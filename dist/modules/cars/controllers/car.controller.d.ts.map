@@ -1,0 +1,1 @@
+{"version":3,"file":"car.controller.d.ts","sourceRoot":"","sources":["../../../../src/modules/cars/controllers/car.controller.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,QAAQ,EAAE,MAAM,SAAS,CAAC;AAa5C,qBAAa,aAAa;IACxB,MAAM,CAAC,UAAU,8EAUd;IAEH,MAAM,CAAC,YAAY,8EAehB;IAEH,MAAM,CAAC,SAAS,8EAgCb;IAEH,MAAM,CAAC,SAAS,8EAiCb;IAEH,MAAM,CAAC,SAAS,8EASb;CACJ"}

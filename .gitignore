@@ -6,8 +6,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-dist/
-dist*
+# dist/
+# dist*
 
 # ===============================
 # ENV FILES (IMPORTANT 🔥)
@@ -19,7 +19,7 @@ dist*
 # ===============================
 # BUILD FILES
 # ===============================
-dist/
+# dist/
 build/
 out/
 

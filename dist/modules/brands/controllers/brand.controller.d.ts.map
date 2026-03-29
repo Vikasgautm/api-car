@@ -1,0 +1,1 @@
+{"version":3,"file":"brand.controller.d.ts","sourceRoot":"","sources":["../../../../src/modules/brands/controllers/brand.controller.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,OAAO,EAAE,QAAQ,EAAE,MAAM,SAAS,CAAC;AAS5C,qBAAa,eAAe;IAC1B,MAAM,CAAC,YAAY,8EAMhB;IAEH,MAAM,CAAC,cAAc,8EASlB;IAEH,MAAM,CAAC,WAAW,8EAiBf;CACJ"}
