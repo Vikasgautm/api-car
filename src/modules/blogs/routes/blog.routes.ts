@@ -6,24 +6,45 @@ import upload from "../../../utils/cloudinary";
 const router = Router();
 
 router.get("/", BlogController.getAllBlogs);
+router.get("/admin", protect, restrictTo("admin", "superadmin"), BlogController.getAllBlogsAdmin);
 router.get("/:slug", BlogController.getBlogBySlug);
+
 router.post(
   "/",
-  //   upload.single("image"),
+  protect,
+  restrictTo("admin", "superadmin"),
+  upload.fields([
+    { name: "thumbnail", maxCount: 5 },
+    { name: "linkImage", maxCount: 5 }, // optional
+  ]),
+  BlogController.createBlog,
+);
+
+router.put(
+  "/:id",
+  protect,
+  restrictTo("admin", "superadmin"),
   upload.fields([
     { name: "thumbnail", maxCount: 1 },
     { name: "linkImage", maxCount: 1 }, // optional
   ]),
+  BlogController.updateBlog,
+);
+
+router.delete(
+  "/:id",
   protect,
   restrictTo("admin", "superadmin"),
-  BlogController.createBlog,
+  BlogController.deleteBlog,
 );
+
 router.patch(
-  "/blogs/:id/toggle",
+  "/:id/toggle",
   protect,
   restrictTo("admin", "superadmin"),
   BlogController.togglePublish,
 );
+
 router.post("/upload", upload.single("image"), BlogController.uploadImage);
 
 export default router;

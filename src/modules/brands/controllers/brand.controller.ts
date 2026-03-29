@@ -2,7 +2,11 @@ import { Request, Response } from 'express';
 import { BrandService } from '../services/brand.service';
 import { catchAsync } from '../../../utils/catchAsync';
 import { AppError } from '../../../middlewares/error.middleware';
-
+interface MulterRequest extends Request {
+  files?: {
+    [fieldname: string]: Express.Multer.File[];
+  };
+}
 export class BrandController {
   static getAllBrands = catchAsync(async (req: Request, res: Response) => {
     const result = await BrandService.getAllBrands(req.query);
@@ -23,8 +27,19 @@ export class BrandController {
     });
   });
 
-  static createBrand = catchAsync(async (req: Request, res: Response) => {
-    const brand = await BrandService.createBrand(req.body);
+  static createBrand = catchAsync(async (req: MulterRequest, res: Response) => {
+
+    let images = {
+      url: "",
+      title: req.body.title || "",
+      // preview: ""
+    };
+
+    if (req.files?.["images"]) {
+      const file = req.files["images"][0];
+      images.url = file.path;
+    }
+    const brand = await BrandService.createBrand({ ...req.body, images });
     res.status(201).json({
       status: 'success',
       data: { brand },

@@ -7,6 +7,8 @@ import cityRoutes from '../../modules/cities/routes/city.routes';
 import faqRoutes from '../../modules/faqs/routes/faq.routes';
 import imageRoutes from '../../modules/images/routes/image.routes';
 import carCompareRoutes from '../../modules/carCompare/routes/car-compare.routes';
+import userRoutes from '../../modules/users/routes/user.routes';
+import settingsRoutes from '../../modules/settings/routes/settings.routes';
 
 const router = Router();
 
@@ -18,5 +20,7 @@ router.use('/cities', cityRoutes);
 router.use('/faqs', faqRoutes);
 router.use('/images', imageRoutes);
 router.use('/car-compare', carCompareRoutes);
+router.use('/users', userRoutes);
+router.use('/settings', settingsRoutes);
 
 export default router;

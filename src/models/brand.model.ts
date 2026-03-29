@@ -5,8 +5,9 @@ export interface IBrand extends Document {
   brand_name: string;
   brand_slug: string;
   images: {
-    preview: string;
+    // preview: string;
     title: string;
+    url: string;
   };
   is_published: boolean;
   is_deleted: boolean;
@@ -19,8 +20,9 @@ const brandSchema = new Schema<IBrand>(
     brand_slug: { type: String, required: true, unique: true },
     images: {
       type: {
-        preview: { type: String },
+        // preview: { type: String },
         title: { type: String },
+        url: { type: String },
       },
       required: true,
     },

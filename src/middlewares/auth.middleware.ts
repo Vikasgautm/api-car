@@ -3,9 +3,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { AppError } from './error.middleware';
 
-export interface AuthRequest extends Request {
-  user?: any;
-}
+import { AuthRequest } from '../types/auth';
 
 export const protect = async (
   req: AuthRequest,

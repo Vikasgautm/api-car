@@ -12,6 +12,7 @@ export interface IUser extends Document {
   is_email_verified: boolean;
   google_id?: string;
   is_deleted: boolean;
+  theme?: string;
   comparePassword(password: string): Promise<boolean>;
 }
 
@@ -27,6 +28,7 @@ const userSchema = new Schema<IUser>(
     is_email_verified: { type: Boolean, default: false },
     google_id: { type: String },
     is_deleted: { type: Boolean, default: false },
+    theme: { type: String, default: "light" },
   },
   { timestamps: true }
 );

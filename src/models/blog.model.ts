@@ -7,6 +7,7 @@ export interface IBlog extends Document {
   excerpt: string;
   author: string;
   slug: string;
+  category: string;
   link?: string;
   thumbnail: {
     preview: string;
@@ -28,6 +29,7 @@ const blogSchema = new Schema<IBlog>(
     },
     author: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
+    category: { type: String, required: true, default: "Uncategorized" },
     link: { type: String },
     thumbnail: {
       type: {

@@ -16,7 +16,7 @@ export interface ICar extends Document {
     title: string;
   }>;
   link: string;
-  upcomming: boolean;
+  upcoming: boolean;
   recommended: boolean;
   popular: boolean;
   latest: boolean;
@@ -50,7 +50,7 @@ const carSchema = new Schema<ICar>(
       required: true,
     },
     link: { type: String, required: true },
-    upcomming: { type: Boolean, default: false },
+    upcoming: { type: Boolean, default: false },
     recommended: { type: Boolean, default: false },
     popular: { type: Boolean, default: false },
     latest: { type: Boolean, default: true },
