@@ -49,19 +49,24 @@ export class BlogController {
     let thumbnail = {
       url: "",
       title: req.body.thumbnailTitle || "",
-      preview: ""
+      preview: "",
     };
+    let images: string[] = [];
 
     let link = req.body.link || "";
 
     if (req.files?.["thumbnail"]) {
       const file = req.files["thumbnail"][0];
       thumbnail.url = file.path;
+      thumbnail.title = req.body.thumbnailTitle || "";
     }
 
     if (req.files?.["linkImage"]) {
       const file = req.files["linkImage"][0];
       link = file.path;
+    }
+    if (req.files?.images) {
+      images = req.files.images.map((file: any) => file.path);
     }
 
     const blog = await BlogService.createBlog({
@@ -72,7 +77,9 @@ export class BlogController {
       slug: req.body.slug,
       link,
       thumbnail,
-      is_published: req.body.is_published === "true" || req.body.is_published === true,
+      images,
+      is_published:
+        req.body.is_published === "true" || req.body.is_published === true,
     });
 
     res.status(201).json({
@@ -80,33 +87,59 @@ export class BlogController {
       data: { blog },
     });
   });
-  
+
   static updateBlog = catchAsync(async (req: MulterRequest, res: Response) => {
     const id = req.params.id as string;
     let blogData = { ...req.body };
-    
+
     if (req.files?.["thumbnail"]) {
       const file = req.files["thumbnail"][0];
       blogData.thumbnail = {
-        url: file.path,
+        // url: file.path,
+        url: file.path.replace(/\\/g, "/"),
         title: req.body.thumbnailTitle || "",
-        preview: ""
+        preview: "",
       };
     }
-    
+
     if (req.files?.["linkImage"]) {
       const file = req.files["linkImage"][0];
       blogData.link = file.path;
     }
-    
+    // keep existing images if no new uploaded
+    if (req.body.keptImages || req.files?.["images"]) {
+      let finalImages: string[] = [];
+
+      // Keep existing images that were not removed
+      if (req.body.keptImages) {
+        try {
+          finalImages = JSON.parse(req.body.keptImages);
+        } catch {
+          finalImages = [];
+        }
+      }
+
+      // Add newly uploaded images
+      if (req.files?.["images"]) {
+        const newPaths = req.files.images.map((file: any) => file.path);
+        finalImages = [...finalImages, ...newPaths];
+      }
+
+      blogData.images = finalImages;
+    }
+    // if (req.files?.images) {
+    //   blogData.images = req.files.images.map((file: any) => file.path);
+    // }
+
     // convert string to boolean
-    if(typeof req.body.is_published !== "undefined") {
-       blogData.is_published = req.body.is_published === "true" || req.body.is_published === true;
+    if (typeof req.body.is_published !== "undefined") {
+      blogData.is_published =
+        req.body.is_published === "true" || req.body.is_published === true;
     }
 
     const updatedBlog = await BlogService.updateBlog(id, blogData);
     if (!updatedBlog) {
-       throw new AppError("Blog not found", 404);
+      throw new AppError("Blog not found", 404);
     }
 
     res.status(200).json({
@@ -118,21 +151,21 @@ export class BlogController {
   static deleteBlog = catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id as string;
     const deletedBlog = await BlogService.deleteBlog(id);
-    
+
     if (!deletedBlog) {
-       throw new AppError("Blog not found", 404);
+      throw new AppError("Blog not found", 404);
     }
 
     res.status(200).json({
       status: "success",
-      message: "Blog deleted successfully"
+      message: "Blog deleted successfully",
     });
   });
 
   static togglePublish = catchAsync(async (req: Request, res: Response) => {
     const blog = await BlogService.findBlogById(req.params.id as string);
     if (!blog) {
-       throw new AppError("Blog not found", 404);
+      throw new AppError("Blog not found", 404);
     }
 
     blog.is_published = !blog.is_published;
@@ -149,9 +182,26 @@ export class BlogController {
       });
     }
 
-    res.status(200).json({
-      status: "success",
-      url: req.file.path,
-    });
+    // FIX: convert backslash to forward slash
+    const filePath = req.file.path.replace(/\\/g, "/");
+
+    const url = `${req.protocol}://${req.get("host")}/${filePath}`;
+
+    res.json({ url });
   });
+  // static uploadImage = catchAsync(async (req: Request, res: Response) => {
+  //   if (!req.file) {
+  //     return res.status(400).json({
+  //       status: "fail",
+  //       message: "No file uploaded",
+  //     });
+  //   }
+  //   const url = `${req.protocol}://${req.get("host")}/${req.file.path}`;
+  //   res.json({ url });
+
+  //   // res.status(200).json({
+  //   //   status: "success",
+  //   //   url: req.file.path,
+  //   // });
+  // });
 }

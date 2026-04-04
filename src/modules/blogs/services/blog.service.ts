@@ -30,7 +30,12 @@ export class BlogService {
       .limit(Number(limit) || 10);
     const total = await Blog.countDocuments(filter);
 
-    return { blogs, total, page: Number(page) || 1, limit: Number(limit) || 10 };
+    return {
+      blogs,
+      total,
+      page: Number(page) || 1,
+      limit: Number(limit) || 10,
+    };
   }
 
   static async getBlogBySlug(slug: string) {
@@ -44,16 +49,17 @@ export class BlogService {
   static async createBlog(blogData: any) {
     const blog_id = uuidv4();
     let slug = generateSlug(blogData.title);
-    
+
     // Ensure unique slug
     const existing = await Blog.findOne({ slug });
     if (existing) {
-        slug = `${slug}-${Date.now()}`;
+      slug = `${slug}-${Date.now()}`;
     }
 
     let excerpt = blogData.excerpt;
     if (!excerpt && blogData.content) {
-      excerpt = blogData.content.replace(/<[^>]+>/g, "").substring(0, 150) + "...";
+      excerpt =
+        blogData.content.replace(/<[^>]+>/g, "").substring(0, 150) + "...";
     }
 
     return await Blog.create({
@@ -69,26 +75,42 @@ export class BlogService {
       blogData.slug = generateSlug(blogData.title);
     }
     if (!blogData.excerpt && blogData.content) {
-      blogData.excerpt = blogData.content.replace(/<[^>]+>/g, "").substring(0, 150) + "...";
+      blogData.excerpt =
+        blogData.content.replace(/<[^>]+>/g, "").substring(0, 150) + "...";
     }
-    return await Blog.findByIdAndUpdate(id, blogData, { new: true });
+    return await Blog.findByIdAndUpdate(id, blogData, {
+      returnDocument: "after",
+    });
   }
 
+  // static async deleteBlog(id: string) {
+  //   const blog = await Blog.findById(id);
+  //   if (blog) {
+  //     if (blog.thumbnail?.url) {
+  //       const publicIdMatch = blog.thumbnail.url.match(/\/v\d+\/(.+?)\.\w+$/);
+  //       if (publicIdMatch && publicIdMatch[1]) {
+  //         try {
+  //           await cloudinary.uploader.destroy(publicIdMatch[1]);
+  //         } catch (e) {
+  //           console.error("Cloudinary delete error:", e);
+  //         }
+  //       }
+  //     }
+  //     return await Blog.findByIdAndDelete(id);
+  //   }
+  //   return null;
+  // }
   static async deleteBlog(id: string) {
-    const blog = await Blog.findById(id);
-    if (blog) {
-      if (blog.thumbnail?.url) {
-        const publicIdMatch = blog.thumbnail.url.match(/\/v\d+\/(.+?)\.\w+$/);
-        if (publicIdMatch && publicIdMatch[1]) {
-          try {
-            await cloudinary.uploader.destroy(publicIdMatch[1]);
-          } catch (e) {
-            console.error("Cloudinary delete error:", e);
-          }
-        }
-      }
-      return await Blog.findByIdAndDelete(id);
-    }
-    return null;
+    // Soft Delete - sirf is_deleted flag update kar rahe hain
+    const blog = await Blog.findByIdAndUpdate(
+      id,
+      {
+        is_deleted: true,
+        deletedAt: new Date(), // optional but recommended
+      },
+      { new: true },
+    );
+
+    return blog;
   }
 }

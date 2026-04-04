@@ -14,6 +14,7 @@ export interface IBlog extends Document {
     title: string;
     url: string;
   };
+  images?: string[];
   is_published: boolean;
   is_deleted: boolean;
 }
@@ -39,6 +40,7 @@ const blogSchema = new Schema<IBlog>(
       },
       required: true,
     },
+    images: [String],
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
   },
