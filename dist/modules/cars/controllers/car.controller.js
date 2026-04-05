@@ -96,7 +96,17 @@ class CarController {
             throw new error_middleware_1.AppError('Car not found', 404);
         res.status(200).json({
             status: 'success',
-            message: 'Car deleted'
+            message: 'Car soft deleted successfully',
+        });
+    });
+    static restoreCar = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const car = await car_service_1.CarService.restoreCar(req.params.id);
+        if (!car)
+            throw new error_middleware_1.AppError('Car not found', 404);
+        res.status(200).json({
+            status: 'success',
+            message: 'Car restored successfully',
+            data: { car },
         });
     });
 }

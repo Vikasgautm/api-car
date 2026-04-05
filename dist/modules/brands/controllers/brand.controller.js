@@ -38,6 +38,42 @@ class BrandController {
             data: { brand },
         });
     });
+    static updateBrand = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        let updateData = { ...req.body };
+        if (req.files?.["images"]) {
+            const file = req.files["images"][0];
+            updateData.images = {
+                url: file.path,
+                title: req.body.title || "",
+            };
+        }
+        const brand = await brand_service_1.BrandService.updateBrand(req.params.id, updateData);
+        if (!brand)
+            throw new error_middleware_1.AppError('Brand not found', 404);
+        res.status(200).json({
+            status: 'success',
+            data: { brand },
+        });
+    });
+    static deleteBrand = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const brand = await brand_service_1.BrandService.deleteBrand(req.params.id);
+        if (!brand)
+            throw new error_middleware_1.AppError('Brand not found', 404);
+        res.status(200).json({
+            status: 'success',
+            message: 'Brand soft deleted successfully',
+        });
+    });
+    static restoreBrand = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const brand = await brand_service_1.BrandService.restoreBrand(req.params.id);
+        if (!brand)
+            throw new error_middleware_1.AppError('Brand not found', 404);
+        res.status(200).json({
+            status: 'success',
+            message: 'Brand restored successfully',
+            data: { brand },
+        });
+    });
 }
 exports.BrandController = BrandController;
 //# sourceMappingURL=brand.controller.js.map

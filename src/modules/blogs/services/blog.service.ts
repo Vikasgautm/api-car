@@ -108,7 +108,7 @@ export class BlogService {
         is_deleted: true,
         deletedAt: new Date(), // optional but recommended
       },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     return blog;

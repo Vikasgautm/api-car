@@ -45,4 +45,40 @@ export class BrandController {
       data: { brand },
     });
   });
+
+  static updateBrand = catchAsync(async (req: MulterRequest, res: Response) => {
+    let updateData = { ...req.body };
+    if (req.files?.["images"]) {
+      const file = req.files["images"][0];
+      updateData.images = {
+        url: file.path,
+        title: req.body.title || "",
+      };
+    }
+    const brand = await BrandService.updateBrand(req.params.id as string, updateData);
+    if (!brand) throw new AppError('Brand not found', 404);
+    res.status(200).json({
+      status: 'success',
+      data: { brand },
+    });
+  });
+
+  static deleteBrand = catchAsync(async (req: Request, res: Response) => {
+    const brand = await BrandService.deleteBrand(req.params.id as string);
+    if (!brand) throw new AppError('Brand not found', 404);
+    res.status(200).json({
+      status: 'success',
+      message: 'Brand soft deleted successfully',
+    });
+  });
+
+  static restoreBrand = catchAsync(async (req: Request, res: Response) => {
+    const brand = await BrandService.restoreBrand(req.params.id as string);
+    if (!brand) throw new AppError('Brand not found', 404);
+    res.status(200).json({
+      status: 'success',
+      message: 'Brand restored successfully',
+      data: { brand },
+    });
+  });
 }

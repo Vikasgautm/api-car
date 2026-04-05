@@ -4,7 +4,6 @@ exports.BlogService = void 0;
 const blog_model_1 = require("../../../models/blog.model");
 const uuid_1 = require("uuid");
 const slugify_1 = require("../../../utils/slugify");
-const cloudinary_1 = require("cloudinary");
 class BlogService {
     static async getAllBlogs(query, isAdmin = false) {
         const { q, category, page = 1, limit = 10 } = query;
@@ -27,7 +26,12 @@ class BlogService {
             .skip(skip)
             .limit(Number(limit) || 10);
         const total = await blog_model_1.Blog.countDocuments(filter);
-        return { blogs, total, page: Number(page) || 1, limit: Number(limit) || 10 };
+        return {
+            blogs,
+            total,
+            page: Number(page) || 1,
+            limit: Number(limit) || 10,
+        };
     }
     static async getBlogBySlug(slug) {
         return await blog_model_1.Blog.findOne({ slug, is_deleted: false, is_published: true });
@@ -45,7 +49,8 @@ class BlogService {
         }
         let excerpt = blogData.excerpt;
         if (!excerpt && blogData.content) {
-            excerpt = blogData.content.replace(/<[^>]+>/g, "").substring(0, 150) + "...";
+            excerpt =
+                blogData.content.replace(/<[^>]+>/g, "").substring(0, 150) + "...";
         }
         return await blog_model_1.Blog.create({
             ...blogData,
@@ -59,27 +64,37 @@ class BlogService {
             blogData.slug = (0, slugify_1.generateSlug)(blogData.title);
         }
         if (!blogData.excerpt && blogData.content) {
-            blogData.excerpt = blogData.content.replace(/<[^>]+>/g, "").substring(0, 150) + "...";
+            blogData.excerpt =
+                blogData.content.replace(/<[^>]+>/g, "").substring(0, 150) + "...";
         }
-        return await blog_model_1.Blog.findByIdAndUpdate(id, blogData, { new: true });
+        return await blog_model_1.Blog.findByIdAndUpdate(id, blogData, {
+            returnDocument: "after",
+        });
     }
+    // static async deleteBlog(id: string) {
+    //   const blog = await Blog.findById(id);
+    //   if (blog) {
+    //     if (blog.thumbnail?.url) {
+    //       const publicIdMatch = blog.thumbnail.url.match(/\/v\d+\/(.+?)\.\w+$/);
+    //       if (publicIdMatch && publicIdMatch[1]) {
+    //         try {
+    //           await cloudinary.uploader.destroy(publicIdMatch[1]);
+    //         } catch (e) {
+    //           console.error("Cloudinary delete error:", e);
+    //         }
+    //       }
+    //     }
+    //     return await Blog.findByIdAndDelete(id);
+    //   }
+    //   return null;
+    // }
     static async deleteBlog(id) {
-        const blog = await blog_model_1.Blog.findById(id);
-        if (blog) {
-            if (blog.thumbnail?.url) {
-                const publicIdMatch = blog.thumbnail.url.match(/\/v\d+\/(.+?)\.\w+$/);
-                if (publicIdMatch && publicIdMatch[1]) {
-                    try {
-                        await cloudinary_1.v2.uploader.destroy(publicIdMatch[1]);
-                    }
-                    catch (e) {
-                        console.error("Cloudinary delete error:", e);
-                    }
-                }
-            }
-            return await blog_model_1.Blog.findByIdAndDelete(id);
-        }
-        return null;
+        // Soft Delete - sirf is_deleted flag update kar rahe hain
+        const blog = await blog_model_1.Blog.findByIdAndUpdate(id, {
+            is_deleted: true,
+            deletedAt: new Date(), // optional but recommended
+        }, { new: true });
+        return blog;
     }
 }
 exports.BlogService = BlogService;

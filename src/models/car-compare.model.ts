@@ -18,6 +18,7 @@ export interface ICarCompare extends Document {
   comparison_title: string;
   route_link: string;
   is_published: boolean;
+  is_deleted: boolean;
 }
 
 const carInfoSchema = new Schema(
@@ -47,6 +48,7 @@ const carCompareSchema = new Schema<ICarCompare>(
     comparison_title: { type: String, required: true },
     route_link: { type: String, required: true },
     is_published: { type: Boolean, default: false },
+    is_deleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

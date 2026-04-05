@@ -13,6 +13,7 @@ const variantSchema = new mongoose_1.Schema({
     expectedLaunchDate: { type: String },
     specification: { type: mongoose_1.Schema.Types.Mixed },
     is_published: { type: Boolean, default: false },
+    is_deleted: { type: Boolean, default: false },
 }, { timestamps: true });
 exports.CarVariant = (0, mongoose_1.model)('CarVariant', variantSchema);
 //# sourceMappingURL=car-variant.model.js.map

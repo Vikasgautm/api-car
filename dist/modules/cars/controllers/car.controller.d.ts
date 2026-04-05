@@ -5,5 +5,6 @@ export declare class CarController {
     static createCar: (req: Request, res: Response, next: import("express").NextFunction) => void;
     static updateCar: (req: Request, res: Response, next: import("express").NextFunction) => void;
     static deleteCar: (req: Request, res: Response, next: import("express").NextFunction) => void;
+    static restoreCar: (req: Request, res: Response, next: import("express").NextFunction) => void;
 }
 //# sourceMappingURL=car.controller.d.ts.map

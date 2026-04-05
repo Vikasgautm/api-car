@@ -48,5 +48,12 @@ export declare class CarService {
     } & {
         id: string;
     }) | null>;
+    static restoreCar(id: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/car.model").ICar, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/car.model").ICar & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }) | null>;
 }
 //# sourceMappingURL=car.service.d.ts.map

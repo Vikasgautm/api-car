@@ -24,6 +24,7 @@ const carCompareSchema = new mongoose_1.Schema({
     comparison_title: { type: String, required: true },
     route_link: { type: String, required: true },
     is_published: { type: Boolean, default: false },
+    is_deleted: { type: Boolean, default: false },
 }, { timestamps: true });
 exports.CarCompare = (0, mongoose_1.model)('CarCompare', carCompareSchema);
 //# sourceMappingURL=car-compare.model.js.map

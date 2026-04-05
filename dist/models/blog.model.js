@@ -22,6 +22,7 @@ const blogSchema = new mongoose_1.Schema({
         },
         required: true,
     },
+    images: [String],
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
 }, { timestamps: true });

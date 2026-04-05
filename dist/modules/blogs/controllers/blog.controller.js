@@ -39,16 +39,21 @@ class BlogController {
         let thumbnail = {
             url: "",
             title: req.body.thumbnailTitle || "",
-            preview: ""
+            preview: "",
         };
+        let images = [];
         let link = req.body.link || "";
         if (req.files?.["thumbnail"]) {
             const file = req.files["thumbnail"][0];
             thumbnail.url = file.path;
+            thumbnail.title = req.body.thumbnailTitle || "";
         }
         if (req.files?.["linkImage"]) {
             const file = req.files["linkImage"][0];
             link = file.path;
+        }
+        if (req.files?.images) {
+            images = req.files.images.map((file) => file.path);
         }
         const blog = await blog_service_1.BlogService.createBlog({
             title: req.body.title,
@@ -58,6 +63,7 @@ class BlogController {
             slug: req.body.slug,
             link,
             thumbnail,
+            images,
             is_published: req.body.is_published === "true" || req.body.is_published === true,
         });
         res.status(201).json({
@@ -71,18 +77,42 @@ class BlogController {
         if (req.files?.["thumbnail"]) {
             const file = req.files["thumbnail"][0];
             blogData.thumbnail = {
-                url: file.path,
+                // url: file.path,
+                url: file.path.replace(/\\/g, "/"),
                 title: req.body.thumbnailTitle || "",
-                preview: ""
+                preview: "",
             };
         }
         if (req.files?.["linkImage"]) {
             const file = req.files["linkImage"][0];
             blogData.link = file.path;
         }
+        // keep existing images if no new uploaded
+        if (req.body.keptImages || req.files?.["images"]) {
+            let finalImages = [];
+            // Keep existing images that were not removed
+            if (req.body.keptImages) {
+                try {
+                    finalImages = JSON.parse(req.body.keptImages);
+                }
+                catch {
+                    finalImages = [];
+                }
+            }
+            // Add newly uploaded images
+            if (req.files?.["images"]) {
+                const newPaths = req.files.images.map((file) => file.path);
+                finalImages = [...finalImages, ...newPaths];
+            }
+            blogData.images = finalImages;
+        }
+        // if (req.files?.images) {
+        //   blogData.images = req.files.images.map((file: any) => file.path);
+        // }
         // convert string to boolean
         if (typeof req.body.is_published !== "undefined") {
-            blogData.is_published = req.body.is_published === "true" || req.body.is_published === true;
+            blogData.is_published =
+                req.body.is_published === "true" || req.body.is_published === true;
         }
         const updatedBlog = await blog_service_1.BlogService.updateBlog(id, blogData);
         if (!updatedBlog) {
@@ -101,7 +131,7 @@ class BlogController {
         }
         res.status(200).json({
             status: "success",
-            message: "Blog deleted successfully"
+            message: "Blog deleted successfully",
         });
     });
     static togglePublish = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -120,10 +150,10 @@ class BlogController {
                 message: "No file uploaded",
             });
         }
-        res.status(200).json({
-            status: "success",
-            url: req.file.path,
-        });
+        // FIX: convert backslash to forward slash
+        const filePath = req.file.path.replace(/\\/g, "/");
+        const url = `${req.protocol}://${req.get("host")}/${filePath}`;
+        res.json({ url });
     });
 }
 exports.BlogController = BlogController;
