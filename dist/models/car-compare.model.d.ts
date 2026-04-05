@@ -16,6 +16,7 @@ export interface ICarCompare extends Document {
     comparison_title: string;
     route_link: string;
     is_published: boolean;
+    is_deleted: boolean;
 }
 export declare const CarCompare: import("mongoose").Model<ICarCompare, {}, {}, {}, Document<unknown, {}, ICarCompare, {}, import("mongoose").DefaultSchemaOptions> & ICarCompare & Required<{
     _id: import("mongoose").Types.ObjectId;

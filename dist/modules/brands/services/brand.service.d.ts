@@ -8,10 +8,31 @@ export declare class BrandService {
             id: string;
         })[];
         total: number;
-        page: any;
-        limit: any;
+        page: number;
+        limit: number;
     }>;
     static getBrandBySlug(slug: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/brand.model").IBrand, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/brand.model").IBrand & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }) | null>;
+    static updateBrand(id: string, brandData: any): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/brand.model").IBrand, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/brand.model").IBrand & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }) | null>;
+    static deleteBrand(id: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/brand.model").IBrand, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/brand.model").IBrand & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }) | null>;
+    static restoreBrand(id: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/brand.model").IBrand, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/brand.model").IBrand & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;

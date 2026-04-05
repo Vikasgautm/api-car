@@ -7,6 +7,7 @@ const fuelTypeSchema = new mongoose_1.Schema({
     name: { type: String, required: true, unique: true },
     slug: { type: String, required: true, unique: true },
     description: { type: String },
+    is_deleted: { type: Boolean, default: false },
 }, { timestamps: true });
 exports.FuelType = (0, mongoose_1.model)('FuelType', fuelTypeSchema);
 //# sourceMappingURL=fuel-type.model.js.map

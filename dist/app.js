@@ -12,7 +12,16 @@ const config_1 = require("./config");
 const rate_limit_middleware_1 = require("./middlewares/rate-limit.middleware");
 const app = (0, express_1.default)();
 // Middlewares
-app.use((0, helmet_1.default)());
+// app.use(helmet());
+app.use((0, helmet_1.default)({
+    crossOriginResourcePolicy: {
+        policy: "cross-origin",
+    },
+}));
+app.use((req, res, next) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+});
 app.use(rate_limit_middleware_1.globalRateLimiter);
 app.use((0, cors_1.default)({
     origin: config_1.config.cors_origin,
@@ -23,17 +32,18 @@ app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 app.use((0, cookie_parser_1.default)());
 // Base route
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
     res.status(200).json({
-        message: 'Welcome to Car Salahakar API',
-        status: 'healthy',
-        version: '1.0.0',
+        message: "Welcome to Car Salahakar API",
+        status: "healthy",
+        version: "1.0.0",
     });
 });
 // Import routes
 const routes_1 = __importDefault(require("./shared/routes"));
 const error_middleware_1 = require("./middlewares/error.middleware");
-app.use('/api/v1', routes_1.default);
+app.use("/uploads", express_1.default.static("uploads"));
+app.use("/api/v1", routes_1.default);
 // Error handling
 app.use(error_middleware_1.errorMiddleware);
 exports.default = app;

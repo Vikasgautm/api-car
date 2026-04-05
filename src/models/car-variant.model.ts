@@ -11,6 +11,7 @@ export interface ICarVariant extends Document {
   expectedLaunchDate?: string;
   specification?: any;
   is_published: boolean;
+  is_deleted: boolean;
 }
 
 const variantSchema = new Schema<ICarVariant>(
@@ -25,6 +26,7 @@ const variantSchema = new Schema<ICarVariant>(
     expectedLaunchDate: { type: String },
     specification: { type: Schema.Types.Mixed },
     is_published: { type: Boolean, default: false },
+    is_deleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

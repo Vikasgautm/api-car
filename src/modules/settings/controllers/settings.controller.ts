@@ -12,10 +12,14 @@ export class SettingsController {
       throw new AppError("Theme is required", 400);
     }
 
-    const user = await User.findOneAndUpdate({ user_id: userId }, { theme }, { new: true });
-    
+    const user = await User.findOneAndUpdate(
+      { user_id: userId },
+      { theme },
+      { returnDocument: "after" },
+    );
+
     if (!user) {
-        throw new AppError("User not found", 404);
+      throw new AppError("User not found", 404);
     }
 
     res.status(200).json({

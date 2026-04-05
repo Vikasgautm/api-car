@@ -1,11 +1,12 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document } from "mongoose";
 
 export interface ICar extends Document {
   car_id: string;
   car_name: string;
   description: string;
   slug: string;
-  brand_id: string;
+  // brand_id: string;
+  brand_id: Schema.Types.ObjectId;
   body_type_id: string;
   thumbnail: {
     preview: string;
@@ -31,8 +32,12 @@ const carSchema = new Schema<ICar>(
     car_name: { type: String, required: true },
     description: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
-    brand_id: { type: String, ref: 'Brand', required: true },
-    body_type_id: { type: String, ref: 'BodyType', required: true },
+    brand_id: { type: Schema.Types.ObjectId, ref: "Brand", required: true },
+
+    // brand_id: { type: String, ref: "Brand", required: true },
+    body_type_id: { type: String, ref: "BodyType", required: true },
+    // body_type_id: { type: Schema.Types.ObjectId, ref: 'BodyType', required: true },
+
     thumbnail: {
       type: {
         preview: { type: String },
@@ -58,7 +63,7 @@ const carSchema = new Schema<ICar>(
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export const Car = model<ICar>('Car', carSchema);
+export const Car = model<ICar>("Car", carSchema);

@@ -117,7 +117,18 @@ export class CarController {
 
     res.status(200).json({
       status: 'success',
-      message: 'Car deleted'
+      message: 'Car soft deleted successfully',
+    });
+  });
+
+  static restoreCar = catchAsync<AuthRequest>(async (req, res) => {
+    const car = await CarService.restoreCar(req.params.id as string);
+    if (!car) throw new AppError('Car not found', 404);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Car restored successfully',
+      data: { car },
     });
   });
 }

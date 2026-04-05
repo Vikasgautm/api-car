@@ -21,7 +21,7 @@ app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   next();
 });
-app.use(globalRateLimiter);
+// app.use(globalRateLimiter);
 app.use(
   cors({
     origin: config.cors_origin,

@@ -5,12 +5,11 @@ const car_model_1 = require("../../../models/car.model");
 const car_variant_model_1 = require("../../../models/car-variant.model");
 const uuid_1 = require("uuid");
 const slugify_1 = require("../../../utils/slugify");
-const cloudinary_1 = require("cloudinary");
 class CarService {
     static async getAllCars(query, fetchAsAdmin = false) {
-        const { brand_id, body_type_id, page = 1, limit = 10, category, q } = query;
-        const filter = { is_deleted: false };
-        if (!fetchAsAdmin) {
+        const { brand_id, body_type_id, page = 1, limit = 10, category, q, is_deleted } = query;
+        const filter = { is_deleted: is_deleted === 'true' };
+        if (!fetchAsAdmin && is_deleted !== 'true') {
             filter.is_published = true;
         }
         if (brand_id)
@@ -70,30 +69,10 @@ class CarService {
         return await car_model_1.Car.findByIdAndUpdate(id, carData, { new: true });
     }
     static async deleteCar(id) {
-        const car = await car_model_1.Car.findById(id);
-        if (!car)
-            return null;
-        if (car.thumbnail?.preview) {
-            const publicIdMatch = car.thumbnail.preview.match(/\/v\d+\/(.+?)\.\w+$/);
-            if (publicIdMatch && publicIdMatch[1]) {
-                try {
-                    await cloudinary_1.v2.uploader.destroy(publicIdMatch[1]);
-                }
-                catch (e) { }
-            }
-        }
-        if (car.images && car.images.length > 0) {
-            for (const img of car.images) {
-                const match = img.preview.match(/\/v\d+\/(.+?)\.\w+$/);
-                if (match && match[1]) {
-                    try {
-                        await cloudinary_1.v2.uploader.destroy(match[1]);
-                    }
-                    catch (e) { }
-                }
-            }
-        }
-        return await car_model_1.Car.findByIdAndDelete(id);
+        return await car_model_1.Car.findByIdAndUpdate(id, { is_deleted: true }, { new: true });
+    }
+    static async restoreCar(id) {
+        return await car_model_1.Car.findByIdAndUpdate(id, { is_deleted: false }, { new: true });
     }
 }
 exports.CarService = CarService;

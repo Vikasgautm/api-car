@@ -5,6 +5,7 @@ export interface IFuelType extends Document {
   name: string;
   slug: string;
   description?: string;
+  is_deleted: boolean;
 }
 
 const fuelTypeSchema = new Schema<IFuelType>(
@@ -13,6 +14,7 @@ const fuelTypeSchema = new Schema<IFuelType>(
     name: { type: String, required: true, unique: true },
     slug: { type: String, required: true, unique: true },
     description: { type: String },
+    is_deleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

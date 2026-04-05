@@ -13,6 +13,7 @@ export interface IBlog extends Document {
         title: string;
         url: string;
     };
+    images?: string[];
     is_published: boolean;
     is_deleted: boolean;
 }

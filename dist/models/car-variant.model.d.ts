@@ -10,6 +10,7 @@ export interface ICarVariant extends Document {
     expectedLaunchDate?: string;
     specification?: any;
     is_published: boolean;
+    is_deleted: boolean;
 }
 export declare const CarVariant: import("mongoose").Model<ICarVariant, {}, {}, {}, Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
     _id: import("mongoose").Types.ObjectId;
