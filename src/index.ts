@@ -8,8 +8,8 @@ const startServer = async () => {
   try {
     // MongoDB Connection
     await mongoose.connect(config.mongodb_uri);
-    logger.info("Successfully connected to MongoDB");
-
+    logger.info("Successfully connected to MongoDB", { mongodb_uri: config.mongodb_uri });
+    console.log("MongoDB URI:", config.mongodb_uri);
     // Create default superadmin
     // await createDefaultSuperAdmin();
 

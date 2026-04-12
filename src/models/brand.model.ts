@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Document, Schema, model } from 'mongoose';
 
 export interface IBrand extends Document {
   brand_uuid: string;
@@ -11,6 +11,10 @@ export interface IBrand extends Document {
   };
   is_published: boolean;
   is_deleted: boolean;
+  // SEO fields
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
 }
 
 const brandSchema = new Schema<IBrand>(
@@ -28,6 +32,10 @@ const brandSchema = new Schema<IBrand>(
     },
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
+    // SEO fields
+    meta_title: { type: String },
+    meta_description: { type: String, maxlength: 160 },
+    meta_keywords: { type: String },
   },
   { timestamps: true }
 );

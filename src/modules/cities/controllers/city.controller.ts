@@ -1,8 +1,7 @@
-import { Request, Response } from 'express';
-import { AuthRequest } from '../../../types/auth';
-import { CityService } from '../services/city.service';
-import { catchAsync } from '../../../utils/catchAsync';
 import { AppError } from '../../../middlewares/error.middleware';
+import { AuthRequest } from '../../../types/auth';
+import { catchAsync } from '../../../utils/catchAsync';
+import { CityService } from '../services/city.service';
 
 export class CityController {
   static getAllCities = catchAsync<AuthRequest>(async (req, res) => {
@@ -14,7 +13,14 @@ export class CityController {
   });
 
   static createCity = catchAsync<AuthRequest>(async (req, res) => {
-    const city = await CityService.createCity(req.body);
+    const cityData = {
+      ...req.body,
+      // SEO fields
+      meta_title: req.body.meta_title,
+      meta_description: req.body.meta_description,
+      meta_keywords: req.body.meta_keywords,
+    };
+    const city = await CityService.createCity(cityData);
     res.status(201).json({
       status: 'success',
       data: { city },
@@ -22,7 +28,14 @@ export class CityController {
   });
 
   static updateCity = catchAsync<AuthRequest>(async (req, res) => {
-    const city = await CityService.updateCity(req.params.id as string, req.body);
+    const cityData = {
+      ...req.body,
+      // SEO fields
+      meta_title: req.body.meta_title,
+      meta_description: req.body.meta_description,
+      meta_keywords: req.body.meta_keywords,
+    };
+    const city = await CityService.updateCity(req.params.id as string, cityData);
     if (!city) throw new AppError('City not found', 404);
     res.status(200).json({
       status: 'success',

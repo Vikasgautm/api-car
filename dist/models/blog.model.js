@@ -25,6 +25,13 @@ const blogSchema = new mongoose_1.Schema({
     images: [String],
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
+    // SEO fields
+    meta_title: { type: String },
+    meta_description: { type: String, maxlength: 160 },
+    meta_keywords: { type: String },
+    og_image: { type: String },
+    canonical_url: { type: String },
+    noindex: { type: Boolean, default: false },
 }, { timestamps: true });
 exports.Blog = (0, mongoose_1.model)("Blog", blogSchema);
 //# sourceMappingURL=blog.model.js.map

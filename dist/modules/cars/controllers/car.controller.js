@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarController = void 0;
-const car_service_1 = require("../services/car.service");
-const catchAsync_1 = require("../../../utils/catchAsync");
 const error_middleware_1 = require("../../../middlewares/error.middleware");
+const catchAsync_1 = require("../../../utils/catchAsync");
 const seo_1 = require("../../../utils/seo");
+const car_service_1 = require("../services/car.service");
 class CarController {
     static getAllCars = (0, catchAsync_1.catchAsync)(async (req, res) => {
         // If admin is fetching, return all cars, else just published
@@ -52,6 +52,13 @@ class CarController {
             electric: req.body.electric === 'true',
             is_published: req.body.is_published === 'true',
             upcoming: req.body.upcoming === 'true',
+            // SEO fields
+            meta_title: req.body.meta_title,
+            meta_description: req.body.meta_description,
+            meta_keywords: req.body.meta_keywords,
+            og_image: req.body.og_image,
+            canonical_url: req.body.canonical_url,
+            noindex: req.body.noindex === 'true',
         };
         const car = await car_service_1.CarService.createCar(payload);
         res.status(201).json({
@@ -75,7 +82,7 @@ class CarController {
             }));
         }
         // Convert booleans
-        const boolFields = ['latest', 'popular', 'recommended', 'electric', 'is_published', 'upcoming'];
+        const boolFields = ['latest', 'popular', 'recommended', 'electric', 'is_published', 'upcoming', 'noindex'];
         boolFields.forEach(f => {
             if (typeof payload[f] !== 'undefined') {
                 payload[f] = payload[f] === 'true' || payload[f] === true;

@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { BlogService } from "../services/blog.service";
-import { catchAsync } from "../../../utils/catchAsync";
 import { AppError } from "../../../middlewares/error.middleware";
+import { catchAsync } from "../../../utils/catchAsync";
 import { generateBlogMetadata } from "../../../utils/seo";
+import { BlogService } from "../services/blog.service";
 
 interface MulterRequest extends Request {
   files?: {
@@ -80,6 +80,13 @@ export class BlogController {
       images,
       is_published:
         req.body.is_published === "true" || req.body.is_published === true,
+      // SEO fields
+      meta_title: req.body.meta_title,
+      meta_description: req.body.meta_description,
+      meta_keywords: req.body.meta_keywords,
+      og_image: req.body.og_image,
+      canonical_url: req.body.canonical_url,
+      noindex: req.body.noindex === "true",
     });
 
     res.status(201).json({
@@ -135,6 +142,10 @@ export class BlogController {
     if (typeof req.body.is_published !== "undefined") {
       blogData.is_published =
         req.body.is_published === "true" || req.body.is_published === true;
+    }
+    if (typeof req.body.noindex !== "undefined") {
+      blogData.noindex =
+        req.body.noindex === "true" || req.body.noindex === true;
     }
 
     const updatedBlog = await BlogService.updateBlog(id, blogData);

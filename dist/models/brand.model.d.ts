@@ -9,6 +9,9 @@ export interface IBrand extends Document {
     };
     is_published: boolean;
     is_deleted: boolean;
+    meta_title?: string;
+    meta_description?: string;
+    meta_keywords?: string;
 }
 export declare const Brand: import("mongoose").Model<IBrand, {}, {}, {}, Document<unknown, {}, IBrand, {}, import("mongoose").DefaultSchemaOptions> & IBrand & Required<{
     _id: import("mongoose").Types.ObjectId;

@@ -11,7 +11,8 @@ const startServer = async () => {
     try {
         // MongoDB Connection
         await mongoose_1.default.connect(config_1.config.mongodb_uri);
-        logger_1.logger.info('Successfully connected to MongoDB');
+        logger_1.logger.info("Successfully connected to MongoDB", { mongodb_uri: config_1.config.mongodb_uri });
+        console.log("MongoDB URI:", config_1.config.mongodb_uri);
         // Create default superadmin
         // await createDefaultSuperAdmin();
         // Start Express Server
@@ -20,7 +21,7 @@ const startServer = async () => {
         });
     }
     catch (error) {
-        logger_1.logger.error('Error starting server:', error);
+        logger_1.logger.error("Error starting server:", error);
         process.exit(1);
     }
 };

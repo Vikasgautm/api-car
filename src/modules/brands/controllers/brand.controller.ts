@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { BrandService } from "../services/brand.service";
-import { catchAsync } from "../../../utils/catchAsync";
 import { AppError } from "../../../middlewares/error.middleware";
+import { catchAsync } from "../../../utils/catchAsync";
+import { BrandService } from "../services/brand.service";
 interface MulterRequest extends Request {
   files?: {
     [fieldname: string]: Express.Multer.File[];
@@ -38,7 +38,14 @@ export class BrandController {
       const file = req.files["images"][0];
       images.url = file.path;
     }
-    const brand = await BrandService.createBrand({ ...req.body, images });
+    const brand = await BrandService.createBrand({
+      ...req.body,
+      images,
+      // SEO fields
+      meta_title: req.body.meta_title,
+      meta_description: req.body.meta_description,
+      meta_keywords: req.body.meta_keywords,
+    });
     res.status(201).json({
       status: "success",
       data: { brand },
@@ -57,6 +64,11 @@ export class BrandController {
         title: req.body.title || "",
       };
     }
+    // SEO fields
+    if (req.body.meta_title !== undefined) updateData.meta_title = req.body.meta_title;
+    if (req.body.meta_description !== undefined) updateData.meta_description = req.body.meta_description;
+    if (req.body.meta_keywords !== undefined) updateData.meta_keywords = req.body.meta_keywords;
+
     const brand = await BrandService.updateBrand(
       req.params.id as string,
       updateData,

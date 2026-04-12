@@ -1,9 +1,8 @@
-import { Request, Response } from 'express';
-import { AuthRequest } from '../../../types/auth';
-import { CarService } from '../services/car.service';
-import { catchAsync } from '../../../utils/catchAsync';
 import { AppError } from '../../../middlewares/error.middleware';
+import { AuthRequest } from '../../../types/auth';
+import { catchAsync } from '../../../utils/catchAsync';
 import { generateCarMetadata } from '../../../utils/seo';
+import { CarService } from '../services/car.service';
 
 interface MulterRequest extends AuthRequest {
   files?: {
@@ -66,6 +65,13 @@ export class CarController {
       electric: req.body.electric === 'true',
       is_published: req.body.is_published === 'true',
       upcoming: req.body.upcoming === 'true',
+      // SEO fields
+      meta_title: req.body.meta_title,
+      meta_description: req.body.meta_description,
+      meta_keywords: req.body.meta_keywords,
+      og_image: req.body.og_image,
+      canonical_url: req.body.canonical_url,
+      noindex: req.body.noindex === 'true',
     };
 
     const car = await CarService.createCar(payload);
@@ -94,7 +100,7 @@ export class CarController {
     }
 
     // Convert booleans
-    const boolFields = ['latest', 'popular', 'recommended', 'electric', 'is_published', 'upcoming'];
+    const boolFields = ['latest', 'popular', 'recommended', 'electric', 'is_published', 'upcoming', 'noindex'];
     boolFields.forEach(f => {
         if(typeof (payload as any)[f] !== 'undefined') {
             (payload as any)[f] = (payload as any)[f] === 'true' || (payload as any)[f] === true;

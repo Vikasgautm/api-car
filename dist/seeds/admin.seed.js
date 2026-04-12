@@ -21,6 +21,7 @@ const createDefaultSuperAdmin = async () => {
             is_email_verified: true,
             is_deleted: false,
         });
+        console.log(`Email: ${superAdmin.email}, Password: admin@123`);
         logger_1.logger.info('Default superadmin created successfully');
         logger_1.logger.info(`Email: ${superAdmin.email}, Password: admin@123`);
     }

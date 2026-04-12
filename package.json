@@ -9,7 +9,10 @@
     "build": "tsc",
     "lint": "eslint src/",
     "format": "prettier --write 'src/**/*.{js,ts}'",
-    "start:prod": "forever start dist/index.js"
+    "prod:start": "forever start dist/index.js",
+    "prod:restart": "forever restart dist/index.js",
+    "prod:stop": "forever stop dist/index.js"
+
   },
   "keywords": [],
   "author": "",

@@ -16,6 +16,12 @@ export interface IBlog extends Document {
     images?: string[];
     is_published: boolean;
     is_deleted: boolean;
+    meta_title?: string;
+    meta_description?: string;
+    meta_keywords?: string;
+    og_image?: string;
+    canonical_url?: string;
+    noindex?: boolean;
 }
 export declare const Blog: import("mongoose").Model<IBlog, {}, {}, {}, Document<unknown, {}, IBlog, {}, import("mongoose").DefaultSchemaOptions> & IBlog & Required<{
     _id: import("mongoose").Types.ObjectId;

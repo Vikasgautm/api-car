@@ -23,6 +23,31 @@ const errorMiddleware = (err, req, res, next) => {
     }
     err.statusCode = err.statusCode || 500;
     err.status = err.status || "error";
+    // Handle Mongoose validation errors
+    if (err.name === "ValidationError") {
+        const errors = Object.values(err.errors).map((e) => e.message);
+        return res.status(400).json({
+            status: "fail",
+            message: "Validation Error",
+            errors,
+        });
+    }
+    // Handle Mongoose duplicate key error
+    if (err.code === 11000) {
+        const field = Object.keys(err.keyValue)[0];
+        return res.status(400).json({
+            status: "fail",
+            message: `${field} already exists`,
+        });
+    }
+    // Handle Mongoose cast error (invalid ObjectId)
+    if (err.name === "CastError") {
+        return res.status(400).json({
+            status: "fail",
+            message: "Invalid ID format",
+        });
+    }
+    // Handle Zod validation errors
     if (err instanceof zod_1.ZodError) {
         return res.status(400).json({
             status: "fail",
@@ -31,6 +56,19 @@ const errorMiddleware = (err, req, res, next) => {
                 path: issue.path.join("."),
                 message: issue.message,
             })),
+        });
+    }
+    // Handle JWT errors
+    if (err.name === "JsonWebTokenError") {
+        return res.status(401).json({
+            status: "fail",
+            message: "Invalid token. Please log in again.",
+        });
+    }
+    if (err.name === "TokenExpiredError") {
+        return res.status(401).json({
+            status: "fail",
+            message: "Token expired. Please log in again.",
         });
     }
     if (process.env.NODE_ENV === "development") {

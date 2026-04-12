@@ -7,9 +7,9 @@ const slugify_1 = require("../../../utils/slugify");
 class BrandService {
     static async getAllBrands(query) {
         const { q, page = 1, limit = 10, is_deleted } = query;
-        const filter = { is_deleted: is_deleted === 'true' };
+        const filter = { is_deleted: is_deleted === "true" };
         if (q) {
-            filter.brand_name = { $regex: q, $options: 'i' };
+            filter.brand_name = { $regex: q, $options: "i" };
         }
         const skip = (Number(page) - 1) * Number(limit);
         const brands = await brand_model_1.Brand.find(filter)
@@ -23,13 +23,15 @@ class BrandService {
         return await brand_model_1.Brand.findOne({ brand_slug: slug });
     }
     static async updateBrand(id, brandData) {
-        return await brand_model_1.Brand.findOneAndUpdate({ brand_uuid: id }, brandData, { new: true });
+        return await brand_model_1.Brand.findOneAndUpdate({ brand_uuid: id }, brandData, {
+            returnDocument: "after",
+        });
     }
     static async deleteBrand(id) {
-        return await brand_model_1.Brand.findOneAndUpdate({ brand_uuid: id }, { is_deleted: true }, { new: true });
+        return await brand_model_1.Brand.findOneAndUpdate({ brand_uuid: id }, { is_deleted: true }, { returnDocument: "after" });
     }
     static async restoreBrand(id) {
-        return await brand_model_1.Brand.findOneAndUpdate({ brand_uuid: id }, { is_deleted: false }, { new: true });
+        return await brand_model_1.Brand.findOneAndUpdate({ brand_uuid: id }, { is_deleted: false }, { returnDocument: "after" });
     }
     static async createBrand(brandData) {
         const brand_uuid = (0, uuid_1.v4)();

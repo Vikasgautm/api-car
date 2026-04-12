@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BlogController = void 0;
-const blog_service_1 = require("../services/blog.service");
-const catchAsync_1 = require("../../../utils/catchAsync");
 const error_middleware_1 = require("../../../middlewares/error.middleware");
+const catchAsync_1 = require("../../../utils/catchAsync");
 const seo_1 = require("../../../utils/seo");
+const blog_service_1 = require("../services/blog.service");
 class BlogController {
     static getAllBlogs = (0, catchAsync_1.catchAsync)(async (req, res) => {
         // Public route, only fetch published
@@ -65,6 +65,13 @@ class BlogController {
             thumbnail,
             images,
             is_published: req.body.is_published === "true" || req.body.is_published === true,
+            // SEO fields
+            meta_title: req.body.meta_title,
+            meta_description: req.body.meta_description,
+            meta_keywords: req.body.meta_keywords,
+            og_image: req.body.og_image,
+            canonical_url: req.body.canonical_url,
+            noindex: req.body.noindex === "true",
         });
         res.status(201).json({
             status: "success",
@@ -113,6 +120,10 @@ class BlogController {
         if (typeof req.body.is_published !== "undefined") {
             blogData.is_published =
                 req.body.is_published === "true" || req.body.is_published === true;
+        }
+        if (typeof req.body.noindex !== "undefined") {
+            blogData.noindex =
+                req.body.noindex === "true" || req.body.noindex === true;
         }
         const updatedBlog = await blog_service_1.BlogService.updateBlog(id, blogData);
         if (!updatedBlog) {

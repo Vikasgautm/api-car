@@ -1,4 +1,4 @@
-import { Schema, model, Document } from "mongoose";
+import { Document, Schema, model } from "mongoose";
 
 export interface ICar extends Document {
   car_id: string;
@@ -24,6 +24,13 @@ export interface ICar extends Document {
   electric: boolean;
   is_published: boolean;
   is_deleted: boolean;
+  // SEO fields
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
+  og_image?: string;
+  canonical_url?: string;
+  noindex?: boolean;
 }
 
 const carSchema = new Schema<ICar>(
@@ -62,6 +69,13 @@ const carSchema = new Schema<ICar>(
     electric: { type: Boolean, default: false },
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
+    // SEO fields
+    meta_title: { type: String },
+    meta_description: { type: String, maxlength: 160 },
+    meta_keywords: { type: String },
+    og_image: { type: String },
+    canonical_url: { type: String },
+    noindex: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

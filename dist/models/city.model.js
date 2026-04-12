@@ -12,6 +12,10 @@ const citySchema = new mongoose_1.Schema({
     latitude: { type: Number, required: true },
     city_logo: { type: String },
     is_deleted: { type: Boolean, default: false },
+    // SEO fields
+    meta_title: { type: String },
+    meta_description: { type: String, maxlength: 160 },
+    meta_keywords: { type: String },
 }, { timestamps: true });
 exports.City = (0, mongoose_1.model)('City', citySchema);
 //# sourceMappingURL=city.model.js.map

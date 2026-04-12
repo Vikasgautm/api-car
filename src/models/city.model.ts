@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Document, Schema, model } from 'mongoose';
 
 export interface ICity extends Document {
   city_uuid: string;
@@ -10,6 +10,10 @@ export interface ICity extends Document {
   latitude: number;
   city_logo?: string;
   is_deleted: boolean;
+  // SEO fields
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
 }
 
 const citySchema = new Schema<ICity>(
@@ -23,6 +27,10 @@ const citySchema = new Schema<ICity>(
     latitude: { type: Number, required: true },
     city_logo: { type: String },
     is_deleted: { type: Boolean, default: false },
+    // SEO fields
+    meta_title: { type: String },
+    meta_description: { type: String, maxlength: 160 },
+    meta_keywords: { type: String },
   },
   { timestamps: true }
 );

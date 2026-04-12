@@ -93,7 +93,7 @@ class BlogService {
         const blog = await blog_model_1.Blog.findByIdAndUpdate(id, {
             is_deleted: true,
             deletedAt: new Date(), // optional but recommended
-        }, { new: true });
+        }, { returnDocument: "after" });
         return blog;
     }
 }

@@ -1,4 +1,4 @@
-import { Schema, model, Document } from "mongoose";
+import { Document, Schema, model } from "mongoose";
 
 export interface IBlog extends Document {
   blog_id: string;
@@ -17,6 +17,13 @@ export interface IBlog extends Document {
   images?: string[];
   is_published: boolean;
   is_deleted: boolean;
+  // SEO fields
+  meta_title?: string;
+  meta_description?: string;
+  meta_keywords?: string;
+  og_image?: string;
+  canonical_url?: string;
+  noindex?: boolean;
 }
 
 const blogSchema = new Schema<IBlog>(
@@ -43,6 +50,13 @@ const blogSchema = new Schema<IBlog>(
     images: [String],
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
+    // SEO fields
+    meta_title: { type: String },
+    meta_description: { type: String, maxlength: 160 },
+    meta_keywords: { type: String },
+    og_image: { type: String },
+    canonical_url: { type: String },
+    noindex: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

@@ -1,10 +1,9 @@
-import express, { Application, Request, Response, NextFunction } from "express";
-import cors from "cors";
-import helmet from "helmet";
 import compression from "compression";
 import cookieParser from "cookie-parser";
+import cors from "cors";
+import express, { Application, NextFunction, Request, Response } from "express";
+import helmet from "helmet";
 import { config } from "./config";
-import { globalRateLimiter } from "./middlewares/rate-limit.middleware";
 
 const app: Application = express();
 
@@ -43,10 +42,15 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // Import routes
+import { AppError, errorMiddleware } from "./middlewares/error.middleware";
 import routes from "./shared/routes";
-import { errorMiddleware } from "./middlewares/error.middleware";
 app.use("/uploads", express.static("uploads"));
 app.use("/api/v1", routes);
+
+// Handle 404 - Route not found
+app.use((req: Request, res: Response, next: NextFunction) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
 
 // Error handling
 app.use(errorMiddleware);

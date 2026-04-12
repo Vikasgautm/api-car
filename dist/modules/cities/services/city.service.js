@@ -7,11 +7,11 @@ const slugify_1 = require("../../../utils/slugify");
 class CityService {
     static async getAllCities(query) {
         const { q, page = 1, limit = 10, is_deleted } = query;
-        const filter = { is_deleted: is_deleted === 'true' };
+        const filter = { is_deleted: is_deleted === "true" };
         if (q) {
             filter.$or = [
-                { city_name: { $regex: q, $options: 'i' } },
-                { state: { $regex: q, $options: 'i' } },
+                { city_name: { $regex: q, $options: "i" } },
+                { state: { $regex: q, $options: "i" } },
             ];
         }
         const skip = (Number(page) - 1) * Number(limit);
@@ -23,13 +23,15 @@ class CityService {
         return { cities, total, page: Number(page), limit: Number(limit) };
     }
     static async updateCity(id, cityData) {
-        return await city_model_1.City.findOneAndUpdate({ city_uuid: id }, cityData, { new: true });
+        return await city_model_1.City.findOneAndUpdate({ city_uuid: id }, cityData, {
+            returnDocument: "after",
+        });
     }
     static async deleteCity(id) {
-        return await city_model_1.City.findOneAndUpdate({ city_uuid: id }, { is_deleted: true }, { new: true });
+        return await city_model_1.City.findOneAndUpdate({ city_uuid: id }, { is_deleted: true }, { returnDocument: "after" });
     }
     static async restoreCity(id) {
-        return await city_model_1.City.findOneAndUpdate({ city_uuid: id }, { is_deleted: false }, { new: true });
+        return await city_model_1.City.findOneAndUpdate({ city_uuid: id }, { is_deleted: false }, { returnDocument: "after" });
     }
     static async createCity(cityData) {
         const city_uuid = (0, uuid_1.v4)();

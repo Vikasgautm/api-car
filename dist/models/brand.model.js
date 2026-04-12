@@ -16,6 +16,10 @@ const brandSchema = new mongoose_1.Schema({
     },
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
+    // SEO fields
+    meta_title: { type: String },
+    meta_description: { type: String, maxlength: 160 },
+    meta_keywords: { type: String },
 }, { timestamps: true });
 exports.Brand = (0, mongoose_1.model)('Brand', brandSchema);
 //# sourceMappingURL=brand.model.js.map
