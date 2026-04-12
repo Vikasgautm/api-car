@@ -45,7 +45,7 @@ app.get("/", (req: Request, res: Response) => {
 import { AppError, errorMiddleware } from "./middlewares/error.middleware";
 import routes from "./shared/routes";
 app.use("/uploads", express.static("uploads"));
-app.use("/api/v1", routes);
+app.use("/v1", routes);
 
 // Handle 404 - Route not found
 app.use((req: Request, res: Response, next: NextFunction) => {

@@ -42,7 +42,7 @@ app.get("/", (req, res) => {
 const error_middleware_1 = require("./middlewares/error.middleware");
 const routes_1 = __importDefault(require("./shared/routes"));
 app.use("/uploads", express_1.default.static("uploads"));
-app.use("/api/v1", routes_1.default);
+app.use("/v1", routes_1.default);
 // Handle 404 - Route not found
 app.use((req, res, next) => {
     next(new error_middleware_1.AppError(`Can't find ${req.originalUrl} on this server!`, 404));
