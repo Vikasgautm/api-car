@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
-import { BrandService } from '../services/brand.service';
-import { catchAsync } from '../../../utils/catchAsync';
-import { AppError } from '../../../middlewares/error.middleware';
+import { Request, Response } from "express";
+import { BrandService } from "../services/brand.service";
+import { catchAsync } from "../../../utils/catchAsync";
+import { AppError } from "../../../middlewares/error.middleware";
 interface MulterRequest extends Request {
   files?: {
     [fieldname: string]: Express.Multer.File[];
@@ -11,7 +11,7 @@ export class BrandController {
   static getAllBrands = catchAsync(async (req: Request, res: Response) => {
     const result = await BrandService.getAllBrands(req.query);
     res.status(200).json({
-      status: 'success',
+      status: "success",
       data: result,
     });
   });
@@ -19,16 +19,15 @@ export class BrandController {
   static getBrandBySlug = catchAsync(async (req: Request, res: Response) => {
     const brand = await BrandService.getBrandBySlug(req.params.slug as string);
     if (!brand) {
-      throw new AppError('Brand not found', 404);
+      throw new AppError("Brand not found", 404);
     }
     res.status(200).json({
-      status: 'success',
+      status: "success",
       data: { brand },
     });
   });
 
   static createBrand = catchAsync(async (req: MulterRequest, res: Response) => {
-
     let images = {
       url: "",
       title: req.body.title || "",
@@ -41,13 +40,16 @@ export class BrandController {
     }
     const brand = await BrandService.createBrand({ ...req.body, images });
     res.status(201).json({
-      status: 'success',
+      status: "success",
       data: { brand },
     });
   });
 
   static updateBrand = catchAsync(async (req: MulterRequest, res: Response) => {
     let updateData = { ...req.body };
+    if (updateData.is_published !== undefined) {
+      updateData.is_published = updateData.is_published === "true";
+    }
     if (req.files?.["images"]) {
       const file = req.files["images"][0];
       updateData.images = {
@@ -55,29 +57,32 @@ export class BrandController {
         title: req.body.title || "",
       };
     }
-    const brand = await BrandService.updateBrand(req.params.id as string, updateData);
-    if (!brand) throw new AppError('Brand not found', 404);
+    const brand = await BrandService.updateBrand(
+      req.params.id as string,
+      updateData,
+    );
+    if (!brand) throw new AppError("Brand not found", 404);
     res.status(200).json({
-      status: 'success',
+      status: "success",
       data: { brand },
     });
   });
 
   static deleteBrand = catchAsync(async (req: Request, res: Response) => {
     const brand = await BrandService.deleteBrand(req.params.id as string);
-    if (!brand) throw new AppError('Brand not found', 404);
+    if (!brand) throw new AppError("Brand not found", 404);
     res.status(200).json({
-      status: 'success',
-      message: 'Brand soft deleted successfully',
+      status: "success",
+      message: "Brand soft deleted successfully",
     });
   });
 
   static restoreBrand = catchAsync(async (req: Request, res: Response) => {
     const brand = await BrandService.restoreBrand(req.params.id as string);
-    if (!brand) throw new AppError('Brand not found', 404);
+    if (!brand) throw new AppError("Brand not found", 404);
     res.status(200).json({
-      status: 'success',
-      message: 'Brand restored successfully',
+      status: "success",
+      message: "Brand restored successfully",
       data: { brand },
     });
   });
