@@ -1,73 +1,79 @@
+import { IFAQ } from "../../../models/faq.model";
 export declare class FAQService {
-    static getAllFAQs(query: any, fetchAsAdmin?: boolean): Promise<{
-        faqs: (import("mongoose").Document<unknown, {}, import("../../../models/faq.model").IFAQ, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/faq.model").IFAQ & Required<{
+    static getAllFAQs(filterDto: any, includeDeleted?: boolean): Promise<{
+        faqs: (import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
             _id: import("mongoose").Types.ObjectId;
         }> & {
             __v: number;
         } & {
             id: string;
         })[];
-        total: number;
-        page: number;
-        limit: number;
+        pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
-    static getFAQsByGroup(groupName: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/faq.model").IFAQ, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/faq.model").IFAQ & Required<{
+    static getFAQById(faqId: string): Promise<(import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }) | null>;
+    static getFAQsByGroup(groupName: string): Promise<(import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     })[]>;
-    static getFeaturedFAQs(): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/faq.model").IFAQ, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/faq.model").IFAQ & Required<{
+    static getFeaturedFAQs(): Promise<(import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     })[]>;
-    static getFAQsByTag(tag: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/faq.model").IFAQ, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/faq.model").IFAQ & Required<{
+    static getFAQsByTag(tag: string): Promise<(import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     })[]>;
-    static incrementViewCount(id: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/faq.model").IFAQ, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/faq.model").IFAQ & Required<{
+    static incrementViewCount(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
-    }) | null>;
-    static togglePublish(id: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/faq.model").IFAQ, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/faq.model").IFAQ & Required<{
+    }>;
+    static togglePublish(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
-    }) | null>;
-    static updateFAQ(id: string, faqData: any): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/faq.model").IFAQ, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/faq.model").IFAQ & Required<{
+    }>;
+    static createFAQ(faqData: any): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
-    }) | null>;
-    static deleteFAQ(id: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/faq.model").IFAQ, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/faq.model").IFAQ & Required<{
+    }>;
+    static updateFAQ(faqId: string, faqData: any): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
-    }) | null>;
-    static restoreFAQ(id: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/faq.model").IFAQ, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/faq.model").IFAQ & Required<{
+    }>;
+    static deleteFAQ(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
-    }) | null>;
-    static createFAQ(faqData: any): Promise<import("mongoose").Document<unknown, {}, import("../../../models/faq.model").IFAQ, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/faq.model").IFAQ & Required<{
+    }>;
+    static restoreFAQ(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;

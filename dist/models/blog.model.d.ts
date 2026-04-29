@@ -1,21 +1,26 @@
-import { Document } from "mongoose";
+import { Document, Schema } from 'mongoose';
 export interface IBlog extends Document {
     blog_id: string;
     title: string;
-    content: string;
-    excerpt: string;
-    author: string;
     slug: string;
+    excerpt: string;
+    content: string;
+    author_name?: string;
+    author_id?: Schema.Types.ObjectId;
     category: string;
-    link?: string;
-    thumbnail: {
-        preview: string;
-        title: string;
+    tags?: string[];
+    thumbnail?: {
         url: string;
+        alt?: string;
     };
-    images?: string[];
+    images?: Array<{
+        url: string;
+        alt?: string;
+    }>;
+    link?: string;
     is_published: boolean;
     is_deleted: boolean;
+    is_featured?: boolean;
     meta_title?: string;
     meta_description?: string;
     meta_keywords?: string;

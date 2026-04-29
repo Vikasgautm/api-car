@@ -1,95 +1,96 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BrandController = void 0;
-const error_middleware_1 = require("../../../middlewares/error.middleware");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
+const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
+const create_brand_dto_1 = require("../dto/create-brand.dto");
+const update_brand_dto_1 = require("../dto/update-brand.dto");
 const brand_service_1 = require("../services/brand.service");
 class BrandController {
-    static getAllBrands = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const result = await brand_service_1.BrandService.getAllBrands(req.query);
-        res.status(200).json({
-            status: "success",
-            data: result,
-        });
+    // Public routes
+    static getAllPublicBrands = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const filterDto = {
+            ...req.query,
+            is_published: true,
+        };
+        const result = await brand_service_1.BrandService.getAllBrands(filterDto, false);
+        return response_util_1.ResponseUtil.paginated(res, result.brands, result.pagination, 'Brands retrieved successfully');
     });
-    static getBrandBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    static getPublicBrandBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const brand = await brand_service_1.BrandService.getBrandBySlug(req.params.slug);
         if (!brand) {
-            throw new error_middleware_1.AppError("Brand not found", 404);
+            throw new app_error_util_1.AppError("Brand not found", 404);
         }
-        res.status(200).json({
-            status: "success",
-            data: { brand },
-        });
+        return response_util_1.ResponseUtil.success(res, brand, "Brand retrieved successfully");
+    });
+    // Admin routes
+    static getAllAdminBrands = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const result = await brand_service_1.BrandService.getAllBrands(req.query, true);
+        return response_util_1.ResponseUtil.paginated(res, result.brands, result.pagination, 'Brands retrieved successfully');
+    });
+    static getAdminBrandById = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const brand = await brand_service_1.BrandService.getBrandById(req.params.id);
+        if (!brand) {
+            throw new app_error_util_1.AppError("Brand not found", 404);
+        }
+        return response_util_1.ResponseUtil.success(res, brand, "Brand retrieved successfully");
     });
     static createBrand = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        let images = {
-            url: "",
-            title: req.body.title || "",
-            // preview: ""
-        };
-        if (req.files?.["images"]) {
-            const file = req.files["images"][0];
-            images.url = file.path;
-        }
-        const brand = await brand_service_1.BrandService.createBrand({
-            ...req.body,
-            images,
-            // SEO fields
+        const createDto = {
+            name: req.body.name,
+            description: req.body.description,
+            logo_url: req.file?.path || req.body.logo_url,
+            logo_title: req.body.logo_title,
+            is_published: req.body.is_published,
+            is_featured: req.body.is_featured,
             meta_title: req.body.meta_title,
             meta_description: req.body.meta_description,
             meta_keywords: req.body.meta_keywords,
-        });
-        res.status(201).json({
-            status: "success",
-            data: { brand },
-        });
+            og_image: req.body.og_image,
+            canonical_url: req.body.canonical_url,
+            noindex: req.body.noindex,
+        };
+        const validation = create_brand_dto_1.CreateBrandDto.validate(createDto);
+        if (!validation.valid) {
+            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        }
+        const brand = await brand_service_1.BrandService.createBrand(createDto);
+        return response_util_1.ResponseUtil.created(res, brand, "Brand created successfully");
     });
     static updateBrand = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        let updateData = { ...req.body };
-        if (updateData.is_published !== undefined) {
-            updateData.is_published = updateData.is_published === "true";
+        const updateDto = {
+            name: req.body.name,
+            description: req.body.description,
+            logo_url: req.file?.path || req.body.logo_url,
+            logo_title: req.body.logo_title,
+            is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
+            is_featured: req.body.is_featured !== undefined ? req.body.is_featured === 'true' || req.body.is_featured === true : undefined,
+            meta_title: req.body.meta_title,
+            meta_description: req.body.meta_description,
+            meta_keywords: req.body.meta_keywords,
+            og_image: req.body.og_image,
+            canonical_url: req.body.canonical_url,
+            noindex: req.body.noindex,
+        };
+        const validation = update_brand_dto_1.UpdateBrandDto.validate(updateDto);
+        if (!validation.valid) {
+            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
         }
-        if (req.files?.["images"]) {
-            const file = req.files["images"][0];
-            updateData.images = {
-                url: file.path,
-                title: req.body.title || "",
-            };
-        }
-        // SEO fields
-        if (req.body.meta_title !== undefined)
-            updateData.meta_title = req.body.meta_title;
-        if (req.body.meta_description !== undefined)
-            updateData.meta_description = req.body.meta_description;
-        if (req.body.meta_keywords !== undefined)
-            updateData.meta_keywords = req.body.meta_keywords;
-        const brand = await brand_service_1.BrandService.updateBrand(req.params.id, updateData);
-        if (!brand)
-            throw new error_middleware_1.AppError("Brand not found", 404);
-        res.status(200).json({
-            status: "success",
-            data: { brand },
-        });
+        const brand = await brand_service_1.BrandService.updateBrand(req.params.id, updateDto);
+        return response_util_1.ResponseUtil.success(res, brand, "Brand updated successfully");
     });
     static deleteBrand = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const brand = await brand_service_1.BrandService.deleteBrand(req.params.id);
-        if (!brand)
-            throw new error_middleware_1.AppError("Brand not found", 404);
-        res.status(200).json({
-            status: "success",
-            message: "Brand soft deleted successfully",
-        });
+        await brand_service_1.BrandService.deleteBrand(req.params.id);
+        return response_util_1.ResponseUtil.success(res, null, "Brand deleted successfully");
     });
     static restoreBrand = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const brand = await brand_service_1.BrandService.restoreBrand(req.params.id);
-        if (!brand)
-            throw new error_middleware_1.AppError("Brand not found", 404);
-        res.status(200).json({
-            status: "success",
-            message: "Brand restored successfully",
-            data: { brand },
-        });
+        return response_util_1.ResponseUtil.success(res, brand, "Brand restored successfully");
+    });
+    static togglePublish = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const brand = await brand_service_1.BrandService.togglePublish(req.params.id);
+        return response_util_1.ResponseUtil.success(res, brand, "Brand publish status toggled successfully");
     });
 }
 exports.BrandController = BrandController;

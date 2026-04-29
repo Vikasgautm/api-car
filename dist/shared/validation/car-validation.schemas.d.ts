@@ -1,0 +1,129 @@
+import { z } from 'zod';
+export declare const createCarSchema: z.ZodObject<{
+    name: z.ZodString;
+    brand_id: z.ZodString;
+    body_type_id: z.ZodString;
+    fuel_type_id: z.ZodOptional<z.ZodString>;
+    short_description: z.ZodOptional<z.ZodString>;
+    description: z.ZodString;
+    thumbnail_url: z.ZodUnion<[z.ZodOptional<z.ZodString>, z.ZodLiteral<"">]>;
+    thumbnail_alt: z.ZodOptional<z.ZodString>;
+    gallery: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        url: z.ZodString;
+        alt: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>>;
+    gallery_summary: z.ZodOptional<z.ZodString>;
+    status: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
+        upcoming: "upcoming";
+        on_sale: "on_sale";
+        discontinued: "discontinued";
+    }>>>;
+    is_electric: z.ZodOptional<z.ZodBoolean>;
+    is_published: z.ZodOptional<z.ZodBoolean>;
+    is_featured: z.ZodOptional<z.ZodBoolean>;
+    meta_title: z.ZodOptional<z.ZodString>;
+    meta_description: z.ZodOptional<z.ZodString>;
+    meta_keywords: z.ZodOptional<z.ZodString>;
+    og_image: z.ZodUnion<[z.ZodOptional<z.ZodString>, z.ZodLiteral<"">]>;
+    canonical_url: z.ZodUnion<[z.ZodOptional<z.ZodString>, z.ZodLiteral<"">]>;
+    noindex: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$strict>;
+export declare const updateCarSchema: z.ZodObject<{
+    name: z.ZodOptional<z.ZodString>;
+    brand_id: z.ZodOptional<z.ZodString>;
+    body_type_id: z.ZodOptional<z.ZodString>;
+    fuel_type_id: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    short_description: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    description: z.ZodOptional<z.ZodString>;
+    thumbnail_url: z.ZodOptional<z.ZodUnion<[z.ZodOptional<z.ZodString>, z.ZodLiteral<"">]>>;
+    thumbnail_alt: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    gallery: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodObject<{
+        url: z.ZodString;
+        alt: z.ZodOptional<z.ZodString>;
+    }, z.core.$strip>>>>;
+    gallery_summary: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    status: z.ZodOptional<z.ZodOptional<z.ZodOptional<z.ZodEnum<{
+        upcoming: "upcoming";
+        on_sale: "on_sale";
+        discontinued: "discontinued";
+    }>>>>;
+    is_electric: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+    is_published: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+    is_featured: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+    meta_title: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    meta_description: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    meta_keywords: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    og_image: z.ZodOptional<z.ZodUnion<[z.ZodOptional<z.ZodString>, z.ZodLiteral<"">]>>;
+    canonical_url: z.ZodOptional<z.ZodUnion<[z.ZodOptional<z.ZodString>, z.ZodLiteral<"">]>>;
+    noindex: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+}, z.core.$strict>;
+export declare const createVariantSchema: z.ZodObject<{
+    car_id: z.ZodString;
+    variant_name: z.ZodString;
+    model_year: z.ZodNumber;
+    fuel_type_id: z.ZodString;
+    transmission_type: z.ZodEnum<{
+        manual: "manual";
+        automatic: "automatic";
+        cvt: "cvt";
+        dct: "dct";
+        amt: "amt";
+    }>;
+    drivetrain: z.ZodOptional<z.ZodString>;
+    seating_capacity: z.ZodOptional<z.ZodNumber>;
+    ex_showroom_price: z.ZodOptional<z.ZodNumber>;
+    expected_price: z.ZodOptional<z.ZodNumber>;
+    expected_launch_date: z.ZodOptional<z.ZodCoercedDate<unknown>>;
+    is_published: z.ZodOptional<z.ZodBoolean>;
+}, z.core.$strict>;
+export declare const updateVariantSchema: z.ZodObject<{
+    car_id: z.ZodOptional<z.ZodString>;
+    variant_name: z.ZodOptional<z.ZodString>;
+    model_year: z.ZodOptional<z.ZodNumber>;
+    fuel_type_id: z.ZodOptional<z.ZodString>;
+    transmission_type: z.ZodOptional<z.ZodEnum<{
+        manual: "manual";
+        automatic: "automatic";
+        cvt: "cvt";
+        dct: "dct";
+        amt: "amt";
+    }>>;
+    drivetrain: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+    seating_capacity: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    ex_showroom_price: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    expected_price: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
+    expected_launch_date: z.ZodOptional<z.ZodOptional<z.ZodCoercedDate<unknown>>>;
+    is_published: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+}, z.core.$strict>;
+export declare const carFilterSchema: z.ZodObject<{
+    page: z.ZodOptional<z.ZodDefault<z.ZodCoercedNumber<unknown>>>;
+    limit: z.ZodOptional<z.ZodDefault<z.ZodCoercedNumber<unknown>>>;
+    sortBy: z.ZodOptional<z.ZodString>;
+    sortOrder: z.ZodOptional<z.ZodEnum<{
+        asc: "asc";
+        desc: "desc";
+    }>>;
+    q: z.ZodOptional<z.ZodString>;
+    brand_id: z.ZodOptional<z.ZodString>;
+    body_type_id: z.ZodOptional<z.ZodString>;
+    status: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
+        upcoming: "upcoming";
+        on_sale: "on_sale";
+        discontinued: "discontinued";
+    }>>>;
+    is_electric: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>]>>;
+    is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>]>>;
+    is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>]>>;
+    min_price: z.ZodOptional<z.ZodNumber>;
+    max_price: z.ZodOptional<z.ZodNumber>;
+}, z.core.$strict>;
+//# sourceMappingURL=car-validation.schemas.d.ts.map

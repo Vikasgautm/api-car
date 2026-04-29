@@ -1,15 +1,41 @@
 import { Router } from 'express';
-import { BrandController } from '../controllers/brand.controller';
 import { protect, restrictTo } from '../../../middlewares/auth.middleware';
-import upload from '../../../utils/cloudinary';
+import { UploadService } from '../../../shared/services/upload.service';
+import { validatePaginationQuery, validateSlugParam, validateUuidIdParam } from '../../../shared/validation';
+import { BrandController } from '../controllers/brand.controller';
 
 const router = Router();
 
-router.get('/', BrandController.getAllBrands);
-router.get('/:slug', BrandController.getBrandBySlug);
-router.post('/', protect, restrictTo("admin", "superadmin"), upload.fields([{ name: "images", maxCount: 1 }]), BrandController.createBrand);
-router.put('/:id', protect, restrictTo("admin", "superadmin"), upload.fields([{ name: "images", maxCount: 1 }]), BrandController.updateBrand);
-router.delete('/:id', protect, restrictTo("admin", "superadmin"), BrandController.deleteBrand);
-router.patch('/restore/:id', protect, restrictTo("admin", "superadmin"), BrandController.restoreBrand);
+// Public routes
+router.get('/public', validatePaginationQuery, BrandController.getAllPublicBrands);
+router.get('/public/:slug', validateSlugParam, BrandController.getPublicBrandBySlug);
+
+// Admin routes
+const adminRouter = Router();
+adminRouter.use(protect);
+adminRouter.use(restrictTo('admin', 'super_admin'));
+
+adminRouter.get('/', validatePaginationQuery, BrandController.getAllAdminBrands);
+adminRouter.get('/:id', validateUuidIdParam, BrandController.getAdminBrandById);
+
+const logoUpload = UploadService.createUploadMiddleware({
+  fieldName: 'logo',
+  maxFileSize: 2 * 1024 * 1024,
+  allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+  useCloudinary: true,
+  folder: 'brands',
+});
+
+adminRouter.post('/', logoUpload, BrandController.createBrand);
+adminRouter.put('/:id', validateUuidIdParam, logoUpload, BrandController.updateBrand);
+adminRouter.delete('/:id', validateUuidIdParam, BrandController.deleteBrand);
+adminRouter.patch('/restore/:id', validateUuidIdParam, BrandController.restoreBrand);
+adminRouter.patch('/:id/publish', validateUuidIdParam, BrandController.togglePublish);
+
+router.use('/admin', adminRouter);
+
+// Legacy routes for backward compatibility
+router.get('/', validatePaginationQuery, BrandController.getAllPublicBrands);
+router.get('/:slug', validateSlugParam, BrandController.getPublicBrandBySlug);
 
 export default router;

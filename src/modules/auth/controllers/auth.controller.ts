@@ -1,25 +1,91 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
+import { AppError } from '../../../shared/utils/app-error.util';
+import { ResponseUtil } from '../../../shared/utils/response.util';
+import { AuthRequest } from '../../../types/auth';
+import { LoginDto } from '../dto/login.dto';
+import { RefreshTokenDto } from '../dto/refresh-token.dto';
+import { RegisterDto } from '../dto/register.dto';
 import { AuthService } from '../services/auth.service';
-import { catchAsync } from '../../../utils/catchAsync';
 
 export class AuthController {
-  static signup = catchAsync(async (req: Request, res: Response) => {
-    const { user, token } = await AuthService.signup(req.body);
+  static async register(req: Request, res: Response, next: NextFunction) {
+    try {
+      const registerDto: RegisterDto = req.body;
+      
+      // Validate DTO
+      const validation = RegisterDto.validate(registerDto);
+      if (!validation.valid) {
+        throw new AppError(validation.errors.join(', '), 400);
+      }
 
-    res.status(201).json({
-      status: 'success',
-      token,
-      data: { user },
-    });
-  });
+      const result = await AuthService.register(registerDto);
+      return ResponseUtil.created(res, result, 'User registered successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  static login = catchAsync(async (req: Request, res: Response) => {
-    const { user, token } = await AuthService.login(req.body);
+  static async login(req: Request, res: Response, next: NextFunction) {
+    try {
+      const loginDto: LoginDto = req.body;
+      
+      // Validate DTO
+      const validation = LoginDto.validate(loginDto);
+      if (!validation.valid) {
+        throw new AppError(validation.errors.join(', '), 400);
+      }
 
-    res.status(200).json({
-      status: 'success',
-      token,
-      data: { user },
-    });
-  });
+      const result = await AuthService.login(loginDto, req);
+      return ResponseUtil.success(res, result, 'Login successful');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async refreshToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const refreshTokenDto: RefreshTokenDto = req.body;
+      
+      // Validate DTO
+      const validation = RefreshTokenDto.validate(refreshTokenDto);
+      if (!validation.valid) {
+        throw new AppError(validation.errors.join(', '), 400);
+      }
+
+      const result = await AuthService.refreshToken(refreshTokenDto);
+      return ResponseUtil.success(res, result, 'Token refreshed successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async logout(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const user = req.user;
+      const user_id = user?.user_id || user?.id;
+      if (!user_id) {
+        throw new AppError('User not authenticated', 401);
+      }
+
+      const result = await AuthService.logout(user_id);
+      return ResponseUtil.success(res, result, 'Logout successful');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getProfile(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const user = req.user;
+      const user_id = user?.user_id || user?.id;
+      if (!user_id) {
+        throw new AppError('User not authenticated', 401);
+      }
+
+      const userProfile = await AuthService.getProfile(user_id);
+      return ResponseUtil.success(res, userProfile, 'Profile retrieved successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

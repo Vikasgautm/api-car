@@ -1,10 +1,13 @@
 import { Document } from 'mongoose';
 export interface IUserSession extends Document {
-    user_session_id: string;
-    user_uuid: string;
+    session_id: string;
+    user_id: string;
     refresh_token: string;
-    expiry_date: Date;
-    is_active: boolean;
+    expires_at: Date;
+    is_revoked: boolean;
+    device_info?: string;
+    ip_address?: string;
+    revoked_at?: Date;
 }
 export declare const UserSession: import("mongoose").Model<IUserSession, {}, {}, {}, Document<unknown, {}, IUserSession, {}, import("mongoose").DefaultSchemaOptions> & IUserSession & Required<{
     _id: import("mongoose").Types.ObjectId;

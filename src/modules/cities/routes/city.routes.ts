@@ -1,13 +1,31 @@
 import { Router } from 'express';
-import { CityController } from '../controllers/city.controller';
 import { protect, restrictTo } from '../../../middlewares/auth.middleware';
+import { validateIdParam, validatePaginationQuery, validateSlugParam } from '../../../shared/validation';
+import { CityController } from '../controllers/city.controller';
 
 const router = Router();
 
-router.get('/', CityController.getAllCities);
-router.post('/', protect, restrictTo('admin', 'superadmin'), CityController.createCity);
-router.put('/:id', protect, restrictTo('admin', 'superadmin'), CityController.updateCity);
-router.delete('/:id', protect, restrictTo('admin', 'superadmin'), CityController.deleteCity);
-router.patch('/restore/:id', protect, restrictTo('admin', 'superadmin'), CityController.restoreCity);
+// Public routes
+router.get('/public', validatePaginationQuery, CityController.getAllPublicCities);
+router.get('/public/:slug', validateSlugParam, CityController.getPublicCityBySlug);
+
+// Admin routes
+const adminRouter = Router();
+adminRouter.use(protect);
+adminRouter.use(restrictTo('admin', 'super_admin'));
+
+adminRouter.get('/', validatePaginationQuery, CityController.getAllAdminCities);
+adminRouter.get('/:id', validateIdParam, CityController.getAdminCityById);
+adminRouter.post('/', CityController.createCity);
+adminRouter.put('/:id', validateIdParam, CityController.updateCity);
+adminRouter.delete('/:id', validateIdParam, CityController.deleteCity);
+adminRouter.patch('/restore/:id', validateIdParam, CityController.restoreCity);
+adminRouter.patch('/:id/publish', validateIdParam, CityController.togglePublish);
+
+router.use('/admin', adminRouter);
+
+// Legacy routes for backward compatibility
+router.get('/', validatePaginationQuery, CityController.getAllPublicCities);
+router.get('/:slug', validateSlugParam, CityController.getPublicCityBySlug);
 
 export default router;

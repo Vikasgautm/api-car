@@ -1,50 +1,68 @@
+import { IBlog } from "../../../models/blog.model";
 export declare class BlogService {
-    static getAllBlogs(query: any, isAdmin?: boolean): Promise<{
-        blogs: (import("mongoose").Document<unknown, {}, import("../../../models/blog.model").IBlog, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/blog.model").IBlog & Required<{
+    static getAllBlogs(filterDto: any, includeDeleted?: boolean): Promise<{
+        blogs: (IBlog & Required<{
             _id: import("mongoose").Types.ObjectId;
         }> & {
             __v: number;
-        } & {
-            id: string;
         })[];
-        total: number;
-        page: number;
-        limit: number;
+        pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
-    static getBlogBySlug(slug: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/blog.model").IBlog, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/blog.model").IBlog & Required<{
+    static getBlogById(blogId: string): Promise<(import("mongoose").Document<unknown, {}, IBlog, {}, import("mongoose").DefaultSchemaOptions> & IBlog & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }) | null>;
-    static findBlogById(id: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/blog.model").IBlog, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/blog.model").IBlog & Required<{
+    static getBlogBySlug(slug: string): Promise<(import("mongoose").Document<unknown, {}, IBlog, {}, import("mongoose").DefaultSchemaOptions> & IBlog & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }) | null>;
-    static createBlog(blogData: any): Promise<import("mongoose").Document<unknown, {}, import("../../../models/blog.model").IBlog, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/blog.model").IBlog & Required<{
+    static findBlogById(id: string): Promise<(import("mongoose").Document<unknown, {}, IBlog, {}, import("mongoose").DefaultSchemaOptions> & IBlog & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }) | null>;
+    static createBlog(blogData: any): Promise<import("mongoose").Document<unknown, {}, IBlog, {}, import("mongoose").DefaultSchemaOptions> & IBlog & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static updateBlog(id: string, blogData: any): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/blog.model").IBlog, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/blog.model").IBlog & Required<{
+    static updateBlog(blogId: string, blogData: any): Promise<import("mongoose").Document<unknown, {}, IBlog, {}, import("mongoose").DefaultSchemaOptions> & IBlog & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
-    }) | null>;
-    static deleteBlog(id: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/blog.model").IBlog, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/blog.model").IBlog & Required<{
+    }>;
+    static deleteBlog(blogId: string): Promise<import("mongoose").Document<unknown, {}, IBlog, {}, import("mongoose").DefaultSchemaOptions> & IBlog & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
-    }) | null>;
+    }>;
+    static restoreBlog(blogId: string): Promise<import("mongoose").Document<unknown, {}, IBlog, {}, import("mongoose").DefaultSchemaOptions> & IBlog & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
+    static togglePublish(blogId: string): Promise<import("mongoose").Document<unknown, {}, IBlog, {}, import("mongoose").DefaultSchemaOptions> & IBlog & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
 }
 //# sourceMappingURL=blog.service.d.ts.map

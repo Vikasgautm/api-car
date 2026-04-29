@@ -1,74 +1,80 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BodyTypeController = void 0;
-const error_middleware_1 = require("../../../middlewares/error.middleware");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
+const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
+const create_body_type_dto_1 = require("../dto/create-body-type.dto");
+const update_body_type_dto_1 = require("../dto/update-body-type.dto");
 const bodyType_service_1 = require("../services/bodyType.service");
 class BodyTypeController {
-    static getAllBodyTypes = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const result = await bodyType_service_1.BodyTypeService.getAllBodyTypes(req.query);
-        res.status(200).json({
-            status: "success",
-            data: result,
-        });
+    // Public routes
+    static getAllPublicBodyTypes = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const filterDto = {
+            ...req.query,
+            is_published: true,
+        };
+        const result = await bodyType_service_1.BodyTypeService.getAllBodyTypes(filterDto, false);
+        return response_util_1.ResponseUtil.paginated(res, result.bodyTypes, result.pagination, 'Body types retrieved successfully');
     });
-    static getBodyTypeBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    static getPublicBodyTypeBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const bodyType = await bodyType_service_1.BodyTypeService.getBodyTypeBySlug(req.params.slug);
         if (!bodyType) {
-            throw new error_middleware_1.AppError("Body type not found", 404);
+            throw new app_error_util_1.AppError("Body type not found", 404);
         }
-        res.status(200).json({
-            status: "success",
-            data: { body_type: bodyType },
-        });
+        return response_util_1.ResponseUtil.success(res, bodyType, "Body type retrieved successfully");
+    });
+    // Admin routes
+    static getAllAdminBodyTypes = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const result = await bodyType_service_1.BodyTypeService.getAllBodyTypes(req.query, true);
+        return response_util_1.ResponseUtil.paginated(res, result.bodyTypes, result.pagination, 'Body types retrieved successfully');
+    });
+    static getAdminBodyTypeById = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const bodyType = await bodyType_service_1.BodyTypeService.getBodyTypeById(req.params.id);
+        if (!bodyType) {
+            throw new app_error_util_1.AppError("Body type not found", 404);
+        }
+        return response_util_1.ResponseUtil.success(res, bodyType, "Body type retrieved successfully");
     });
     static createBodyType = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        try {
-            const bodyType = await bodyType_service_1.BodyTypeService.createBodyType(req.body);
-            res.status(201).json({
-                status: "success",
-                data: { body_type: bodyType },
-            });
+        const createDto = {
+            name: req.body.name,
+            description: req.body.description,
+            is_published: req.body.is_published,
+            is_featured: req.body.is_featured,
+        };
+        const validation = create_body_type_dto_1.CreateBodyTypeDto.validate(createDto);
+        if (!validation.valid) {
+            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
         }
-        catch (error) {
-            console.log(error, "error");
-        }
+        const bodyType = await bodyType_service_1.BodyTypeService.createBodyType(createDto);
+        return response_util_1.ResponseUtil.created(res, bodyType, "Body type created successfully");
     });
     static updateBodyType = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        let updateData = { ...req.body };
-        if (updateData.is_published !== undefined) {
-            // Handle both string "true"/"false" and boolean true/false
-            if (typeof updateData.is_published === "string") {
-                updateData.is_published = updateData.is_published === "true";
-            }
-            // If it's already a boolean, keep it as is
+        const updateDto = {
+            name: req.body.name,
+            description: req.body.description,
+            is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
+            is_featured: req.body.is_featured !== undefined ? req.body.is_featured === 'true' || req.body.is_featured === true : undefined,
+        };
+        const validation = update_body_type_dto_1.UpdateBodyTypeDto.validate(updateDto);
+        if (!validation.valid) {
+            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
         }
-        const bodyType = await bodyType_service_1.BodyTypeService.updateBodyType(req.params.id, updateData);
-        if (!bodyType)
-            throw new error_middleware_1.AppError("Body type not found", 404);
-        res.status(200).json({
-            status: "success",
-            data: { body_type: bodyType },
-        });
+        const bodyType = await bodyType_service_1.BodyTypeService.updateBodyType(req.params.id, updateDto);
+        return response_util_1.ResponseUtil.success(res, bodyType, "Body type updated successfully");
     });
     static deleteBodyType = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const bodyType = await bodyType_service_1.BodyTypeService.deleteBodyType(req.params.id);
-        if (!bodyType)
-            throw new error_middleware_1.AppError("Body type not found", 404);
-        res.status(200).json({
-            status: "success",
-            message: "Body type soft deleted successfully",
-        });
+        await bodyType_service_1.BodyTypeService.deleteBodyType(req.params.id);
+        return response_util_1.ResponseUtil.success(res, null, "Body type deleted successfully");
     });
     static restoreBodyType = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const bodyType = await bodyType_service_1.BodyTypeService.restoreBodyType(req.params.id);
-        if (!bodyType)
-            throw new error_middleware_1.AppError("Body type not found", 404);
-        res.status(200).json({
-            status: "success",
-            message: "Body type restored successfully",
-            data: { body_type: bodyType },
-        });
+        return response_util_1.ResponseUtil.success(res, bodyType, "Body type restored successfully");
+    });
+    static togglePublish = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const bodyType = await bodyType_service_1.BodyTypeService.togglePublish(req.params.id);
+        return response_util_1.ResponseUtil.success(res, bodyType, "Body type publish status updated successfully");
     });
 }
 exports.BodyTypeController = BodyTypeController;

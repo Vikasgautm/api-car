@@ -1,9 +1,1 @@
-import { IUser } from '../models/user.model';
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: IUser;
-    }
-  }
-}
+// Global Express type augmentation removed - using AuthRequest for authenticated routes

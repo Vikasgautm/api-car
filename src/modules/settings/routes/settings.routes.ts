@@ -1,15 +1,18 @@
 import { Router } from "express";
-import { protect } from "../../../middlewares/auth.middleware";
+import { protect, restrictTo } from "../../../middlewares/auth.middleware";
 import { SettingsController } from "../controllers/settings.controller";
 
 const router = Router();
 
+// Theme settings (any authenticated user)
 router.put("/theme", protect, SettingsController.updateTheme);
 router.post("/theme", protect, SettingsController.updateTheme);
 
 // SEO settings routes
-router.get("/seo", protect, SettingsController.getSEOSettings);
-router.put("/seo", protect, SettingsController.updateSEOSettings);
-router.post("/seo", protect, SettingsController.updateSEOSettings);
+// GET - public (no authentication required)
+router.get("/seo", SettingsController.getSEOSettings);
+// PUT/POST - admin only
+router.put("/seo", protect, restrictTo('admin', 'super_admin'), SettingsController.updateSEOSettings);
+router.post("/seo", protect, restrictTo('admin', 'super_admin'), SettingsController.updateSEOSettings);
 
 export default router;

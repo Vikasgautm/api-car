@@ -1,36 +1,22 @@
-import { Document } from 'mongoose';
-export declare enum FAQCategory {
-    GENERAL = "General",
-    BUYING_GUIDE = "Buying Guide",
-    MAINTENANCE = "Maintenance",
-    COMPARISON = "Comparison",
-    FINANCING = "Financing",
-    DOCUMENTATION = "Documentation",
-    TECHNICAL = "Technical",
-    OTHER = "Other"
-}
-export declare enum AnswerFormat {
-    TEXT = "text",
-    HTML = "html",
-    MARKDOWN = "markdown"
-}
+import { Document, Schema } from 'mongoose';
+export type AnswerFormat = 'text' | 'html' | 'markdown';
 export interface IFAQ extends Document {
     faq_id: string;
     question: string;
     answer: string;
-    category: FAQCategory;
+    category: string;
     order: number;
-    tags: string[];
+    tags?: string[];
     answer_format: AnswerFormat;
-    view_count: number;
     faq_group?: string;
-    related_cars: string[];
-    related_brands: string[];
-    related_blogs: string[];
+    related_cars?: Schema.Types.ObjectId[];
+    related_brands?: Schema.Types.ObjectId[];
+    related_blogs?: Schema.Types.ObjectId[];
     is_published: boolean;
     is_deleted: boolean;
     is_featured: boolean;
     slug: string;
+    view_count?: number;
 }
 export declare const FAQ: import("mongoose").Model<IFAQ, {}, {}, {}, Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
     _id: import("mongoose").Types.ObjectId;

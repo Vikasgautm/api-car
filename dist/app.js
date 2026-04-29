@@ -9,9 +9,9 @@ const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const helmet_1 = __importDefault(require("helmet"));
 const config_1 = require("./config");
+const logging_middleware_1 = require("./middlewares/logging.middleware");
 const app = (0, express_1.default)();
 // Middlewares
-// app.use(helmet());
 app.use((0, helmet_1.default)({
     crossOriginResourcePolicy: {
         policy: "cross-origin",
@@ -21,6 +21,7 @@ app.use((req, res, next) => {
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     next();
 });
+app.use(logging_middleware_1.requestLogger);
 // app.use(globalRateLimiter);
 app.use((0, cors_1.default)({
     origin: config_1.config.cors_origin,
@@ -41,11 +42,12 @@ app.get("/", (req, res) => {
 // Import routes
 const error_middleware_1 = require("./middlewares/error.middleware");
 const routes_1 = __importDefault(require("./shared/routes"));
+const app_error_util_1 = require("./shared/utils/app-error.util");
 app.use("/uploads", express_1.default.static("uploads"));
-app.use("/v1", routes_1.default);
+app.use("/api/v1", routes_1.default);
 // Handle 404 - Route not found
 app.use((req, res, next) => {
-    next(new error_middleware_1.AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+    next(new app_error_util_1.AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 // Error handling
 app.use(error_middleware_1.errorMiddleware);

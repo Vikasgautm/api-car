@@ -1,17 +1,23 @@
 import { Document } from 'mongoose';
 export interface ICity extends Document {
-    city_uuid: string;
-    city_name: string;
+    city_id: string;
+    name: string;
     slug: string;
     state: string;
-    pincode: number;
-    longitude: number;
-    latitude: number;
+    country?: string;
+    pincode?: string;
+    longitude?: number;
+    latitude?: number;
     city_logo?: string;
+    is_published: boolean;
     is_deleted: boolean;
+    is_featured?: boolean;
     meta_title?: string;
     meta_description?: string;
     meta_keywords?: string;
+    og_image?: string;
+    canonical_url?: string;
+    noindex?: boolean;
 }
 export declare const City: import("mongoose").Model<ICity, {}, {}, {}, Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
     _id: import("mongoose").Types.ObjectId;

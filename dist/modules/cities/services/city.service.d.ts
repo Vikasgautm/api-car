@@ -1,38 +1,58 @@
+import { ICity } from "../../../models/city.model";
 export declare class CityService {
-    static getAllCities(query: any): Promise<{
-        cities: (import("mongoose").Document<unknown, {}, import("../../../models/city.model").ICity, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/city.model").ICity & Required<{
+    static getAllCities(filterDto: any, includeDeleted?: boolean): Promise<{
+        cities: (import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
             _id: import("mongoose").Types.ObjectId;
         }> & {
             __v: number;
         } & {
             id: string;
         })[];
-        total: number;
-        page: number;
-        limit: number;
+        pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
-    static updateCity(id: string, cityData: any): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/city.model").ICity, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/city.model").ICity & Required<{
+    static getCityById(cityId: string): Promise<(import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }) | null>;
-    static deleteCity(id: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/city.model").ICity, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/city.model").ICity & Required<{
+    static getCityBySlug(slug: string): Promise<(import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }) | null>;
-    static restoreCity(id: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/city.model").ICity, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/city.model").ICity & Required<{
+    static createCity(cityData: any): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
-    }) | null>;
-    static createCity(cityData: any): Promise<import("mongoose").Document<unknown, {}, import("../../../models/city.model").ICity, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/city.model").ICity & Required<{
+    }>;
+    static updateCity(cityId: string, cityData: any): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
+    static deleteCity(cityId: string): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
+    static restoreCity(cityId: string): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
+    static togglePublish(cityId: string): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;

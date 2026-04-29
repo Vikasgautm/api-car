@@ -1,6 +1,12 @@
 import { Request } from 'express';
-import { IUser } from '../models/user.model';
 
-export interface AuthRequest extends Request {
-  user?: IUser | any;
+export interface JwtPayload {
+  id: string;
+  user_id: string;
+  email: string;
+  role: string;
+}
+
+export interface AuthRequest extends Omit<Request, 'user'> {
+  user?: JwtPayload;
 }

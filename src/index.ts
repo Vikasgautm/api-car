@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 import app from "./app";
 import { config } from "./config";
-import { logger } from "./utils/logger";
+import { UpdateUpcomingCarsJob } from "./jobs/updateUpcomingCars.job";
 import { createDefaultSuperAdmin } from "./seeds/admin.seed";
+import { logger } from "./utils/logger";
 
 const startServer = async () => {
   try {
@@ -10,8 +11,12 @@ const startServer = async () => {
     await mongoose.connect(config.mongodb_uri);
     logger.info("Successfully connected to MongoDB", { mongodb_uri: config.mongodb_uri });
     console.log("MongoDB URI:", config.mongodb_uri);
+    
     // Create default superadmin
-    // await createDefaultSuperAdmin();
+    await createDefaultSuperAdmin();
+
+    // Start auto-launch cron job
+    UpdateUpcomingCarsJob.start();
 
     // Start Express Server
     app.listen(config.port, () => {

@@ -1,29 +1,40 @@
 import { Document, Schema, model } from "mongoose";
 
+export type CarStatus = 'upcoming' | 'launched' | 'discontinued';
+
 export interface ICar extends Document {
   car_id: string;
-  car_name: string;
-  description: string;
+  name: string;
   slug: string;
-  // brand_id: string;
-  brand_id: Schema.Types.ObjectId;
+  brand_id: string;
   body_type_id: string;
-  thumbnail: {
-    preview: string;
-    title: string;
+  fuel_type_id?: string;
+  short_description?: string;
+  description: string;
+  thumbnail?: {
+    url: string;
+    alt?: string;
   };
-  images: Array<{
-    preview: string;
-    title: string;
+  images?: Array<{
+    url: string;
+    alt?: string;
   }>;
-  link: string;
-  upcoming: boolean;
-  recommended: boolean;
-  popular: boolean;
-  latest: boolean;
-  electric: boolean;
+  gallery_summary?: string;
+  status: CarStatus;
+  is_upcoming: boolean;
+  is_launched: boolean;
+  expected_exshowroom_price?: number | null;
+  expected_launch_date?: Date | null;
+  exshowroom_price?: number | null;
+  launch_date?: Date | null;
+  is_electric: boolean;
   is_published: boolean;
   is_deleted: boolean;
+  is_featured: boolean;
+  is_popular: boolean;
+  is_recommended: boolean;
+  is_latest: boolean;
+  top_selling: boolean;
   // SEO fields
   meta_title?: string;
   meta_description?: string;
@@ -36,39 +47,41 @@ export interface ICar extends Document {
 const carSchema = new Schema<ICar>(
   {
     car_id: { type: String, required: true, unique: true },
-    car_name: { type: String, required: true },
-    description: { type: String, required: true },
+    name: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
-    brand_id: { type: Schema.Types.ObjectId, ref: "Brand", required: true },
-
-    // brand_id: { type: String, ref: "Brand", required: true },
-    body_type_id: { type: String, ref: "BodyType", required: true },
-    // body_type_id: { type: Schema.Types.ObjectId, ref: 'BodyType', required: true },
-
+    brand_id: { type: String, required: true },
+    body_type_id: { type: String, required: true },
+    fuel_type_id: { type: String },
+    short_description: { type: String },
+    description: { type: String, required: true },
     thumbnail: {
-      type: {
-        preview: { type: String },
-        title: { type: String },
-      },
-      required: true,
+      url: { type: String },
+      alt: { type: String },
     },
-    images: {
-      type: [
-        {
-          preview: { type: String },
-          title: { type: String },
-        },
-      ],
-      required: true,
+    images: [{
+      url: { type: String },
+      alt: { type: String },
+    }],
+    gallery_summary: { type: String },
+    status: { 
+      type: String, 
+      enum: ['upcoming', 'launched', 'discontinued'], 
+      default: 'launched'
     },
-    link: { type: String, required: true },
-    upcoming: { type: Boolean, default: false },
-    recommended: { type: Boolean, default: false },
-    popular: { type: Boolean, default: false },
-    latest: { type: Boolean, default: true },
-    electric: { type: Boolean, default: false },
+    is_upcoming: { type: Boolean, default: false },
+    is_launched: { type: Boolean, default: true },
+    expected_exshowroom_price: { type: Number, default: null },
+    expected_launch_date: { type: Date, default: null },
+    exshowroom_price: { type: Number, default: null },
+    launch_date: { type: Date, default: null },
+    is_electric: { type: Boolean, default: false },
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
+    is_featured: { type: Boolean, default: false },
+    is_popular: { type: Boolean, default: false },
+    is_recommended: { type: Boolean, default: false },
+    is_latest: { type: Boolean, default: false },
+    top_selling: { type: Boolean, default: false },
     // SEO fields
     meta_title: { type: String },
     meta_description: { type: String, maxlength: 160 },
@@ -77,7 +90,30 @@ const carSchema = new Schema<ICar>(
     canonical_url: { type: String },
     noindex: { type: Boolean, default: false },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+  }
 );
+
+carSchema.index({ brand_id: 1 });
+carSchema.index({ body_type_id: 1 });
+carSchema.index({ fuel_type_id: 1 });
+carSchema.index({ status: 1 });
+carSchema.index({ is_published: 1, is_deleted: 1 });
+carSchema.index({ is_deleted: 1 });
+carSchema.index({ is_published: 1 });
+carSchema.index({ is_electric: 1 });
+carSchema.index({ is_featured: 1 });
+carSchema.index({ is_popular: 1 });
+carSchema.index({ is_recommended: 1 });
+carSchema.index({ is_latest: 1 });
+carSchema.index({ top_selling: 1 });
+carSchema.index({ is_upcoming: 1 });
+carSchema.index({ is_launched: 1 });
+carSchema.index({ expected_launch_date: 1 });
+carSchema.index({ launch_date: 1 });
+carSchema.index({ name: 'text' });
+carSchema.index({ brand_id: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ body_type_id: 1, is_published: 1, is_deleted: 1 });
 
 export const Car = model<ICar>("Car", carSchema);

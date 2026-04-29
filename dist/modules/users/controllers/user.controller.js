@@ -1,23 +1,33 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
-const catchAsync_1 = require("../../../utils/catchAsync");
 const user_model_1 = require("../../../models/user.model");
-const error_middleware_1 = require("../../../middlewares/error.middleware");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
+const response_util_1 = require("../../../shared/utils/response.util");
+const catchAsync_1 = require("../../../utils/catchAsync");
+const admin_update_user_dto_1 = require("../dto/admin-update-user.dto");
+const update_profile_dto_1 = require("../dto/update-profile.dto");
+const user_filter_dto_1 = require("../dto/user-filter.dto");
+const user_service_1 = require("../services/user.service");
 class UserController {
     static getProfile = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const userId = req.user.id;
-        const user = await user_model_1.User.findOne({ user_id: userId }).select("-password");
-        if (!user) {
-            throw new error_middleware_1.AppError("User not found", 404);
+        const user = req.user;
+        const userId = user?.user_id || user?.id;
+        if (!userId) {
+            throw new app_error_util_1.AppError("User not authenticated", 401);
         }
-        res.status(200).json({
-            status: "success",
-            data: { user },
-        });
+        const userProfile = await user_model_1.User.findOne({ user_id: userId, is_deleted: false }).select("-password");
+        if (!userProfile) {
+            throw new app_error_util_1.AppError("User not found", 404);
+        }
+        return response_util_1.ResponseUtil.success(res, userProfile, "Profile retrieved successfully");
     });
     static updateProfile = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const userId = req.user.id;
+        const user = req.user;
+        const userId = user?.user_id || user?.id;
+        if (!userId) {
+            throw new app_error_util_1.AppError("User not authenticated", 401);
+        }
         const { user_name, phone } = req.body;
         let updateData = {};
         if (user_name)
@@ -27,16 +37,53 @@ class UserController {
         if (req.file) {
             updateData.profile_pic = req.file.path;
         }
-        const user = await user_model_1.User.findOneAndUpdate({ user_id: userId }, updateData, {
-            new: true,
-        }).select("-password");
-        if (!user) {
-            throw new error_middleware_1.AppError("User not found", 404);
+        const updateDto = { user_name, phone, profile_pic: updateData.profile_pic };
+        const validation = update_profile_dto_1.UpdateProfileDto.validate(updateDto);
+        if (!validation.valid) {
+            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
         }
-        res.status(200).json({
-            status: "success",
-            data: { user },
-        });
+        const updatedUser = await user_model_1.User.findOneAndUpdate({ user_id: userId, is_deleted: false }, updateData, {
+            returnDocument: 'after',
+        }).select("-password");
+        if (!updatedUser) {
+            throw new app_error_util_1.AppError("User not found", 404);
+        }
+        return response_util_1.ResponseUtil.success(res, updatedUser, "Profile updated successfully");
+    });
+    // Admin endpoints
+    static getAllAdminUsers = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const filterDto = req.query;
+        const validation = user_filter_dto_1.UserFilterDto.validate(filterDto);
+        if (!validation.valid) {
+            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        }
+        const result = await user_service_1.UserService.getAllUsers(filterDto, true);
+        return response_util_1.ResponseUtil.paginated(res, result.users, result.pagination, 'Users retrieved successfully');
+    });
+    static getAdminUserById = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const user = await user_service_1.UserService.getUserById(req.params.id);
+        if (!user) {
+            throw new app_error_util_1.AppError("User not found", 404);
+        }
+        return response_util_1.ResponseUtil.success(res, user, "User retrieved successfully");
+    });
+    static deleteUser = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        await user_service_1.UserService.deleteUser(req.params.id);
+        return response_util_1.ResponseUtil.success(res, null, "User deleted successfully");
+    });
+    static restoreUser = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const user = await user_service_1.UserService.restoreUser(req.params.id);
+        return response_util_1.ResponseUtil.success(res, user, "User restored successfully");
+    });
+    static updateUser = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const userId = req.params.id;
+        const updateDto = req.body;
+        const validation = admin_update_user_dto_1.AdminUpdateUserDto.validate(updateDto);
+        if (!validation.valid) {
+            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        }
+        const user = await user_service_1.UserService.updateUser(userId, updateDto);
+        return response_util_1.ResponseUtil.success(res, user, "User updated successfully");
     });
 }
 exports.UserController = UserController;

@@ -1,170 +1,169 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BlogController = void 0;
-const error_middleware_1 = require("../../../middlewares/error.middleware");
+const upload_service_1 = require("../../../shared/services/upload.service");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
+const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const seo_1 = require("../../../utils/seo");
+const create_blog_dto_1 = require("../dto/create-blog.dto");
+const update_blog_dto_1 = require("../dto/update-blog.dto");
 const blog_service_1 = require("../services/blog.service");
+// Type guard to check if files is an object with field names
+function isFilesObject(files) {
+    return files && typeof files === 'object' && !Array.isArray(files);
+}
 class BlogController {
-    static getAllBlogs = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        // Public route, only fetch published
-        const result = await blog_service_1.BlogService.getAllBlogs(req.query, false);
-        res.status(200).json({
-            status: "success",
-            data: result,
-        });
+    // Public routes
+    static getAllPublicBlogs = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const filterDto = {
+            ...req.query,
+            is_published: true,
+        };
+        const result = await blog_service_1.BlogService.getAllBlogs(filterDto, false);
+        return response_util_1.ResponseUtil.paginated(res, result.blogs, result.pagination, 'Blogs retrieved successfully');
     });
-    static getAllBlogsAdmin = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const result = await blog_service_1.BlogService.getAllBlogs(req.query, true);
-        res.status(200).json({
-            status: "success",
-            data: result,
-        });
-    });
-    static getBlogBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    static getPublicBlogBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const blog = await blog_service_1.BlogService.getBlogBySlug(req.params.slug);
         if (!blog) {
-            throw new error_middleware_1.AppError("Blog not found", 404);
+            throw new app_error_util_1.AppError("Blog not found", 404);
         }
-        const metadata = (0, seo_1.generateBlogMetadata)(blog);
-        res.status(200).json({
-            status: "success",
-            data: {
-                blog,
-                seo: metadata,
-            },
-        });
+        return response_util_1.ResponseUtil.success(res, blog, "Blog retrieved successfully");
+    });
+    // Admin routes
+    static getAllAdminBlogs = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const result = await blog_service_1.BlogService.getAllBlogs(req.query, true);
+        return response_util_1.ResponseUtil.paginated(res, result.blogs, result.pagination, 'Blogs retrieved successfully');
+    });
+    static getAdminBlogById = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const blog = await blog_service_1.BlogService.getBlogById(req.params.id);
+        if (!blog) {
+            throw new app_error_util_1.AppError("Blog not found", 404);
+        }
+        return response_util_1.ResponseUtil.success(res, blog, "Blog retrieved successfully");
     });
     static createBlog = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        let thumbnail = {
-            url: "",
-            title: req.body.thumbnailTitle || "",
-            preview: "",
-        };
+        let thumbnailUrl = req.body.thumbnail_url;
+        let linkUrl = req.body.link;
         let images = [];
-        let link = req.body.link || "";
-        if (req.files?.["thumbnail"]) {
-            const file = req.files["thumbnail"][0];
-            thumbnail.url = file.path;
-            thumbnail.title = req.body.thumbnailTitle || "";
+        if (isFilesObject(req.files) && req.files["thumbnail"]) {
+            thumbnailUrl = req.files["thumbnail"][0].path;
         }
-        if (req.files?.["linkImage"]) {
-            const file = req.files["linkImage"][0];
-            link = file.path;
+        if (isFilesObject(req.files) && req.files["linkImage"]) {
+            linkUrl = req.files["linkImage"][0].path;
         }
-        if (req.files?.images) {
-            images = req.files.images.map((file) => file.path);
+        if (isFilesObject(req.files) && req.files["images"]) {
+            images = req.files.images.map((file) => ({ url: file.path }));
         }
-        const blog = await blog_service_1.BlogService.createBlog({
+        if (req.body.images) {
+            try {
+                const parsedImages = JSON.parse(req.body.images);
+                images = [...images, ...parsedImages];
+            }
+            catch {
+                // ignore parse errors
+            }
+        }
+        const createDto = {
             title: req.body.title,
             content: req.body.content,
-            author: req.body.author,
-            category: req.body.category || "Uncategorized",
-            slug: req.body.slug,
-            link,
-            thumbnail,
+            excerpt: req.body.excerpt,
+            // author_name: req.body.author_name,
+            // author_id: req.body.author_id,
+            category: req.body.category,
+            tags: req.body.tags ? (Array.isArray(req.body.tags) ? req.body.tags : req.body.tags.split(',')) : undefined,
+            thumbnail_url: thumbnailUrl,
+            thumbnail_alt: req.body.thumbnail_alt,
             images,
-            is_published: req.body.is_published === "true" || req.body.is_published === true,
-            // SEO fields
+            link: linkUrl,
+            is_published: req.body.is_published,
+            is_featured: req.body.is_featured,
             meta_title: req.body.meta_title,
             meta_description: req.body.meta_description,
             meta_keywords: req.body.meta_keywords,
             og_image: req.body.og_image,
             canonical_url: req.body.canonical_url,
-            noindex: req.body.noindex === "true",
-        });
-        res.status(201).json({
-            status: "success",
-            data: { blog },
-        });
+            noindex: req.body.noindex,
+        };
+        console.log(createDto, "hello");
+        const validation = create_blog_dto_1.CreateBlogDto.validate(createDto);
+        if (!validation.valid) {
+            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        }
+        const blog = await blog_service_1.BlogService.createBlog(createDto);
+        return response_util_1.ResponseUtil.created(res, blog, "Blog created successfully");
     });
     static updateBlog = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const id = req.params.id;
-        let blogData = { ...req.body };
-        if (req.files?.["thumbnail"]) {
-            const file = req.files["thumbnail"][0];
-            blogData.thumbnail = {
-                // url: file.path,
-                url: file.path.replace(/\\/g, "/"),
-                title: req.body.thumbnailTitle || "",
-                preview: "",
-            };
+        let thumbnailUrl = req.body.thumbnail_url;
+        let linkUrl = req.body.link;
+        let images = [];
+        if (isFilesObject(req.files) && req.files["thumbnail"]) {
+            thumbnailUrl = req.files["thumbnail"][0].path;
         }
-        if (req.files?.["linkImage"]) {
-            const file = req.files["linkImage"][0];
-            blogData.link = file.path;
+        if (isFilesObject(req.files) && req.files["linkImage"]) {
+            linkUrl = req.files["linkImage"][0].path;
         }
-        // keep existing images if no new uploaded
-        if (req.body.keptImages || req.files?.["images"]) {
-            let finalImages = [];
-            // Keep existing images that were not removed
-            if (req.body.keptImages) {
-                try {
-                    finalImages = JSON.parse(req.body.keptImages);
-                }
-                catch {
-                    finalImages = [];
-                }
+        if (req.body.keptImages) {
+            try {
+                images = JSON.parse(req.body.keptImages);
             }
-            // Add newly uploaded images
-            if (req.files?.["images"]) {
-                const newPaths = req.files.images.map((file) => file.path);
-                finalImages = [...finalImages, ...newPaths];
+            catch {
+                images = [];
             }
-            blogData.images = finalImages;
         }
-        // if (req.files?.images) {
-        //   blogData.images = req.files.images.map((file: any) => file.path);
-        // }
-        // convert string to boolean
-        if (typeof req.body.is_published !== "undefined") {
-            blogData.is_published =
-                req.body.is_published === "true" || req.body.is_published === true;
+        if (isFilesObject(req.files) && req.files["images"]) {
+            const newImages = req.files.images.map((file) => ({ url: file.path }));
+            images = [...images, ...newImages];
         }
-        if (typeof req.body.noindex !== "undefined") {
-            blogData.noindex =
-                req.body.noindex === "true" || req.body.noindex === true;
+        const updateDto = {
+            title: req.body.title,
+            content: req.body.content,
+            excerpt: req.body.excerpt,
+            // author_name: req.body.author_name,
+            // author_id: req.body.author_id,
+            category: req.body.category,
+            tags: req.body.tags ? (Array.isArray(req.body.tags) ? req.body.tags : req.body.tags.split(',')) : undefined,
+            thumbnail_url: thumbnailUrl,
+            thumbnail_alt: req.body.thumbnail_alt,
+            images: images.length > 0 ? images : undefined,
+            link: linkUrl,
+            is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
+            is_featured: req.body.is_featured !== undefined ? req.body.is_featured === 'true' || req.body.is_featured === true : undefined,
+            meta_title: req.body.meta_title,
+            meta_description: req.body.meta_description,
+            meta_keywords: req.body.meta_keywords,
+            og_image: req.body.og_image,
+            canonical_url: req.body.canonical_url,
+            noindex: req.body.noindex,
+        };
+        console.log(updateDto, "updatedto");
+        const validation = update_blog_dto_1.UpdateBlogDto.validate(updateDto);
+        if (!validation.valid) {
+            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
         }
-        const updatedBlog = await blog_service_1.BlogService.updateBlog(id, blogData);
-        if (!updatedBlog) {
-            throw new error_middleware_1.AppError("Blog not found", 404);
-        }
-        res.status(200).json({
-            status: "success",
-            data: { blog: updatedBlog },
-        });
+        const blog = await blog_service_1.BlogService.updateBlog(req.params.id, updateDto);
+        return response_util_1.ResponseUtil.success(res, blog, "Blog updated successfully");
     });
     static deleteBlog = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const id = req.params.id;
-        const deletedBlog = await blog_service_1.BlogService.deleteBlog(id);
-        if (!deletedBlog) {
-            throw new error_middleware_1.AppError("Blog not found", 404);
-        }
-        res.status(200).json({
-            status: "success",
-            message: "Blog deleted successfully",
-        });
+        await blog_service_1.BlogService.deleteBlog(req.params.id);
+        return response_util_1.ResponseUtil.success(res, null, "Blog deleted successfully");
+    });
+    static restoreBlog = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const blog = await blog_service_1.BlogService.restoreBlog(req.params.id);
+        return response_util_1.ResponseUtil.success(res, blog, "Blog restored successfully");
     });
     static togglePublish = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const blog = await blog_service_1.BlogService.findBlogById(req.params.id);
-        if (!blog) {
-            throw new error_middleware_1.AppError("Blog not found", 404);
-        }
-        blog.is_published = !blog.is_published;
-        await blog.save();
-        res.json({ status: "success", data: blog });
+        const blog = await blog_service_1.BlogService.togglePublish(req.params.id);
+        return response_util_1.ResponseUtil.success(res, blog, "Blog publish status toggled successfully");
     });
     static uploadImage = (0, catchAsync_1.catchAsync)(async (req, res) => {
         if (!req.file) {
-            return res.status(400).json({
-                status: "fail",
-                message: "No file uploaded",
-            });
+            throw new app_error_util_1.AppError("No file uploaded", 400);
         }
-        // FIX: convert backslash to forward slash
-        const filePath = req.file.path.replace(/\\/g, "/");
-        const url = `${req.protocol}://${req.get("host")}/${filePath}`;
-        res.json({ url });
+        const uploadedFile = upload_service_1.UploadService.formatUploadedFile(req.file);
+        return response_util_1.ResponseUtil.success(res, {
+            url: uploadedFile.url,
+            publicId: uploadedFile.publicId,
+        }, "Image uploaded successfully");
     });
 }
 exports.BlogController = BlogController;

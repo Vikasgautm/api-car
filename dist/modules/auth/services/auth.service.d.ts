@@ -1,25 +1,31 @@
-import { IUser } from '../../../models/user.model';
+import { LoginDto } from '../dto/login.dto';
+import { RefreshTokenDto } from '../dto/refresh-token.dto';
+import { RegisterDto } from '../dto/register.dto';
 export declare class AuthService {
-    static generateToken(user: IUser): string;
-    static signup(userData: any): Promise<{
-        user: import("mongoose").Document<unknown, {}, IUser, {}, import("mongoose").DefaultSchemaOptions> & IUser & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        } & {
-            id: string;
-        };
-        token: string;
+    static register(registerDto: RegisterDto): Promise<{
+        user: any;
+        accessToken: string;
+        refreshToken: string;
     }>;
-    static login(loginData: any): Promise<{
-        user: import("mongoose").Document<unknown, {}, IUser, {}, import("mongoose").DefaultSchemaOptions> & IUser & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        } & {
-            id: string;
-        };
-        token: string;
+    static login(loginDto: LoginDto, req?: any): Promise<{
+        user: any;
+        accessToken: string;
+        refreshToken: string;
     }>;
+    static refreshToken(refreshTokenDto: RefreshTokenDto): Promise<{
+        user: any;
+        accessToken: string;
+        refreshToken: string;
+    }>;
+    static logout(user_id: string): Promise<{
+        message: string;
+    }>;
+    static getProfile(user_id: string): Promise<any>;
+    private static generateTokens;
+    private static saveRefreshToken;
+    private static parseExpiresIn;
+    private static sanitizeUser;
+    private static extractDeviceInfo;
+    private static extractIpAddress;
 }
 //# sourceMappingURL=auth.service.d.ts.map

@@ -1,0 +1,113 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.FuelTypeService = void 0;
+const uuid_1 = require("uuid");
+const fuel_type_model_1 = require("../../../models/fuel-type.model");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
+const filter_util_1 = require("../../../shared/utils/filter.util");
+const pagination_util_1 = require("../../../shared/utils/pagination.util");
+const slug_util_1 = require("../../../shared/utils/slug.util");
+class FuelTypeService {
+    static async getAllFuelTypes(filterDto, includeDeleted = false) {
+        const { page = 1, limit = 10, q, is_published, is_featured, sortBy = 'name', sortOrder = 'asc' } = filterDto;
+        const filter = {};
+        if (!includeDeleted) {
+            filter.is_deleted = false;
+        }
+        if (is_published !== undefined) {
+            filter.is_published = is_published;
+        }
+        if (is_featured !== undefined) {
+            filter.is_featured = is_featured;
+        }
+        if (q) {
+            const searchFilter = filter_util_1.FilterUtil.buildSearchFilter(['name', 'description'], q);
+            Object.assign(filter, searchFilter);
+        }
+        const { skip, limit: validatedLimit } = pagination_util_1.PaginationUtil.getPaginationParams(page, limit);
+        const sortFilter = filter_util_1.FilterUtil.buildSortFilter(sortBy, sortOrder);
+        const fuelTypes = await fuel_type_model_1.FuelType.find(filter)
+            .sort(sortFilter)
+            .skip(skip)
+            .limit(validatedLimit);
+        const total = await fuel_type_model_1.FuelType.countDocuments(filter);
+        const paginationMeta = pagination_util_1.PaginationUtil.createPaginationMeta(page, validatedLimit, total);
+        return { fuelTypes, pagination: paginationMeta };
+    }
+    static async getFuelTypeById(fuelTypeId) {
+        return await fuel_type_model_1.FuelType.findOne({ fuel_type_id: fuelTypeId, is_deleted: false });
+    }
+    static async getFuelTypeBySlug(slug) {
+        return await fuel_type_model_1.FuelType.findOne({ slug, is_deleted: false });
+    }
+    static async createFuelType(fuelTypeData) {
+        const fuel_type_id = (0, uuid_1.v4)();
+        const slug = slug_util_1.SlugUtil.generate(fuelTypeData.name);
+        const existingSlug = await fuel_type_model_1.FuelType.findOne({ slug, is_deleted: false });
+        if (existingSlug) {
+            const existingSlugs = (await fuel_type_model_1.FuelType.find({ is_deleted: false }).select('slug')).map(f => f.slug);
+            const uniqueSlug = slug_util_1.SlugUtil.generateUnique(fuelTypeData.name, existingSlugs);
+            fuelTypeData.slug = uniqueSlug;
+        }
+        else {
+            fuelTypeData.slug = slug;
+        }
+        const fuelType = {
+            fuel_type_id,
+            name: fuelTypeData.name,
+            slug: fuelTypeData.slug,
+            description: fuelTypeData.description,
+            is_published: fuelTypeData.is_published || false,
+            is_featured: fuelTypeData.is_featured || false,
+            is_deleted: false,
+        };
+        return await fuel_type_model_1.FuelType.create(fuelType);
+    }
+    static async updateFuelType(fuelTypeId, fuelTypeData) {
+        const updateData = {};
+        if (fuelTypeData.name !== undefined) {
+            updateData.name = fuelTypeData.name;
+            const newSlug = slug_util_1.SlugUtil.generate(fuelTypeData.name);
+            const existingSlug = await fuel_type_model_1.FuelType.findOne({ slug: newSlug, fuel_type_id: { $ne: fuelTypeId }, is_deleted: false });
+            if (!existingSlug) {
+                updateData.slug = newSlug;
+            }
+        }
+        if (fuelTypeData.description !== undefined)
+            updateData.description = fuelTypeData.description;
+        if (fuelTypeData.is_published !== undefined)
+            updateData.is_published = fuelTypeData.is_published;
+        if (fuelTypeData.is_featured !== undefined)
+            updateData.is_featured = fuelTypeData.is_featured;
+        const fuelType = await fuel_type_model_1.FuelType.findOneAndUpdate({ fuel_type_id: fuelTypeId, is_deleted: false }, updateData, { returnDocument: 'after' });
+        if (!fuelType) {
+            throw new app_error_util_1.AppError('Fuel type not found', 404);
+        }
+        return fuelType;
+    }
+    static async deleteFuelType(fuelTypeId) {
+        const fuelType = await fuel_type_model_1.FuelType.findOneAndUpdate({ fuel_type_id: fuelTypeId, is_deleted: false }, { is_deleted: true }, { returnDocument: 'after' });
+        if (!fuelType) {
+            throw new app_error_util_1.AppError('Fuel type not found', 404);
+        }
+        return fuelType;
+    }
+    static async restoreFuelType(fuelTypeId) {
+        const fuelType = await fuel_type_model_1.FuelType.findOneAndUpdate({ fuel_type_id: fuelTypeId, is_deleted: true }, { is_deleted: false }, { returnDocument: 'after' });
+        if (!fuelType) {
+            throw new app_error_util_1.AppError('Fuel type not found', 404);
+        }
+        return fuelType;
+    }
+    static async togglePublish(fuelTypeId) {
+        const fuelType = await fuel_type_model_1.FuelType.findOne({ fuel_type_id: fuelTypeId, is_deleted: false });
+        if (!fuelType) {
+            throw new app_error_util_1.AppError('Fuel type not found', 404);
+        }
+        fuelType.is_published = !fuelType.is_published;
+        await fuelType.save();
+        return fuelType;
+    }
+}
+exports.FuelTypeService = FuelTypeService;
+//# sourceMappingURL=fuel-type.service.js.map

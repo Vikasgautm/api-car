@@ -1,5 +1,6 @@
-import { Response, NextFunction } from 'express';
-import { AuthRequest } from '../types/auth';
-export declare const protect: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
-export declare const restrictTo: (...roles: string[]) => (req: AuthRequest, res: Response, next: NextFunction) => void;
+import { RequestHandler } from 'express';
+export declare const protect: RequestHandler;
+export declare const restrictTo: (...roles: string[]) => RequestHandler;
+export declare const restrictToEditorOrAbove: (...roles: string[]) => RequestHandler;
+export declare const optionalAuth: RequestHandler;
 //# sourceMappingURL=auth.middleware.d.ts.map

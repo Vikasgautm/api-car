@@ -1,72 +1,147 @@
 import { v4 as uuidv4 } from "uuid";
-import { BodyType } from "../../../models/body-type.model";
-import { generateSlug } from "../../../utils/slugify";
+import { BodyType, IBodyType } from "../../../models/body-type.model";
+import { AppError } from "../../../shared/utils/app-error.util";
+import { FilterUtil } from "../../../shared/utils/filter.util";
+import { PaginationUtil } from "../../../shared/utils/pagination.util";
+import { SlugUtil } from "../../../shared/utils/slug.util";
 
 export class BodyTypeService {
-  static async getAllBodyTypes(query: any) {
-    const { q, page = 1, limit = 10, is_deleted } = query;
-    const filter: any = { is_deleted: is_deleted === "true" };
+  static async getAllBodyTypes(filterDto: any, includeDeleted: boolean = false) {
+    const { page = 1, limit = 10, q, is_published, is_featured, sortBy = 'name', sortOrder = 'asc' } = filterDto;
 
-    if (q) {
-      filter.body_type_name = { $regex: q, $options: "i" };
+    const filter: Record<string, unknown> = {};
+
+    if (!includeDeleted) {
+      filter.is_deleted = false;
     }
 
-    const skip = (Number(page) - 1) * Number(limit);
-    const bodyTypes = await BodyType.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
-    const total = await BodyType.countDocuments(filter);
+    if (is_published !== undefined) {
+      filter.is_published = is_published;
+    }
 
-    return { body_types: bodyTypes, total, page: Number(page), limit: Number(limit) };
+    if (is_featured !== undefined) {
+      filter.is_featured = is_featured;
+    }
+
+    if (q) {
+      const searchFilter = FilterUtil.buildSearchFilter(['name', 'description'], q);
+      Object.assign(filter, searchFilter);
+    }
+
+    const { skip, limit: validatedLimit } = PaginationUtil.getPaginationParams(page, limit);
+    const sortFilter = FilterUtil.buildSortFilter(sortBy, sortOrder);
+
+    const bodyTypes = await BodyType.find(filter)
+      .sort(sortFilter)
+      .skip(skip)
+      .limit(validatedLimit);
+
+    const total = await BodyType.countDocuments(filter);
+    const paginationMeta = PaginationUtil.createPaginationMeta(page, validatedLimit, total);
+
+    return { bodyTypes, pagination: paginationMeta };
+  }
+
+  static async getBodyTypeById(bodyTypeId: string) {
+    return await BodyType.findOne({ body_type_id: bodyTypeId, is_deleted: false } as any);
   }
 
   static async getBodyTypeBySlug(slug: string) {
-    return await BodyType.findOne({ slug });
-  }
-
-  static async getBodyTypeById(id: string) {
-    return await BodyType.findOne({ body_type_id: id });
-  }
-
-  static async updateBodyType(id: string, bodyTypeData: any) {
-    let updateData = { ...bodyTypeData };
-    console.log(updateData, "updateData");
-    if (updateData.is_published !== undefined) {
-      // Handle both string "true"/"false" and boolean true/false
-      if (typeof updateData.is_published === "string") {
-        updateData.is_published = updateData.is_published === "true";
-      }
-      // If it's already a boolean, keep it as is
-    }
-    return await BodyType.findOneAndUpdate({ body_type_id: id }, updateData, {
-      returnDocument: "after",
-    });
-  }
-
-  static async deleteBodyType(id: string) {
-    return await BodyType.findOneAndUpdate(
-      { body_type_id: id },
-      { is_deleted: true },
-      { returnDocument: "after" },
-    );
-  }
-
-  static async restoreBodyType(id: string) {
-    return await BodyType.findOneAndUpdate(
-      { body_type_id: id },
-      { is_deleted: false },
-      { returnDocument: "after" },
-    );
+    return await BodyType.findOne({ slug, is_deleted: false });
   }
 
   static async createBodyType(bodyTypeData: any) {
     const body_type_id = uuidv4();
-    const slug = generateSlug(bodyTypeData.body_type_name);
-    return await BodyType.create({
-      ...bodyTypeData,
+    const slug = SlugUtil.generate(bodyTypeData.name);
+
+    const existingSlug = await BodyType.findOne({ slug, is_deleted: false });
+    if (existingSlug) {
+      const existingSlugs = (await BodyType.find({ is_deleted: false }).select('slug')).map(b => b.slug);
+      const uniqueSlug = SlugUtil.generateUnique(bodyTypeData.name, existingSlugs);
+      bodyTypeData.slug = uniqueSlug;
+    } else {
+      bodyTypeData.slug = slug;
+    }
+
+    const bodyType: Partial<IBodyType> = {
       body_type_id,
-      slug,
-    });
+      name: bodyTypeData.name,
+      slug: bodyTypeData.slug,
+      description: bodyTypeData.description,
+      is_published: bodyTypeData.is_published || false,
+      is_featured: bodyTypeData.is_featured || false,
+      is_deleted: false,
+    };
+
+    return await BodyType.create(bodyType);
+  }
+
+  static async updateBodyType(bodyTypeId: string, bodyTypeData: any) {
+    const updateData: Partial<IBodyType> = {};
+
+    if (bodyTypeData.name !== undefined) {
+      updateData.name = bodyTypeData.name;
+      const newSlug = SlugUtil.generate(bodyTypeData.name);
+      const existingSlug = await BodyType.findOne({ slug: newSlug, body_type_id: { $ne: bodyTypeId }, is_deleted: false } as any);
+      if (!existingSlug) {
+        updateData.slug = newSlug;
+      }
+    }
+
+    if (bodyTypeData.description !== undefined) updateData.description = bodyTypeData.description;
+    if (bodyTypeData.is_published !== undefined) updateData.is_published = bodyTypeData.is_published;
+    if (bodyTypeData.is_featured !== undefined) updateData.is_featured = bodyTypeData.is_featured;
+
+    const bodyType = await BodyType.findOneAndUpdate(
+      { body_type_id: bodyTypeId, is_deleted: false } as any,
+      updateData,
+      { returnDocument: 'after' }
+    );
+
+    if (!bodyType) {
+      throw new AppError('Body type not found', 404);
+    }
+
+    return bodyType;
+  }
+
+  static async deleteBodyType(bodyTypeId: string) {
+    const bodyType = await BodyType.findOneAndUpdate(
+      { body_type_id: bodyTypeId, is_deleted: false },
+      { is_deleted: true },
+      { returnDocument: 'after' }
+    );
+
+    if (!bodyType) {
+      throw new AppError('Body type not found', 404);
+    }
+
+    return bodyType;
+  }
+
+  static async restoreBodyType(bodyTypeId: string) {
+    const bodyType = await BodyType.findOneAndUpdate(
+      { body_type_id: bodyTypeId, is_deleted: true },
+      { is_deleted: false },
+      { returnDocument: 'after' }
+    );
+
+    if (!bodyType) {
+      throw new AppError('Body type not found', 404);
+    }
+
+    return bodyType;
+  }
+
+  static async togglePublish(bodyTypeId: string) {
+    const bodyType = await BodyType.findOne({ body_type_id: bodyTypeId, is_deleted: false });
+    if (!bodyType) {
+      throw new AppError('Body type not found', 404);
+    }
+
+    bodyType.is_published = !bodyType.is_published;
+    await bodyType.save();
+
+    return bodyType;
   }
 }

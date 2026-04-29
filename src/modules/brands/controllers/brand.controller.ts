@@ -1,101 +1,110 @@
 import { Request, Response } from "express";
-import { AppError } from "../../../middlewares/error.middleware";
+import { AppError } from "../../../shared/utils/app-error.util";
+import { ResponseUtil } from "../../../shared/utils/response.util";
 import { catchAsync } from "../../../utils/catchAsync";
+import { CreateBrandDto } from "../dto/create-brand.dto";
+import { UpdateBrandDto } from "../dto/update-brand.dto";
 import { BrandService } from "../services/brand.service";
+
 interface MulterRequest extends Request {
-  files?: {
-    [fieldname: string]: Express.Multer.File[];
-  };
+  file?: Express.Multer.File;
 }
+
 export class BrandController {
-  static getAllBrands = catchAsync(async (req: Request, res: Response) => {
-    const result = await BrandService.getAllBrands(req.query);
-    res.status(200).json({
-      status: "success",
-      data: result,
-    });
+  // Public routes
+  static getAllPublicBrands = catchAsync(async (req: Request, res: Response) => {
+    const filterDto = {
+      ...req.query,
+      is_published: true,
+    };
+    const result = await BrandService.getAllBrands(filterDto, false);
+    return ResponseUtil.paginated(res, result.brands, result.pagination, 'Brands retrieved successfully');
   });
 
-  static getBrandBySlug = catchAsync(async (req: Request, res: Response) => {
+  static getPublicBrandBySlug = catchAsync(async (req: Request, res: Response) => {
     const brand = await BrandService.getBrandBySlug(req.params.slug as string);
     if (!brand) {
       throw new AppError("Brand not found", 404);
     }
-    res.status(200).json({
-      status: "success",
-      data: { brand },
-    });
+    return ResponseUtil.success(res, brand, "Brand retrieved successfully");
+  });
+
+  // Admin routes
+  static getAllAdminBrands = catchAsync(async (req: Request, res: Response) => {
+    const result = await BrandService.getAllBrands(req.query, true);
+    return ResponseUtil.paginated(res, result.brands, result.pagination, 'Brands retrieved successfully');
+  });
+
+  static getAdminBrandById = catchAsync(async (req: Request, res: Response) => {
+    const brand = await BrandService.getBrandById(req.params.id as string);
+    if (!brand) {
+      throw new AppError("Brand not found", 404);
+    }
+    return ResponseUtil.success(res, brand, "Brand retrieved successfully");
   });
 
   static createBrand = catchAsync(async (req: MulterRequest, res: Response) => {
-    let images = {
-      url: "",
-      title: req.body.title || "",
-      // preview: ""
-    };
-
-    if (req.files?.["images"]) {
-      const file = req.files["images"][0];
-      images.url = file.path;
-    }
-    const brand = await BrandService.createBrand({
-      ...req.body,
-      images,
-      // SEO fields
+    const createDto: CreateBrandDto = {
+      name: req.body.name,
+      description: req.body.description,
+      logo_url: req.file?.path || req.body.logo_url,
+      logo_title: req.body.logo_title,
+      is_published: req.body.is_published,
+      is_featured: req.body.is_featured,
       meta_title: req.body.meta_title,
       meta_description: req.body.meta_description,
       meta_keywords: req.body.meta_keywords,
-    });
-    res.status(201).json({
-      status: "success",
-      data: { brand },
-    });
+      og_image: req.body.og_image,
+      canonical_url: req.body.canonical_url,
+      noindex: req.body.noindex,
+    };
+
+    const validation = CreateBrandDto.validate(createDto);
+    if (!validation.valid) {
+      throw new AppError(validation.errors.join(', '), 400);
+    }
+
+    const brand = await BrandService.createBrand(createDto);
+    return ResponseUtil.created(res, brand, "Brand created successfully");
   });
 
   static updateBrand = catchAsync(async (req: MulterRequest, res: Response) => {
-    let updateData = { ...req.body };
-    if (updateData.is_published !== undefined) {
-      updateData.is_published = updateData.is_published === "true";
-    }
-    if (req.files?.["images"]) {
-      const file = req.files["images"][0];
-      updateData.images = {
-        url: file.path,
-        title: req.body.title || "",
-      };
-    }
-    // SEO fields
-    if (req.body.meta_title !== undefined) updateData.meta_title = req.body.meta_title;
-    if (req.body.meta_description !== undefined) updateData.meta_description = req.body.meta_description;
-    if (req.body.meta_keywords !== undefined) updateData.meta_keywords = req.body.meta_keywords;
+    const updateDto: UpdateBrandDto = {
+      name: req.body.name,
+      description: req.body.description,
+      logo_url: req.file?.path || req.body.logo_url,
+      logo_title: req.body.logo_title,
+      is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
+      is_featured: req.body.is_featured !== undefined ? req.body.is_featured === 'true' || req.body.is_featured === true : undefined,
+      meta_title: req.body.meta_title,
+      meta_description: req.body.meta_description,
+      meta_keywords: req.body.meta_keywords,
+      og_image: req.body.og_image,
+      canonical_url: req.body.canonical_url,
+      noindex: req.body.noindex,
+    };
 
-    const brand = await BrandService.updateBrand(
-      req.params.id as string,
-      updateData,
-    );
-    if (!brand) throw new AppError("Brand not found", 404);
-    res.status(200).json({
-      status: "success",
-      data: { brand },
-    });
+    const validation = UpdateBrandDto.validate(updateDto);
+    if (!validation.valid) {
+      throw new AppError(validation.errors.join(', '), 400);
+    }
+
+    const brand = await BrandService.updateBrand(req.params.id as string, updateDto);
+    return ResponseUtil.success(res, brand, "Brand updated successfully");
   });
 
   static deleteBrand = catchAsync(async (req: Request, res: Response) => {
-    const brand = await BrandService.deleteBrand(req.params.id as string);
-    if (!brand) throw new AppError("Brand not found", 404);
-    res.status(200).json({
-      status: "success",
-      message: "Brand soft deleted successfully",
-    });
+    await BrandService.deleteBrand(req.params.id as string);
+    return ResponseUtil.success(res, null, "Brand deleted successfully");
   });
 
   static restoreBrand = catchAsync(async (req: Request, res: Response) => {
     const brand = await BrandService.restoreBrand(req.params.id as string);
-    if (!brand) throw new AppError("Brand not found", 404);
-    res.status(200).json({
-      status: "success",
-      message: "Brand restored successfully",
-      data: { brand },
-    });
+    return ResponseUtil.success(res, brand, "Brand restored successfully");
+  });
+
+  static togglePublish = catchAsync(async (req: Request, res: Response) => {
+    const brand = await BrandService.togglePublish(req.params.id as string);
+    return ResponseUtil.success(res, brand, "Brand publish status toggled successfully");
   });
 }

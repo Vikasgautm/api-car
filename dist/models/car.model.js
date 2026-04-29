@@ -4,37 +4,41 @@ exports.Car = void 0;
 const mongoose_1 = require("mongoose");
 const carSchema = new mongoose_1.Schema({
     car_id: { type: String, required: true, unique: true },
-    car_name: { type: String, required: true },
-    description: { type: String, required: true },
+    name: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
-    brand_id: { type: mongoose_1.Schema.Types.ObjectId, ref: "Brand", required: true },
-    // brand_id: { type: String, ref: "Brand", required: true },
-    body_type_id: { type: String, ref: "BodyType", required: true },
-    // body_type_id: { type: Schema.Types.ObjectId, ref: 'BodyType', required: true },
+    brand_id: { type: String, required: true },
+    body_type_id: { type: String, required: true },
+    fuel_type_id: { type: String },
+    short_description: { type: String },
+    description: { type: String, required: true },
     thumbnail: {
-        type: {
-            preview: { type: String },
-            title: { type: String },
-        },
-        required: true,
+        url: { type: String },
+        alt: { type: String },
     },
-    images: {
-        type: [
-            {
-                preview: { type: String },
-                title: { type: String },
-            },
-        ],
-        required: true,
+    images: [{
+            url: { type: String },
+            alt: { type: String },
+        }],
+    gallery_summary: { type: String },
+    status: {
+        type: String,
+        enum: ['upcoming', 'launched', 'discontinued'],
+        default: 'launched'
     },
-    link: { type: String, required: true },
-    upcoming: { type: Boolean, default: false },
-    recommended: { type: Boolean, default: false },
-    popular: { type: Boolean, default: false },
-    latest: { type: Boolean, default: true },
-    electric: { type: Boolean, default: false },
+    is_upcoming: { type: Boolean, default: false },
+    is_launched: { type: Boolean, default: true },
+    expected_exshowroom_price: { type: Number, default: null },
+    expected_launch_date: { type: Date, default: null },
+    exshowroom_price: { type: Number, default: null },
+    launch_date: { type: Date, default: null },
+    is_electric: { type: Boolean, default: false },
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
+    is_featured: { type: Boolean, default: false },
+    is_popular: { type: Boolean, default: false },
+    is_recommended: { type: Boolean, default: false },
+    is_latest: { type: Boolean, default: false },
+    top_selling: { type: Boolean, default: false },
     // SEO fields
     meta_title: { type: String },
     meta_description: { type: String, maxlength: 160 },
@@ -42,6 +46,28 @@ const carSchema = new mongoose_1.Schema({
     og_image: { type: String },
     canonical_url: { type: String },
     noindex: { type: Boolean, default: false },
-}, { timestamps: true });
+}, {
+    timestamps: true,
+});
+carSchema.index({ brand_id: 1 });
+carSchema.index({ body_type_id: 1 });
+carSchema.index({ fuel_type_id: 1 });
+carSchema.index({ status: 1 });
+carSchema.index({ is_published: 1, is_deleted: 1 });
+carSchema.index({ is_deleted: 1 });
+carSchema.index({ is_published: 1 });
+carSchema.index({ is_electric: 1 });
+carSchema.index({ is_featured: 1 });
+carSchema.index({ is_popular: 1 });
+carSchema.index({ is_recommended: 1 });
+carSchema.index({ is_latest: 1 });
+carSchema.index({ top_selling: 1 });
+carSchema.index({ is_upcoming: 1 });
+carSchema.index({ is_launched: 1 });
+carSchema.index({ expected_launch_date: 1 });
+carSchema.index({ launch_date: 1 });
+carSchema.index({ name: 'text' });
+carSchema.index({ brand_id: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ body_type_id: 1, is_published: 1, is_deleted: 1 });
 exports.Car = (0, mongoose_1.model)("Car", carSchema);
 //# sourceMappingURL=car.model.js.map

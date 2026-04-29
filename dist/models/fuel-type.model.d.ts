@@ -4,7 +4,13 @@ export interface IFuelType extends Document {
     name: string;
     slug: string;
     description?: string;
+    is_published: boolean;
     is_deleted: boolean;
+    is_featured?: boolean;
+    logo?: {
+        title?: string;
+        url: string;
+    };
 }
 export declare const FuelType: import("mongoose").Model<IFuelType, {}, {}, {}, Document<unknown, {}, IFuelType, {}, import("mongoose").DefaultSchemaOptions> & IFuelType & Required<{
     _id: import("mongoose").Types.ObjectId;

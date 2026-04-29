@@ -1,0 +1,25 @@
+import { Document } from 'mongoose';
+export type SpecDataType = 'string' | 'number' | 'boolean' | 'list' | 'date';
+export type SpecCategory = 'engine_performance' | 'mileage_range' | 'battery_charging' | 'dimensions_practicality' | 'suspension_steering_brakes' | 'tyres_wheels' | 'safety' | 'adas' | 'comfort_convenience' | 'infotainment_connectivity' | 'connected_car' | 'interior' | 'exterior' | 'warranty';
+export interface IVariantSpecKey extends Document {
+    key_id: string;
+    name: string;
+    slug: string;
+    category: SpecCategory;
+    section: string;
+    data_type: SpecDataType;
+    unit?: string;
+    aliases: string[];
+    fuel_type_visibility?: string[];
+    is_published: boolean;
+    is_deleted: boolean;
+    display_order?: number;
+}
+export declare const VariantSpecKey: import("mongoose").Model<IVariantSpecKey, {}, {}, {}, Document<unknown, {}, IVariantSpecKey, {}, import("mongoose").DefaultSchemaOptions> & IVariantSpecKey & Required<{
+    _id: import("mongoose").Types.ObjectId;
+}> & {
+    __v: number;
+} & {
+    id: string;
+}, any, IVariantSpecKey>;
+//# sourceMappingURL=variant-spec-key.model.d.ts.map

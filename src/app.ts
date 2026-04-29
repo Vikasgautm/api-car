@@ -4,11 +4,12 @@ import cors from "cors";
 import express, { Application, NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import { config } from "./config";
+import { requestLogger } from "./middlewares/logging.middleware";
+import { globalRateLimiter } from "./middlewares/rate-limit.middleware";
 
 const app: Application = express();
 
 // Middlewares
-// app.use(helmet());
 app.use(
   helmet({
     crossOriginResourcePolicy: {
@@ -20,6 +21,7 @@ app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   next();
 });
+app.use(requestLogger);
 // app.use(globalRateLimiter);
 app.use(
   cors({
@@ -42,8 +44,9 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // Import routes
-import { AppError, errorMiddleware } from "./middlewares/error.middleware";
+import { errorMiddleware } from "./middlewares/error.middleware";
 import routes from "./shared/routes";
+import { AppError } from "./shared/utils/app-error.util";
 app.use("/uploads", express.static("uploads"));
 app.use("/api/v1", routes);
 

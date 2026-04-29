@@ -1,27 +1,38 @@
-import { Document, Schema } from "mongoose";
+import { Document } from "mongoose";
+export type CarStatus = 'upcoming' | 'launched' | 'discontinued';
 export interface ICar extends Document {
     car_id: string;
-    car_name: string;
-    description: string;
+    name: string;
     slug: string;
-    brand_id: Schema.Types.ObjectId;
+    brand_id: string;
     body_type_id: string;
-    thumbnail: {
-        preview: string;
-        title: string;
+    fuel_type_id?: string;
+    short_description?: string;
+    description: string;
+    thumbnail?: {
+        url: string;
+        alt?: string;
     };
-    images: Array<{
-        preview: string;
-        title: string;
+    images?: Array<{
+        url: string;
+        alt?: string;
     }>;
-    link: string;
-    upcoming: boolean;
-    recommended: boolean;
-    popular: boolean;
-    latest: boolean;
-    electric: boolean;
+    gallery_summary?: string;
+    status: CarStatus;
+    is_upcoming: boolean;
+    is_launched: boolean;
+    expected_exshowroom_price?: number | null;
+    expected_launch_date?: Date | null;
+    exshowroom_price?: number | null;
+    launch_date?: Date | null;
+    is_electric: boolean;
     is_published: boolean;
     is_deleted: boolean;
+    is_featured: boolean;
+    is_popular: boolean;
+    is_recommended: boolean;
+    is_latest: boolean;
+    top_selling: boolean;
     meta_title?: string;
     meta_description?: string;
     meta_keywords?: string;

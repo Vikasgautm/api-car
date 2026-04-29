@@ -1,11 +1,18 @@
 import { Router } from 'express';
+import { validateBody } from '../../../middlewares/validate.middleware';
+import { loginSchema, refreshTokenSchema, registerSchema } from '../../../shared/validation';
 import { AuthController } from '../controllers/auth.controller';
-import { validate } from '../../../middlewares/validate.middleware';
-import { signupSchema, loginSchema } from '../schemas/auth.schema';
+import { jwtAuthGuard } from '../guards/jwt-auth.guard';
 
 const router = Router();
 
-router.post('/signup', validate(signupSchema), AuthController.signup);
-router.post('/login', validate(loginSchema), AuthController.login);
+// Public routes
+router.post('/register', validateBody(registerSchema), AuthController.register);
+router.post('/login', validateBody(loginSchema), AuthController.login);
+router.post('/refresh-token', validateBody(refreshTokenSchema), AuthController.refreshToken);
+
+// Protected routes
+router.post('/logout', jwtAuthGuard, AuthController.logout);
+router.get('/profile', jwtAuthGuard, AuthController.getProfile);
 
 export default router;

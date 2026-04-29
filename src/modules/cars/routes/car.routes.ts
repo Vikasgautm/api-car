@@ -1,74 +1,43 @@
 import { Router } from 'express';
-import { CarController } from '../controllers/car.controller';
-import { CarVariantController } from '../controllers/car-variant.controller';
 import { protect, restrictTo } from '../../../middlewares/auth.middleware';
-import upload from "../../../utils/cloudinary";
+import { UploadService } from '../../../shared/services/upload.service';
+import { validatePaginationQuery, validateSlugParam, validateUuidIdParam } from '../../../shared/validation';
+import { CarController } from '../controllers/car.controller';
 
 const router = Router();
 
-// Car Routes
-router.get("/", CarController.getAllCars);
-router.get("/:slug", CarController.getCarBySlug);
-router.post(
-  "/",
-  protect,
-  restrictTo("admin", "superadmin"),
-  upload.fields([
-    { name: "thumbnail", maxCount: 1 },
-    { name: "images", maxCount: 10 },
-  ]),
-  CarController.createCar
-);
-router.put(
-  "/:id",
-  protect,
-  restrictTo("admin", "superadmin"),
-  upload.fields([
-    { name: "thumbnail", maxCount: 1 },
-    { name: "images", maxCount: 10 },
-  ]),
-  CarController.updateCar
-);
-router.delete(
-  "/:id",
-  protect,
-  restrictTo("admin", "superadmin"),
-  CarController.deleteCar
-);
+// Public routes
+router.get('/public', validatePaginationQuery, CarController.getAllPublicCars);
+router.get('/public/:slug', validateSlugParam, CarController.getPublicCarBySlug);
 
-router.patch(
-  '/restore/:id',
-  protect,
-  restrictTo('admin', 'superadmin'),
-  CarController.restoreCar
-);
+// Admin routes
+const adminRouter = Router();
+adminRouter.use(protect);
+adminRouter.use(restrictTo('admin', 'super_admin'));
 
-// Variant Routes
-router.get("/variants/all", CarVariantController.getAllVariants);
-router.get("/variants/:slug", CarVariantController.getVariantBySlug);
-router.post(
-  "/variants",
-  protect,
-  restrictTo("admin", "superadmin"),
-  CarVariantController.createVariant
-);
-router.put(
-  "/variants/:id",
-  protect,
-  restrictTo("admin", "superadmin"),
-  CarVariantController.updateVariant
-);
-router.delete(
-  "/variants/:id",
-  protect,
-  restrictTo("admin", "superadmin"),
-  CarVariantController.deleteVariant
-);
-router.patch(
-  "/variants/restore/:id",
-  protect,
-  restrictTo("admin", "superadmin"),
-  CarVariantController.restoreVariant
-);
+adminRouter.get('/', validatePaginationQuery, CarController.getAllAdminCars);
+adminRouter.get('/:id', validateUuidIdParam, CarController.getAdminCarById);
+
+const thumbnailUpload = UploadService.createUploadMiddleware({
+  fieldName: 'thumbnail',
+  maxFileSize: 2 * 1024 * 1024,
+  allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+  useCloudinary: true,
+  folder: 'cars',
+});
+
+adminRouter.post('/', thumbnailUpload, CarController.createCar);
+adminRouter.put('/:id', validateUuidIdParam, thumbnailUpload, CarController.updateCar);
+adminRouter.delete('/:id', validateUuidIdParam, CarController.deleteCar);
+adminRouter.patch('/restore/:id', validateUuidIdParam, CarController.restoreCar);
+adminRouter.patch('/:id/publish', validateUuidIdParam, CarController.togglePublish);
+adminRouter.patch('/:id/mark-launched', validateUuidIdParam, CarController.markLaunched);
+adminRouter.patch('/:id/mark-upcoming', validateUuidIdParam, CarController.markUpcoming);
+
+router.use('/admin', adminRouter);
+
+// Legacy routes for backward compatibility
+router.get('/', validatePaginationQuery, CarController.getAllPublicCars);
+router.get('/:slug', validateSlugParam, CarController.getPublicCarBySlug);
 
 export default router;
