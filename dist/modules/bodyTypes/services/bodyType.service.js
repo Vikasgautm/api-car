@@ -61,6 +61,12 @@ class BodyTypeService {
             is_featured: bodyTypeData.is_featured || false,
             is_deleted: false,
         };
+        if (bodyTypeData.logo_url) {
+            bodyType.logo = {
+                url: bodyTypeData.logo_url,
+                title: bodyTypeData.logo_title || bodyTypeData.name,
+            };
+        }
         return await body_type_model_1.BodyType.create(bodyType);
     }
     static async updateBodyType(bodyTypeId, bodyTypeData) {
@@ -79,6 +85,17 @@ class BodyTypeService {
             updateData.is_published = bodyTypeData.is_published;
         if (bodyTypeData.is_featured !== undefined)
             updateData.is_featured = bodyTypeData.is_featured;
+        if (bodyTypeData.logo_url !== undefined) {
+            if (bodyTypeData.logo_url) {
+                updateData.logo = {
+                    url: bodyTypeData.logo_url,
+                    title: bodyTypeData.logo_title || bodyTypeData.name,
+                };
+            }
+            else {
+                updateData.logo = undefined;
+            }
+        }
         const bodyType = await body_type_model_1.BodyType.findOneAndUpdate({ body_type_id: bodyTypeId, is_deleted: false }, updateData, { returnDocument: 'after' });
         if (!bodyType) {
             throw new app_error_util_1.AppError('Body type not found', 404);

@@ -17,8 +17,6 @@ adminRouter.get('/:id', validation_1.validateIdParam, city_controller_1.CityCont
 adminRouter.post('/', city_controller_1.CityController.createCity);
 adminRouter.put('/:id', validation_1.validateIdParam, city_controller_1.CityController.updateCity);
 adminRouter.delete('/:id', validation_1.validateIdParam, city_controller_1.CityController.deleteCity);
-adminRouter.patch('/restore/:id', validation_1.validateIdParam, city_controller_1.CityController.restoreCity);
-adminRouter.patch('/:id/publish', validation_1.validateIdParam, city_controller_1.CityController.togglePublish);
 router.use('/admin', adminRouter);
 // Legacy routes for backward compatibility
 router.get('/', validation_1.validatePaginationQuery, city_controller_1.CityController.getAllPublicCities);

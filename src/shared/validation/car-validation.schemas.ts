@@ -1,12 +1,18 @@
 import { z } from 'zod';
-import { metaFieldsSchema, objectIdSchema, publishStatusSchema, transmissionTypeSchema } from './common-validation.schemas';
+import { metaFieldsSchema, objectIdSchema, publishStatusSchema, transmissionTypeSchema, uuidSchema } from './common-validation.schemas';
+
+// Helper for boolean fields that may come as strings from FormData
+const booleanOrString = z.union([
+  z.boolean(),
+  z.enum(['true', 'false']).transform((v) => v === 'true'),
+]);
 
 // Car DTO schemas
 export const createCarSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  brand_id: objectIdSchema,
-  body_type_id: objectIdSchema,
-  fuel_type_id: objectIdSchema.optional(),
+  brand_id: uuidSchema,
+  body_type_id: uuidSchema,
+  fuel_type_id: uuidSchema.optional(),
   short_description: z.string().max(500).optional(),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   thumbnail_url: z.string().url().optional().or(z.literal('')),
@@ -17,9 +23,15 @@ export const createCarSchema = z.object({
   })).optional(),
   gallery_summary: z.string().max(1000).optional(),
   status: publishStatusSchema.optional(),
-  is_electric: z.boolean().optional(),
-  is_published: z.boolean().optional(),
-  is_featured: z.boolean().optional(),
+  is_electric: booleanOrString.optional(),
+  is_published: booleanOrString.optional(),
+  is_featured: booleanOrString.optional(),
+  is_upcoming: booleanOrString.optional(),
+  is_popular: booleanOrString.optional(),
+  is_recommended: booleanOrString.optional(),
+  is_latest: booleanOrString.optional(),
+  top_selling: booleanOrString.optional(),
+  is_launched: booleanOrString.optional(),
 }).extend(metaFieldsSchema.shape).strict();
 
 export const updateCarSchema = createCarSchema.partial().strict();
@@ -47,8 +59,8 @@ export const carFilterSchema = z.object({
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
   q: z.string().optional(),
-  brand_id: objectIdSchema.optional(),
-  body_type_id: objectIdSchema.optional(),
+  brand_id: uuidSchema.optional(),
+  body_type_id: uuidSchema.optional(),
   status: publishStatusSchema.optional(),
   is_electric: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(),
   is_published: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(),

@@ -12,9 +12,9 @@ exports.createFaqSchema = zod_1.z.object({
     tags: zod_1.z.array(zod_1.z.string().min(2)).max(20, 'Cannot have more than 20 tags').optional(),
     answer_format: common_validation_schemas_1.answerFormatSchema.optional(),
     faq_group: zod_1.z.string().min(2).optional(),
-    related_cars: zod_1.z.array(common_validation_schemas_1.objectIdSchema).optional(),
-    related_brands: zod_1.z.array(common_validation_schemas_1.objectIdSchema).optional(),
-    related_blogs: zod_1.z.array(common_validation_schemas_1.objectIdSchema).optional(),
+    related_cars: zod_1.z.array(common_validation_schemas_1.uuidSchema).optional(),
+    related_brands: zod_1.z.array(common_validation_schemas_1.uuidSchema).optional(),
+    related_blogs: zod_1.z.array(common_validation_schemas_1.uuidSchema).optional(),
     is_published: zod_1.z.boolean().optional(),
     is_featured: zod_1.z.boolean().optional(),
 }).strict();

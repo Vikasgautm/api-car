@@ -3,6 +3,7 @@ import app from "./app";
 import { config } from "./config";
 import { UpdateUpcomingCarsJob } from "./jobs/updateUpcomingCars.job";
 import { createDefaultSuperAdmin } from "./seeds/admin.seed";
+import { seedCities } from "./seeds/city.seed";
 import { logger } from "./utils/logger";
 
 const startServer = async () => {
@@ -14,6 +15,9 @@ const startServer = async () => {
     
     // Create default superadmin
     await createDefaultSuperAdmin();
+
+    // Seed cities from JSON file
+    await seedCities();
 
     // Start auto-launch cron job
     UpdateUpcomingCarsJob.start();

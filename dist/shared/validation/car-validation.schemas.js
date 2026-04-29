@@ -3,12 +3,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.carFilterSchema = exports.updateVariantSchema = exports.createVariantSchema = exports.updateCarSchema = exports.createCarSchema = void 0;
 const zod_1 = require("zod");
 const common_validation_schemas_1 = require("./common-validation.schemas");
+// Helper for boolean fields that may come as strings from FormData
+const booleanOrString = zod_1.z.union([
+    zod_1.z.boolean(),
+    zod_1.z.enum(['true', 'false']).transform((v) => v === 'true'),
+]);
 // Car DTO schemas
 exports.createCarSchema = zod_1.z.object({
     name: zod_1.z.string().min(2, 'Name must be at least 2 characters'),
-    brand_id: common_validation_schemas_1.objectIdSchema,
-    body_type_id: common_validation_schemas_1.objectIdSchema,
-    fuel_type_id: common_validation_schemas_1.objectIdSchema.optional(),
+    brand_id: common_validation_schemas_1.uuidSchema,
+    body_type_id: common_validation_schemas_1.uuidSchema,
+    fuel_type_id: common_validation_schemas_1.uuidSchema.optional(),
     short_description: zod_1.z.string().max(500).optional(),
     description: zod_1.z.string().min(10, 'Description must be at least 10 characters'),
     thumbnail_url: zod_1.z.string().url().optional().or(zod_1.z.literal('')),
@@ -19,9 +24,15 @@ exports.createCarSchema = zod_1.z.object({
     })).optional(),
     gallery_summary: zod_1.z.string().max(1000).optional(),
     status: common_validation_schemas_1.publishStatusSchema.optional(),
-    is_electric: zod_1.z.boolean().optional(),
-    is_published: zod_1.z.boolean().optional(),
-    is_featured: zod_1.z.boolean().optional(),
+    is_electric: booleanOrString.optional(),
+    is_published: booleanOrString.optional(),
+    is_featured: booleanOrString.optional(),
+    is_upcoming: booleanOrString.optional(),
+    is_popular: booleanOrString.optional(),
+    is_recommended: booleanOrString.optional(),
+    is_latest: booleanOrString.optional(),
+    top_selling: booleanOrString.optional(),
+    is_launched: booleanOrString.optional(),
 }).extend(common_validation_schemas_1.metaFieldsSchema.shape).strict();
 exports.updateCarSchema = exports.createCarSchema.partial().strict();
 // Car Variant DTO schemas
@@ -45,8 +56,8 @@ exports.carFilterSchema = zod_1.z.object({
     sortBy: zod_1.z.string().optional(),
     sortOrder: zod_1.z.enum(['asc', 'desc']).optional(),
     q: zod_1.z.string().optional(),
-    brand_id: common_validation_schemas_1.objectIdSchema.optional(),
-    body_type_id: common_validation_schemas_1.objectIdSchema.optional(),
+    brand_id: common_validation_schemas_1.uuidSchema.optional(),
+    body_type_id: common_validation_schemas_1.uuidSchema.optional(),
     status: common_validation_schemas_1.publishStatusSchema.optional(),
     is_electric: zod_1.z.union([zod_1.z.boolean(), zod_1.z.enum(['true', 'false'])]).optional(),
     is_published: zod_1.z.union([zod_1.z.boolean(), zod_1.z.enum(['true', 'false'])]).optional(),

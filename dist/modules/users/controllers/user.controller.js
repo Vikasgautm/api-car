@@ -35,7 +35,8 @@ class UserController {
         if (phone)
             updateData.phone = phone;
         if (req.file) {
-            updateData.profile_pic = req.file.path;
+            const cloudinaryFile = req.file;
+            updateData.profile_pic = cloudinaryFile.secure_url || req.file.path;
         }
         const updateDto = { user_name, phone, profile_pic: updateData.profile_pic };
         const validation = update_profile_dto_1.UpdateProfileDto.validate(updateDto);

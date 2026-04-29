@@ -9,15 +9,6 @@ class CreateCityDto {
     pincode;
     longitude;
     latitude;
-    city_logo;
-    is_published;
-    is_featured;
-    meta_title;
-    meta_description;
-    meta_keywords;
-    og_image;
-    canonical_url;
-    noindex;
     static validate(dto) {
         const errors = [];
         const nameResult = validation_util_1.ValidationUtil.required(dto.name, 'name');
@@ -38,9 +29,9 @@ class CreateCityDto {
                 errors.push(...slugResult.errors);
         }
         if (dto.pincode !== undefined) {
-            const pincodeResult = validation_util_1.ValidationUtil.pincode(dto.pincode);
-            if (!pincodeResult.valid)
-                errors.push(...pincodeResult.errors);
+            if (typeof dto.pincode !== 'number' || !Number.isInteger(dto.pincode) || dto.pincode < 100000 || dto.pincode > 999999) {
+                errors.push('Pincode must be a valid 6-digit number');
+            }
         }
         if (dto.latitude !== undefined) {
             const latResult = validation_util_1.ValidationUtil.latitude(dto.latitude);
@@ -51,16 +42,6 @@ class CreateCityDto {
             const lngResult = validation_util_1.ValidationUtil.longitude(dto.longitude);
             if (!lngResult.valid)
                 errors.push(...lngResult.errors);
-        }
-        if (dto.meta_description !== undefined) {
-            const metaDescResult = validation_util_1.ValidationUtil.maxLength(dto.meta_description, 160, 'meta_description');
-            if (!metaDescResult.valid)
-                errors.push(...metaDescResult.errors);
-        }
-        if (dto.canonical_url !== undefined && dto.canonical_url) {
-            const urlResult = validation_util_1.ValidationUtil.url(dto.canonical_url);
-            if (!urlResult.valid)
-                errors.push(...urlResult.errors);
         }
         return { valid: errors.length === 0, errors };
     }

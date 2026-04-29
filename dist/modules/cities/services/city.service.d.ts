@@ -1,6 +1,6 @@
 import { ICity } from "../../../models/city.model";
 export declare class CityService {
-    static getAllCities(filterDto: any, includeDeleted?: boolean): Promise<{
+    static getAllCities(filterDto: any): Promise<{
         cities: (import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
             _id: import("mongoose").Types.ObjectId;
         }> & {
@@ -39,20 +39,6 @@ export declare class CityService {
         id: string;
     }>;
     static deleteCity(cityId: string): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static restoreCity(cityId: string): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static togglePublish(cityId: string): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;

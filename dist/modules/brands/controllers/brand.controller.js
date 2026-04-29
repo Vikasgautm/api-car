@@ -40,7 +40,9 @@ class BrandController {
         const createDto = {
             name: req.body.name,
             description: req.body.description,
-            logo_url: req.file?.path || req.body.logo_url,
+            logo_url: req.file
+                ? req.file.secure_url || req.file.path
+                : req.body.logo_url,
             logo_title: req.body.logo_title,
             is_published: req.body.is_published,
             is_featured: req.body.is_featured,
@@ -62,7 +64,9 @@ class BrandController {
         const updateDto = {
             name: req.body.name,
             description: req.body.description,
-            logo_url: req.file?.path || req.body.logo_url,
+            logo_url: req.file
+                ? req.file.secure_url || req.file.path
+                : req.body.logo_url,
             logo_title: req.body.logo_title,
             is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
             is_featured: req.body.is_featured !== undefined ? req.body.is_featured === 'true' || req.body.is_featured === true : undefined,

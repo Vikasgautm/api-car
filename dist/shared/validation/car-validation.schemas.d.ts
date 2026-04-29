@@ -18,9 +18,42 @@ export declare const createCarSchema: z.ZodObject<{
         on_sale: "on_sale";
         discontinued: "discontinued";
     }>>>;
-    is_electric: z.ZodOptional<z.ZodBoolean>;
-    is_published: z.ZodOptional<z.ZodBoolean>;
-    is_featured: z.ZodOptional<z.ZodBoolean>;
+    is_electric: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    is_upcoming: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    is_popular: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    is_recommended: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    is_latest: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    top_selling: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    is_launched: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
     meta_title: z.ZodOptional<z.ZodString>;
     meta_description: z.ZodOptional<z.ZodString>;
     meta_keywords: z.ZodOptional<z.ZodString>;
@@ -47,9 +80,42 @@ export declare const updateCarSchema: z.ZodObject<{
         on_sale: "on_sale";
         discontinued: "discontinued";
     }>>>>;
-    is_electric: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
-    is_published: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
-    is_featured: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+    is_electric: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    is_published: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    is_featured: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    is_upcoming: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    is_popular: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    is_recommended: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    is_latest: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    top_selling: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    is_launched: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
     meta_title: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     meta_description: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     meta_keywords: z.ZodOptional<z.ZodOptional<z.ZodString>>;

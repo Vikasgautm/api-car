@@ -48,8 +48,10 @@ export class CarController {
 
   static createCar = catchAsync(async (req: MulterRequest, res: Response) => {
     let thumbnailUrl = req.body.thumbnail_url;
-    if (req.file?.path) {
-      thumbnailUrl = req.file.path;
+    if (req.file) {
+      // Handle both local storage (path) and Cloudinary (secure_url)
+      const cloudinaryFile = req.file as Express.Multer.File & { secure_url?: string };
+      thumbnailUrl = cloudinaryFile.secure_url || req.file.path;
     }
 
     // Handle gallery images
@@ -108,8 +110,10 @@ export class CarController {
 
   static updateCar = catchAsync(async (req: MulterRequest, res: Response) => {
     let thumbnailUrl = req.body.thumbnail_url;
-    if (req.file?.path) {
-      thumbnailUrl = req.file.path;
+    if (req.file) {
+      // Handle both local storage (path) and Cloudinary (secure_url)
+      const cloudinaryFile = req.file as Express.Multer.File & { secure_url?: string };
+      thumbnailUrl = cloudinaryFile.secure_url || req.file.path;
     }
 
     // Handle gallery images

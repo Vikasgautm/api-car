@@ -11,9 +11,9 @@ export interface IFAQ extends Document {
   tags?: string[];
   answer_format: AnswerFormat;
   faq_group?: string;
-  related_cars?: Schema.Types.ObjectId[];
-  related_brands?: Schema.Types.ObjectId[];
-  related_blogs?: Schema.Types.ObjectId[];
+  related_cars?: string[];
+  related_brands?: string[];
+  related_blogs?: string[];
   is_published: boolean;
   is_deleted: boolean;
   is_featured: boolean;
@@ -35,9 +35,9 @@ const faqSchema = new Schema<IFAQ>(
       default: 'text'
     },
     faq_group: { type: String },
-    related_cars: [{ type: Schema.Types.ObjectId, ref: 'Car' }],
-    related_brands: [{ type: Schema.Types.ObjectId, ref: 'Brand' }],
-    related_blogs: [{ type: Schema.Types.ObjectId, ref: 'Blog' }],
+    related_cars: [{ type: String }],
+    related_brands: [{ type: String }],
+    related_blogs: [{ type: String }],
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
     is_featured: { type: Boolean, default: false },

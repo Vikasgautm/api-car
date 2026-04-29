@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { objectIdSchema, answerFormatSchema } from './common-validation.schemas';
+import { answerFormatSchema, uuidSchema } from './common-validation.schemas';
 
 // FAQ DTO schemas
 export const createFaqSchema = z.object({
@@ -10,9 +10,9 @@ export const createFaqSchema = z.object({
   tags: z.array(z.string().min(2)).max(20, 'Cannot have more than 20 tags').optional(),
   answer_format: answerFormatSchema.optional(),
   faq_group: z.string().min(2).optional(),
-  related_cars: z.array(objectIdSchema).optional(),
-  related_brands: z.array(objectIdSchema).optional(),
-  related_blogs: z.array(objectIdSchema).optional(),
+  related_cars: z.array(uuidSchema).optional(),
+  related_brands: z.array(uuidSchema).optional(),
+  related_blogs: z.array(uuidSchema).optional(),
   is_published: z.boolean().optional(),
   is_featured: z.boolean().optional(),
 }).strict();

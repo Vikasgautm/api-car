@@ -45,6 +45,8 @@ export class BodyTypeController {
       description: req.body.description,
       is_published: req.body.is_published,
       is_featured: req.body.is_featured,
+      logo_url: req.body.logo_url,
+      logo_title: req.body.logo_title,
     };
 
     const validation = CreateBodyTypeDto.validate(createDto);
@@ -62,6 +64,8 @@ export class BodyTypeController {
       description: req.body.description,
       is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
       is_featured: req.body.is_featured !== undefined ? req.body.is_featured === 'true' || req.body.is_featured === true : undefined,
+      logo_url: req.body.logo_url,
+      logo_title: req.body.logo_title,
     };
 
     const validation = UpdateBodyTypeDto.validate(updateDto);

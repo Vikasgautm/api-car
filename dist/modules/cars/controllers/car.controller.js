@@ -38,8 +38,10 @@ class CarController {
     });
     static createCar = (0, catchAsync_1.catchAsync)(async (req, res) => {
         let thumbnailUrl = req.body.thumbnail_url;
-        if (req.file?.path) {
-            thumbnailUrl = req.file.path;
+        if (req.file) {
+            // Handle both local storage (path) and Cloudinary (secure_url)
+            const cloudinaryFile = req.file;
+            thumbnailUrl = cloudinaryFile.secure_url || req.file.path;
         }
         // Handle gallery images
         let gallery;
@@ -94,8 +96,10 @@ class CarController {
     });
     static updateCar = (0, catchAsync_1.catchAsync)(async (req, res) => {
         let thumbnailUrl = req.body.thumbnail_url;
-        if (req.file?.path) {
-            thumbnailUrl = req.file.path;
+        if (req.file) {
+            // Handle both local storage (path) and Cloudinary (secure_url)
+            const cloudinaryFile = req.file;
+            thumbnailUrl = cloudinaryFile.secure_url || req.file.path;
         }
         // Handle gallery images
         let gallery;

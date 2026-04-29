@@ -12,6 +12,11 @@ const blog_service_1 = require("../services/blog.service");
 function isFilesObject(files) {
     return files && typeof files === 'object' && !Array.isArray(files);
 }
+// Helper to get file URL from either Cloudinary (secure_url) or local storage (path)
+function getFileUrl(file) {
+    const cloudinaryFile = file;
+    return cloudinaryFile.secure_url || file.path;
+}
 class BlogController {
     // Public routes
     static getAllPublicBlogs = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -46,13 +51,13 @@ class BlogController {
         let linkUrl = req.body.link;
         let images = [];
         if (isFilesObject(req.files) && req.files["thumbnail"]) {
-            thumbnailUrl = req.files["thumbnail"][0].path;
+            thumbnailUrl = getFileUrl(req.files["thumbnail"][0]);
         }
         if (isFilesObject(req.files) && req.files["linkImage"]) {
-            linkUrl = req.files["linkImage"][0].path;
+            linkUrl = getFileUrl(req.files["linkImage"][0]);
         }
         if (isFilesObject(req.files) && req.files["images"]) {
-            images = req.files.images.map((file) => ({ url: file.path }));
+            images = req.files.images.map((file) => ({ url: getFileUrl(file) }));
         }
         if (req.body.images) {
             try {
@@ -97,10 +102,10 @@ class BlogController {
         let linkUrl = req.body.link;
         let images = [];
         if (isFilesObject(req.files) && req.files["thumbnail"]) {
-            thumbnailUrl = req.files["thumbnail"][0].path;
+            thumbnailUrl = getFileUrl(req.files["thumbnail"][0]);
         }
         if (isFilesObject(req.files) && req.files["linkImage"]) {
-            linkUrl = req.files["linkImage"][0].path;
+            linkUrl = getFileUrl(req.files["linkImage"][0]);
         }
         if (req.body.keptImages) {
             try {
@@ -111,7 +116,7 @@ class BlogController {
             }
         }
         if (isFilesObject(req.files) && req.files["images"]) {
-            const newImages = req.files.images.map((file) => ({ url: file.path }));
+            const newImages = req.files.images.map((file) => ({ url: getFileUrl(file) }));
             images = [...images, ...newImages];
         }
         const updateDto = {

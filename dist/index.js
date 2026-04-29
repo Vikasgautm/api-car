@@ -8,6 +8,7 @@ const app_1 = __importDefault(require("./app"));
 const config_1 = require("./config");
 const updateUpcomingCars_job_1 = require("./jobs/updateUpcomingCars.job");
 const admin_seed_1 = require("./seeds/admin.seed");
+const city_seed_1 = require("./seeds/city.seed");
 const logger_1 = require("./utils/logger");
 const startServer = async () => {
     try {
@@ -17,6 +18,8 @@ const startServer = async () => {
         console.log("MongoDB URI:", config_1.config.mongodb_uri);
         // Create default superadmin
         await (0, admin_seed_1.createDefaultSuperAdmin)();
+        // Seed cities from JSON file
+        await (0, city_seed_1.seedCities)();
         // Start auto-launch cron job
         updateUpcomingCars_job_1.UpdateUpcomingCarsJob.start();
         // Start Express Server

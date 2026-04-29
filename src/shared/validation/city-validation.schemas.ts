@@ -1,18 +1,15 @@
 import { z } from 'zod';
-import { metaFieldsSchema, slugSchema } from './common-validation.schemas';
+import { slugSchema } from './common-validation.schemas';
 
 // City DTO schemas
 export const createCitySchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   slug: slugSchema.optional(),
   state: z.string().min(2, 'State must be at least 2 characters'),
-  pincode: z.string().regex(/^[0-9]{6}$/, 'Pincode must be a 6-digit number').optional(),
+  pincode: z.number().int().min(100000).max(999999, 'Pincode must be a 6-digit number').optional(),
   longitude: z.number().min(-180).max(180).optional(),
   latitude: z.number().min(-90).max(90).optional(),
-  city_logo: z.string().url().optional().or(z.literal('')),
-  is_published: z.boolean().optional(),
-  is_featured: z.boolean().optional(),
-}).extend(metaFieldsSchema.shape).strict();
+}).strict();
 
 export const updateCitySchema = createCitySchema.partial().strict();
 
@@ -23,6 +20,4 @@ export const cityFilterSchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).optional(),
   q: z.string().optional(),
   state: z.string().optional(),
-  is_published: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(),
-  is_featured: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(),
 }).strict();

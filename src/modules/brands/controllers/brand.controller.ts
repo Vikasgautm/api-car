@@ -47,7 +47,9 @@ export class BrandController {
     const createDto: CreateBrandDto = {
       name: req.body.name,
       description: req.body.description,
-      logo_url: req.file?.path || req.body.logo_url,
+      logo_url: req.file
+        ? (req.file as Express.Multer.File & { secure_url?: string }).secure_url || req.file.path
+        : req.body.logo_url,
       logo_title: req.body.logo_title,
       is_published: req.body.is_published,
       is_featured: req.body.is_featured,
@@ -72,7 +74,9 @@ export class BrandController {
     const updateDto: UpdateBrandDto = {
       name: req.body.name,
       description: req.body.description,
-      logo_url: req.file?.path || req.body.logo_url,
+      logo_url: req.file
+        ? (req.file as Express.Multer.File & { secure_url?: string }).secure_url || req.file.path
+        : req.body.logo_url,
       logo_title: req.body.logo_title,
       is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
       is_featured: req.body.is_featured !== undefined ? req.body.is_featured === 'true' || req.body.is_featured === true : undefined,

@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { protect, restrictTo } from '../../../middlewares/auth.middleware';
 import { UploadService } from '../../../shared/services/upload.service';
-import { validatePaginationQuery, validateSlugParam, validateUuidIdParam } from '../../../shared/validation';
+import { createCarSchema, updateCarSchema, validatePaginationQuery, validateSlugParam, validateUuidIdParam } from '../../../shared/validation';
 import { CarController } from '../controllers/car.controller';
+import { validateBody } from '../../../middlewares/validate.middleware';
 
 const router = Router();
 
@@ -26,8 +27,8 @@ const thumbnailUpload = UploadService.createUploadMiddleware({
   folder: 'cars',
 });
 
-adminRouter.post('/', thumbnailUpload, CarController.createCar);
-adminRouter.put('/:id', validateUuidIdParam, thumbnailUpload, CarController.updateCar);
+adminRouter.post('/', validateBody(createCarSchema), thumbnailUpload, CarController.createCar);
+adminRouter.put('/:id', validateUuidIdParam, validateBody(updateCarSchema), thumbnailUpload, CarController.updateCar);
 adminRouter.delete('/:id', validateUuidIdParam, CarController.deleteCar);
 adminRouter.patch('/restore/:id', validateUuidIdParam, CarController.restoreCar);
 adminRouter.patch('/:id/publish', validateUuidIdParam, CarController.togglePublish);

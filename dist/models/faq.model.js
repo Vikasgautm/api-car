@@ -15,9 +15,9 @@ const faqSchema = new mongoose_1.Schema({
         default: 'text'
     },
     faq_group: { type: String },
-    related_cars: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Car' }],
-    related_brands: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Brand' }],
-    related_blogs: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Blog' }],
+    related_cars: [{ type: String }],
+    related_brands: [{ type: String }],
+    related_blogs: [{ type: String }],
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
     is_featured: { type: Boolean, default: false },

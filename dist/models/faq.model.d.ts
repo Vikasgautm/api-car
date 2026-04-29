@@ -1,4 +1,4 @@
-import { Document, Schema } from 'mongoose';
+import { Document } from 'mongoose';
 export type AnswerFormat = 'text' | 'html' | 'markdown';
 export interface IFAQ extends Document {
     faq_id: string;
@@ -9,9 +9,9 @@ export interface IFAQ extends Document {
     tags?: string[];
     answer_format: AnswerFormat;
     faq_group?: string;
-    related_cars?: Schema.Types.ObjectId[];
-    related_brands?: Schema.Types.ObjectId[];
-    related_blogs?: Schema.Types.ObjectId[];
+    related_cars?: string[];
+    related_brands?: string[];
+    related_blogs?: string[];
     is_published: boolean;
     is_deleted: boolean;
     is_featured: boolean;

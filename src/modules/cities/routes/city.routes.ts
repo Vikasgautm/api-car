@@ -19,8 +19,6 @@ adminRouter.get('/:id', validateIdParam, CityController.getAdminCityById);
 adminRouter.post('/', CityController.createCity);
 adminRouter.put('/:id', validateIdParam, CityController.updateCity);
 adminRouter.delete('/:id', validateIdParam, CityController.deleteCity);
-adminRouter.patch('/restore/:id', validateIdParam, CityController.restoreCity);
-adminRouter.patch('/:id/publish', validateIdParam, CityController.togglePublish);
 
 router.use('/admin', adminRouter);
 

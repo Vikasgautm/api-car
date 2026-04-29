@@ -42,6 +42,8 @@ class BodyTypeController {
             description: req.body.description,
             is_published: req.body.is_published,
             is_featured: req.body.is_featured,
+            logo_url: req.body.logo_url,
+            logo_title: req.body.logo_title,
         };
         const validation = create_body_type_dto_1.CreateBodyTypeDto.validate(createDto);
         if (!validation.valid) {
@@ -56,6 +58,8 @@ class BodyTypeController {
             description: req.body.description,
             is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
             is_featured: req.body.is_featured !== undefined ? req.body.is_featured === 'true' || req.body.is_featured === true : undefined,
+            logo_url: req.body.logo_url,
+            logo_title: req.body.logo_title,
         };
         const validation = update_body_type_dto_1.UpdateBodyTypeDto.validate(updateDto);
         if (!validation.valid) {

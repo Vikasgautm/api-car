@@ -73,6 +73,13 @@ export class BodyTypeService {
       is_deleted: false,
     };
 
+    if (bodyTypeData.logo_url) {
+      bodyType.logo = {
+        url: bodyTypeData.logo_url,
+        title: bodyTypeData.logo_title || bodyTypeData.name,
+      };
+    }
+
     return await BodyType.create(bodyType);
   }
 
@@ -91,6 +98,17 @@ export class BodyTypeService {
     if (bodyTypeData.description !== undefined) updateData.description = bodyTypeData.description;
     if (bodyTypeData.is_published !== undefined) updateData.is_published = bodyTypeData.is_published;
     if (bodyTypeData.is_featured !== undefined) updateData.is_featured = bodyTypeData.is_featured;
+
+    if (bodyTypeData.logo_url !== undefined) {
+      if (bodyTypeData.logo_url) {
+        updateData.logo = {
+          url: bodyTypeData.logo_url,
+          title: bodyTypeData.logo_title || bodyTypeData.name,
+        };
+      } else {
+        updateData.logo = undefined;
+      }
+    }
 
     const bodyType = await BodyType.findOneAndUpdate(
       { body_type_id: bodyTypeId, is_deleted: false } as any,
