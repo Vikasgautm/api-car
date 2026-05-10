@@ -24,7 +24,7 @@ export class UpdateBrandDto {
     }
 
     if (dto.description !== undefined) {
-      const descResult = ValidationUtil.maxLength(dto.description, 2000, 'description');
+      const descResult = ValidationUtil.maxLength(dto.description, 8000, 'description');
       if (!descResult.valid) errors.push(...descResult.errors);
     }
 

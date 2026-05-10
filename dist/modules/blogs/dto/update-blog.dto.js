@@ -30,7 +30,7 @@ class UpdateBlogDto {
                 errors.push(...titleLengthResult.errors);
         }
         if (dto.excerpt !== undefined) {
-            const excerptResult = validation_util_1.ValidationUtil.maxLength(dto.excerpt, 500, 'excerpt');
+            const excerptResult = validation_util_1.ValidationUtil.maxLength(dto.excerpt, 8000, 'excerpt');
             if (!excerptResult.valid)
                 errors.push(...excerptResult.errors);
         }

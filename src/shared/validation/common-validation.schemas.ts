@@ -49,7 +49,7 @@ export const metaFieldsSchema = z.object({
 // Common field schemas
 export const commonFieldsSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  description: z.string().max(2000).optional(),
+  description: z.string().max(8000).optional(),
   is_published: z.boolean().optional(),
   is_featured: z.boolean().optional(),
 });

@@ -36,7 +36,7 @@ const blogSchema = new Schema<IBlog>(
     blog_id: { type: String, required: true, unique: true },
     title: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
-    excerpt: { type: String, required: true, maxlength: 500 },
+    excerpt: { type: String, required: true, maxlength: 8000 },
     content: { type: String, required: true },
     author_name: { type: String },
     author_id: { type: Schema.Types.ObjectId, ref: 'User' },

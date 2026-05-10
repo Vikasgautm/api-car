@@ -14,7 +14,7 @@ exports.createCarSchema = zod_1.z.object({
     brand_id: common_validation_schemas_1.uuidSchema,
     body_type_id: common_validation_schemas_1.uuidSchema,
     fuel_type_id: common_validation_schemas_1.uuidSchema.optional(),
-    short_description: zod_1.z.string().max(500).optional(),
+    short_description: zod_1.z.string().max(8000).optional(),
     description: zod_1.z.string().min(10, 'Description must be at least 10 characters'),
     thumbnail_url: zod_1.z.string().url().optional().or(zod_1.z.literal('')),
     thumbnail_alt: zod_1.z.string().max(200).optional(),

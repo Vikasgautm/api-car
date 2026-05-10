@@ -5,8 +5,8 @@ const zod_1 = require("zod");
 // Settings DTO schemas
 exports.updateSEOSettingsSchema = zod_1.z.object({
     site_title: zod_1.z.string().min(3).max(100).optional(),
-    site_description: zod_1.z.string().min(10).max(500).optional(),
-    site_keywords: zod_1.z.string().max(500).optional().or(zod_1.z.literal('')),
+    site_description: zod_1.z.string().min(10).max(8000).optional(),
+    site_keywords: zod_1.z.string().max(8000).optional().or(zod_1.z.literal('')),
     og_default_image: zod_1.z.string().url().optional().or(zod_1.z.literal('')),
     twitter_handle: zod_1.z.string().max(50).regex(/^@/, 'Twitter handle must start with @').optional().or(zod_1.z.literal('')),
     google_analytics_id: zod_1.z.string().max(50).regex(/^(G-[A-Z0-9]{10}|UA-\d{4,10}-\d{1,4})$/, 'Invalid Google Analytics ID format').optional().or(zod_1.z.literal('')),

@@ -39,7 +39,7 @@ exports.metaFieldsSchema = zod_1.z.object({
 // Common field schemas
 exports.commonFieldsSchema = zod_1.z.object({
     name: zod_1.z.string().min(2, 'Name must be at least 2 characters'),
-    description: zod_1.z.string().max(2000).optional(),
+    description: zod_1.z.string().max(8000).optional(),
     is_published: zod_1.z.boolean().optional(),
     is_featured: zod_1.z.boolean().optional(),
 });

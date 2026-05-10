@@ -13,7 +13,7 @@ export const createCarSchema = z.object({
   brand_id: uuidSchema,
   body_type_id: uuidSchema,
   fuel_type_id: uuidSchema.optional(),
-  short_description: z.string().max(500).optional(),
+  short_description: z.string().max(8000).optional(),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   thumbnail_url: z.string().url().optional().or(z.literal('')),
   thumbnail_alt: z.string().max(200).optional(),

@@ -42,7 +42,7 @@ export class UpdateCarDto {
     }
 
     if (dto.short_description !== undefined) {
-      const shortDescResult = ValidationUtil.maxLength(dto.short_description, 500, 'short_description');
+      const shortDescResult = ValidationUtil.maxLength(dto.short_description, 8000, 'short_description');
       if (!shortDescResult.valid) errors.push(...shortDescResult.errors);
     }
 

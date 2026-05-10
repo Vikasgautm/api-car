@@ -42,7 +42,7 @@ export class UpdateSEOSettingsDto {
         if (!minLengthResult.valid) {
           errors.push(...minLengthResult.errors);
         }
-        const maxLengthResult = ValidationUtil.maxLength(data.site_description, 500, 'site_description');
+        const maxLengthResult = ValidationUtil.maxLength(data.site_description, 8000, 'site_description');
         if (!maxLengthResult.valid) {
           errors.push(...maxLengthResult.errors);
         }
@@ -51,7 +51,7 @@ export class UpdateSEOSettingsDto {
 
     // Validate site_keywords if provided
     if (data.site_keywords !== undefined && data.site_keywords !== '') {
-      const maxLengthResult = ValidationUtil.maxLength(data.site_keywords, 500, 'site_keywords');
+      const maxLengthResult = ValidationUtil.maxLength(data.site_keywords, 8000, 'site_keywords');
       if (!maxLengthResult.valid) {
         errors.push(...maxLengthResult.errors);
       }

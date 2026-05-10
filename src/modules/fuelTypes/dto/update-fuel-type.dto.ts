@@ -15,7 +15,7 @@ export class UpdateFuelTypeDto {
     }
 
     if (dto.description !== undefined) {
-      const descResult = ValidationUtil.maxLength(dto.description, 500, 'description');
+      const descResult = ValidationUtil.maxLength(dto.description, 8000, 'description');
       if (!descResult.valid) errors.push(...descResult.errors);
     }
 

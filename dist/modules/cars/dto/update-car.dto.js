@@ -42,7 +42,7 @@ class UpdateCarDto {
                 errors.push(...nameLengthResult.errors);
         }
         if (dto.short_description !== undefined) {
-            const shortDescResult = validation_util_1.ValidationUtil.maxLength(dto.short_description, 500, 'short_description');
+            const shortDescResult = validation_util_1.ValidationUtil.maxLength(dto.short_description, 8000, 'short_description');
             if (!shortDescResult.valid)
                 errors.push(...shortDescResult.errors);
         }

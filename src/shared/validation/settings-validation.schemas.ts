@@ -3,8 +3,8 @@ import { z } from 'zod';
 // Settings DTO schemas
 export const updateSEOSettingsSchema = z.object({
   site_title: z.string().min(3).max(100).optional(),
-  site_description: z.string().min(10).max(500).optional(),
-  site_keywords: z.string().max(500).optional().or(z.literal('')),
+  site_description: z.string().min(10).max(8000).optional(),
+  site_keywords: z.string().max(8000).optional().or(z.literal('')),
   og_default_image: z.string().url().optional().or(z.literal('')),
   twitter_handle: z.string().max(50).regex(/^@/, 'Twitter handle must start with @').optional().or(z.literal('')),
   google_analytics_id: z.string().max(50).regex(/^(G-[A-Z0-9]{10}|UA-\d{4,10}-\d{1,4})$/, 'Invalid Google Analytics ID format').optional().or(z.literal('')),

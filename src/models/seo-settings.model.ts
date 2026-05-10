@@ -25,12 +25,12 @@ const seoSettingsSchema = new Schema<ISEOSettings>(
       required: true,
       trim: true,
       minlength: 10,
-      maxlength: 500
+      maxlength: 8000
     },
     site_keywords: { 
       type: String,
       trim: true,
-      maxlength: 500
+      maxlength: 8000
     },
     og_default_image: { 
       type: String,

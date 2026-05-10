@@ -4,7 +4,7 @@ import { commonFieldsSchema, metaFieldsSchema } from './common-validation.schema
 // Fuel Type DTO schemas
 export const createFuelTypeSchema = commonFieldsSchema
   .extend({
-    description: z.string().max(500).optional(),
+    description: z.string().max(8000).optional(),
   })
   .extend(metaFieldsSchema.shape)
   .strict();

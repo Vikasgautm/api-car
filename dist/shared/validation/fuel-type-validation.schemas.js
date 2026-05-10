@@ -6,7 +6,7 @@ const common_validation_schemas_1 = require("./common-validation.schemas");
 // Fuel Type DTO schemas
 exports.createFuelTypeSchema = common_validation_schemas_1.commonFieldsSchema
     .extend({
-    description: zod_1.z.string().max(500).optional(),
+    description: zod_1.z.string().max(8000).optional(),
 })
     .extend(common_validation_schemas_1.metaFieldsSchema.shape)
     .strict();
