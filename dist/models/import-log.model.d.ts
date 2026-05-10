@@ -16,8 +16,8 @@ export interface IImportLog extends Omit<Document, 'errors'> {
     warnings: string[];
     error_messages: string[];
     created_by: string;
-    created_at: Date;
-    updated_at: Date;
+    createdAt: Date;
+    updatedAt: Date;
 }
 export declare const ImportLog: import("mongoose").Model<IImportLog, {}, {}, {}, Document<unknown, {}, IImportLog, {}, import("mongoose").DefaultSchemaOptions> & IImportLog & Required<{
     _id: import("mongoose").Types.ObjectId;

@@ -96,6 +96,7 @@ export interface VariantPreviewItem {
     matched_fuel_type?: MatchedField;
     normalized_transmission?: string | null;
     specs_normalized?: SpecsNormalized;
+    specs_raw?: Record<string, any>;
     existing_variant?: {
         variant_id: string;
         variant_name: string;
@@ -136,6 +137,8 @@ export interface SaveVariantItem {
         fuel_type_id: string;
         transmission_type: string;
         specs_normalized?: SpecsNormalized;
+        specs_raw?: Record<string, unknown>;
+        hidden_spec_keys?: string[];
         is_published: boolean;
     };
     unmatched_specs: UnmatchedSpec[];

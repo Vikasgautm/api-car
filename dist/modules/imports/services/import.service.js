@@ -189,18 +189,6 @@ class ImportService {
         for (const url of urls) {
             try {
                 const extracted = await cardekho_extractor_1.CarDekhoExtractor.extractVariantData(url);
-                // Log extracted data for debugging
-                console.log('=== Extracted Variant Data ===');
-                console.log('URL:', url);
-                console.log('Full Name:', extracted.full_name);
-                console.log('Variant Name:', extracted.variant_name);
-                console.log('Price:', extracted.price);
-                console.log('Price Text:', extracted.price_text);
-                console.log('Fuel Type:', extracted.fuel_type);
-                console.log('Transmission:', extracted.transmission);
-                console.log('Specs Count:', extracted.specs.length);
-                console.log('Specs:', JSON.stringify(extracted.specs, null, 2));
-                console.log('============================');
                 // Check for existing variant
                 const existingVariant = await car_variant_model_1.CarVariant.findOne({
                     car_id: carId,
@@ -234,8 +222,30 @@ class ImportService {
                 };
                 // Normalize transmission
                 const normalizedTransmission = this.normalizeTransmission(extracted.transmission || '');
-                // Map matched specs to specs_normalized structure
-                const specsNormalized = key_matcher_1.KeyMatcher.mapMatchedSpecsToSpecsNormalized(matched);
+                // Map matched specs to specs_normalized and specs_raw structures
+                const { specs_normalized, specs_raw } = key_matcher_1.KeyMatcher.mapMatchedSpecsToSpecsNormalized(matched);
+                // Log key matching results for debugging
+                const keyMapping = matched.map(m => ({
+                    extracted: m.source_label,
+                    mapped_to: m.matched_key_name,
+                    path: m.suggested_path,
+                    match_type: m.matchType,
+                }));
+                const unmatchedKeys = unmatched.map(u => ({
+                    extracted: u.source_label,
+                    value: u.source_value,
+                    suggested_slug: u.suggested_slug,
+                }));
+                // Define expected model keys for variants
+                const expectedVariantKeys = [
+                    'variant_name', 'slug', 'model_year', 'fuel_type_id', 'transmission_type',
+                    'drivetrain', 'seating_capacity', 'ex_showroom_price', 'expected_price',
+                    'is_upcoming', 'specs_normalized', 'specs_raw', 'is_published'
+                ];
+                // Extract keys from the extracted data
+                const extractedTopLevelKeys = Object.keys(extracted);
+                const missingRequiredKeys = expectedVariantKeys.filter(k => !extractedTopLevelKeys.includes(k) &&
+                    !['variant_name', 'fuel_type', 'transmission', 'price'].includes(k));
                 if (unmatched.length > 0) {
                     itemWarnings.push(`${unmatched.length} specs could not be matched`);
                 }
@@ -259,7 +269,8 @@ class ImportService {
                     warnings: itemWarnings,
                     matched_fuel_type: fuelTypeMatched,
                     normalized_transmission: normalizedTransmission,
-                    specs_normalized: specsNormalized,
+                    specs_normalized,
+                    specs_raw,
                     existing_variant: existingVariant ? {
                         variant_id: existingVariant.variant_id,
                         variant_name: existingVariant.variant_name,
@@ -275,7 +286,7 @@ class ImportService {
                     car_id: carId,
                     status: 'previewed',
                     extracted_data: extracted,
-                    matched_data: { matched, fuel_type: fuelTypeMatched, specs_normalized: specsNormalized },
+                    matched_data: { matched, fuel_type: fuelTypeMatched, specs_normalized, specs_raw },
                     unmatched_data: { unmatched },
                     warnings: itemWarnings,
                     created_by: userId,
@@ -320,12 +331,45 @@ class ImportService {
                         warnings.push(`Variant with slug '${item.data.slug}' already exists. Skipping.`);
                         continue;
                     }
-                    variant = await car_variant_model_1.CarVariant.create({
+                    // Build the correct save payload with proper field mapping
+                    // Explicitly cast values to satisfy TypeScript
+                    let variantPayload = {
                         variant_id: (0, uuid_1.v4)(),
                         car_id: car_id,
-                        ...cleanItemData,
+                        variant_name: String(cleanItemData.name || cleanItemData.variant_name || ''),
+                        slug: String(cleanItemData.slug || ''),
+                        model_year: Number(cleanItemData.model_year || new Date().getFullYear()),
+                        fuel_type_id: cleanItemData.fuel_type_id ? String(cleanItemData.fuel_type_id) : undefined,
+                        transmission_type: cleanItemData.transmission_type ? String(cleanItemData.transmission_type) : undefined,
+                        drivetrain: cleanItemData.drivetrain ? String(cleanItemData.drivetrain) : undefined,
+                        seating_capacity: cleanItemData.seating_capacity ? Number(cleanItemData.seating_capacity) : undefined,
+                        ex_showroom_price: cleanItemData.ex_showroom_price !== undefined ? Number(cleanItemData.ex_showroom_price) : undefined,
+                        expected_price: cleanItemData.expected_price !== undefined ? Number(cleanItemData.expected_price) : undefined,
+                        expected_launch_date: cleanItemData.expected_launch_date && (typeof cleanItemData.expected_launch_date === 'string' || typeof cleanItemData.expected_launch_date === 'number') ? new Date(cleanItemData.expected_launch_date) : undefined,
+                        is_upcoming: Boolean(cleanItemData.is_upcoming || false),
+                        specs_normalized: cleanItemData.specs_normalized && typeof cleanItemData.specs_normalized === 'object' && !Array.isArray(cleanItemData.specs_normalized) ? cleanItemData.specs_normalized : undefined,
+                        specs_raw: cleanItemData.specs_raw && typeof cleanItemData.specs_raw === 'object' && !Array.isArray(cleanItemData.specs_raw) ? cleanItemData.specs_raw : undefined,
+                        hidden_spec_keys: Array.isArray(cleanItemData.hidden_spec_keys) ? cleanItemData.hidden_spec_keys : [],
+                        is_published: Boolean(cleanItemData.is_published || false),
                         is_deleted: false,
-                    });
+                    };
+                    console.log('\n═══════════════════════════════════════════════════════════════');
+                    console.log('🚀 [VARIANT IMPORT] SAVING TO DATABASE - CREATE MODE');
+                    console.log('═══════════════════════════════════════════════════════════════');
+                    console.log('[Variant Import] Raw extracted data:', item.data);
+                    console.log('[Variant Import] Cleaned item data:', cleanItemData);
+                    console.log('[Variant Import] Final save payload before type conversion:', variantPayload);
+                    console.log('═══════════════════════════════════════════════════════════════\n');
+                    // Auto-convert types to match CarVariant schema requirements
+                    variantPayload = this.convertSpecsTypes(variantPayload);
+                    console.log('[Variant Import] Final save payload after type conversion:', variantPayload);
+                    console.log('═══════════════════════════════════════════════════════════════\n');
+                    variant = await car_variant_model_1.CarVariant.create(variantPayload);
+                    console.log('\n✅ [VARIANT IMPORT] SUCCESSFULLY SAVED TO CARVARIANTS COLLECTION');
+                    console.log('✅ Variant ID:', variant.variant_id);
+                    console.log('✅ Variant Name:', variant.variant_name);
+                    console.log('✅ Car ID:', variant.car_id);
+                    console.log('═══════════════════════════════════════════════════════════════\n');
                     // Update import log
                     await import_log_model_1.ImportLog.findOneAndUpdate({ source_url: item.url, created_by: userId }, {
                         status: 'saved',
@@ -350,7 +394,37 @@ class ImportService {
                     }
                     const updateData = {};
                     if (mode === 'update') {
-                        Object.assign(updateData, cleanItemData);
+                        // Map fields correctly: 'name' from frontend -> 'variant_name' in model
+                        if (cleanItemData.name !== undefined)
+                            updateData.variant_name = cleanItemData.name;
+                        if (cleanItemData.slug !== undefined)
+                            updateData.slug = cleanItemData.slug;
+                        if (cleanItemData.model_year !== undefined)
+                            updateData.model_year = cleanItemData.model_year;
+                        if (cleanItemData.fuel_type_id !== undefined)
+                            updateData.fuel_type_id = cleanItemData.fuel_type_id;
+                        if (cleanItemData.transmission_type !== undefined)
+                            updateData.transmission_type = cleanItemData.transmission_type;
+                        if (cleanItemData.drivetrain !== undefined)
+                            updateData.drivetrain = cleanItemData.drivetrain;
+                        if (cleanItemData.seating_capacity !== undefined)
+                            updateData.seating_capacity = cleanItemData.seating_capacity;
+                        if (cleanItemData.ex_showroom_price !== undefined)
+                            updateData.ex_showroom_price = cleanItemData.ex_showroom_price;
+                        if (cleanItemData.expected_price !== undefined)
+                            updateData.expected_price = cleanItemData.expected_price;
+                        if (cleanItemData.expected_launch_date !== undefined)
+                            updateData.expected_launch_date = cleanItemData.expected_launch_date;
+                        if (cleanItemData.is_upcoming !== undefined)
+                            updateData.is_upcoming = cleanItemData.is_upcoming;
+                        if (cleanItemData.specs_normalized !== undefined)
+                            updateData.specs_normalized = cleanItemData.specs_normalized;
+                        if (cleanItemData.specs_raw !== undefined)
+                            updateData.specs_raw = cleanItemData.specs_raw;
+                        if (cleanItemData.hidden_spec_keys !== undefined)
+                            updateData.hidden_spec_keys = cleanItemData.hidden_spec_keys;
+                        if (cleanItemData.is_published !== undefined)
+                            updateData.is_published = cleanItemData.is_published;
                     }
                     else {
                         // Merge mode: only fill empty fields (excluding nulls)
@@ -360,6 +434,10 @@ class ImportService {
                             updateData.ex_showroom_price = cleanItemData.ex_showroom_price;
                         if (!existingVariant.expected_price && cleanItemData.expected_price !== undefined)
                             updateData.expected_price = cleanItemData.expected_price;
+                        if (!existingVariant.fuel_type_id && cleanItemData.fuel_type_id)
+                            updateData.fuel_type_id = cleanItemData.fuel_type_id;
+                        if (!existingVariant.transmission_type && cleanItemData.transmission_type)
+                            updateData.transmission_type = cleanItemData.transmission_type;
                         if (cleanItemData.specs_normalized) {
                             updateData.specs_normalized = {
                                 ...(existingVariant.specs_normalized || {}),
@@ -367,7 +445,25 @@ class ImportService {
                             };
                         }
                     }
+                    console.log('\n═══════════════════════════════════════════════════════════════');
+                    console.log(`🔄 [VARIANT IMPORT] UPDATING IN DATABASE - ${mode.toUpperCase()} MODE`);
+                    console.log('═══════════════════════════════════════════════════════════════');
+                    console.log('[Variant Import] Update/Merge - Raw data:', item.data);
+                    console.log('[Variant Import] Update/Merge - Clean data:', cleanItemData);
+                    console.log('[Variant Import] Update/Merge - Update payload before type conversion:', updateData);
+                    console.log('═══════════════════════════════════════════════════════════════\n');
+                    // Auto-convert types to match CarVariant schema requirements
+                    if (updateData.specs_normalized) {
+                        updateData.specs_normalized = this.convertObjectTypes(updateData.specs_normalized);
+                    }
+                    console.log('[Variant Import] Update/Merge - Update payload after type conversion:', updateData);
+                    console.log('═══════════════════════════════════════════════════════════════\n');
                     variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: item.variant_id, car_id, is_deleted: false }, updateData, { returnDocument: 'after' });
+                    console.log('\n✅ [VARIANT IMPORT] SUCCESSFULLY UPDATED IN CARVARIANTS COLLECTION');
+                    console.log('✅ Variant ID:', variant.variant_id);
+                    console.log('✅ Variant Name:', variant.variant_name);
+                    console.log('✅ Car ID:', variant.car_id);
+                    console.log('═══════════════════════════════════════════════════════════════\n');
                     // Update import log
                     await import_log_model_1.ImportLog.findOneAndUpdate({ source_url: item.url, created_by: userId }, {
                         status: 'saved',
@@ -452,6 +548,158 @@ class ImportService {
         if (normalized.includes('amt') || normalized.includes('automated manual'))
             return 'amt';
         return null; // Return null if no match
+    }
+    static convertSpecsTypes(payload) {
+        if (!payload.specs_normalized) {
+            return payload;
+        }
+        const converted = { ...payload };
+        converted.specs_normalized = this.convertObjectTypes(payload.specs_normalized);
+        return converted;
+    }
+    static convertObjectTypes(obj) {
+        if (!obj || typeof obj !== 'object') {
+            return obj;
+        }
+        const converted = {};
+        // Known boolean fields in CarVariant schema
+        const booleanFields = [
+            'turbocharger',
+            'led_headlights',
+            'led_tail_lights',
+            'drl',
+            'alloy_wheels',
+            'panoramic_sunroof',
+            'moonroof',
+            'rear_sunblind',
+            'digital_driver_display',
+            'ambient_lighting',
+            'abs',
+            'ebd',
+            'brake_assist',
+            'esp',
+            'traction_control',
+            'hill_hold',
+            'hill_descent',
+            'rear_camera',
+            'camera_360',
+            'isofix',
+            'seat_belt_warning',
+            'speed_alert',
+            'crash_sensor',
+            'engine_immobilizer',
+            'central_locking',
+            'child_safety_lock',
+            'automatic_climate_control',
+            'air_quality_control',
+            'rear_ac_vents',
+            'steering_mounted_controls',
+            'cruise_control',
+            'paddle_shifters',
+            'remote_start',
+            'keyless_entry',
+            'push_button_start',
+            'rear_window_defogger',
+            'rear_wiper',
+            'headlamp_washer',
+            'cooled_glovebox',
+            'android_auto',
+            'apple_carplay',
+            'bluetooth',
+            'wireless_charging',
+            'navigation',
+            'voice_command',
+            'wifi_hotspot',
+            'internet_connectivity',
+            'ota_updates',
+            'app_connectivity',
+            'vehicle_tracking',
+            'geofencing',
+            'remote_vehicle_control',
+            'sos_emergency_assist',
+            'adaptive_cruise_control',
+            'lane_keep_assist',
+            'lane_departure_warning',
+            'blind_spot_monitoring',
+            'forward_collision_warning',
+            'automatic_emergency_braking',
+            'traffic_sign_recognition',
+            'autonomous_emergency_braking',
+            'roof_rails',
+            'spoiler',
+            'skid_plate',
+        ];
+        // Known number fields in CarVariant schema
+        const numberFields = [
+            'cylinders',
+            'valves_per_cylinder',
+            'seating_capacity',
+            'doors',
+            'airbags',
+            'usb_ports',
+            'speakers',
+            'basic_warranty_years',
+            'basic_warranty_km',
+            'battery_warranty_years',
+            'battery_warranty_km',
+        ];
+        for (const key in obj) {
+            const value = obj[key];
+            // Handle nested objects recursively
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+                converted[key] = this.convertObjectTypes(value);
+            }
+            else {
+                // Convert boolean fields
+                if (booleanFields.includes(key)) {
+                    converted[key] = this.convertToBoolean(value);
+                }
+                // Convert number fields
+                else if (numberFields.includes(key)) {
+                    converted[key] = this.convertToNumber(value);
+                }
+                // Keep as-is for other fields
+                else {
+                    converted[key] = value;
+                }
+            }
+        }
+        return converted;
+    }
+    static convertToBoolean(value) {
+        if (value === null || value === undefined)
+            return null;
+        if (typeof value === 'boolean')
+            return value;
+        if (typeof value === 'string') {
+            const lower = value.trim().toLowerCase();
+            if (lower === 'yes' || lower === 'true' || lower === 'available' || lower === 'with' || lower === 'powered') {
+                return true;
+            }
+            if (lower === 'no' || lower === 'false' || lower === 'not available' || lower === 'none' || lower === 'na') {
+                return false;
+            }
+        }
+        // Try to convert number to boolean
+        if (typeof value === 'number') {
+            return value !== 0;
+        }
+        return null;
+    }
+    static convertToNumber(value) {
+        if (value === null || value === undefined)
+            return null;
+        if (typeof value === 'number')
+            return value;
+        if (typeof value === 'string') {
+            const trimmed = value.trim();
+            const numMatch = trimmed.match(/[\d.]+/);
+            if (numMatch) {
+                const num = parseFloat(numMatch[0]);
+                return isNaN(num) ? null : num;
+            }
+        }
+        return null;
     }
     static async getImportLogs(userId, filter) {
         const query = { created_by: userId };

@@ -8,6 +8,10 @@ export declare class ImportService {
     private static matchBodyType;
     private static matchFuelType;
     private static normalizeTransmission;
+    private static convertSpecsTypes;
+    private static convertObjectTypes;
+    private static convertToBoolean;
+    private static convertToNumber;
     static getImportLogs(userId: string, filter?: any): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/import-log.model").IImportLog, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/import-log.model").IImportLog & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {

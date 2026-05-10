@@ -80,7 +80,7 @@ export class AuthService {
   }
 
   static async refreshToken(refreshTokenDto: RefreshTokenDto) {
-    const { refresh_token } = refreshTokenDto;
+    const { refreshToken: refresh_token } = refreshTokenDto;
 
     // Verify refresh token
     const decoded = jwt.verify(refresh_token, config.jwt_refresh_secret) as {
@@ -148,13 +148,13 @@ export class AuthService {
         role: user.role,
       },
       config.jwt_secret,
-      { expiresIn: '15m' }
+      { expiresIn: config.jwt_expires_in as `${number}${'s' | 'm' | 'h' | 'd'}` }
     );
 
     const refreshToken = jwt.sign(
       { user_id: user.user_id },
       config.jwt_refresh_secret,
-      { expiresIn: '7d' }
+      { expiresIn: config.jwt_refresh_expires_in as `${number}${'s' | 'm' | 'h' | 'd'}` }
     );
 
     return { accessToken, refreshToken };

@@ -2,10 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefreshTokenDto = void 0;
 class RefreshTokenDto {
-    refresh_token;
+    refreshToken;
     static validate(dto) {
         const errors = [];
-        if (!dto.refresh_token) {
+        if (!dto.refreshToken) {
             errors.push('Refresh token is required');
         }
         return { valid: errors.length === 0, errors };

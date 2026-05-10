@@ -14,8 +14,11 @@ export declare class KeyMatcher {
     }>;
     private static mapToSpecPath;
     private static toCamelCase;
-    private static guessCategory;
-    static mapMatchedSpecsToSpecsNormalized(matchedSpecs: MatchedSpec[]): Partial<SpecsNormalized>;
+    private static parseValueByDataType;
+    static mapMatchedSpecsToSpecsNormalized(matchedSpecs: MatchedSpec[]): {
+        specs_normalized: Partial<SpecsNormalized>;
+        specs_raw: Record<string, any>;
+    };
     static clearCache(): void;
 }
 //# sourceMappingURL=key-matcher.d.ts.map

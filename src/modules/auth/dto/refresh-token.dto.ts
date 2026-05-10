@@ -1,10 +1,10 @@
 export class RefreshTokenDto {
-  refresh_token!: string;
+  refreshToken!: string;
 
   static validate(dto: RefreshTokenDto): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
-    if (!dto.refresh_token) {
+    if (!dto.refreshToken) {
       errors.push('Refresh token is required');
     }
 

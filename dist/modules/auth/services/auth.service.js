@@ -68,7 +68,7 @@ class AuthService {
         };
     }
     static async refreshToken(refreshTokenDto) {
-        const { refresh_token } = refreshTokenDto;
+        const { refreshToken: refresh_token } = refreshTokenDto;
         // Verify refresh token
         const decoded = jsonwebtoken_1.default.verify(refresh_token, config_1.config.jwt_refresh_secret);
         // Check if refresh token exists in database
@@ -115,8 +115,8 @@ class AuthService {
             id: user.user_id,
             email: user.email,
             role: user.role,
-        }, config_1.config.jwt_secret, { expiresIn: '15m' });
-        const refreshToken = jsonwebtoken_1.default.sign({ user_id: user.user_id }, config_1.config.jwt_refresh_secret, { expiresIn: '7d' });
+        }, config_1.config.jwt_secret, { expiresIn: config_1.config.jwt_expires_in });
+        const refreshToken = jsonwebtoken_1.default.sign({ user_id: user.user_id }, config_1.config.jwt_refresh_secret, { expiresIn: config_1.config.jwt_refresh_expires_in });
         return { accessToken, refreshToken };
     }
     static async saveRefreshToken(user_id, refreshToken, deviceInfo, ipAddress) {

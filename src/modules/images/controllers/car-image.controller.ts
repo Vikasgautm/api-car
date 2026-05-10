@@ -5,6 +5,33 @@ import { AuthRequest } from '../../../types/auth';
 import { catchAsync } from '../../../utils/catchAsync';
 import { CarImageService } from '../services/car-image.service';
 
+// Helper to safely parse JSON fields from FormData
+const parseJSONField = (value: any): any => {
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }
+  return value;
+};
+
+// Helper to parse FormData body with potential JSON strings
+const parseFormDataBody = (body: Record<string, any>): Record<string, any> => {
+  const parsed: Record<string, any> = {};
+  for (const [key, value] of Object.entries(body)) {
+    // Fields that should be parsed as JSON if they are strings
+    const jsonFields = ['tags', 'metadata', 'car_id', 'variant_id', 'category_id', 'sub_category_id', 'display_order', 'is_primary', 'is_published'];
+    if (jsonFields.includes(key)) {
+      parsed[key] = parseJSONField(value);
+    } else {
+      parsed[key] = value;
+    }
+  }
+  return parsed;
+};
+
 export class CarImageController {
   // Public routes
   static getPublicGallery = catchAsync(async (req: any, res: Response) => {
@@ -33,10 +60,14 @@ export class CarImageController {
 
   static createCarImage = catchAsync(async (req: AuthRequest & any, res: Response) => {
     const uploadedBy = req.user?.user_id || req.user?.id;
+
+    // Parse JSON fields from FormData
+    const parsedBody = parseFormDataBody(req.body);
+
     const imageData = {
-      ...req.body,
-      url: req.file?.path || req.body.url,
-      thumbnail_url: req.body.thumbnail_url,
+      ...parsedBody,
+      url: (req.file as any)?.secure_url || req.file?.path || parsedBody.url,
+      thumbnail_url: parsedBody.thumbnail_url,
     };
 
     const image = await CarImageService.createCarImage(imageData, uploadedBy);
@@ -44,9 +75,12 @@ export class CarImageController {
   });
 
   static updateCarImage = catchAsync(async (req: any, res: Response) => {
+    // Parse JSON fields from FormData
+    const parsedBody = parseFormDataBody(req.body);
+
     const imageData = {
-      ...req.body,
-      url: req.file?.path || req.body.url,
+      ...parsedBody,
+      url: (req.file as any)?.secure_url || req.file?.path || parsedBody.url,
     };
 
     const image = await CarImageService.updateCarImage(req.params.id, imageData);

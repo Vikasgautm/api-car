@@ -9,41 +9,56 @@ const path_1 = __importDefault(require("path"));
 const city_model_1 = require("../models/city.model");
 const logger_1 = require("../utils/logger");
 const BATCH_SIZE = 500;
+const DEFAULT_CITIES = [
+    { city_id: 'delhi-001', name: 'New Delhi', slug: 'new-delhi', state: 'Delhi', country: 'India', pincode: 110001, latitude: 28.6139, longitude: 77.2090 },
+    { city_id: 'mumbai-001', name: 'Mumbai', slug: 'mumbai', state: 'Maharashtra', country: 'India', pincode: 400001, latitude: 19.0760, longitude: 72.8777 },
+    { city_id: 'bangalore-001', name: 'Bangalore', slug: 'bangalore', state: 'Karnataka', country: 'India', pincode: 560001, latitude: 12.9716, longitude: 77.5946 },
+    { city_id: 'chennai-001', name: 'Chennai', slug: 'chennai', state: 'Tamil Nadu', country: 'India', pincode: 600001, latitude: 13.0827, longitude: 80.2707 },
+    { city_id: 'hyderabad-001', name: 'Hyderabad', slug: 'hyderabad', state: 'Telangana', country: 'India', pincode: 500001, latitude: 17.3850, longitude: 78.4867 },
+    { city_id: 'pune-001', name: 'Pune', slug: 'pune', state: 'Maharashtra', country: 'India', pincode: 411001, latitude: 18.5204, longitude: 73.8567 },
+    { city_id: 'kolkata-001', name: 'Kolkata', slug: 'kolkata', state: 'West Bengal', country: 'India', pincode: 700001, latitude: 22.5726, longitude: 88.3639 },
+    { city_id: 'ahmedabad-001', name: 'Ahmedabad', slug: 'ahmedabad', state: 'Gujarat', country: 'India', pincode: 380001, latitude: 23.0225, longitude: 72.5714 },
+    { city_id: 'jaipur-001', name: 'Jaipur', slug: 'jaipur', state: 'Rajasthan', country: 'India', pincode: 302001, latitude: 26.9124, longitude: 75.7873 },
+    { city_id: 'lucknow-001', name: 'Lucknow', slug: 'lucknow', state: 'Uttar Pradesh', country: 'India', pincode: 226001, latitude: 26.8467, longitude: 80.9462 },
+];
 const seedCities = async () => {
     try {
-        const filePath = path_1.default.resolve(__dirname, 'prod_carsalahakar.cities.json');
-        if (!fs_1.default.existsSync(filePath)) {
-            logger_1.logger.error(`City data file not found at: ${filePath}`);
-            return;
-        }
-        logger_1.logger.info('Reading city data file...');
-        const raw = fs_1.default.readFileSync(filePath, 'utf-8');
-        const rawCities = JSON.parse(raw);
-        logger_1.logger.info(`Found ${rawCities.length} cities in JSON file`);
         // Check if cities already exist
         const existingCount = await city_model_1.City.countDocuments();
         if (existingCount > 0) {
             logger_1.logger.info(`Cities already exist in database (${existingCount} found). Skipping seed.`);
             return;
         }
-        // Map raw data to model shape
-        const mappedCities = rawCities.map((c) => ({
-            city_id: c.city_uuid,
-            name: c.city_name,
-            slug: c.slug,
-            state: c.state,
-            country: 'India',
-            pincode: c.pincode ?? undefined,
-            longitude: c.longitude,
-            latitude: c.latitude,
-        }));
+        const filePath = path_1.default.resolve(__dirname, 'prod_carsalahakar.cities.json');
+        let citiesToInsert = [];
+        if (fs_1.default.existsSync(filePath)) {
+            logger_1.logger.info('Reading city data file...');
+            const raw = fs_1.default.readFileSync(filePath, 'utf-8');
+            const rawCities = JSON.parse(raw);
+            logger_1.logger.info(`Found ${rawCities.length} cities in JSON file`);
+            // Map raw data to model shape
+            citiesToInsert = rawCities.map((c) => ({
+                city_id: c.city_uuid,
+                name: c.city_name,
+                slug: c.slug,
+                state: c.state,
+                country: 'India',
+                pincode: c.pincode ?? undefined,
+                longitude: c.longitude,
+                latitude: c.latitude,
+            }));
+        }
+        else {
+            logger_1.logger.warn(`City data file not found at: ${filePath}. Using default cities.`);
+            citiesToInsert = DEFAULT_CITIES;
+        }
         // Insert in batches
         let inserted = 0;
-        for (let i = 0; i < mappedCities.length; i += BATCH_SIZE) {
-            const batch = mappedCities.slice(i, i + BATCH_SIZE);
+        for (let i = 0; i < citiesToInsert.length; i += BATCH_SIZE) {
+            const batch = citiesToInsert.slice(i, i + BATCH_SIZE);
             await city_model_1.City.insertMany(batch, { ordered: false });
             inserted += batch.length;
-            logger_1.logger.info(`Inserted ${inserted}/${mappedCities.length} cities`);
+            logger_1.logger.info(`Inserted ${inserted}/${citiesToInsert.length} cities`);
         }
         logger_1.logger.info(`City seed completed. Total inserted: ${inserted}`);
     }

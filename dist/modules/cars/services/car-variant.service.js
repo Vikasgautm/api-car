@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarVariantService = void 0;
 const uuid_1 = require("uuid");
 const car_variant_model_1 = require("../../../models/car-variant.model");
+const car_model_1 = require("../../../models/car.model");
+const fuel_type_model_1 = require("../../../models/fuel-type.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
@@ -107,6 +109,14 @@ class CarVariantService {
             .populate("fuel_type_id", "name slug");
     }
     static async createVariant(variantData) {
+        const car = await car_model_1.Car.findOne({ car_id: variantData.car_id, is_deleted: false }).lean();
+        if (!car) {
+            throw new app_error_util_1.AppError('Car not found', 404);
+        }
+        const fuelType = await fuel_type_model_1.FuelType.findOne({ fuel_type_id: variantData.fuel_type_id, is_deleted: false }).lean();
+        if (!fuelType) {
+            throw new app_error_util_1.AppError('Fuel type not found', 404);
+        }
         const variant_id = (0, uuid_1.v4)();
         const slug = slug_util_1.SlugUtil.generate(variantData.variant_name);
         const existingSlug = await car_variant_model_1.CarVariant.findOne({ slug, is_deleted: false });
@@ -148,12 +158,22 @@ class CarVariantService {
                 updateData.slug = newSlug;
             }
         }
-        if (variantData.car_id !== undefined)
+        if (variantData.car_id !== undefined) {
+            const car = await car_model_1.Car.findOne({ car_id: variantData.car_id, is_deleted: false }).lean();
+            if (!car) {
+                throw new app_error_util_1.AppError('Car not found or deleted', 404);
+            }
             updateData.car_id = variantData.car_id;
+        }
         if (variantData.model_year !== undefined)
             updateData.model_year = variantData.model_year;
-        if (variantData.fuel_type_id !== undefined)
+        if (variantData.fuel_type_id !== undefined) {
+            const fuelType = await fuel_type_model_1.FuelType.findOne({ fuel_type_id: variantData.fuel_type_id, is_deleted: false }).lean();
+            if (!fuelType) {
+                throw new app_error_util_1.AppError('Fuel type not found or deleted', 404);
+            }
             updateData.fuel_type_id = variantData.fuel_type_id;
+        }
         if (variantData.transmission_type !== undefined)
             updateData.transmission_type = variantData.transmission_type;
         if (variantData.drivetrain !== undefined)

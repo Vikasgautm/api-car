@@ -28,6 +28,6 @@ importLogSchema.index({ car_id: 1 });
 importLogSchema.index({ variant_id: 1 });
 importLogSchema.index({ status: 1 });
 importLogSchema.index({ created_by: 1 });
-importLogSchema.index({ created_at: -1 });
+importLogSchema.index({ createdAt: -1 });
 exports.ImportLog = (0, mongoose_1.model)('ImportLog', importLogSchema);
 //# sourceMappingURL=import-log.model.js.map

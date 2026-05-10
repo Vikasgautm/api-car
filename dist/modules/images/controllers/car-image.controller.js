@@ -5,6 +5,33 @@ const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
 const car_image_service_1 = require("../services/car-image.service");
+// Helper to safely parse JSON fields from FormData
+const parseJSONField = (value) => {
+    if (typeof value === 'string') {
+        try {
+            return JSON.parse(value);
+        }
+        catch {
+            return value;
+        }
+    }
+    return value;
+};
+// Helper to parse FormData body with potential JSON strings
+const parseFormDataBody = (body) => {
+    const parsed = {};
+    for (const [key, value] of Object.entries(body)) {
+        // Fields that should be parsed as JSON if they are strings
+        const jsonFields = ['tags', 'metadata', 'car_id', 'variant_id', 'category_id', 'sub_category_id', 'display_order', 'is_primary', 'is_published'];
+        if (jsonFields.includes(key)) {
+            parsed[key] = parseJSONField(value);
+        }
+        else {
+            parsed[key] = value;
+        }
+    }
+    return parsed;
+};
 class CarImageController {
     // Public routes
     static getPublicGallery = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -29,18 +56,22 @@ class CarImageController {
     });
     static createCarImage = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const uploadedBy = req.user?.user_id || req.user?.id;
+        // Parse JSON fields from FormData
+        const parsedBody = parseFormDataBody(req.body);
         const imageData = {
-            ...req.body,
-            url: req.file?.path || req.body.url,
-            thumbnail_url: req.body.thumbnail_url,
+            ...parsedBody,
+            url: req.file?.secure_url || req.file?.path || parsedBody.url,
+            thumbnail_url: parsedBody.thumbnail_url,
         };
         const image = await car_image_service_1.CarImageService.createCarImage(imageData, uploadedBy);
         return response_util_1.ResponseUtil.created(res, image, 'Car image created successfully');
     });
     static updateCarImage = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        // Parse JSON fields from FormData
+        const parsedBody = parseFormDataBody(req.body);
         const imageData = {
-            ...req.body,
-            url: req.file?.path || req.body.url,
+            ...parsedBody,
+            url: req.file?.secure_url || req.file?.path || parsedBody.url,
         };
         const image = await car_image_service_1.CarImageService.updateCarImage(req.params.id, imageData);
         return response_util_1.ResponseUtil.success(res, image, 'Car image updated successfully');

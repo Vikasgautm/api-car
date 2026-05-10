@@ -1,5 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { CarVariant, ICarVariant, SpecsNormalized } from "../../../models/car-variant.model";
+import { Car } from "../../../models/car.model";
+import { FuelType } from "../../../models/fuel-type.model";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { FilterUtil } from "../../../shared/utils/filter.util";
 import { PaginationUtil } from "../../../shared/utils/pagination.util";
@@ -140,6 +142,16 @@ export class CarVariantService {
   }
 
   static async createVariant(variantData: any) {
+    const car = await Car.findOne({ car_id: variantData.car_id, is_deleted: false }).lean();
+    if (!car) {
+      throw new AppError('Car not found', 404);
+    }
+
+    const fuelType = await FuelType.findOne({ fuel_type_id: variantData.fuel_type_id, is_deleted: false }).lean();
+    if (!fuelType) {
+      throw new AppError('Fuel type not found', 404);
+    }
+
     const variant_id = uuidv4();
     const slug = SlugUtil.generate(variantData.variant_name);
 
@@ -186,9 +198,21 @@ export class CarVariantService {
       }
     }
 
-    if (variantData.car_id !== undefined) updateData.car_id = variantData.car_id;
+    if (variantData.car_id !== undefined) {
+      const car = await Car.findOne({ car_id: variantData.car_id, is_deleted: false }).lean();
+      if (!car) {
+        throw new AppError('Car not found or deleted', 404);
+      }
+      updateData.car_id = variantData.car_id;
+    }
     if (variantData.model_year !== undefined) updateData.model_year = variantData.model_year;
-    if (variantData.fuel_type_id !== undefined) updateData.fuel_type_id = variantData.fuel_type_id;
+    if (variantData.fuel_type_id !== undefined) {
+      const fuelType = await FuelType.findOne({ fuel_type_id: variantData.fuel_type_id, is_deleted: false }).lean();
+      if (!fuelType) {
+        throw new AppError('Fuel type not found or deleted', 404);
+      }
+      updateData.fuel_type_id = variantData.fuel_type_id;
+    }
     if (variantData.transmission_type !== undefined) updateData.transmission_type = variantData.transmission_type;
     if (variantData.drivetrain !== undefined) updateData.drivetrain = variantData.drivetrain;
     if (variantData.seating_capacity !== undefined) updateData.seating_capacity = variantData.seating_capacity;

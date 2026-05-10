@@ -1,5 +1,5 @@
 export declare class RefreshTokenDto {
-    refresh_token: string;
+    refreshToken: string;
     static validate(dto: RefreshTokenDto): {
         valid: boolean;
         errors: string[];

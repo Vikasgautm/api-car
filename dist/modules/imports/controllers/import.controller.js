@@ -1,16 +1,19 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImportController = void 0;
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const import_service_1 = require("../services/import.service");
+const console_1 = __importDefault(require("console"));
 class ImportController {
     static async previewCarImport(req, res) {
         try {
             const { url } = req.body;
             const userId = req.user?.user_id || 'admin';
             const result = await import_service_1.ImportService.previewCarImport(url, userId);
-            console.log(result, "result");
-            res.status(200).json({
+            res.status(201).json({
                 success: true,
                 data: result,
             });
@@ -35,8 +38,7 @@ class ImportController {
             const payload = req.body;
             const userId = req.user?.user_id || 'admin';
             const result = await import_service_1.ImportService.saveCarImport(payload, userId);
-            console.log(result, 'saveCarImport result');
-            res.status(200).json({
+            res.status(201).json({
                 success: true,
                 data: result,
             });
@@ -61,8 +63,7 @@ class ImportController {
             const { car_id, urls } = req.body;
             const userId = req.user?.user_id || 'admin';
             const result = await import_service_1.ImportService.previewVariantImport(car_id, urls, userId);
-            console.log(result, 'previewVariantImport result');
-            res.status(200).json({
+            res.status(201).json({
                 success: true,
                 data: result,
             });
@@ -87,13 +88,14 @@ class ImportController {
             const payload = req.body;
             const userId = req.user?.user_id || 'admin';
             const result = await import_service_1.ImportService.saveVariantImport(payload, userId);
-            console.log(result, 'saveVariantImport result');
-            res.status(200).json({
+            console_1.default.log(result, "result");
+            res.status(201).json({
                 success: true,
                 data: result,
             });
         }
         catch (error) {
+            console_1.default.log(error, "error");
             if (error instanceof app_error_util_1.AppError) {
                 res.status(error.statusCode).json({
                     success: false,
@@ -113,7 +115,6 @@ class ImportController {
             const userId = req.user?.user_id || 'admin';
             const filter = req.query;
             const logs = await import_service_1.ImportService.getImportLogs(userId, filter);
-            console.log(logs, 'getImportLogs result');
             res.status(200).json({
                 success: true,
                 data: logs,

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { ImportService } from '../services/import.service';
+import console from 'console';
 
 export class ImportController {
   static async previewCarImport(req: Request, res: Response) {
@@ -9,9 +10,8 @@ export class ImportController {
       const userId = (req as any).user?.user_id || 'admin';
 
       const result = await ImportService.previewCarImport(url, userId);
-      console.log(result, "result");
-      
-      res.status(200).json({
+
+      res.status(201).json({
         success: true,
         data: result,
       });
@@ -36,9 +36,8 @@ export class ImportController {
       const userId = (req as any).user?.user_id || 'admin';
 
       const result = await ImportService.saveCarImport(payload, userId);
-      console.log(result, 'saveCarImport result');
 
-      res.status(200).json({
+      res.status(201).json({
         success: true,
         data: result,
       });
@@ -63,9 +62,8 @@ export class ImportController {
       const userId = (req as any).user?.user_id || 'admin';
 
       const result = await ImportService.previewVariantImport(car_id, urls, userId);
-      console.log(result, 'previewVariantImport result');
 
-      res.status(200).json({
+      res.status(201).json({
         success: true,
         data: result,
       });
@@ -90,13 +88,14 @@ export class ImportController {
       const userId = (req as any).user?.user_id || 'admin';
 
       const result = await ImportService.saveVariantImport(payload, userId);
-      console.log(result, 'saveVariantImport result');
-
-      res.status(200).json({
+      console.log(result, "result");
+      
+      res.status(201).json({
         success: true,
         data: result,
       });
     } catch (error: any) {
+      console.log(error, "error");
       if (error instanceof AppError) {
         res.status(error.statusCode).json({
           success: false,
@@ -117,7 +116,6 @@ export class ImportController {
       const filter = req.query;
 
       const logs = await ImportService.getImportLogs(userId, filter);
-      console.log(logs, 'getImportLogs result');
 
       res.status(200).json({
         success: true,

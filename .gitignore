@@ -106,3 +106,58 @@ dump/
 # VS CODE SETTINGS (OPTIONAL)
 # ===============================
 .vscode/settings.json
+
+tests
+docs
+
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime / cache
+.cache/
+.tmp/
+temp/
+coverage/
+.nyc_output/
+
+# Uploads / generated files
+uploads/
+public/uploads/
+storage/
+*.tmp
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local test/debug helper scripts
+check-server.ps1
+extract-failed-tests.js
+extract-failed.ps1
+install-and-test.bat
+parse-results.js
+run-tests.bat
+run-tests.ps1
+test-api.js
+test-runner.js
+
+package-lock.json

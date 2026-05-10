@@ -1,6 +1,41 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KeyMatcher = void 0;
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 const variant_spec_key_model_1 = require("../../../models/variant-spec-key.model");
 const spec_key_map_1 = require("../../../modules/variants/utils/spec-key-map");
 class KeyMatcher {
@@ -58,24 +93,39 @@ class KeyMatcher {
         const specKeys = await this.loadSpecKeys();
         const matched = [];
         const unmatched = [];
-        const seenLabels = new Set();
+        const seenDedupKeys = new Set();
+        let duplicateSkippedCount = 0;
+        let invalidSkippedCount = 0;
+        // Track per-spec debug info
+        const debugEntries = [];
         for (const spec of extractedSpecs) {
             // Skip invalid labels
             if ((0, spec_key_map_1.isInvalidLabel)(spec.label)) {
+                invalidSkippedCount++;
                 continue;
             }
-            // Skip duplicate labels
             const normalizedLabel = (0, spec_key_map_1.normalizeLabel)(spec.label);
-            if (seenLabels.has(normalizedLabel)) {
+            const normalizedSlug = this.slugify(spec.label);
+            // Dedup by normalized label + value + section (keep first occurrence)
+            const dedupKey = `${normalizedLabel}|||${spec.value}|||${spec.section}`;
+            if (seenDedupKeys.has(dedupKey)) {
+                duplicateSkippedCount++;
                 continue;
             }
-            seenLabels.add(normalizedLabel);
-            const normalizedSlug = this.slugify(spec.label);
-            // First, check canonical mapping
+            seenDedupKeys.add(dedupKey);
+            // First, check canonical mapping (SPEC_LABEL_MAP)
             const canonicalMapping = (0, spec_key_map_1.getSpecMapping)(spec.label);
             if (canonicalMapping) {
-                // Use canonical mapping - highest priority
                 const parsedValue = (0, spec_key_map_1.parseSpecValue)(spec.value, canonicalMapping.type);
+                const path = canonicalMapping.path || canonicalMapping.rootKey || '';
+                debugEntries.push({
+                    original_label: spec.label,
+                    normalized_label: normalizedLabel,
+                    matched_path: path,
+                    match_type: 'canonical',
+                    confidence: 1.0,
+                    final_value: parsedValue,
+                });
                 matched.push({
                     source_label: spec.label,
                     source_value: spec.value,
@@ -86,7 +136,7 @@ class KeyMatcher {
                     section: spec.section,
                     matchType: 'exact',
                     confidence: 1.0,
-                    suggested_path: canonicalMapping.path || canonicalMapping.rootKey,
+                    suggested_path: path,
                 });
                 continue;
             }
@@ -126,9 +176,21 @@ class KeyMatcher {
                 }
             }
             if (bestMatch && bestConfidence >= 0.75) {
+                const suggestedPath = this.mapToSpecPath(bestMatch.category, bestMatch.name);
+                const matchLabel = bestMatchType === 'exact' ? 'DB-EXACT' : bestMatchType === 'alias' ? 'DB-ALIAS' : 'FUZZY';
+                // Parse value based on data_type from database spec key
+                const parsedValue = this.parseValueByDataType(spec.value, bestMatch.data_type);
+                debugEntries.push({
+                    original_label: spec.label,
+                    normalized_label: normalizedLabel,
+                    matched_path: suggestedPath,
+                    match_type: `db-${bestMatchType}`,
+                    confidence: bestConfidence,
+                    final_value: parsedValue,
+                });
                 matched.push({
                     source_label: spec.label,
-                    source_value: spec.value,
+                    source_value: parsedValue,
                     matched_key_id: bestMatch.key_id,
                     matched_key_name: bestMatch.name,
                     matched_key_slug: bestMatch.slug,
@@ -136,19 +198,59 @@ class KeyMatcher {
                     section: spec.section,
                     matchType: bestMatchType,
                     confidence: bestConfidence,
-                    suggested_path: this.mapToSpecPath(bestMatch.category, bestMatch.name),
+                    suggested_path: suggestedPath,
                 });
             }
             else {
+                const guessedCategory = (0, spec_key_map_1.guessCategory)(spec.label, spec.section);
+                debugEntries.push({
+                    original_label: spec.label,
+                    normalized_label: normalizedLabel,
+                    matched_path: undefined,
+                    match_type: 'unmatched',
+                    confidence: 0,
+                    final_value: spec.value,
+                });
                 unmatched.push({
                     section: spec.section,
                     source_label: spec.label,
                     source_value: spec.value,
                     suggested_slug: normalizedSlug,
-                    suggested_category: this.guessCategory(spec.label, spec.section),
+                    suggested_category: guessedCategory,
                 });
             }
         }
+        // Count unique labels (before dedup)
+        const uniqueLabels = new Set(extractedSpecs.filter(s => !(0, spec_key_map_1.isInvalidLabel)(s.label)).map(s => (0, spec_key_map_1.normalizeLabel)(s.label)));
+        // Count raw (specs_raw path) matched specs
+        const rawCount = matched.filter(m => m.suggested_path?.startsWith('specs_raw.')).length;
+        const normalizedCount = matched.filter(m => m.suggested_path?.startsWith('specs_normalized.')).length;
+        const rootCount = matched.filter(m => m.suggested_path && !m.suggested_path.startsWith('specs_raw.') && !m.suggested_path.startsWith('specs_normalized.')).length;
+        // Summary
+        const summary = {
+            total_extracted_specs: extractedSpecs.length,
+            unique_labels: uniqueLabels.size,
+            invalid_skipped: invalidSkippedCount,
+            duplicate_skipped: duplicateSkippedCount,
+            matched_count: matched.length,
+            matched_normalized: normalizedCount,
+            matched_raw: rawCount,
+            matched_root: rootCount,
+            unmatched_count: unmatched.length,
+            match_types: {
+                canonical: matched.filter(m => m.matchType === 'exact' && m.suggested_path && !m.suggested_path.startsWith('specs_raw.')).length,
+                'db-exact': matched.filter(m => m.matchType === 'exact' && m.matched_key_id !== m.matched_key_name).length,
+                'db-alias': matched.filter(m => m.matchType === 'alias').length,
+                fuzzy: matched.filter(m => m.matchType === 'normalized' || m.matchType === 'fuzzy').length,
+            },
+            unmatched_labels: unmatched.map(u => u.source_label),
+        };
+        // Write matching results to file
+        const logDir = path.resolve(process.cwd(), 'logs', 'imports');
+        fs.mkdirSync(logDir, { recursive: true });
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const logFile = path.join(logDir, `key-match-${timestamp}.json`);
+        fs.writeFileSync(logFile, JSON.stringify({ summary, debug_entries: debugEntries }, null, 2), 'utf-8');
         return { matched, unmatched };
     }
     static mapToSpecPath(category, keyName) {
@@ -180,104 +282,104 @@ class KeyMatcher {
             .replace(/\s+(.)/g, (_, c) => c.toUpperCase())
             .replace(/^\s/, '');
     }
-    static guessCategory(label, section) {
-        const lowerLabel = label.toLowerCase();
-        const lowerSection = section.toLowerCase();
-        // Engine & Transmission
-        if (lowerLabel.includes('engine') || lowerLabel.includes('motor') ||
-            lowerLabel.includes('power') || lowerLabel.includes('torque') ||
-            lowerLabel.includes('displacement') || lowerLabel.includes('cylinder')) {
-            return 'engine_performance';
+    static parseValueByDataType(value, dataType) {
+        if (!value)
+            return null;
+        const trimmed = value.trim();
+        switch (dataType) {
+            case 'boolean': {
+                const lower = trimmed.toLowerCase();
+                if (lower === 'yes' || lower === 'true' || lower === 'available' || lower === 'with' || lower === 'powered') {
+                    return true;
+                }
+                if (lower === 'no' || lower === 'false' || lower === 'not available' || lower === 'none') {
+                    return false;
+                }
+                return null;
+            }
+            case 'number': {
+                const numMatch = trimmed.match(/[\d.]+/);
+                if (numMatch) {
+                    const num = parseFloat(numMatch[0]);
+                    return isNaN(num) ? null : num;
+                }
+                return null;
+            }
+            case 'list': {
+                return trimmed
+                    .split('|')
+                    .map(s => s.trim())
+                    .filter(s => s.length > 0);
+            }
+            case 'date': {
+                const date = new Date(trimmed);
+                return isNaN(date.getTime()) ? null : date;
+            }
+            case 'string':
+            default:
+                return trimmed;
         }
-        // Battery & Charging
-        if (lowerLabel.includes('battery') || lowerLabel.includes('charging') ||
-            lowerLabel.includes('range') || lowerLabel.includes('kwh')) {
-            return 'battery_charging';
-        }
-        // Dimensions
-        if (lowerLabel.includes('length') || lowerLabel.includes('width') ||
-            lowerLabel.includes('height') || lowerLabel.includes('wheelbase') ||
-            lowerLabel.includes('boot') || lowerLabel.includes('ground clearance')) {
-            return 'dimensions_practicality';
-        }
-        // Safety
-        if (lowerLabel.includes('airbag') || lowerLabel.includes('abs') ||
-            lowerLabel.includes('brake') || lowerLabel.includes('safety') ||
-            lowerLabel.includes('ncap')) {
-            return 'safety';
-        }
-        // Suspension & Steering
-        if (lowerLabel.includes('suspension') || lowerLabel.includes('steering')) {
-            return 'suspension_steering_brakes';
-        }
-        // Tyres
-        if (lowerLabel.includes('tyre') || lowerLabel.includes('wheel') || lowerLabel.includes('rim')) {
-            return 'tyres_wheels';
-        }
-        // Mileage
-        if (lowerLabel.includes('mileage') || lowerLabel.includes('fuel tank')) {
-            return 'mileage_range';
-        }
-        // ADAS
-        if (lowerLabel.includes('adaptive') || lowerLabel.includes('lane') ||
-            lowerLabel.includes('collision') || lowerLabel.includes('cruise')) {
-            return 'adas';
-        }
-        // Infotainment
-        if (lowerLabel.includes('screen') || lowerLabel.includes('display') ||
-            lowerLabel.includes('bluetooth') || lowerLabel.includes('speaker') ||
-            lowerLabel.includes('android') || lowerLabel.includes('apple')) {
-            return 'infotainment_connectivity';
-        }
-        // Comfort
-        if (lowerLabel.includes('ac') || lowerLabel.includes('seat') ||
-            lowerLabel.includes('climate') || lowerLabel.includes('sunroof')) {
-            return 'comfort_convenience';
-        }
-        // Interior
-        if (lowerLabel.includes('dashboard') || lowerLabel.includes('interior') ||
-            lowerLabel.includes('upholstery')) {
-            return 'interior';
-        }
-        // Exterior
-        if (lowerLabel.includes('headlight') || lowerLabel.includes('tail light') ||
-            lowerLabel.includes('fog') || lowerLabel.includes('mirror')) {
-            return 'exterior';
-        }
-        // Warranty
-        if (lowerLabel.includes('warranty')) {
-            return 'warranty';
-        }
-        // Default based on section
-        if (lowerSection.includes('engine') || lowerSection.includes('transmission')) {
-            return 'engine_performance';
-        }
-        if (lowerSection.includes('dimension')) {
-            return 'dimensions_practicality';
-        }
-        if (lowerSection.includes('safety')) {
-            return 'safety';
-        }
-        return 'dimensions_practicality'; // Default
     }
     static mapMatchedSpecsToSpecsNormalized(matchedSpecs) {
-        const specs = {};
+        const specsNormalized = {};
+        const specsRaw = {};
+        const additionalFeatures = [];
         for (const matched of matchedSpecs) {
             if (!matched.suggested_path)
                 continue;
             const pathParts = matched.suggested_path.split('.');
-            let current = specs;
-            for (let i = 0; i < pathParts.length - 1; i++) {
-                const part = pathParts[i];
-                if (!current[part]) {
-                    current[part] = {};
-                }
-                current = current[part];
+            // Special handling for additional_features - accumulate as array
+            if (pathParts[pathParts.length - 1] === 'additional_features') {
+                additionalFeatures.push(matched.source_value);
+                continue;
             }
-            const finalKey = pathParts[pathParts.length - 1];
-            current[finalKey] = matched.source_value;
+            // Route to specs_raw or specs_normalized based on path prefix
+            if (pathParts[0] === 'specs_raw') {
+                let current = specsRaw;
+                for (let i = 1; i < pathParts.length - 1; i++) {
+                    const part = pathParts[i];
+                    if (!current[part]) {
+                        current[part] = {};
+                    }
+                    current = current[part];
+                }
+                const finalKey = pathParts[pathParts.length - 1];
+                current[finalKey] = matched.source_value;
+            }
+            else if (pathParts[0] === 'specs_normalized') {
+                let current = specsNormalized;
+                for (let i = 1; i < pathParts.length - 1; i++) {
+                    const part = pathParts[i];
+                    if (!current[part]) {
+                        current[part] = {};
+                    }
+                    current = current[part];
+                }
+                const finalKey = pathParts[pathParts.length - 1];
+                current[finalKey] = matched.source_value;
+            }
+            else {
+                // Root-level field (e.g., transmission_type, drivetrain)
+                specsNormalized[pathParts[0]] = matched.source_value;
+            }
         }
-        return specs;
+        // Set accumulated additional_features
+        if (additionalFeatures.length > 0) {
+            specsRaw.additional_features = additionalFeatures;
+            // Derive android_auto / apple_carplay from additional features text
+            const allFeaturesText = additionalFeatures.join(' ').toLowerCase();
+            if (allFeaturesText.includes('android auto') || allFeaturesText.includes('androidauto')) {
+                if (!specsNormalized.infotainment_connectivity)
+                    specsNormalized.infotainment_connectivity = {};
+                specsNormalized.infotainment_connectivity.android_auto = true;
+            }
+            if (allFeaturesText.includes('apple carplay') || allFeaturesText.includes('applecarplay')) {
+                if (!specsNormalized.infotainment_connectivity)
+                    specsNormalized.infotainment_connectivity = {};
+                specsNormalized.infotainment_connectivity.apple_carplay = true;
+            }
+        }
+        return { specs_normalized: specsNormalized, specs_raw: specsRaw };
     }
     static clearCache() {
         this.specKeyCache = null;

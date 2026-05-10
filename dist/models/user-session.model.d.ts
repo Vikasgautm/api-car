@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 export interface IUserSession extends Document {
     session_id: string;
     user_id: string;
@@ -9,11 +9,5 @@ export interface IUserSession extends Document {
     ip_address?: string;
     revoked_at?: Date;
 }
-export declare const UserSession: import("mongoose").Model<IUserSession, {}, {}, {}, Document<unknown, {}, IUserSession, {}, import("mongoose").DefaultSchemaOptions> & IUserSession & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IUserSession>;
+export declare const UserSession: mongoose.Model<any, {}, {}, {}, any, any, any>;
 //# sourceMappingURL=user-session.model.d.ts.map

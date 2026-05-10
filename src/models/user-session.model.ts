@@ -1,4 +1,4 @@
-import { Document, Schema, model } from 'mongoose';
+import mongoose, { Document, Schema, model } from 'mongoose';
 
 export interface IUserSession extends Document {
   session_id: string;
@@ -33,4 +33,4 @@ userSessionSchema.index({ user_id: 1, is_revoked: 1, expires_at: 1 });
 userSessionSchema.index({ expires_at: 1, is_revoked: 1 });
 userSessionSchema.index({ ip_address: 1 });
 
-export const UserSession = model<IUserSession>('UserSession', userSessionSchema);
+export const UserSession = mongoose.models.UserSession || model<IUserSession>('UserSession', userSessionSchema);

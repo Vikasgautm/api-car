@@ -39,6 +39,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarDekhoExtractor = void 0;
 const axios_1 = __importDefault(require("axios"));
 const cheerio = __importStar(require("cheerio"));
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 class CarDekhoExtractor {
     static TIMEOUT = 15000; // 15 seconds
@@ -383,6 +385,25 @@ class CarDekhoExtractor {
             });
         }
         extracted.specs = specs;
+        // Write extracted data to file
+        const logDir = path.resolve(process.cwd(), 'logs', 'imports');
+        fs.mkdirSync(logDir, { recursive: true });
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const slug = extracted.variant_name.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 40);
+        const logFile = path.join(logDir, `extracted-${slug}-${timestamp}.json`);
+        const rawData = {
+            url,
+            variant_name: extracted.variant_name,
+            full_name: extracted.full_name,
+            price: extracted.price,
+            price_text: extracted.price_text,
+            fuel_type: extracted.fuel_type,
+            transmission: extracted.transmission,
+            specs_count: extracted.specs.length,
+            specs: extracted.specs.map(s => ({ label: s.label, value: s.value, section: s.section })),
+            features: extracted.features,
+        };
+        fs.writeFileSync(logFile, JSON.stringify(rawData, null, 2), 'utf-8');
         // Extract features
         const features = [];
         $('.feature-list li, .features li').each((_, el) => {

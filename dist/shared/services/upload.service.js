@@ -27,6 +27,8 @@ class UploadService {
         'image/png': 'png',
         'image/gif': 'gif',
         'image/webp': 'webp',
+        'image/avif': 'avif',
+        'image/svg+xml': 'svg',
         'image/tiff': 'tiff',
         'application/pdf': 'pdf',
     };

@@ -18,8 +18,8 @@ export interface IImportLog extends Omit<Document, 'errors'> {
   warnings: string[];
   error_messages: string[];
   created_by: string;
-  created_at: Date;
-  updated_at: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const importLogSchema = new Schema<IImportLog>(
@@ -52,6 +52,6 @@ importLogSchema.index({ car_id: 1 });
 importLogSchema.index({ variant_id: 1 });
 importLogSchema.index({ status: 1 });
 importLogSchema.index({ created_by: 1 });
-importLogSchema.index({ created_at: -1 });
+importLogSchema.index({ createdAt: -1 });
 
 export const ImportLog = model<IImportLog>('ImportLog', importLogSchema);
