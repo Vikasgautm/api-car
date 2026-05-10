@@ -33,8 +33,8 @@ class ImageCategoryController {
         return response_util_1.ResponseUtil.success(res, category, 'Image category updated successfully');
     });
     static deleteImageCategory = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        await image_category_service_1.ImageCategoryService.deleteImageCategory(req.params.id);
-        return response_util_1.ResponseUtil.success(res, null, 'Image category deleted successfully');
+        const category = await image_category_service_1.ImageCategoryService.deleteImageCategory(req.params.id);
+        return response_util_1.ResponseUtil.success(res, category, 'Image category deleted successfully');
     });
     static restoreImageCategory = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const category = await image_category_service_1.ImageCategoryService.restoreImageCategory(req.params.id);

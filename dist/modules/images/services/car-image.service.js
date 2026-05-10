@@ -13,9 +13,12 @@ const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 class CarImageService {
     static async getAllCarImages(filterDto, includeDeleted = false) {
-        const { page = 1, limit = 10, car_id, variant_id, category_id, sub_category_id, is_published, is_primary, sortBy = 'display_order', sortOrder = 'asc', } = filterDto;
+        const { page = 1, limit = 10, car_id, variant_id, category_id, sub_category_id, is_published, is_primary, is_deleted, sortBy = 'display_order', sortOrder = 'asc', } = filterDto;
         const filter = {};
-        if (!includeDeleted) {
+        if (is_deleted === 'true' || is_deleted === true) {
+            filter.is_deleted = true;
+        }
+        else if (!includeDeleted) {
             filter.is_deleted = false;
         }
         if (car_id)

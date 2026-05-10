@@ -20,13 +20,16 @@ export class CarImageService {
       sub_category_id,
       is_published,
       is_primary,
+      is_deleted,
       sortBy = 'display_order',
       sortOrder = 'asc',
     } = filterDto;
 
     const filter: Record<string, unknown> = {};
 
-    if (!includeDeleted) {
+    if (is_deleted === 'true' || is_deleted === true) {
+      filter.is_deleted = true;
+    } else if (!includeDeleted) {
       filter.is_deleted = false;
     }
 

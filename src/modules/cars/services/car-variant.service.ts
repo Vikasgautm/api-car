@@ -86,6 +86,7 @@ export class CarVariantService {
       model_year,
       is_published,
       is_archived,
+      is_deleted,
       min_price,
       max_price,
       min_model_year,
@@ -96,7 +97,9 @@ export class CarVariantService {
 
     const filter: Record<string, unknown> = {};
 
-    if (!includeDeleted) {
+    if (is_deleted === 'true' || is_deleted === true) {
+      filter.is_deleted = true;
+    } else if (!includeDeleted) {
       filter.is_deleted = false;
     }
 

@@ -69,9 +69,12 @@ class CarVariantService {
         return result;
     }
     static async getAllVariants(filterDto, includeDeleted = false) {
-        const { page = 1, limit = 10, q, car_id, fuel_type_id, transmission_type, model_year, is_published, is_archived, min_price, max_price, min_model_year, max_model_year, sortBy = 'variant_name', sortOrder = 'asc', } = filterDto;
+        const { page = 1, limit = 10, q, car_id, fuel_type_id, transmission_type, model_year, is_published, is_archived, is_deleted, min_price, max_price, min_model_year, max_model_year, sortBy = 'variant_name', sortOrder = 'asc', } = filterDto;
         const filter = {};
-        if (!includeDeleted) {
+        if (is_deleted === 'true' || is_deleted === true) {
+            filter.is_deleted = true;
+        }
+        else if (!includeDeleted) {
             filter.is_deleted = false;
         }
         // By default, exclude archived variants unless explicitly requested

@@ -204,6 +204,7 @@ export interface ICarVariant extends Document {
   transmission_type: TransmissionType;
   drivetrain?: string;
   seating_capacity?: number;
+  body_type?: string;
   ex_showroom_price?: number;
   expected_price?: number;
   expected_launch_date?: Date;
@@ -243,12 +244,13 @@ const variantSchema = new Schema<ICarVariant>(
       type: String, 
       enum: ['manual', 'automatic', 'cvt', 'dct', 'amt']
     },
-    drivetrain: { type: String },
-    seating_capacity: { 
+    drivetrain: { type:String },
+    seating_capacity: {
       type: Number,
       min: 2,
       max: 10
     },
+    body_type: { type: String },
     ex_showroom_price: { 
       type: Number,
       min: 0

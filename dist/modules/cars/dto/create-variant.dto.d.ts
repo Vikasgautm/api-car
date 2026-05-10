@@ -8,6 +8,7 @@ export declare class CreateVariantDto {
     transmission_type: 'manual' | 'automatic' | 'cvt' | 'dct' | 'amt';
     drivetrain?: string;
     seating_capacity?: number;
+    body_type?: string;
     ex_showroom_price?: number;
     expected_price?: number;
     expected_launch_date?: Date;

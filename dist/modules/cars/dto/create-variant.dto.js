@@ -11,6 +11,7 @@ class CreateVariantDto {
     transmission_type;
     drivetrain;
     seating_capacity;
+    body_type;
     ex_showroom_price;
     expected_price;
     expected_launch_date;

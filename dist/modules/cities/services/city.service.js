@@ -8,9 +8,15 @@ const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
 class CityService {
-    static async getAllCities(filterDto) {
-        const { page = 1, limit = 10, q, state, sortBy = 'name', sortOrder = 'asc' } = filterDto;
+    static async getAllCities(filterDto, includeDeleted = false) {
+        const { page = 1, limit = 10, q, state, is_deleted, sortBy = 'name', sortOrder = 'asc' } = filterDto;
         const filter = {};
+        if (is_deleted === 'true' || is_deleted === true) {
+            filter.is_deleted = true;
+        }
+        else if (!includeDeleted) {
+            filter.is_deleted = false;
+        }
         if (state !== undefined) {
             filter.state = state;
         }
@@ -99,9 +105,16 @@ class CityService {
         return city;
     }
     static async deleteCity(cityId) {
-        const city = await city_model_1.City.findOneAndDelete({ city_id: cityId });
+        const city = await city_model_1.City.findOneAndUpdate({ city_id: cityId, is_deleted: false }, { is_deleted: true, deleted_at: new Date() }, { returnDocument: 'after' });
         if (!city) {
             throw new app_error_util_1.AppError('City not found', 404);
+        }
+        return city;
+    }
+    static async restoreCity(cityId) {
+        const city = await city_model_1.City.findOneAndUpdate({ city_id: cityId, is_deleted: true }, { is_deleted: false, deleted_at: null }, { returnDocument: 'after' });
+        if (!city) {
+            throw new app_error_util_1.AppError('City not found or not deleted', 404);
         }
         return city;
     }

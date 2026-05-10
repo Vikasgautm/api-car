@@ -6,10 +6,16 @@ import { PaginationUtil } from "../../../shared/utils/pagination.util";
 import { SlugUtil } from "../../../shared/utils/slug.util";
 
 export class CityService {
-  static async getAllCities(filterDto: any) {
-    const { page = 1, limit = 10, q, state, sortBy = 'name', sortOrder = 'asc' } = filterDto;
+  static async getAllCities(filterDto: any, includeDeleted: boolean = false) {
+    const { page = 1, limit = 10, q, state, is_deleted, sortBy = 'name', sortOrder = 'asc' } = filterDto;
 
     const filter: Record<string, unknown> = {};
+
+    if (is_deleted === 'true' || is_deleted === true) {
+      filter.is_deleted = true;
+    } else if (!includeDeleted) {
+      filter.is_deleted = false;
+    }
 
     if (state !== undefined) {
       filter.state = state;
@@ -119,10 +125,28 @@ export class CityService {
   }
 
   static async deleteCity(cityId: string) {
-    const city = await City.findOneAndDelete({ city_id: cityId });
+    const city = await City.findOneAndUpdate(
+      { city_id: cityId, is_deleted: false },
+      { is_deleted: true, deleted_at: new Date() },
+      { returnDocument: 'after' }
+    );
 
     if (!city) {
       throw new AppError('City not found', 404);
+    }
+
+    return city;
+  }
+
+  static async restoreCity(cityId: string) {
+    const city = await City.findOneAndUpdate(
+      { city_id: cityId, is_deleted: true },
+      { is_deleted: false, deleted_at: null },
+      { returnDocument: 'after' }
+    );
+
+    if (!city) {
+      throw new AppError('City not found or not deleted', 404);
     }
 
     return city;

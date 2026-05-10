@@ -8,6 +8,8 @@ export interface ICity extends Document {
     pincode?: number;
     longitude?: number;
     latitude?: number;
+    is_deleted?: boolean;
+    deleted_at?: Date;
 }
 export declare const City: import("mongoose").Model<ICity, {}, {}, {}, Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
     _id: import("mongoose").Types.ObjectId;

@@ -39,7 +39,8 @@ export class BodyTypeController {
 
   // Admin routes
   static getAllAdminBodyTypes = catchAsync(async (req: Request, res: Response) => {
-    const result = await BodyTypeService.getAllBodyTypes(req.query, true);
+    const includeDeleted = req.query.include_deleted === 'true';
+    const result = await BodyTypeService.getAllBodyTypes(req.query, includeDeleted);
     return ResponseUtil.paginated(res, result.bodyTypes, result.pagination, 'Body types retrieved successfully');
   });
 
@@ -111,8 +112,8 @@ export class BodyTypeController {
   });
 
   static deleteBodyType = catchAsync(async (req: Request, res: Response) => {
-    await BodyTypeService.deleteBodyType(req.params.id as string);
-    return ResponseUtil.success(res, null, "Body type deleted successfully");
+    const bodyType = await BodyTypeService.deleteBodyType(req.params.id as string);
+    return ResponseUtil.success(res, bodyType, "Body type deleted successfully");
   });
 
   static restoreBodyType = catchAsync(async (req: Request, res: Response) => {

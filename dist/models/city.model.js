@@ -11,6 +11,8 @@ const citySchema = new mongoose_1.Schema({
     pincode: { type: Number },
     longitude: { type: Number, min: -180, max: 180 },
     latitude: { type: Number, min: -90, max: 90 },
+    is_deleted: { type: Boolean, default: false },
+    deleted_at: { type: Date },
 }, {
     timestamps: true,
 });

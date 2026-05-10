@@ -21,13 +21,16 @@ export class BlogService {
       tags,
       is_published,
       is_featured,
+      is_deleted,
       sortBy = 'createdAt',
       sortOrder = 'desc',
     } = filterDto;
 
     const filter: Record<string, unknown> = {};
 
-    if (!includeDeleted) {
+    if (is_deleted === 'true' || is_deleted === true) {
+      filter.is_deleted = true;
+    } else if (!includeDeleted) {
       filter.is_deleted = false;
     }
 

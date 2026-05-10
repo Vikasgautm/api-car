@@ -58,7 +58,8 @@ export class BlogController {
 
   // Admin routes
   static getAllAdminBlogs = catchAsync(async (req: Request, res: Response) => {
-    const result = await BlogService.getAllBlogs(req.query, true);
+    const includeDeleted = req.query.include_deleted === 'true';
+    const result = await BlogService.getAllBlogs(req.query, includeDeleted);
     return ResponseUtil.paginated(res, result.blogs, result.pagination, 'Blogs retrieved successfully');
   });
 
@@ -208,8 +209,8 @@ export class BlogController {
   });
 
   static deleteBlog = catchAsync(async (req: Request, res: Response) => {
-    await BlogService.deleteBlog(req.params.id as string);
-    return ResponseUtil.success(res, null, "Blog deleted successfully");
+    const blog = await BlogService.deleteBlog(req.params.id as string);
+    return ResponseUtil.success(res, blog, "Blog deleted successfully");
   });
 
   static restoreBlog = catchAsync(async (req: Request, res: Response) => {

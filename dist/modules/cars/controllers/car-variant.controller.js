@@ -48,7 +48,8 @@ class CarVariantController {
     });
     // Admin routes
     static getAllAdminVariants = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const result = await car_variant_service_1.CarVariantService.getAllVariants(req.query, true);
+        const includeDeleted = req.query.include_deleted === 'true';
+        const result = await car_variant_service_1.CarVariantService.getAllVariants(req.query, includeDeleted);
         return response_util_1.ResponseUtil.paginated(res, result.variants, result.pagination, 'Variants retrieved successfully');
     });
     static getAdminVariantById = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -112,8 +113,8 @@ class CarVariantController {
         return response_util_1.ResponseUtil.success(res, variant, 'Variant updated successfully');
     });
     static deleteVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        await car_variant_service_1.CarVariantService.deleteVariant(req.params.id);
-        return response_util_1.ResponseUtil.success(res, null, 'Variant deleted successfully');
+        const variant = await car_variant_service_1.CarVariantService.deleteVariant(req.params.id);
+        return response_util_1.ResponseUtil.success(res, variant, 'Variant deleted successfully');
     });
     static restoreVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const variant = await car_variant_service_1.CarVariantService.restoreVariant(req.params.id);

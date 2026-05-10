@@ -186,6 +186,7 @@ export interface ICarVariant extends Document {
     transmission_type: TransmissionType;
     drivetrain?: string;
     seating_capacity?: number;
+    body_type?: string;
     ex_showroom_price?: number;
     expected_price?: number;
     expected_launch_date?: Date;

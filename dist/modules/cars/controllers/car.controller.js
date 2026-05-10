@@ -34,7 +34,8 @@ class CarController {
     });
     // Admin routes
     static getAllAdminCars = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const result = await car_service_1.CarService.getAllCars(req.query, true);
+        const includeDeleted = req.query.include_deleted === 'true';
+        const result = await car_service_1.CarService.getAllCars(req.query, includeDeleted);
         return response_util_1.ResponseUtil.paginated(res, result.cars, result.pagination, 'Cars retrieved successfully');
     });
     static getAdminCarById = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -169,8 +170,8 @@ class CarController {
         return response_util_1.ResponseUtil.success(res, car, "Car updated successfully");
     });
     static deleteCar = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        await car_service_1.CarService.deleteCar(req.params.id);
-        return response_util_1.ResponseUtil.success(res, null, "Car deleted successfully");
+        const car = await car_service_1.CarService.deleteCar(req.params.id);
+        return response_util_1.ResponseUtil.success(res, car, "Car deleted successfully");
     });
     static restoreCar = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const car = await car_service_1.CarService.restoreCar(req.params.id);

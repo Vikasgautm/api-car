@@ -31,13 +31,16 @@ export class CarService {
         top_selling,
         min_price,
         max_price,
+        is_deleted,
         sortBy = 'name',
         sortOrder = 'asc',
       } = filterDto;
 
     const filter: Record<string, any> = {};
 
-    if (!includeDeleted) {
+    if (is_deleted === 'true' || is_deleted === true) {
+      filter.is_deleted = true;
+    } else if (!includeDeleted) {
       filter.is_deleted = false;
     }
 

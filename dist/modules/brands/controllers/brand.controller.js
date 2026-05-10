@@ -34,7 +34,8 @@ class BrandController {
     });
     // Admin routes
     static getAllAdminBrands = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const result = await brand_service_1.BrandService.getAllBrands(req.query, true);
+        const includeDeleted = req.query.include_deleted === 'true';
+        const result = await brand_service_1.BrandService.getAllBrands(req.query, includeDeleted);
         return response_util_1.ResponseUtil.paginated(res, result.brands, result.pagination, 'Brands retrieved successfully');
     });
     static getAdminBrandById = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -106,8 +107,8 @@ class BrandController {
         return response_util_1.ResponseUtil.success(res, brand, "Brand updated successfully");
     });
     static deleteBrand = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        await brand_service_1.BrandService.deleteBrand(req.params.id);
-        return response_util_1.ResponseUtil.success(res, null, "Brand deleted successfully");
+        const brand = await brand_service_1.BrandService.deleteBrand(req.params.id);
+        return response_util_1.ResponseUtil.success(res, brand, "Brand deleted successfully");
     });
     static restoreBrand = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const brand = await brand_service_1.BrandService.restoreBrand(req.params.id);

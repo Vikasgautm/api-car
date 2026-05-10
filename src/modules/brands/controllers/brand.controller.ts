@@ -43,7 +43,8 @@ export class BrandController {
 
   // Admin routes
   static getAllAdminBrands = catchAsync(async (req: Request, res: Response) => {
-    const result = await BrandService.getAllBrands(req.query, true);
+    const includeDeleted = req.query.include_deleted === 'true';
+    const result = await BrandService.getAllBrands(req.query, includeDeleted);
     return ResponseUtil.paginated(res, result.brands, result.pagination, 'Brands retrieved successfully');
   });
 
@@ -131,8 +132,8 @@ export class BrandController {
   });
 
   static deleteBrand = catchAsync(async (req: Request, res: Response) => {
-    await BrandService.deleteBrand(req.params.id as string);
-    return ResponseUtil.success(res, null, "Brand deleted successfully");
+    const brand = await BrandService.deleteBrand(req.params.id as string);
+    return ResponseUtil.success(res, brand, "Brand deleted successfully");
   });
 
   static restoreBrand = catchAsync(async (req: Request, res: Response) => {

@@ -44,7 +44,8 @@ class BlogController {
     });
     // Admin routes
     static getAllAdminBlogs = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const result = await blog_service_1.BlogService.getAllBlogs(req.query, true);
+        const includeDeleted = req.query.include_deleted === 'true';
+        const result = await blog_service_1.BlogService.getAllBlogs(req.query, includeDeleted);
         return response_util_1.ResponseUtil.paginated(res, result.blogs, result.pagination, 'Blogs retrieved successfully');
     });
     static getAdminBlogById = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -170,8 +171,8 @@ class BlogController {
         return response_util_1.ResponseUtil.success(res, blog, "Blog updated successfully");
     });
     static deleteBlog = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        await blog_service_1.BlogService.deleteBlog(req.params.id);
-        return response_util_1.ResponseUtil.success(res, null, "Blog deleted successfully");
+        const blog = await blog_service_1.BlogService.deleteBlog(req.params.id);
+        return response_util_1.ResponseUtil.success(res, blog, "Blog deleted successfully");
     });
     static restoreBlog = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const blog = await blog_service_1.BlogService.restoreBlog(req.params.id);

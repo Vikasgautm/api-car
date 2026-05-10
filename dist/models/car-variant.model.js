@@ -24,6 +24,7 @@ const variantSchema = new mongoose_1.Schema({
         min: 2,
         max: 10
     },
+    body_type: { type: String },
     ex_showroom_price: {
         type: Number,
         min: 0

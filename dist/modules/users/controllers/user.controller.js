@@ -58,8 +58,19 @@ class UserController {
         if (!validation.valid) {
             throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
         }
-        const result = await user_service_1.UserService.getAllUsers(filterDto, true);
+        const includeDeleted = req.query.include_deleted === 'true';
+        const result = await user_service_1.UserService.getAllUsers(filterDto, includeDeleted);
         return response_util_1.ResponseUtil.paginated(res, result.users, result.pagination, 'Users retrieved successfully');
+    });
+    static createAdminUser = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const userData = req.body;
+        // Check if user with this email already exists
+        const existingUser = await user_model_1.User.findOne({ email: userData.email, is_deleted: false });
+        if (existingUser) {
+            throw new app_error_util_1.AppError("User with this email already exists", 400);
+        }
+        const user = await user_service_1.UserService.createUser(userData);
+        return response_util_1.ResponseUtil.success(res, user, "User created successfully");
     });
     static getAdminUserById = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const user = await user_service_1.UserService.getUserById(req.params.id);
@@ -69,8 +80,8 @@ class UserController {
         return response_util_1.ResponseUtil.success(res, user, "User retrieved successfully");
     });
     static deleteUser = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        await user_service_1.UserService.deleteUser(req.params.id);
-        return response_util_1.ResponseUtil.success(res, null, "User deleted successfully");
+        const user = await user_service_1.UserService.deleteUser(req.params.id);
+        return response_util_1.ResponseUtil.success(res, user, "User deleted successfully");
     });
     static restoreUser = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const user = await user_service_1.UserService.restoreUser(req.params.id);

@@ -37,8 +37,8 @@ export class ImageSubCategoryController {
   });
 
   static deleteImageSubCategory = catchAsync(async (req: any, res: Response) => {
-    await ImageSubCategoryService.deleteImageSubCategory(req.params.id);
-    return ResponseUtil.success(res, null, 'Image subcategory deleted successfully');
+    const subcategory = await ImageSubCategoryService.deleteImageSubCategory(req.params.id);
+    return ResponseUtil.success(res, subcategory, 'Image subcategory deleted successfully');
   });
 
   static restoreImageSubCategory = catchAsync(async (req: any, res: Response) => {

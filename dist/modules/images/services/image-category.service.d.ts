@@ -1,6 +1,6 @@
 import { IImageCategory } from "../../../models/image-category.model";
 export declare class ImageCategoryService {
-    static getAllImageCategories(filterDto: any): Promise<{
+    static getAllImageCategories(filterDto: any, includeDeleted?: boolean): Promise<{
         categories: (IImageCategory & Required<{
             _id: import("mongoose").Types.ObjectId;
         }> & {

@@ -16,9 +16,12 @@ const slug_util_1 = require("../../../shared/utils/slug.util");
 class CarService {
     static async getAllCars(filterDto, includeDeleted = false) {
         try {
-            const { page = 1, limit = 10, q, brand_id, body_type_id, fuel_type_id, status, is_electric, is_published, is_featured, is_popular, is_recommended, is_latest, top_selling, min_price, max_price, sortBy = 'name', sortOrder = 'asc', } = filterDto;
+            const { page = 1, limit = 10, q, brand_id, body_type_id, fuel_type_id, status, is_electric, is_published, is_featured, is_popular, is_recommended, is_latest, top_selling, min_price, max_price, is_deleted, sortBy = 'name', sortOrder = 'asc', } = filterDto;
             const filter = {};
-            if (!includeDeleted) {
+            if (is_deleted === 'true' || is_deleted === true) {
+                filter.is_deleted = true;
+            }
+            else if (!includeDeleted) {
                 filter.is_deleted = false;
             }
             if (is_published !== undefined)

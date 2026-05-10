@@ -44,7 +44,8 @@ class CarImageController {
     });
     // Admin routes
     static getAllAdminCarImages = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const result = await car_image_service_1.CarImageService.getAllCarImages(req.query, true);
+        const includeDeleted = req.query.include_deleted === 'true';
+        const result = await car_image_service_1.CarImageService.getAllCarImages(req.query, includeDeleted);
         return response_util_1.ResponseUtil.paginated(res, result.images, result.pagination, 'Car images retrieved successfully');
     });
     static getAdminCarImageById = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -77,8 +78,8 @@ class CarImageController {
         return response_util_1.ResponseUtil.success(res, image, 'Car image updated successfully');
     });
     static deleteCarImage = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        await car_image_service_1.CarImageService.deleteCarImage(req.params.id);
-        return response_util_1.ResponseUtil.success(res, null, 'Car image deleted successfully');
+        const image = await car_image_service_1.CarImageService.deleteCarImage(req.params.id);
+        return response_util_1.ResponseUtil.success(res, image, 'Car image deleted successfully');
     });
     static restoreCarImage = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const image = await car_image_service_1.CarImageService.restoreCarImage(req.params.id);

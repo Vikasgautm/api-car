@@ -6,7 +6,7 @@ import { PaginationUtil } from "../../../shared/utils/pagination.util";
 import { SlugUtil } from "../../../shared/utils/slug.util";
 
 export class ImageSubCategoryService {
-  static async getAllImageSubCategories(filterDto: any) {
+  static async getAllImageSubCategories(filterDto: any, includeDeleted: boolean = false) {
     const {
       page = 1,
       limit = 10,
@@ -20,9 +20,14 @@ export class ImageSubCategoryService {
 
     const filter: Record<string, unknown> = {};
 
+    if (is_deleted === 'true' || is_deleted === true) {
+      filter.is_deleted = true;
+    } else if (!includeDeleted) {
+      filter.is_deleted = false;
+    }
+
     if (category_id) filter.category_id = category_id;
     if (is_active !== undefined) filter.is_active = is_active === 'true';
-    if (is_deleted !== undefined) filter.is_deleted = is_deleted === 'true';
     if (q) {
       filter.$or = [
         { name: { $regex: q, $options: 'i' } },

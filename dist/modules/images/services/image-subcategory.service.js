@@ -8,15 +8,19 @@ const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
 class ImageSubCategoryService {
-    static async getAllImageSubCategories(filterDto) {
+    static async getAllImageSubCategories(filterDto, includeDeleted = false) {
         const { page = 1, limit = 10, category_id, is_active, is_deleted, q, sortBy = 'display_order', sortOrder = 'asc', } = filterDto;
         const filter = {};
+        if (is_deleted === 'true' || is_deleted === true) {
+            filter.is_deleted = true;
+        }
+        else if (!includeDeleted) {
+            filter.is_deleted = false;
+        }
         if (category_id)
             filter.category_id = category_id;
         if (is_active !== undefined)
             filter.is_active = is_active === 'true';
-        if (is_deleted !== undefined)
-            filter.is_deleted = is_deleted === 'true';
         if (q) {
             filter.$or = [
                 { name: { $regex: q, $options: 'i' } },

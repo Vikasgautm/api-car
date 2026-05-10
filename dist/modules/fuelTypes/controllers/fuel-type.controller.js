@@ -34,7 +34,8 @@ class FuelTypeController {
     });
     // Admin routes
     static getAllAdminFuelTypes = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const result = await fuel_type_service_1.FuelTypeService.getAllFuelTypes(req.query, true);
+        const includeDeleted = req.query.include_deleted === 'true';
+        const result = await fuel_type_service_1.FuelTypeService.getAllFuelTypes(req.query, includeDeleted);
         return response_util_1.ResponseUtil.paginated(res, result.fuelTypes, result.pagination, 'Fuel types retrieved successfully');
     });
     static getAdminFuelTypeById = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -80,8 +81,8 @@ class FuelTypeController {
         return response_util_1.ResponseUtil.success(res, fuelType, "Fuel type updated successfully");
     });
     static deleteFuelType = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        await fuel_type_service_1.FuelTypeService.deleteFuelType(req.params.id);
-        return response_util_1.ResponseUtil.success(res, null, "Fuel type deleted successfully");
+        const fuelType = await fuel_type_service_1.FuelTypeService.deleteFuelType(req.params.id);
+        return response_util_1.ResponseUtil.success(res, fuelType, "Fuel type deleted successfully");
     });
     static restoreFuelType = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const fuelType = await fuel_type_service_1.FuelTypeService.restoreFuelType(req.params.id);

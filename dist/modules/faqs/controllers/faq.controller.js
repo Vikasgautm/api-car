@@ -42,7 +42,8 @@ class FAQController {
     });
     // Admin routes
     static getAllAdminFAQs = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const result = await faq_service_1.FAQService.getAllFAQs(req.query, true);
+        const includeDeleted = req.query.include_deleted === 'true';
+        const result = await faq_service_1.FAQService.getAllFAQs(req.query, includeDeleted);
         return response_util_1.ResponseUtil.paginated(res, result.faqs, result.pagination, 'FAQs retrieved successfully');
     });
     static getAdminFAQById = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -97,8 +98,8 @@ class FAQController {
         return response_util_1.ResponseUtil.success(res, faq, 'FAQ updated successfully');
     });
     static deleteFAQ = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        await faq_service_1.FAQService.deleteFAQ(req.params.id);
-        return response_util_1.ResponseUtil.success(res, null, 'FAQ deleted successfully');
+        const faq = await faq_service_1.FAQService.deleteFAQ(req.params.id);
+        return response_util_1.ResponseUtil.success(res, faq, 'FAQ deleted successfully');
     });
     static restoreFAQ = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const faq = await faq_service_1.FAQService.restoreFAQ(req.params.id);

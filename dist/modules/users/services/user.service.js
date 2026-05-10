@@ -45,6 +45,32 @@ class UserService {
     static async getUserById(userId) {
         return await user_model_1.User.findOne({ user_id: userId }).select("-password");
     }
+    static async createUser(userData) {
+        const { name, email, role, status, password } = userData;
+        // Validate required fields
+        if (!name || !email || !role) {
+            throw new app_error_util_1.AppError('Name, email, and role are required', 400);
+        }
+        // Check if email already exists
+        const existingUser = await user_model_1.User.findOne({ email: email, is_deleted: false });
+        if (existingUser) {
+            throw new app_error_util_1.AppError('User with this email already exists', 409);
+        }
+        // Create user
+        const createData = {
+            name,
+            email,
+            role,
+            status: status || 'active',
+            is_deleted: false,
+        };
+        // Only include password if provided
+        if (password) {
+            createData.password = password;
+        }
+        const user = await user_model_1.User.create(createData);
+        return user;
+    }
     static async deleteUser(userId) {
         const user = await user_model_1.User.findOneAndUpdate({ user_id: userId }, { is_deleted: true }, { returnDocument: 'after' }).select("-password");
         if (!user) {

@@ -77,8 +77,22 @@ export class UserController {
       throw new AppError(validation.errors.join(', '), 400);
     }
 
-    const result = await UserService.getAllUsers(filterDto, true);
+    const includeDeleted = req.query.include_deleted === 'true';
+    const result = await UserService.getAllUsers(filterDto, includeDeleted);
     return ResponseUtil.paginated(res, result.users, result.pagination, 'Users retrieved successfully');
+  });
+
+  static createAdminUser = catchAsync(async (req: Request, res: Response) => {
+    const userData = req.body;
+    
+    // Check if user with this email already exists
+    const existingUser = await User.findOne({ email: userData.email, is_deleted: false });
+    if (existingUser) {
+      throw new AppError("User with this email already exists", 400);
+    }
+
+    const user = await UserService.createUser(userData);
+    return ResponseUtil.success(res, user, "User created successfully");
   });
 
   static getAdminUserById = catchAsync(async (req: Request, res: Response) => {
@@ -90,8 +104,8 @@ export class UserController {
   });
 
   static deleteUser = catchAsync(async (req: Request, res: Response) => {
-    await UserService.deleteUser(req.params.id as string);
-    return ResponseUtil.success(res, null, "User deleted successfully");
+    const user = await UserService.deleteUser(req.params.id as string);
+    return ResponseUtil.success(res, user, "User deleted successfully");
   });
 
   static restoreUser = catchAsync(async (req: Request, res: Response) => {

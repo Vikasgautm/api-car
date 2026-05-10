@@ -14,9 +14,12 @@ const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
 class BlogService {
     static async getAllBlogs(filterDto, includeDeleted = false) {
-        const { page = 1, limit = 10, q, category, author_id, tags, is_published, is_featured, sortBy = 'createdAt', sortOrder = 'desc', } = filterDto;
+        const { page = 1, limit = 10, q, category, author_id, tags, is_published, is_featured, is_deleted, sortBy = 'createdAt', sortOrder = 'desc', } = filterDto;
         const filter = {};
-        if (!includeDeleted) {
+        if (is_deleted === 'true' || is_deleted === true) {
+            filter.is_deleted = true;
+        }
+        else if (!includeDeleted) {
             filter.is_deleted = false;
         }
         if (is_published !== undefined) {

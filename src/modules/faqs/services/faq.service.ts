@@ -16,6 +16,7 @@ export class FAQService {
       faq_group,
       is_published,
       is_featured,
+      is_deleted,
       sortBy = 'order',
       sortOrder = 'asc',
       q,
@@ -23,7 +24,9 @@ export class FAQService {
 
     const filter: Record<string, unknown> = {};
 
-    if (!includeDeleted) {
+    if (is_deleted === 'true' || is_deleted === true) {
+      filter.is_deleted = true;
+    } else if (!includeDeleted) {
       filter.is_deleted = false;
     }
 

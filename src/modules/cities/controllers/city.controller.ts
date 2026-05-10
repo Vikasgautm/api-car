@@ -23,7 +23,8 @@ export class CityController {
 
   // Admin routes
   static getAllAdminCities = catchAsync(async (req: Request, res: Response) => {
-    const result = await CityService.getAllCities(req.query);
+    const includeDeleted = req.query.include_deleted === 'true';
+    const result = await CityService.getAllCities(req.query, includeDeleted);
     return ResponseUtil.paginated(res, result.cities, result.pagination, 'Cities retrieved successfully');
   });
 
@@ -73,8 +74,13 @@ export class CityController {
   });
 
   static deleteCity = catchAsync(async (req: Request, res: Response) => {
-    await CityService.deleteCity(req.params.id as string);
-    return ResponseUtil.success(res, null, "City deleted successfully");
+    const city = await CityService.deleteCity(req.params.id as string);
+    return ResponseUtil.success(res, city, "City deleted successfully");
+  });
+
+  static restoreCity = catchAsync(async (req: Request, res: Response) => {
+    const city = await CityService.restoreCity(req.params.id as string);
+    return ResponseUtil.success(res, city, "City restored successfully");
   });
 
 }

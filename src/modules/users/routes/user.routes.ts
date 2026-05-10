@@ -23,6 +23,7 @@ adminRouter.use(protect);
 adminRouter.use(restrictTo('admin', 'super_admin'));
 
 adminRouter.get('/', validatePaginationQuery, UserController.getAllAdminUsers);
+adminRouter.post('/', UserController.createAdminUser);
 adminRouter.get('/:id', validateIdParam, UserController.getAdminUserById);
 adminRouter.put('/:id', validateIdParam, UserController.updateUser);
 adminRouter.delete('/:id', validateIdParam, UserController.deleteUser);

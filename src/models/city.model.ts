@@ -9,6 +9,8 @@ export interface ICity extends Document {
   pincode?: number;
   longitude?: number;
   latitude?: number;
+  is_deleted?: boolean;
+  deleted_at?: Date;
 }
 
 const citySchema = new Schema<ICity>(
@@ -21,6 +23,8 @@ const citySchema = new Schema<ICity>(
     pincode: { type: Number },
     longitude: { type: Number, min: -180, max: 180 },
     latitude: { type: Number, min: -90, max: 90 },
+    is_deleted: { type: Boolean, default: false },
+    deleted_at: { type: Date },
   },
   {
     timestamps: true,

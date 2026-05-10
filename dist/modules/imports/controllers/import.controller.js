@@ -1,132 +1,40 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImportController = void 0;
-const app_error_util_1 = require("../../../shared/utils/app-error.util");
+const response_util_1 = require("../../../shared/utils/response.util");
+const catchAsync_1 = require("../../../utils/catchAsync");
 const import_service_1 = require("../services/import.service");
-const console_1 = __importDefault(require("console"));
 class ImportController {
-    static async previewCarImport(req, res) {
-        try {
-            const { url } = req.body;
-            const userId = req.user?.user_id || 'admin';
-            const result = await import_service_1.ImportService.previewCarImport(url, userId);
-            res.status(201).json({
-                success: true,
-                data: result,
-            });
-        }
-        catch (error) {
-            if (error instanceof app_error_util_1.AppError) {
-                res.status(error.statusCode).json({
-                    success: false,
-                    message: error.message,
-                });
-            }
-            else {
-                res.status(500).json({
-                    success: false,
-                    message: error.message || 'Failed to preview car import',
-                });
-            }
-        }
-    }
-    static async saveCarImport(req, res) {
-        try {
-            const payload = req.body;
-            const userId = req.user?.user_id || 'admin';
-            const result = await import_service_1.ImportService.saveCarImport(payload, userId);
-            res.status(201).json({
-                success: true,
-                data: result,
-            });
-        }
-        catch (error) {
-            if (error instanceof app_error_util_1.AppError) {
-                res.status(error.statusCode).json({
-                    success: false,
-                    message: error.message,
-                });
-            }
-            else {
-                res.status(500).json({
-                    success: false,
-                    message: error.message || 'Failed to save car import',
-                });
-            }
-        }
-    }
-    static async previewVariantImport(req, res) {
-        try {
-            const { car_id, urls } = req.body;
-            const userId = req.user?.user_id || 'admin';
-            const result = await import_service_1.ImportService.previewVariantImport(car_id, urls, userId);
-            res.status(201).json({
-                success: true,
-                data: result,
-            });
-        }
-        catch (error) {
-            if (error instanceof app_error_util_1.AppError) {
-                res.status(error.statusCode).json({
-                    success: false,
-                    message: error.message,
-                });
-            }
-            else {
-                res.status(500).json({
-                    success: false,
-                    message: error.message || 'Failed to preview variant import',
-                });
-            }
-        }
-    }
-    static async saveVariantImport(req, res) {
-        try {
-            const payload = req.body;
-            const userId = req.user?.user_id || 'admin';
-            const result = await import_service_1.ImportService.saveVariantImport(payload, userId);
-            console_1.default.log(result, "result");
-            res.status(201).json({
-                success: true,
-                data: result,
-            });
-        }
-        catch (error) {
-            console_1.default.log(error, "error");
-            if (error instanceof app_error_util_1.AppError) {
-                res.status(error.statusCode).json({
-                    success: false,
-                    message: error.message,
-                });
-            }
-            else {
-                res.status(500).json({
-                    success: false,
-                    message: error.message || 'Failed to save variant import',
-                });
-            }
-        }
-    }
-    static async getImportLogs(req, res) {
-        try {
-            const userId = req.user?.user_id || 'admin';
-            const filter = req.query;
-            const logs = await import_service_1.ImportService.getImportLogs(userId, filter);
-            res.status(200).json({
-                success: true,
-                data: logs,
-            });
-        }
-        catch (error) {
-            res.status(500).json({
-                success: false,
-                message: error.message || 'Failed to fetch import logs',
-            });
-        }
-    }
+    static previewCarImport = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { url } = req.body;
+        const userId = req.user?.user_id || 'admin';
+        const result = await import_service_1.ImportService.previewCarImport(url, userId);
+        return response_util_1.ResponseUtil.created(res, result, 'Car import preview generated successfully');
+    });
+    static saveCarImport = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const payload = req.body;
+        const userId = req.user?.user_id || 'admin';
+        const result = await import_service_1.ImportService.saveCarImport(payload, userId);
+        return response_util_1.ResponseUtil.created(res, result, 'Car import saved successfully');
+    });
+    static previewVariantImport = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { car_id, urls } = req.body;
+        const userId = req.user?.user_id || 'admin';
+        const result = await import_service_1.ImportService.previewVariantImport(car_id, urls, userId);
+        return response_util_1.ResponseUtil.created(res, result, 'Variant import preview generated successfully');
+    });
+    static saveVariantImport = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const payload = req.body;
+        const userId = req.user?.user_id || 'admin';
+        const result = await import_service_1.ImportService.saveVariantImport(payload, userId);
+        return response_util_1.ResponseUtil.created(res, result, 'Variant import saved successfully');
+    });
+    static getImportLogs = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const userId = req.user?.user_id || 'admin';
+        const filter = req.query;
+        const logs = await import_service_1.ImportService.getImportLogs(userId, filter);
+        return response_util_1.ResponseUtil.success(res, logs, 'Import logs retrieved successfully');
+    });
 }
 exports.ImportController = ImportController;
 //# sourceMappingURL=import.controller.js.map

@@ -5,7 +5,7 @@ import { PaginationUtil } from "../../../shared/utils/pagination.util";
 import { SlugUtil } from "../../../shared/utils/slug.util";
 
 export class ImageCategoryService {
-  static async getAllImageCategories(filterDto: any) {
+  static async getAllImageCategories(filterDto: any, includeDeleted: boolean = false) {
     const {
       page = 1,
       limit = 10,
@@ -18,8 +18,13 @@ export class ImageCategoryService {
 
     const filter: Record<string, unknown> = {};
 
+    if (is_deleted === 'true' || is_deleted === true) {
+      filter.is_deleted = true;
+    } else if (!includeDeleted) {
+      filter.is_deleted = false;
+    }
+
     if (is_active !== undefined) filter.is_active = is_active === 'true';
-    if (is_deleted !== undefined) filter.is_deleted = is_deleted === 'true';
     if (q) {
       filter.$or = [
         { name: { $regex: q, $options: 'i' } },
@@ -104,8 +109,10 @@ export class ImageCategoryService {
   }
 
   static async deleteImageCategory(categoryId: string) {
-    const category = await ImageCategory.findByIdAndDelete(
-      categoryId
+    const category = await ImageCategory.findByIdAndUpdate(
+      categoryId,
+      { is_deleted: true, deleted_at: new Date() },
+      { returnDocument: 'after' }
     );
 
     if (!category) {

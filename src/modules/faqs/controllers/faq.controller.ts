@@ -47,7 +47,8 @@ export class FAQController {
 
   // Admin routes
   static getAllAdminFAQs = catchAsync(async (req: Request, res: Response) => {
-    const result = await FAQService.getAllFAQs(req.query, true);
+    const includeDeleted = req.query.include_deleted === 'true';
+    const result = await FAQService.getAllFAQs(req.query, includeDeleted);
     return ResponseUtil.paginated(res, result.faqs, result.pagination, 'FAQs retrieved successfully');
   });
 
@@ -110,8 +111,8 @@ export class FAQController {
   });
 
   static deleteFAQ = catchAsync(async (req: Request, res: Response) => {
-    await FAQService.deleteFAQ(req.params.id as string);
-    return ResponseUtil.success(res, null, 'FAQ deleted successfully');
+    const faq = await FAQService.deleteFAQ(req.params.id as string);
+    return ResponseUtil.success(res, faq, 'FAQ deleted successfully');
   });
 
   static restoreFAQ = catchAsync(async (req: Request, res: Response) => {
