@@ -6,6 +6,7 @@ const { JSDOM } = require('jsdom');
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
 const uuid_1 = require("uuid");
+const errorMessages_1 = require("../../../constants/errorMessages");
 const blog_model_1 = require("../../../models/blog.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
@@ -159,28 +160,56 @@ class BlogService {
             updateData.excerpt = blogData.excerpt;
         const blog = await blog_model_1.Blog.findOneAndUpdate({ blog_id: blogId, is_deleted: false }, updateData, { returnDocument: 'after' });
         if (!blog) {
-            throw new app_error_util_1.AppError('Blog not found', 404);
+            throw new app_error_util_1.AppError(`Blog not found or deleted for blog_id: ${blogId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BLOG_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BLOG_NOT_FOUND,
+                details: {
+                    field: 'blog_id',
+                    reason: 'The blog does not exist or has already been deleted.',
+                },
+            });
         }
         return blog;
     }
     static async deleteBlog(blogId) {
         const blog = await blog_model_1.Blog.findOneAndUpdate({ blog_id: blogId, is_deleted: false }, { is_deleted: true }, { returnDocument: 'after' });
         if (!blog) {
-            throw new app_error_util_1.AppError('Blog not found', 404);
+            throw new app_error_util_1.AppError(`Blog not found or deleted for blog_id: ${blogId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BLOG_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BLOG_NOT_FOUND,
+                details: {
+                    field: 'blog_id',
+                    reason: 'The blog does not exist or has already been deleted.',
+                },
+            });
         }
         return blog;
     }
     static async restoreBlog(blogId) {
         const blog = await blog_model_1.Blog.findOneAndUpdate({ blog_id: blogId, is_deleted: true }, { is_deleted: false }, { returnDocument: 'after' });
         if (!blog) {
-            throw new app_error_util_1.AppError('Blog not found', 404);
+            throw new app_error_util_1.AppError(`Blog not found for blog_id: ${blogId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BLOG_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BLOG_NOT_FOUND,
+                details: {
+                    field: 'blog_id',
+                    reason: 'The blog does not exist in the deleted records.',
+                },
+            });
         }
         return blog;
     }
     static async togglePublish(blogId) {
         const blog = await blog_model_1.Blog.findOne({ blog_id: blogId, is_deleted: false });
         if (!blog) {
-            throw new app_error_util_1.AppError('Blog not found', 404);
+            throw new app_error_util_1.AppError(`Blog not found or deleted for blog_id: ${blogId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BLOG_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BLOG_NOT_FOUND,
+                details: {
+                    field: 'blog_id',
+                    reason: 'The blog does not exist or has been deleted.',
+                },
+            });
         }
         blog.is_published = !blog.is_published;
         await blog.save();

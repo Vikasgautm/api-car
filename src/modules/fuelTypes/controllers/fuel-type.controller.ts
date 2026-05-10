@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { ResponseUtil } from "../../../shared/utils/response.util";
 import { catchAsync } from "../../../utils/catchAsync";
@@ -20,7 +21,18 @@ export class FuelTypeController {
   static getPublicFuelTypeBySlug = catchAsync(async (req: Request, res: Response) => {
     const fuelType = await FuelTypeService.getFuelTypeBySlug(req.params.slug as string);
     if (!fuelType) {
-      throw new AppError("Fuel type not found", 404);
+      throw new AppError(
+        `Fuel type not found for slug: ${req.params.slug}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+          details: {
+            field: 'slug',
+            reason: 'The fuel type does not exist or has been deleted.',
+          },
+        }
+      );
     }
     return ResponseUtil.success(res, fuelType, "Fuel type retrieved successfully");
   });
@@ -34,7 +46,18 @@ export class FuelTypeController {
   static getAdminFuelTypeById = catchAsync(async (req: Request, res: Response) => {
     const fuelType = await FuelTypeService.getFuelTypeById(req.params.id as string);
     if (!fuelType) {
-      throw new AppError("Fuel type not found", 404);
+      throw new AppError(
+        `Fuel type not found for fuel_type_id: ${req.params.id}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+          details: {
+            field: 'fuel_type_id',
+            reason: 'The fuel type does not exist or has been deleted.',
+          },
+        }
+      );
     }
     return ResponseUtil.success(res, fuelType, "Fuel type retrieved successfully");
   });

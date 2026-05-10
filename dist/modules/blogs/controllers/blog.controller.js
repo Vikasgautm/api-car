@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BlogController = void 0;
+const errorMessages_1 = require("../../../constants/errorMessages");
 const upload_service_1 = require("../../../shared/services/upload.service");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
@@ -30,7 +31,14 @@ class BlogController {
     static getPublicBlogBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const blog = await blog_service_1.BlogService.getBlogBySlug(req.params.slug);
         if (!blog) {
-            throw new app_error_util_1.AppError("Blog not found", 404);
+            throw new app_error_util_1.AppError(`Blog not found for slug: ${req.params.slug}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BLOG_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BLOG_NOT_FOUND,
+                details: {
+                    field: 'slug',
+                    reason: 'The blog does not exist or has been deleted.',
+                },
+            });
         }
         return response_util_1.ResponseUtil.success(res, blog, "Blog retrieved successfully");
     });
@@ -42,7 +50,14 @@ class BlogController {
     static getAdminBlogById = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const blog = await blog_service_1.BlogService.getBlogById(req.params.id);
         if (!blog) {
-            throw new app_error_util_1.AppError("Blog not found", 404);
+            throw new app_error_util_1.AppError(`Blog not found for blog_id: ${req.params.id}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BLOG_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BLOG_NOT_FOUND,
+                details: {
+                    field: 'blog_id',
+                    reason: 'The blog does not exist or has been deleted.',
+                },
+            });
         }
         return response_util_1.ResponseUtil.success(res, blog, "Blog retrieved successfully");
     });
@@ -92,7 +107,13 @@ class BlogController {
         console.log(createDto, "hello");
         const validation = create_blog_dto_1.CreateBlogDto.validate(createDto);
         if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+            throw new app_error_util_1.AppError(validation.errors.join(', '), 400, {
+                userMessage: errorMessages_1.USER_MESSAGES.VALIDATION_ERROR,
+                errorCode: errorMessages_1.ERROR_CODES.VALIDATION_ERROR,
+                details: {
+                    fields: validation.errors,
+                },
+            });
         }
         const blog = await blog_service_1.BlogService.createBlog(createDto);
         return response_util_1.ResponseUtil.created(res, blog, "Blog created successfully");

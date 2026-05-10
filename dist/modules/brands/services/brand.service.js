@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BrandService = void 0;
 const uuid_1 = require("uuid");
+const errorMessages_1 = require("../../../constants/errorMessages");
 const brand_model_1 = require("../../../models/brand.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
@@ -112,28 +113,56 @@ class BrandService {
             updateData.noindex = brandData.noindex;
         const brand = await brand_model_1.Brand.findOneAndUpdate({ brand_id: brandId, is_deleted: false }, updateData, { returnDocument: 'after' });
         if (!brand) {
-            throw new app_error_util_1.AppError('Brand not found', 404);
+            throw new app_error_util_1.AppError(`Brand not found or deleted for brand_id: ${brandId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BRAND_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BRAND_NOT_FOUND,
+                details: {
+                    field: 'brand_id',
+                    reason: 'The brand does not exist or has been deleted.',
+                },
+            });
         }
         return brand;
     }
     static async deleteBrand(brandId) {
         const brand = await brand_model_1.Brand.findOneAndUpdate({ brand_id: brandId, is_deleted: false }, { is_deleted: true }, { returnDocument: 'after' });
         if (!brand) {
-            throw new app_error_util_1.AppError('Brand not found', 404);
+            throw new app_error_util_1.AppError(`Brand not found or deleted for brand_id: ${brandId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BRAND_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BRAND_NOT_FOUND,
+                details: {
+                    field: 'brand_id',
+                    reason: 'The brand does not exist or has already been deleted.',
+                },
+            });
         }
         return brand;
     }
     static async restoreBrand(brandId) {
         const brand = await brand_model_1.Brand.findOneAndUpdate({ brand_id: brandId, is_deleted: true }, { is_deleted: false }, { returnDocument: 'after' });
         if (!brand) {
-            throw new app_error_util_1.AppError('Brand not found', 404);
+            throw new app_error_util_1.AppError(`Brand not found for brand_id: ${brandId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BRAND_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BRAND_NOT_FOUND,
+                details: {
+                    field: 'brand_id',
+                    reason: 'The brand does not exist in the deleted records.',
+                },
+            });
         }
         return brand;
     }
     static async togglePublish(brandId) {
         const brand = await brand_model_1.Brand.findOne({ brand_id: brandId, is_deleted: false });
         if (!brand) {
-            throw new app_error_util_1.AppError('Brand not found', 404);
+            throw new app_error_util_1.AppError(`Brand not found or deleted for brand_id: ${brandId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BRAND_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BRAND_NOT_FOUND,
+                details: {
+                    field: 'brand_id',
+                    reason: 'The brand does not exist or has been deleted.',
+                },
+            });
         }
         brand.is_published = !brand.is_published;
         await brand.save();

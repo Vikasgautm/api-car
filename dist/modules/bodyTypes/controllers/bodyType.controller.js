@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BodyTypeController = void 0;
+const errorMessages_1 = require("../../../constants/errorMessages");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
@@ -20,7 +21,14 @@ class BodyTypeController {
     static getPublicBodyTypeBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const bodyType = await bodyType_service_1.BodyTypeService.getBodyTypeBySlug(req.params.slug);
         if (!bodyType) {
-            throw new app_error_util_1.AppError("Body type not found", 404);
+            throw new app_error_util_1.AppError(`Body type not found for slug: ${req.params.slug}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BODY_TYPE_NOT_FOUND,
+                details: {
+                    field: 'slug',
+                    reason: 'The body type does not exist or has been deleted.',
+                },
+            });
         }
         return response_util_1.ResponseUtil.success(res, bodyType, "Body type retrieved successfully");
     });
@@ -32,7 +40,14 @@ class BodyTypeController {
     static getAdminBodyTypeById = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const bodyType = await bodyType_service_1.BodyTypeService.getBodyTypeById(req.params.id);
         if (!bodyType) {
-            throw new app_error_util_1.AppError("Body type not found", 404);
+            throw new app_error_util_1.AppError(`Body type not found for body_type_id: ${req.params.id}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BODY_TYPE_NOT_FOUND,
+                details: {
+                    field: 'body_type_id',
+                    reason: 'The body type does not exist or has been deleted.',
+                },
+            });
         }
         return response_util_1.ResponseUtil.success(res, bodyType, "Body type retrieved successfully");
     });
@@ -63,7 +78,13 @@ class BodyTypeController {
         };
         const validation = update_body_type_dto_1.UpdateBodyTypeDto.validate(updateDto);
         if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+            throw new app_error_util_1.AppError(validation.errors.join(', '), 400, {
+                userMessage: errorMessages_1.USER_MESSAGES.VALIDATION_ERROR,
+                errorCode: errorMessages_1.ERROR_CODES.VALIDATION_ERROR,
+                details: {
+                    fields: validation.errors,
+                },
+            });
         }
         const bodyType = await bodyType_service_1.BodyTypeService.updateBodyType(req.params.id, updateDto);
         return response_util_1.ResponseUtil.success(res, bodyType, "Body type updated successfully");

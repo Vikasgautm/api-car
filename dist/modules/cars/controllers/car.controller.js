@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarController = void 0;
+const errorMessages_1 = require("../../../constants/errorMessages");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
@@ -20,7 +21,14 @@ class CarController {
     static getPublicCarBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const result = await car_service_1.CarService.getCarBySlug(req.params.slug);
         if (!result) {
-            throw new app_error_util_1.AppError('Car not found', 404);
+            throw new app_error_util_1.AppError(`Car not found for slug: ${req.params.slug}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
+                details: {
+                    field: 'slug',
+                    reason: 'The car does not exist or has been deleted.',
+                },
+            });
         }
         return response_util_1.ResponseUtil.success(res, result, "Car retrieved successfully");
     });
@@ -32,7 +40,14 @@ class CarController {
     static getAdminCarById = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const car = await car_service_1.CarService.getCarById(req.params.id);
         if (!car) {
-            throw new app_error_util_1.AppError("Car not found", 404);
+            throw new app_error_util_1.AppError(`Car not found for car_id: ${req.params.id}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
+                details: {
+                    field: 'car_id',
+                    reason: 'The car does not exist or has been deleted.',
+                },
+            });
         }
         return response_util_1.ResponseUtil.success(res, car, "Car retrieved successfully");
     });

@@ -13,12 +13,12 @@ const adminRouter = (0, express_1.Router)();
 adminRouter.use(auth_middleware_1.protect);
 adminRouter.use((0, auth_middleware_1.restrictTo)('admin', 'super_admin'));
 adminRouter.get('/', validation_1.validatePaginationQuery, fuel_type_controller_1.FuelTypeController.getAllAdminFuelTypes);
-adminRouter.get('/:id', validation_1.validateIdParam, fuel_type_controller_1.FuelTypeController.getAdminFuelTypeById);
+adminRouter.get('/:id', validation_1.validateUuidIdParam, fuel_type_controller_1.FuelTypeController.getAdminFuelTypeById);
 adminRouter.post('/', fuel_type_controller_1.FuelTypeController.createFuelType);
-adminRouter.put('/:id', validation_1.validateIdParam, fuel_type_controller_1.FuelTypeController.updateFuelType);
-adminRouter.delete('/:id', validation_1.validateIdParam, fuel_type_controller_1.FuelTypeController.deleteFuelType);
-adminRouter.patch('/restore/:id', validation_1.validateIdParam, fuel_type_controller_1.FuelTypeController.restoreFuelType);
-adminRouter.patch('/:id/publish', validation_1.validateIdParam, fuel_type_controller_1.FuelTypeController.togglePublish);
+adminRouter.put('/:id', validation_1.validateUuidIdParam, fuel_type_controller_1.FuelTypeController.updateFuelType);
+adminRouter.delete('/:id', validation_1.validateUuidIdParam, fuel_type_controller_1.FuelTypeController.deleteFuelType);
+adminRouter.patch('/restore/:id', validation_1.validateUuidIdParam, fuel_type_controller_1.FuelTypeController.restoreFuelType);
+adminRouter.patch('/:id/publish', validation_1.validateUuidIdParam, fuel_type_controller_1.FuelTypeController.togglePublish);
 router.use('/admin', adminRouter);
 // Legacy routes for backward compatibility
 router.get('/', validation_1.validatePaginationQuery, fuel_type_controller_1.FuelTypeController.getAllPublicFuelTypes);

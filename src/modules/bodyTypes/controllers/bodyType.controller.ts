@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { ResponseUtil } from "../../../shared/utils/response.util";
 import { catchAsync } from "../../../utils/catchAsync";
@@ -20,7 +21,18 @@ export class BodyTypeController {
   static getPublicBodyTypeBySlug = catchAsync(async (req: Request, res: Response) => {
     const bodyType = await BodyTypeService.getBodyTypeBySlug(req.params.slug as string);
     if (!bodyType) {
-      throw new AppError("Body type not found", 404);
+      throw new AppError(
+        `Body type not found for slug: ${req.params.slug}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.BODY_TYPE_NOT_FOUND,
+          details: {
+            field: 'slug',
+            reason: 'The body type does not exist or has been deleted.',
+          },
+        }
+      );
     }
     return ResponseUtil.success(res, bodyType, "Body type retrieved successfully");
   });
@@ -34,7 +46,18 @@ export class BodyTypeController {
   static getAdminBodyTypeById = catchAsync(async (req: Request, res: Response) => {
     const bodyType = await BodyTypeService.getBodyTypeById(req.params.id as string);
     if (!bodyType) {
-      throw new AppError("Body type not found", 404);
+      throw new AppError(
+        `Body type not found for body_type_id: ${req.params.id}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.BODY_TYPE_NOT_FOUND,
+          details: {
+            field: 'body_type_id',
+            reason: 'The body type does not exist or has been deleted.',
+          },
+        }
+      );
     }
     return ResponseUtil.success(res, bodyType, "Body type retrieved successfully");
   });
@@ -70,7 +93,17 @@ export class BodyTypeController {
 
     const validation = UpdateBodyTypeDto.validate(updateDto);
     if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+      throw new AppError(
+        validation.errors.join(', '),
+        400,
+        {
+          userMessage: USER_MESSAGES.VALIDATION_ERROR,
+          errorCode: ERROR_CODES.VALIDATION_ERROR,
+          details: {
+            fields: validation.errors,
+          },
+        }
+      );
     }
 
     const bodyType = await BodyTypeService.updateBodyType(req.params.id as string, updateDto);

@@ -23,6 +23,8 @@ adminRouter.patch('/restore/:id', validateUuidIdParam, CarVariantController.rest
 adminRouter.patch('/:id/publish', validateUuidIdParam, CarVariantController.togglePublish);
 adminRouter.patch('/:id/publish/enable', validateUuidIdParam, CarVariantController.publishVariant);
 adminRouter.patch('/:id/publish/disable', validateUuidIdParam, CarVariantController.unpublishVariant);
+adminRouter.patch('/:id/archive', validateUuidIdParam, CarVariantController.archiveVariant);
+adminRouter.patch('/:id/unarchive', validateUuidIdParam, CarVariantController.unarchiveVariant);
 
 router.use('/admin', adminRouter);
 

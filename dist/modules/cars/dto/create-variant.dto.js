@@ -16,6 +16,7 @@ class CreateVariantDto {
     expected_launch_date;
     specs_normalized;
     hidden_spec_keys;
+    hidden_sections;
     is_published;
     meta_title;
     meta_description;
@@ -34,9 +35,9 @@ class CreateVariantDto {
         const modelYearResult = validation_util_1.ValidationUtil.required(dto.model_year, 'model_year');
         if (!modelYearResult.valid)
             errors.push(...modelYearResult.errors);
-        const fuelTypeIdResult = validation_util_1.ValidationUtil.required(dto.fuel_type_id, 'fuel_type_id');
-        if (!fuelTypeIdResult.valid)
-            errors.push(...fuelTypeIdResult.errors);
+        // fuel_type_id is now optional - allow creation without fuel type if none exist
+        // const fuelTypeIdResult = ValidationUtil.required(dto.fuel_type_id, 'fuel_type_id');
+        // if (!fuelTypeIdResult.valid) errors.push(...fuelTypeIdResult.errors);
         const transmissionResult = validation_util_1.ValidationUtil.required(dto.transmission_type, 'transmission_type');
         if (!transmissionResult.valid)
             errors.push(...transmissionResult.errors);

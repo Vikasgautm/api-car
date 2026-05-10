@@ -34,7 +34,7 @@ export const createUploadMiddleware = (config: UploadConfig = {}) => {
     if (mergedConfig.allowedMimeTypes && mergedConfig.allowedMimeTypes.length > 0) {
       if (!mergedConfig.allowedMimeTypes.includes(file.mimetype)) {
         return cb(
-          AppError.invalidFileType(`File type ${file.mimetype} is not allowed. Allowed types: ${mergedConfig.allowedMimeTypes.join(', ')}`),
+          AppError.invalidFileType(mergedConfig.allowedMimeTypes),
           false
         );
       }

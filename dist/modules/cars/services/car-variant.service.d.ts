@@ -1,6 +1,8 @@
 import { ICarVariant, SpecsNormalized } from "../../../models/car-variant.model";
 export declare class CarVariantService {
+    private static SECTION_NAME_TO_KEY_MAP;
     static removeHiddenSpecKeys(specs_normalized: SpecsNormalized | undefined, hidden_spec_keys?: string[]): SpecsNormalized | undefined;
+    static removeHiddenSections(specs_normalized: SpecsNormalized | undefined, hidden_sections: string[] | undefined): SpecsNormalized | undefined;
     static getAllVariants(filterDto: any, includeDeleted?: boolean): Promise<{
         variants: (ICarVariant & Required<{
             _id: import("mongoose").Types.ObjectId;
@@ -66,6 +68,20 @@ export declare class CarVariantService {
         id: string;
     }>;
     static unpublishVariant(variantId: string): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
+    static archiveVariant(variantId: string, archivedBy?: string): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
+    static unarchiveVariant(variantId: string): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;

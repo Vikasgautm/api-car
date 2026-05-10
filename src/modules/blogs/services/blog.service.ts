@@ -3,6 +3,7 @@ const { JSDOM } = require('jsdom');
 const window = new JSDOM('').window;
 const DOMPurify = createDOMPurify(window);
 import { v4 as uuidv4 } from "uuid";
+import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { Blog, IBlog } from "../../../models/blog.model";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { FilterUtil } from "../../../shared/utils/filter.util";
@@ -185,7 +186,18 @@ export class BlogService {
     );
 
     if (!blog) {
-      throw new AppError('Blog not found', 404);
+      throw new AppError(
+        `Blog not found or deleted for blog_id: ${blogId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BLOG_NOT_FOUND,
+          errorCode: ERROR_CODES.BLOG_NOT_FOUND,
+          details: {
+            field: 'blog_id',
+            reason: 'The blog does not exist or has already been deleted.',
+          },
+        }
+      );
     }
 
     return blog;
@@ -199,7 +211,18 @@ export class BlogService {
     );
 
     if (!blog) {
-      throw new AppError('Blog not found', 404);
+      throw new AppError(
+        `Blog not found or deleted for blog_id: ${blogId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BLOG_NOT_FOUND,
+          errorCode: ERROR_CODES.BLOG_NOT_FOUND,
+          details: {
+            field: 'blog_id',
+            reason: 'The blog does not exist or has already been deleted.',
+          },
+        }
+      );
     }
 
     return blog;
@@ -213,7 +236,18 @@ export class BlogService {
     );
 
     if (!blog) {
-      throw new AppError('Blog not found', 404);
+      throw new AppError(
+        `Blog not found for blog_id: ${blogId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BLOG_NOT_FOUND,
+          errorCode: ERROR_CODES.BLOG_NOT_FOUND,
+          details: {
+            field: 'blog_id',
+            reason: 'The blog does not exist in the deleted records.',
+          },
+        }
+      );
     }
 
     return blog;
@@ -222,7 +256,18 @@ export class BlogService {
   static async togglePublish(blogId: string) {
     const blog = await Blog.findOne({ blog_id: blogId, is_deleted: false });
     if (!blog) {
-      throw new AppError('Blog not found', 404);
+      throw new AppError(
+        `Blog not found or deleted for blog_id: ${blogId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BLOG_NOT_FOUND,
+          errorCode: ERROR_CODES.BLOG_NOT_FOUND,
+          details: {
+            field: 'blog_id',
+            reason: 'The blog does not exist or has been deleted.',
+          },
+        }
+      );
     }
 
     blog.is_published = !blog.is_published;

@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { Brand, IBrand } from "../../../models/brand.model";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { FilterUtil } from "../../../shared/utils/filter.util";
@@ -123,7 +124,18 @@ export class BrandService {
     );
 
     if (!brand) {
-      throw new AppError('Brand not found', 404);
+      throw new AppError(
+        `Brand not found or deleted for brand_id: ${brandId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BRAND_NOT_FOUND,
+          errorCode: ERROR_CODES.BRAND_NOT_FOUND,
+          details: {
+            field: 'brand_id',
+            reason: 'The brand does not exist or has been deleted.',
+          },
+        }
+      );
     }
 
     return brand;
@@ -137,7 +149,18 @@ export class BrandService {
     );
 
     if (!brand) {
-      throw new AppError('Brand not found', 404);
+      throw new AppError(
+        `Brand not found or deleted for brand_id: ${brandId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BRAND_NOT_FOUND,
+          errorCode: ERROR_CODES.BRAND_NOT_FOUND,
+          details: {
+            field: 'brand_id',
+            reason: 'The brand does not exist or has already been deleted.',
+          },
+        }
+      );
     }
 
     return brand;
@@ -151,7 +174,18 @@ export class BrandService {
     );
 
     if (!brand) {
-      throw new AppError('Brand not found', 404);
+      throw new AppError(
+        `Brand not found for brand_id: ${brandId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BRAND_NOT_FOUND,
+          errorCode: ERROR_CODES.BRAND_NOT_FOUND,
+          details: {
+            field: 'brand_id',
+            reason: 'The brand does not exist in the deleted records.',
+          },
+        }
+      );
     }
 
     return brand;
@@ -160,7 +194,18 @@ export class BrandService {
   static async togglePublish(brandId: string) {
     const brand = await Brand.findOne({ brand_id: brandId, is_deleted: false });
     if (!brand) {
-      throw new AppError('Brand not found', 404);
+      throw new AppError(
+        `Brand not found or deleted for brand_id: ${brandId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BRAND_NOT_FOUND,
+          errorCode: ERROR_CODES.BRAND_NOT_FOUND,
+          details: {
+            field: 'brand_id',
+            reason: 'The brand does not exist or has been deleted.',
+          },
+        }
+      );
     }
 
     brand.is_published = !brand.is_published;

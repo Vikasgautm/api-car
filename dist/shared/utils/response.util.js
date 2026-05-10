@@ -13,7 +13,7 @@ class ResponseUtil {
         };
         return res.status(statusCode).json(response);
     }
-    static error(res, message, statusCode = 500, code, errors) {
+    static error(res, message, statusCode = 500, code, errors, details) {
         const response = {
             success: false,
             message,
@@ -22,6 +22,9 @@ class ResponseUtil {
             statusCode,
             timestamp: new Date().toISOString(),
         };
+        if (details) {
+            response.details = details;
+        }
         return res.status(statusCode).json(response);
     }
     static paginated(res, data, pagination, message = 'Success', statusCode = 200) {

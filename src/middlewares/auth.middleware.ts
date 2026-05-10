@@ -47,10 +47,10 @@ export const protect: RequestHandler = async (
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      return next(AppError.tokenInvalid('Invalid token. Please log in again.'));
+      return next(AppError.tokenInvalid());
     }
     if (error instanceof jwt.TokenExpiredError) {
-      return next(AppError.tokenExpired('Token expired. Please log in again.'));
+      return next(AppError.tokenExpired());
     }
     return next(AppError.unauthorized('Invalid token or expired. Please log in again.'));
   }

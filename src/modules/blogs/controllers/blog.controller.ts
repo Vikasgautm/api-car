@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { UploadService } from "../../../shared/services/upload.service";
 import { AppError } from '../../../shared/utils/app-error.util';
 import { ResponseUtil } from "../../../shared/utils/response.util";
@@ -39,7 +40,18 @@ export class BlogController {
   static getPublicBlogBySlug = catchAsync(async (req: Request, res: Response) => {
     const blog = await BlogService.getBlogBySlug(req.params.slug as string);
     if (!blog) {
-      throw new AppError("Blog not found", 404);
+      throw new AppError(
+        `Blog not found for slug: ${req.params.slug}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BLOG_NOT_FOUND,
+          errorCode: ERROR_CODES.BLOG_NOT_FOUND,
+          details: {
+            field: 'slug',
+            reason: 'The blog does not exist or has been deleted.',
+          },
+        }
+      );
     }
     return ResponseUtil.success(res, blog, "Blog retrieved successfully");
   });
@@ -53,7 +65,18 @@ export class BlogController {
   static getAdminBlogById = catchAsync(async (req: Request, res: Response) => {
     const blog = await BlogService.getBlogById(req.params.id as string);
     if (!blog) {
-      throw new AppError("Blog not found", 404);
+      throw new AppError(
+        `Blog not found for blog_id: ${req.params.id}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BLOG_NOT_FOUND,
+          errorCode: ERROR_CODES.BLOG_NOT_FOUND,
+          details: {
+            field: 'blog_id',
+            reason: 'The blog does not exist or has been deleted.',
+          },
+        }
+      );
     }
     return ResponseUtil.success(res, blog, "Blog retrieved successfully");
   });
@@ -109,7 +132,17 @@ export class BlogController {
     
     const validation = CreateBlogDto.validate(createDto);
     if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+      throw new AppError(
+        validation.errors.join(', '),
+        400,
+        {
+          userMessage: USER_MESSAGES.VALIDATION_ERROR,
+          errorCode: ERROR_CODES.VALIDATION_ERROR,
+          details: {
+            fields: validation.errors,
+          },
+        }
+      );
     }
 
     const blog = await BlogService.createBlog(createDto);

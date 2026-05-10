@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { ResponseUtil } from "../../../shared/utils/response.util";
 import { catchAsync } from "../../../utils/catchAsync";
@@ -24,7 +25,18 @@ export class BrandController {
   static getPublicBrandBySlug = catchAsync(async (req: Request, res: Response) => {
     const brand = await BrandService.getBrandBySlug(req.params.slug as string);
     if (!brand) {
-      throw new AppError("Brand not found", 404);
+      throw new AppError(
+        `Brand not found for slug: ${req.params.slug}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BRAND_NOT_FOUND,
+          errorCode: ERROR_CODES.BRAND_NOT_FOUND,
+          details: {
+            field: 'slug',
+            reason: 'The brand does not exist or has been deleted.',
+          },
+        }
+      );
     }
     return ResponseUtil.success(res, brand, "Brand retrieved successfully");
   });
@@ -38,7 +50,18 @@ export class BrandController {
   static getAdminBrandById = catchAsync(async (req: Request, res: Response) => {
     const brand = await BrandService.getBrandById(req.params.id as string);
     if (!brand) {
-      throw new AppError("Brand not found", 404);
+      throw new AppError(
+        `Brand not found for brand_id: ${req.params.id}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BRAND_NOT_FOUND,
+          errorCode: ERROR_CODES.BRAND_NOT_FOUND,
+          details: {
+            field: 'brand_id',
+            reason: 'The brand does not exist or has been deleted.',
+          },
+        }
+      );
     }
     return ResponseUtil.success(res, brand, "Brand retrieved successfully");
   });
@@ -90,7 +113,17 @@ export class BrandController {
 
     const validation = UpdateBrandDto.validate(updateDto);
     if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+      throw new AppError(
+        validation.errors.join(', '),
+        400,
+        {
+          userMessage: USER_MESSAGES.VALIDATION_ERROR,
+          errorCode: ERROR_CODES.VALIDATION_ERROR,
+          details: {
+            fields: validation.errors,
+          },
+        }
+      );
     }
 
     const brand = await BrandService.updateBrand(req.params.id as string, updateDto);

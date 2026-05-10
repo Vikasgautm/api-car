@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { ERROR_CODES, USER_MESSAGES } from '../../../constants/errorMessages';
 import { BodyType } from '../../../models/body-type.model';
 import { Brand } from '../../../models/brand.model';
 import { CarVariant, ICarVariant, SpecsNormalized, TransmissionType } from '../../../models/car-variant.model';
@@ -9,14 +10,14 @@ import { AppError } from '../../../shared/utils/app-error.util';
 import { CarDekhoExtractor } from '../extractors/cardekho.extractor';
 import { KeyMatcher } from '../extractors/key-matcher';
 import {
-  CarPreviewResponse,
-  ImportResult,
-  MatchedField,
-  MatchType,
-  SaveCarImportRequest,
-  SaveVariantImportRequest,
-  VariantPreviewItem,
-  VariantPreviewResponse
+    CarPreviewResponse,
+    ImportResult,
+    MatchedField,
+    MatchType,
+    SaveCarImportRequest,
+    SaveVariantImportRequest,
+    VariantPreviewItem,
+    VariantPreviewResponse
 } from '../types/import.types';
 
 export class ImportService {
@@ -222,7 +223,18 @@ export class ImportService {
     // Verify car exists
     const car = await Car.findOne({ car_id: carId, is_deleted: false });
     if (!car) {
-      throw new AppError('Car not found', 404);
+      throw new AppError(
+        'Car not found',
+        404,
+        {
+          userMessage: USER_MESSAGES.CAR_NOT_FOUND,
+          errorCode: ERROR_CODES.CAR_NOT_FOUND,
+          details: {
+            field: 'car_id',
+            reason: 'The car does not exist or has been deleted.',
+          },
+        }
+      );
     }
 
     for (const url of urls) {
@@ -377,7 +389,18 @@ export class ImportService {
     // Verify car exists
     const car = await Car.findOne({ car_id, is_deleted: false });
     if (!car) {
-      throw new AppError('Car not found', 404);
+      throw new AppError(
+        `Car not found for car_id: ${car_id}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.CAR_NOT_FOUND,
+          errorCode: ERROR_CODES.CAR_NOT_FOUND,
+          details: {
+            field: 'car_id',
+            reason: 'The car does not exist or has been deleted.',
+          },
+        }
+      );
     }
 
     for (const item of items) {

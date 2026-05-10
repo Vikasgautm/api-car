@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BodyTypeService = void 0;
 const uuid_1 = require("uuid");
+const errorMessages_1 = require("../../../constants/errorMessages");
 const body_type_model_1 = require("../../../models/body-type.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
@@ -98,7 +99,14 @@ class BodyTypeService {
         }
         const bodyType = await body_type_model_1.BodyType.findOneAndUpdate({ body_type_id: bodyTypeId, is_deleted: false }, updateData, { returnDocument: 'after' });
         if (!bodyType) {
-            throw new app_error_util_1.AppError('Body type not found', 404);
+            throw new app_error_util_1.AppError(`Body type not found or deleted for body_type_id: ${bodyTypeId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BODY_TYPE_NOT_FOUND,
+                details: {
+                    field: 'body_type_id',
+                    reason: 'The body type does not exist or has been deleted.',
+                },
+            });
         }
         return bodyType;
     }
@@ -106,7 +114,14 @@ class BodyTypeService {
         // First check if body type exists at all
         const existingBodyType = await body_type_model_1.BodyType.findOne({ body_type_id: bodyTypeId });
         if (!existingBodyType) {
-            throw new app_error_util_1.AppError('Body type not found', 404);
+            throw new app_error_util_1.AppError(`Body type not found for body_type_id: ${bodyTypeId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BODY_TYPE_NOT_FOUND,
+                details: {
+                    field: 'body_type_id',
+                    reason: 'The body type does not exist.',
+                },
+            });
         }
         // If already deleted, return success (idempotent)
         if (existingBodyType.is_deleted) {
@@ -119,14 +134,28 @@ class BodyTypeService {
     static async restoreBodyType(bodyTypeId) {
         const bodyType = await body_type_model_1.BodyType.findOneAndUpdate({ body_type_id: bodyTypeId, is_deleted: true }, { is_deleted: false }, { returnDocument: 'after' });
         if (!bodyType) {
-            throw new app_error_util_1.AppError('Body type not found', 404);
+            throw new app_error_util_1.AppError(`Body type not found for body_type_id: ${bodyTypeId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BODY_TYPE_NOT_FOUND,
+                details: {
+                    field: 'body_type_id',
+                    reason: 'The body type does not exist in the deleted records.',
+                },
+            });
         }
         return bodyType;
     }
     static async togglePublish(bodyTypeId) {
         const bodyType = await body_type_model_1.BodyType.findOne({ body_type_id: bodyTypeId, is_deleted: false });
         if (!bodyType) {
-            throw new app_error_util_1.AppError('Body type not found', 404);
+            throw new app_error_util_1.AppError(`Body type not found or deleted for body_type_id: ${bodyTypeId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BODY_TYPE_NOT_FOUND,
+                details: {
+                    field: 'body_type_id',
+                    reason: 'The body type does not exist or has been deleted.',
+                },
+            });
         }
         bodyType.is_published = !bodyType.is_published;
         await bodyType.save();

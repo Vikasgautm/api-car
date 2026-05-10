@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FuelTypeService = void 0;
 const uuid_1 = require("uuid");
+const errorMessages_1 = require("../../../constants/errorMessages");
 const fuel_type_model_1 = require("../../../models/fuel-type.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
@@ -81,28 +82,56 @@ class FuelTypeService {
             updateData.is_featured = fuelTypeData.is_featured;
         const fuelType = await fuel_type_model_1.FuelType.findOneAndUpdate({ fuel_type_id: fuelTypeId, is_deleted: false }, updateData, { returnDocument: 'after' });
         if (!fuelType) {
-            throw new app_error_util_1.AppError('Fuel type not found', 404);
+            throw new app_error_util_1.AppError(`Fuel type not found or deleted for fuel_type_id: ${fuelTypeId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+                details: {
+                    field: 'fuel_type_id',
+                    reason: 'The fuel type does not exist or has been deleted.',
+                },
+            });
         }
         return fuelType;
     }
     static async deleteFuelType(fuelTypeId) {
         const fuelType = await fuel_type_model_1.FuelType.findOneAndUpdate({ fuel_type_id: fuelTypeId, is_deleted: false }, { is_deleted: true }, { returnDocument: 'after' });
         if (!fuelType) {
-            throw new app_error_util_1.AppError('Fuel type not found', 404);
+            throw new app_error_util_1.AppError(`Fuel type not found or deleted for fuel_type_id: ${fuelTypeId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+                details: {
+                    field: 'fuel_type_id',
+                    reason: 'The fuel type does not exist or has already been deleted.',
+                },
+            });
         }
         return fuelType;
     }
     static async restoreFuelType(fuelTypeId) {
         const fuelType = await fuel_type_model_1.FuelType.findOneAndUpdate({ fuel_type_id: fuelTypeId, is_deleted: true }, { is_deleted: false }, { returnDocument: 'after' });
         if (!fuelType) {
-            throw new app_error_util_1.AppError('Fuel type not found', 404);
+            throw new app_error_util_1.AppError(`Fuel type not found for fuel_type_id: ${fuelTypeId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+                details: {
+                    field: 'fuel_type_id',
+                    reason: 'The fuel type does not exist in the deleted records.',
+                },
+            });
         }
         return fuelType;
     }
     static async togglePublish(fuelTypeId) {
         const fuelType = await fuel_type_model_1.FuelType.findOne({ fuel_type_id: fuelTypeId, is_deleted: false });
         if (!fuelType) {
-            throw new app_error_util_1.AppError('Fuel type not found', 404);
+            throw new app_error_util_1.AppError(`Fuel type not found or deleted for fuel_type_id: ${fuelTypeId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+                details: {
+                    field: 'fuel_type_id',
+                    reason: 'The fuel type does not exist or has been deleted.',
+                },
+            });
         }
         fuelType.is_published = !fuelType.is_published;
         await fuelType.save();

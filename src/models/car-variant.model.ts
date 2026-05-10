@@ -211,8 +211,12 @@ export interface ICarVariant extends Document {
   specs_normalized?: SpecsNormalized;
   specs_raw?: Record<string, any>;
   hidden_spec_keys?: string[];
+  hidden_sections?: string[];
   is_published: boolean;
   is_deleted: boolean;
+  is_archived: boolean;
+  archived_at?: Date;
+  archived_by?: string;
   // SEO fields
   meta_title?: string;
   meta_description?: string;
@@ -420,8 +424,12 @@ const variantSchema = new Schema<ICarVariant>(
     },
     specs_raw: { type: Schema.Types.Mixed },
     hidden_spec_keys: { type: [String], default: [] },
+    hidden_sections: { type: [String], default: [] },
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
+    is_archived: { type: Boolean, default: false },
+    archived_at: { type: Date },
+    archived_by: { type: String },
     // SEO fields
     meta_title: { type: String },
     meta_description: { type: String, maxlength: 160 },
@@ -440,10 +448,11 @@ variantSchema.index({ fuel_type_id: 1 });
 variantSchema.index({ transmission_type: 1 });
 variantSchema.index({ model_year: 1 });
 variantSchema.index({ is_published: 1, is_deleted: 1 });
+variantSchema.index({ is_archived: 1 });
 variantSchema.index({ variant_name: 'text' });
-variantSchema.index({ car_id: 1, is_published: 1, is_deleted: 1 });
-variantSchema.index({ expected_launch_date: 1, is_published: 1, is_deleted: 1 });
-variantSchema.index({ ex_showroom_price: 1, is_published: 1, is_deleted: 1 });
-variantSchema.index({ expected_price: 1, is_published: 1, is_deleted: 1 });
+variantSchema.index({ car_id: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ expected_launch_date: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ ex_showroom_price: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ expected_price: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
 
 export const CarVariant = model<ICarVariant>('CarVariant', variantSchema);

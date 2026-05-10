@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarVariantService = void 0;
 const uuid_1 = require("uuid");
+const errorMessages_1 = require("../../../constants/errorMessages");
 const car_variant_model_1 = require("../../../models/car-variant.model");
 const car_model_1 = require("../../../models/car.model");
 const fuel_type_model_1 = require("../../../models/fuel-type.model");
@@ -10,6 +11,22 @@ const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
 class CarVariantService {
+    static SECTION_NAME_TO_KEY_MAP = {
+        'Engine & Performance': 'engine_performance',
+        'Mileage / Range': 'mileage_range',
+        'Battery & Charging': 'battery_charging',
+        'Dimensions & Practicality': 'dimensions_practicality',
+        'Suspension / Steering / Brakes': 'suspension_steering_brakes',
+        'Tyres & Wheels': 'tyres_wheels',
+        'Safety': 'safety',
+        'ADAS': 'adas',
+        'Comfort & Convenience': 'comfort_convenience',
+        'Infotainment & Connectivity': 'infotainment_connectivity',
+        'Connected Car': 'connected_car',
+        'Interior': 'interior',
+        'Exterior': 'exterior',
+        'Warranty': 'warranty',
+    };
     static removeHiddenSpecKeys(specs_normalized, hidden_spec_keys = []) {
         if (!specs_normalized || !hidden_spec_keys || hidden_spec_keys.length === 0) {
             return specs_normalized;
@@ -32,12 +49,39 @@ class CarVariantService {
         });
         return result;
     }
+    static removeHiddenSections(specs_normalized, hidden_sections) {
+        const sectionsToHide = hidden_sections || [];
+        if (!specs_normalized || sectionsToHide.length === 0) {
+            return specs_normalized;
+        }
+        // Create shallow copy only if needed (more efficient than deep clone)
+        const result = { ...specs_normalized };
+        // Delete only the sections that need to be hidden
+        for (const sectionName of sectionsToHide) {
+            const key = this.SECTION_NAME_TO_KEY_MAP[sectionName];
+            if (key && result[key]) {
+                delete result[key];
+            }
+            else if (!key) {
+                console.warn(`Unknown section name in hidden_sections: ${sectionName}`);
+            }
+        }
+        return result;
+    }
     static async getAllVariants(filterDto, includeDeleted = false) {
-        const { page = 1, limit = 10, q, car_id, fuel_type_id, transmission_type, model_year, is_published, min_price, max_price, min_model_year, max_model_year, sortBy = 'variant_name', sortOrder = 'asc', } = filterDto;
+        const { page = 1, limit = 10, q, car_id, fuel_type_id, transmission_type, model_year, is_published, is_archived, min_price, max_price, min_model_year, max_model_year, sortBy = 'variant_name', sortOrder = 'asc', } = filterDto;
         const filter = {};
         if (!includeDeleted) {
             filter.is_deleted = false;
         }
+        // By default, exclude archived variants unless explicitly requested
+        if (is_archived === undefined || is_archived === 'false') {
+            filter.is_archived = false;
+        }
+        else if (is_archived === 'true') {
+            filter.is_archived = true;
+        }
+        // If is_archived === 'all', don't add any filter for is_archived
         if (is_published !== undefined) {
             filter.is_published = is_published;
         }
@@ -87,7 +131,7 @@ class CarVariantService {
         const { skip, limit: validatedLimit } = pagination_util_1.PaginationUtil.getPaginationParams(page, limit);
         const sortFilter = filter_util_1.FilterUtil.buildSortFilter(sortBy, sortOrder);
         const variants = await car_variant_model_1.CarVariant.find(filter)
-            .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published')
+            .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived')
             .populate("car_id", "name slug")
             .populate("fuel_type_id", "name slug")
             .sort(sortFilter)
@@ -111,11 +155,28 @@ class CarVariantService {
     static async createVariant(variantData) {
         const car = await car_model_1.Car.findOne({ car_id: variantData.car_id, is_deleted: false }).lean();
         if (!car) {
-            throw new app_error_util_1.AppError('Car not found', 404);
+            throw new app_error_util_1.AppError(`Car not found or deleted for car_id: ${variantData.car_id}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
+                details: {
+                    field: 'car_id',
+                    reason: 'The car does not exist, is deleted, or the wrong ID type was sent.',
+                },
+            });
         }
-        const fuelType = await fuel_type_model_1.FuelType.findOne({ fuel_type_id: variantData.fuel_type_id, is_deleted: false }).lean();
-        if (!fuelType) {
-            throw new app_error_util_1.AppError('Fuel type not found', 404);
+        // fuel_type_id is now optional - only validate if provided
+        if (variantData.fuel_type_id) {
+            const fuelType = await fuel_type_model_1.FuelType.findOne({ fuel_type_id: variantData.fuel_type_id, is_deleted: false }).lean();
+            if (!fuelType) {
+                throw new app_error_util_1.AppError(`Fuel type not found or deleted for fuel_type_id: ${variantData.fuel_type_id}`, 404, {
+                    userMessage: errorMessages_1.USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+                    errorCode: errorMessages_1.ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+                    details: {
+                        field: 'fuel_type_id',
+                        reason: 'The fuel type does not exist, is deleted, or the wrong ID type was sent.',
+                    },
+                });
+            }
         }
         const variant_id = (0, uuid_1.v4)();
         const slug = slug_util_1.SlugUtil.generate(variantData.variant_name);
@@ -143,8 +204,10 @@ class CarVariantService {
             expected_launch_date: variantData.expected_launch_date,
             specs_normalized: variantData.specs_normalized,
             hidden_spec_keys: variantData.hidden_spec_keys || [],
+            hidden_sections: variantData.hidden_sections || [],
             is_published: variantData.is_published || false,
             is_deleted: false,
+            is_archived: false,
         };
         return await car_variant_model_1.CarVariant.create(variant);
     }
@@ -161,16 +224,33 @@ class CarVariantService {
         if (variantData.car_id !== undefined) {
             const car = await car_model_1.Car.findOne({ car_id: variantData.car_id, is_deleted: false }).lean();
             if (!car) {
-                throw new app_error_util_1.AppError('Car not found or deleted', 404);
+                throw new app_error_util_1.AppError(`Car not found or deleted for car_id: ${variantData.car_id}`, 404, {
+                    userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
+                    errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
+                    details: {
+                        field: 'car_id',
+                        reason: 'The car does not exist, is deleted, or the wrong ID type was sent.',
+                    },
+                });
             }
             updateData.car_id = variantData.car_id;
         }
         if (variantData.model_year !== undefined)
             updateData.model_year = variantData.model_year;
         if (variantData.fuel_type_id !== undefined) {
-            const fuelType = await fuel_type_model_1.FuelType.findOne({ fuel_type_id: variantData.fuel_type_id, is_deleted: false }).lean();
-            if (!fuelType) {
-                throw new app_error_util_1.AppError('Fuel type not found or deleted', 404);
+            // fuel_type_id is now optional - only validate if provided and not empty
+            if (variantData.fuel_type_id) {
+                const fuelType = await fuel_type_model_1.FuelType.findOne({ fuel_type_id: variantData.fuel_type_id, is_deleted: false }).lean();
+                if (!fuelType) {
+                    throw new app_error_util_1.AppError(`Fuel type not found or deleted for fuel_type_id: ${variantData.fuel_type_id}`, 404, {
+                        userMessage: errorMessages_1.USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+                        errorCode: errorMessages_1.ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+                        details: {
+                            field: 'fuel_type_id',
+                            reason: 'The fuel type does not exist, is deleted, or the wrong ID type was sent.',
+                        },
+                    });
+                }
             }
             updateData.fuel_type_id = variantData.fuel_type_id;
         }
@@ -190,32 +270,62 @@ class CarVariantService {
             updateData.specs_normalized = variantData.specs_normalized;
         if (variantData.hidden_spec_keys !== undefined)
             updateData.hidden_spec_keys = variantData.hidden_spec_keys;
+        if (variantData.hidden_sections !== undefined)
+            updateData.hidden_sections = variantData.hidden_sections;
         if (variantData.is_published !== undefined)
             updateData.is_published = variantData.is_published;
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false }, updateData, { returnDocument: 'after' });
         if (!variant) {
-            throw new app_error_util_1.AppError('Variant not found', 404);
+            throw new app_error_util_1.AppError(`Variant not found or deleted for variant_id: ${variantId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.VARIANT_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.VARIANT_NOT_FOUND,
+                details: {
+                    field: 'variant_id',
+                    reason: 'The variant does not exist or has been deleted.',
+                },
+            });
         }
         return variant;
     }
     static async deleteVariant(variantId) {
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false }, { is_deleted: true }, { returnDocument: 'after' });
         if (!variant) {
-            throw new app_error_util_1.AppError('Variant not found', 404);
+            throw new app_error_util_1.AppError(`Variant not found or deleted for variant_id: ${variantId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.VARIANT_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.VARIANT_NOT_FOUND,
+                details: {
+                    field: 'variant_id',
+                    reason: 'The variant does not exist or has already been deleted.',
+                },
+            });
         }
         return variant;
     }
     static async restoreVariant(variantId) {
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: true }, { is_deleted: false }, { returnDocument: 'after' });
         if (!variant) {
-            throw new app_error_util_1.AppError('Variant not found', 404);
+            throw new app_error_util_1.AppError(`Variant not found for variant_id: ${variantId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.VARIANT_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.VARIANT_NOT_FOUND,
+                details: {
+                    field: 'variant_id',
+                    reason: 'The variant does not exist in the deleted records.',
+                },
+            });
         }
         return variant;
     }
     static async togglePublish(variantId) {
         const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId, is_deleted: false });
         if (!variant) {
-            throw new app_error_util_1.AppError('Variant not found', 404);
+            throw new app_error_util_1.AppError(`Variant not found or deleted for variant_id: ${variantId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.VARIANT_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.VARIANT_NOT_FOUND,
+                details: {
+                    field: 'variant_id',
+                    reason: 'The variant does not exist or has been deleted.',
+                },
+            });
         }
         variant.is_published = !variant.is_published;
         await variant.save();
@@ -224,14 +334,64 @@ class CarVariantService {
     static async publishVariant(variantId) {
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false }, { is_published: true }, { returnDocument: 'after' });
         if (!variant) {
-            throw new app_error_util_1.AppError('Variant not found', 404);
+            throw new app_error_util_1.AppError(`Variant not found or deleted for variant_id: ${variantId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.VARIANT_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.VARIANT_NOT_FOUND,
+                details: {
+                    field: 'variant_id',
+                    reason: 'The variant does not exist or has been deleted.',
+                },
+            });
         }
         return variant;
     }
     static async unpublishVariant(variantId) {
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false }, { is_published: false }, { returnDocument: 'after' });
         if (!variant) {
-            throw new app_error_util_1.AppError('Variant not found', 404);
+            throw new app_error_util_1.AppError(`Variant not found or deleted for variant_id: ${variantId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.VARIANT_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.VARIANT_NOT_FOUND,
+                details: {
+                    field: 'variant_id',
+                    reason: 'The variant does not exist or has been deleted.',
+                },
+            });
+        }
+        return variant;
+    }
+    static async archiveVariant(variantId, archivedBy) {
+        const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false, is_archived: false }, {
+            is_archived: true,
+            archived_at: new Date(),
+            archived_by: archivedBy
+        }, { returnDocument: 'after' });
+        if (!variant) {
+            throw new app_error_util_1.AppError(`Variant not found, deleted, or already archived for variant_id: ${variantId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.VARIANT_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.VARIANT_NOT_FOUND,
+                details: {
+                    field: 'variant_id',
+                    reason: 'The variant does not exist, is deleted, or is already archived.',
+                },
+            });
+        }
+        return variant;
+    }
+    static async unarchiveVariant(variantId) {
+        const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false, is_archived: true }, {
+            is_archived: false,
+            archived_at: null,
+            archived_by: null
+        }, { returnDocument: 'after' });
+        if (!variant) {
+            throw new app_error_util_1.AppError(`Variant not found, deleted, or not archived for variant_id: ${variantId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.VARIANT_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.VARIANT_NOT_FOUND,
+                details: {
+                    field: 'variant_id',
+                    reason: 'The variant does not exist, is deleted, or is not archived.',
+                },
+            });
         }
         return variant;
     }

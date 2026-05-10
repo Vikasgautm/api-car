@@ -10,6 +10,7 @@ const updateUpcomingCars_job_1 = require("./jobs/updateUpcomingCars.job");
 const admin_seed_1 = require("./seeds/admin.seed");
 const city_seed_1 = require("./seeds/city.seed");
 const logger_1 = require("./utils/logger");
+const fuel_type_seed_1 = require("./seeds/fuel-type.seed");
 const startServer = async () => {
     try {
         // MongoDB Connection
@@ -20,6 +21,8 @@ const startServer = async () => {
         await (0, admin_seed_1.createDefaultSuperAdmin)();
         // Seed cities from JSON file
         await (0, city_seed_1.seedCities)();
+        // Seed default fuel types
+        await (0, fuel_type_seed_1.seedFuelTypes)();
         // Start auto-launch cron job
         updateUpcomingCars_job_1.UpdateUpcomingCarsJob.start();
         // Start Express Server

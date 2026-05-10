@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { BodyType } from "../../../models/body-type.model";
 import { Brand } from "../../../models/brand.model";
 import { CarVariant } from "../../../models/car-variant.model";
@@ -11,124 +12,28 @@ import { PaginationUtil } from "../../../shared/utils/pagination.util";
 import { SlugUtil } from "../../../shared/utils/slug.util";
 
 export class CarService {
-  // static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
-  //   const {
-  //     page = 1,
-  //     limit = 10,
-  //     q,
-  //     brand_id,
-  //     body_type_id,
-  //     status,
-  //     is_electric,
-  //     is_published,
-  //     is_featured,
-  //     min_price,
-  //     max_price,
-  //     sortBy = 'name',
-  //     sortOrder = 'asc',
-  //   } = filterDto;
-
-  //   console.log('getAllCars called with:', { filterDto, includeDeleted });
-
-  //   const filter: Record<string, unknown> = {};
-
-  //   if (!includeDeleted) {
-  //     filter.is_deleted = false;
-  //   }
-
-  //   if (is_published !== undefined) {
-  //     filter.is_published = is_published;
-  //   }
-
-  //   if (is_featured !== undefined) {
-  //     filter.is_featured = is_featured;
-  //   }
-
-  //   if (brand_id !== undefined) {
-  //     filter.brand_id = brand_id;
-  //   }
-
-  //   if (body_type_id !== undefined) {
-  //     filter.body_type_id = body_type_id;
-  //   }
-
-  //   if (status !== undefined) {
-  //     filter.status = status;
-  //   }
-
-  //   if (is_electric !== undefined) {
-  //     filter.is_electric = is_electric;
-  //   }
-
-  //   // Price range filter (will be applied after fetching variants)
-  //   const priceFilter: Record<string, unknown> = {};
-  //   if (min_price !== undefined) {
-  //     priceFilter.$gte = Number(min_price);
-  //   }
-  //   if (max_price !== undefined) {
-  //     priceFilter.$lte = Number(max_price);
-  //   }
-
-  //   if (q) {
-  //     const searchFilter = FilterUtil.buildSearchFilter(['name', 'short_description', 'description'], q);
-  //     Object.assign(filter, searchFilter);
-  //   }
-
-  //   const { skip, limit: validatedLimit } = PaginationUtil.getPaginationParams(page, limit);
-  //   const sortFilter = FilterUtil.buildSortFilter(sortBy, sortOrder);
-  //   console.log(sortFilter, "sortfilter",validatedLimit, filter);
-    
-  //   let cars = await Car.find(filter)
-  //     .populate("brand_id", "name slug")
-  //     .populate("body_type_id", "name slug")
-  //     .select('car_id name slug brand_id body_type_id short_description thumbnail status is_electric is_published is_featured meta_title meta_description')
-  //     .sort(sortFilter)
-  //     .skip(skip)
-  //     .limit(validatedLimit)
-  //     .lean();
-  //   console.log(cars, "cars");
-  //   // Apply price range filter by checking variants
-  //   if (Object.keys(priceFilter).length > 0) {
-  //     const carIds = (await CarVariant.find({
-  //       $or: [
-  //         { ex_showroom_price: priceFilter },
-  //         { expected_price: priceFilter },
-  //       ],
-  //       is_deleted: false,
-  //     }).distinct('car_id')).map(id => id.toString());
-
-  //     cars = cars.filter((car: any) => carIds.includes(car.car_id.toString()));
-  //   }
-
-  //   const total = Object.keys(priceFilter).length > 0 
-  //     ? cars.length 
-  //     : await Car.countDocuments(filter);
-  //   const paginationMeta = PaginationUtil.createPaginationMeta(page, validatedLimit, total);
-
-  //   return { cars, pagination: paginationMeta };
-  // }
-static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
-  try {
-    const {
-      page = 1,
-      limit = 10,
-      q,
-      brand_id,
-      body_type_id,
-      fuel_type_id,
-      status,
-      is_electric,
-      is_published,
-      is_featured,
-      is_popular,
-      is_recommended,
-      is_latest,
-      top_selling,
-      min_price,
-      max_price,
-      sortBy = 'name',
-      sortOrder = 'asc',
-    } = filterDto;
+  static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        q,
+        brand_id,
+        body_type_id,
+        fuel_type_id,
+        status,
+        is_electric,
+        is_published,
+        is_featured,
+        is_popular,
+        is_recommended,
+        is_latest,
+        top_selling,
+        min_price,
+        max_price,
+        sortBy = 'name',
+        sortOrder = 'asc',
+      } = filterDto;
 
     const filter: Record<string, any> = {};
 
@@ -260,20 +165,53 @@ static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
     // Validate brand_id
     const brand = await Brand.findOne({ brand_id: carData.brand_id, is_deleted: false });
     if (!brand) {
-      throw new AppError('Brand not found', 404);
+      throw new AppError(
+        `Brand not found or deleted for brand_id: ${carData.brand_id}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BRAND_NOT_FOUND,
+          errorCode: ERROR_CODES.BRAND_NOT_FOUND,
+          details: {
+            field: 'brand_id',
+            reason: 'The selected brand does not exist, is deleted, or the wrong ID type was sent.',
+          },
+        }
+      );
     }
 
     // Validate body_type_id
     const bodyType = await BodyType.findOne({ body_type_id: carData.body_type_id, is_deleted: false });
     if (!bodyType) {
-      throw new AppError('Body type not found', 404);
+      throw new AppError(
+        `Body type not found or deleted for body_type_id: ${carData.body_type_id}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.BODY_TYPE_NOT_FOUND,
+          details: {
+            field: 'body_type_id',
+            reason: 'The selected body type does not exist, is deleted, or the wrong ID type was sent.',
+          },
+        }
+      );
     }
 
     // Validate fuel_type_id if provided
     if (carData.fuel_type_id) {
       const fuelType = await FuelType.findOne({ fuel_type_id: carData.fuel_type_id, is_deleted: false });
       if (!fuelType) {
-        throw new AppError('Fuel type not found', 404);
+        throw new AppError(
+          `Fuel type not found or deleted for fuel_type_id: ${carData.fuel_type_id}`,
+          404,
+          {
+            userMessage: USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+            errorCode: ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+            details: {
+              field: 'fuel_type_id',
+              reason: 'The selected fuel type does not exist, is deleted, or the wrong ID type was sent.',
+            },
+          }
+        );
       }
     }
 
@@ -342,7 +280,18 @@ static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
     if (carData.brand_id !== undefined) {
       const brand = await Brand.findOne({ brand_id: carData.brand_id, is_deleted: false });
       if (!brand) {
-        throw new AppError('Brand not found or deleted', 404);
+        throw new AppError(
+          `Brand not found or deleted for brand_id: ${carData.brand_id}`,
+          404,
+          {
+            userMessage: USER_MESSAGES.BRAND_NOT_FOUND,
+            errorCode: ERROR_CODES.BRAND_NOT_FOUND,
+            details: {
+              field: 'brand_id',
+              reason: 'The selected brand does not exist, is deleted, or the wrong ID type was sent.',
+            },
+          }
+        );
       }
       updateData.brand_id = carData.brand_id;
     }
@@ -350,7 +299,18 @@ static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
     if (carData.body_type_id !== undefined) {
       const bodyType = await BodyType.findOne({ body_type_id: carData.body_type_id, is_deleted: false });
       if (!bodyType) {
-        throw new AppError('Body type not found or deleted', 404);
+        throw new AppError(
+          `Body type not found or deleted for body_type_id: ${carData.body_type_id}`,
+          404,
+          {
+            userMessage: USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+            errorCode: ERROR_CODES.BODY_TYPE_NOT_FOUND,
+            details: {
+              field: 'body_type_id',
+              reason: 'The selected body type does not exist, is deleted, or the wrong ID type was sent.',
+            },
+          }
+        );
       }
       updateData.body_type_id = carData.body_type_id;
     }
@@ -359,7 +319,18 @@ static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
       if (carData.fuel_type_id) {
         const fuelTypeDoc = await FuelType.findOne({ fuel_type_id: carData.fuel_type_id, is_deleted: false });
         if (!fuelTypeDoc) {
-          throw new AppError('Fuel type not found or deleted', 404);
+          throw new AppError(
+            `Fuel type not found or deleted for fuel_type_id: ${carData.fuel_type_id}`,
+            404,
+            {
+              userMessage: USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+              errorCode: ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+              details: {
+                field: 'fuel_type_id',
+                reason: 'The selected fuel type does not exist, is deleted, or the wrong ID type was sent.',
+              },
+            }
+          );
         }
       }
       updateData.fuel_type_id = carData.fuel_type_id;
@@ -415,7 +386,18 @@ static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
     );
 
     if (!car) {
-      throw new AppError('Car not found', 404);
+      throw new AppError(
+        'Car not found',
+        404,
+        {
+          userMessage: USER_MESSAGES.CAR_NOT_FOUND,
+          errorCode: ERROR_CODES.CAR_NOT_FOUND,
+          details: {
+            field: 'car_id',
+            reason: 'The car does not exist or has already been deleted.',
+          },
+        }
+      );
     }
 
     return car;
@@ -429,7 +411,18 @@ static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
     );
 
     if (!car) {
-      throw new AppError('Car not found', 404);
+      throw new AppError(
+        `Car not found or deleted for car_id: ${carId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.CAR_NOT_FOUND,
+          errorCode: ERROR_CODES.CAR_NOT_FOUND,
+          details: {
+            field: 'car_id',
+            reason: 'The car does not exist or has already been deleted.',
+          },
+        }
+      );
     }
 
     return car;
@@ -443,7 +436,18 @@ static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
     );
 
     if (!car) {
-      throw new AppError('Car not found', 404);
+      throw new AppError(
+        `Car not found for car_id: ${carId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.CAR_NOT_FOUND,
+          errorCode: ERROR_CODES.CAR_NOT_FOUND,
+          details: {
+            field: 'car_id',
+            reason: 'The car does not exist in the deleted records.',
+          },
+        }
+      );
     }
 
     return car;
@@ -452,7 +456,18 @@ static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
   static async togglePublish(carId: string) {
     const car = await Car.findOne({ car_id: carId, is_deleted: false });
     if (!car) {
-      throw new AppError('Car not found', 404);
+      throw new AppError(
+        `Car not found or deleted for car_id: ${carId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.CAR_NOT_FOUND,
+          errorCode: ERROR_CODES.CAR_NOT_FOUND,
+          details: {
+            field: 'car_id',
+            reason: 'The car does not exist or has been deleted.',
+          },
+        }
+      );
     }
 
     car.is_published = !car.is_published;
@@ -464,7 +479,18 @@ static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
   static async markLaunched(carId: string) {
     const car = await Car.findOne({ car_id: carId, is_deleted: false });
     if (!car) {
-      throw new AppError('Car not found', 404);
+      throw new AppError(
+        `Car not found or deleted for car_id: ${carId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.CAR_NOT_FOUND,
+          errorCode: ERROR_CODES.CAR_NOT_FOUND,
+          details: {
+            field: 'car_id',
+            reason: 'The car does not exist or has been deleted.',
+          },
+        }
+      );
     }
 
     const today = new Date();
@@ -482,11 +508,35 @@ static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
   static async markUpcoming(carId: string, data: { expected_exshowroom_price?: number; expected_launch_date?: string }) {
     const car = await Car.findOne({ car_id: carId, is_deleted: false });
     if (!car) {
-      throw new AppError('Car not found', 404);
+      throw new AppError(
+        `Car not found or deleted for car_id: ${carId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.CAR_NOT_FOUND,
+          errorCode: ERROR_CODES.CAR_NOT_FOUND,
+          details: {
+            field: 'car_id',
+            reason: 'The car does not exist or has been deleted.',
+          },
+        }
+      );
     }
 
     if (!data.expected_exshowroom_price || !data.expected_launch_date) {
-      throw new AppError('expected_exshowroom_price and expected_launch_date are required for upcoming cars', 400);
+      throw new AppError(
+        'expected_exshowroom_price and expected_launch_date are required for upcoming cars',
+        400,
+        {
+          userMessage: USER_MESSAGES.VALIDATION_ERROR,
+          errorCode: ERROR_CODES.VALIDATION_ERROR,
+          details: {
+            fields: {
+              expected_exshowroom_price: 'Expected ex-showroom price is required for upcoming cars.',
+              expected_launch_date: 'Expected launch date is required for upcoming cars.',
+            },
+          },
+        }
+      );
     }
 
     car.is_upcoming = true;

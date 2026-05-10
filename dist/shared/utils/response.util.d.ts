@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { ErrorCode } from './app-error.util';
 export declare class ResponseUtil {
     static success<T>(res: Response, data: T, message?: string, statusCode?: number): Response;
-    static error(res: Response, message: string, statusCode?: number, code?: ErrorCode, errors?: any[]): Response;
+    static error(res: Response, message: string, statusCode?: number, code?: ErrorCode | string, errors?: any[], details?: Record<string, any>): Response;
     static paginated<T>(res: Response, data: T[], pagination: {
         page: number;
         limit: number;

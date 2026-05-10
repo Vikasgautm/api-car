@@ -6,7 +6,7 @@ export class CreateVariantDto {
   variant_name!: string;
   slug?: string;
   model_year!: number;
-  fuel_type_id!: string;
+  fuel_type_id?: string;
   transmission_type!: 'manual' | 'automatic' | 'cvt' | 'dct' | 'amt';
   drivetrain?: string;
   seating_capacity?: number;
@@ -15,6 +15,7 @@ export class CreateVariantDto {
   expected_launch_date?: Date;
   specs_normalized?: SpecsNormalized;
   hidden_spec_keys?: string[];
+  hidden_sections?: string[];
   is_published?: boolean;
   meta_title?: string;
   meta_description?: string;
@@ -35,8 +36,9 @@ export class CreateVariantDto {
     const modelYearResult = ValidationUtil.required(dto.model_year, 'model_year');
     if (!modelYearResult.valid) errors.push(...modelYearResult.errors);
 
-    const fuelTypeIdResult = ValidationUtil.required(dto.fuel_type_id, 'fuel_type_id');
-    if (!fuelTypeIdResult.valid) errors.push(...fuelTypeIdResult.errors);
+    // fuel_type_id is now optional - allow creation without fuel type if none exist
+    // const fuelTypeIdResult = ValidationUtil.required(dto.fuel_type_id, 'fuel_type_id');
+    // if (!fuelTypeIdResult.valid) errors.push(...fuelTypeIdResult.errors);
 
     const transmissionResult = ValidationUtil.required(dto.transmission_type, 'transmission_type');
     if (!transmissionResult.valid) errors.push(...transmissionResult.errors);

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { protect, restrictTo } from '../../../middlewares/auth.middleware';
-import { validateIdParam, validatePaginationQuery, validateSlugParam } from '../../../shared/validation';
+import { validatePaginationQuery, validateSlugParam, validateUuidIdParam } from '../../../shared/validation';
 import { FuelTypeController } from '../controllers/fuel-type.controller';
 
 const router = Router();
@@ -15,12 +15,12 @@ adminRouter.use(protect);
 adminRouter.use(restrictTo('admin', 'super_admin'));
 
 adminRouter.get('/', validatePaginationQuery, FuelTypeController.getAllAdminFuelTypes);
-adminRouter.get('/:id', validateIdParam, FuelTypeController.getAdminFuelTypeById);
+adminRouter.get('/:id', validateUuidIdParam, FuelTypeController.getAdminFuelTypeById);
 adminRouter.post('/', FuelTypeController.createFuelType);
-adminRouter.put('/:id', validateIdParam, FuelTypeController.updateFuelType);
-adminRouter.delete('/:id', validateIdParam, FuelTypeController.deleteFuelType);
-adminRouter.patch('/restore/:id', validateIdParam, FuelTypeController.restoreFuelType);
-adminRouter.patch('/:id/publish', validateIdParam, FuelTypeController.togglePublish);
+adminRouter.put('/:id', validateUuidIdParam, FuelTypeController.updateFuelType);
+adminRouter.delete('/:id', validateUuidIdParam, FuelTypeController.deleteFuelType);
+adminRouter.patch('/restore/:id', validateUuidIdParam, FuelTypeController.restoreFuelType);
+adminRouter.patch('/:id/publish', validateUuidIdParam, FuelTypeController.togglePublish);
 
 router.use('/admin', adminRouter);
 

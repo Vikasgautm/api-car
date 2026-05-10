@@ -193,8 +193,12 @@ export interface ICarVariant extends Document {
     specs_normalized?: SpecsNormalized;
     specs_raw?: Record<string, any>;
     hidden_spec_keys?: string[];
+    hidden_sections?: string[];
     is_published: boolean;
     is_deleted: boolean;
+    is_archived: boolean;
+    archived_at?: Date;
+    archived_by?: string;
     meta_title?: string;
     meta_description?: string;
     meta_keywords?: string;

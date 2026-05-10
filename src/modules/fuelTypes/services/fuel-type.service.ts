@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { FuelType, IFuelType } from "../../../models/fuel-type.model";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { FilterUtil } from "../../../shared/utils/filter.util";
@@ -99,7 +100,18 @@ export class FuelTypeService {
     );
 
     if (!fuelType) {
-      throw new AppError('Fuel type not found', 404);
+      throw new AppError(
+        `Fuel type not found or deleted for fuel_type_id: ${fuelTypeId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+          details: {
+            field: 'fuel_type_id',
+            reason: 'The fuel type does not exist or has been deleted.',
+          },
+        }
+      );
     }
 
     return fuelType;
@@ -113,7 +125,18 @@ export class FuelTypeService {
     );
 
     if (!fuelType) {
-      throw new AppError('Fuel type not found', 404);
+      throw new AppError(
+        `Fuel type not found or deleted for fuel_type_id: ${fuelTypeId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+          details: {
+            field: 'fuel_type_id',
+            reason: 'The fuel type does not exist or has already been deleted.',
+          },
+        }
+      );
     }
 
     return fuelType;
@@ -127,7 +150,18 @@ export class FuelTypeService {
     );
 
     if (!fuelType) {
-      throw new AppError('Fuel type not found', 404);
+      throw new AppError(
+        `Fuel type not found for fuel_type_id: ${fuelTypeId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+          details: {
+            field: 'fuel_type_id',
+            reason: 'The fuel type does not exist in the deleted records.',
+          },
+        }
+      );
     }
 
     return fuelType;
@@ -136,7 +170,18 @@ export class FuelTypeService {
   static async togglePublish(fuelTypeId: string) {
     const fuelType = await FuelType.findOne({ fuel_type_id: fuelTypeId, is_deleted: false });
     if (!fuelType) {
-      throw new AppError('Fuel type not found', 404);
+      throw new AppError(
+        `Fuel type not found or deleted for fuel_type_id: ${fuelTypeId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+          details: {
+            field: 'fuel_type_id',
+            reason: 'The fuel type does not exist or has been deleted.',
+          },
+        }
+      );
     }
 
     fuelType.is_published = !fuelType.is_published;

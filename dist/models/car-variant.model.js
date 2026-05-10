@@ -199,8 +199,12 @@ const variantSchema = new mongoose_1.Schema({
     },
     specs_raw: { type: mongoose_1.Schema.Types.Mixed },
     hidden_spec_keys: { type: [String], default: [] },
+    hidden_sections: { type: [String], default: [] },
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
+    is_archived: { type: Boolean, default: false },
+    archived_at: { type: Date },
+    archived_by: { type: String },
     // SEO fields
     meta_title: { type: String },
     meta_description: { type: String, maxlength: 160 },
@@ -216,10 +220,11 @@ variantSchema.index({ fuel_type_id: 1 });
 variantSchema.index({ transmission_type: 1 });
 variantSchema.index({ model_year: 1 });
 variantSchema.index({ is_published: 1, is_deleted: 1 });
+variantSchema.index({ is_archived: 1 });
 variantSchema.index({ variant_name: 'text' });
-variantSchema.index({ car_id: 1, is_published: 1, is_deleted: 1 });
-variantSchema.index({ expected_launch_date: 1, is_published: 1, is_deleted: 1 });
-variantSchema.index({ ex_showroom_price: 1, is_published: 1, is_deleted: 1 });
-variantSchema.index({ expected_price: 1, is_published: 1, is_deleted: 1 });
+variantSchema.index({ car_id: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ expected_launch_date: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ ex_showroom_price: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ expected_price: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
 exports.CarVariant = (0, mongoose_1.model)('CarVariant', variantSchema);
 //# sourceMappingURL=car-variant.model.js.map

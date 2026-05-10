@@ -21,6 +21,8 @@ adminRouter.patch('/restore/:id', validation_1.validateUuidIdParam, car_variant_
 adminRouter.patch('/:id/publish', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.togglePublish);
 adminRouter.patch('/:id/publish/enable', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.publishVariant);
 adminRouter.patch('/:id/publish/disable', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.unpublishVariant);
+adminRouter.patch('/:id/archive', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.archiveVariant);
+adminRouter.patch('/:id/unarchive', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.unarchiveVariant);
 router.use('/admin', adminRouter);
 // Legacy routes for backward compatibility
 router.get('/', validation_1.validatePaginationQuery, car_variant_controller_1.CarVariantController.getAllPublicVariants);

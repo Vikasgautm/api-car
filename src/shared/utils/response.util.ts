@@ -23,8 +23,9 @@ export class ResponseUtil {
     res: Response,
     message: string,
     statusCode: number = 500,
-    code?: ErrorCode,
-    errors?: any[]
+    code?: ErrorCode | string,
+    errors?: any[],
+    details?: Record<string, any>
   ): Response {
     const response: ApiResponse = {
       success: false,
@@ -34,6 +35,11 @@ export class ResponseUtil {
       statusCode,
       timestamp: new Date().toISOString(),
     };
+
+    if (details) {
+      (response as any).details = details;
+    }
+
     return res.status(statusCode).json(response);
   }
 

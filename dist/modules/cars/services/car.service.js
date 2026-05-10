@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarService = void 0;
 const uuid_1 = require("uuid");
+const errorMessages_1 = require("../../../constants/errorMessages");
 const body_type_model_1 = require("../../../models/body-type.model");
 const brand_model_1 = require("../../../models/brand.model");
 const car_variant_model_1 = require("../../../models/car-variant.model");
@@ -13,86 +14,6 @@ const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
 class CarService {
-    // static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
-    //   const {
-    //     page = 1,
-    //     limit = 10,
-    //     q,
-    //     brand_id,
-    //     body_type_id,
-    //     status,
-    //     is_electric,
-    //     is_published,
-    //     is_featured,
-    //     min_price,
-    //     max_price,
-    //     sortBy = 'name',
-    //     sortOrder = 'asc',
-    //   } = filterDto;
-    //   console.log('getAllCars called with:', { filterDto, includeDeleted });
-    //   const filter: Record<string, unknown> = {};
-    //   if (!includeDeleted) {
-    //     filter.is_deleted = false;
-    //   }
-    //   if (is_published !== undefined) {
-    //     filter.is_published = is_published;
-    //   }
-    //   if (is_featured !== undefined) {
-    //     filter.is_featured = is_featured;
-    //   }
-    //   if (brand_id !== undefined) {
-    //     filter.brand_id = brand_id;
-    //   }
-    //   if (body_type_id !== undefined) {
-    //     filter.body_type_id = body_type_id;
-    //   }
-    //   if (status !== undefined) {
-    //     filter.status = status;
-    //   }
-    //   if (is_electric !== undefined) {
-    //     filter.is_electric = is_electric;
-    //   }
-    //   // Price range filter (will be applied after fetching variants)
-    //   const priceFilter: Record<string, unknown> = {};
-    //   if (min_price !== undefined) {
-    //     priceFilter.$gte = Number(min_price);
-    //   }
-    //   if (max_price !== undefined) {
-    //     priceFilter.$lte = Number(max_price);
-    //   }
-    //   if (q) {
-    //     const searchFilter = FilterUtil.buildSearchFilter(['name', 'short_description', 'description'], q);
-    //     Object.assign(filter, searchFilter);
-    //   }
-    //   const { skip, limit: validatedLimit } = PaginationUtil.getPaginationParams(page, limit);
-    //   const sortFilter = FilterUtil.buildSortFilter(sortBy, sortOrder);
-    //   console.log(sortFilter, "sortfilter",validatedLimit, filter);
-    //   let cars = await Car.find(filter)
-    //     .populate("brand_id", "name slug")
-    //     .populate("body_type_id", "name slug")
-    //     .select('car_id name slug brand_id body_type_id short_description thumbnail status is_electric is_published is_featured meta_title meta_description')
-    //     .sort(sortFilter)
-    //     .skip(skip)
-    //     .limit(validatedLimit)
-    //     .lean();
-    //   console.log(cars, "cars");
-    //   // Apply price range filter by checking variants
-    //   if (Object.keys(priceFilter).length > 0) {
-    //     const carIds = (await CarVariant.find({
-    //       $or: [
-    //         { ex_showroom_price: priceFilter },
-    //         { expected_price: priceFilter },
-    //       ],
-    //       is_deleted: false,
-    //     }).distinct('car_id')).map(id => id.toString());
-    //     cars = cars.filter((car: any) => carIds.includes(car.car_id.toString()));
-    //   }
-    //   const total = Object.keys(priceFilter).length > 0 
-    //     ? cars.length 
-    //     : await Car.countDocuments(filter);
-    //   const paginationMeta = PaginationUtil.createPaginationMeta(page, validatedLimit, total);
-    //   return { cars, pagination: paginationMeta };
-    // }
     static async getAllCars(filterDto, includeDeleted = false) {
         try {
             const { page = 1, limit = 10, q, brand_id, body_type_id, fuel_type_id, status, is_electric, is_published, is_featured, is_popular, is_recommended, is_latest, top_selling, min_price, max_price, sortBy = 'name', sortOrder = 'asc', } = filterDto;
@@ -222,18 +143,39 @@ class CarService {
         // Validate brand_id
         const brand = await brand_model_1.Brand.findOne({ brand_id: carData.brand_id, is_deleted: false });
         if (!brand) {
-            throw new app_error_util_1.AppError('Brand not found', 404);
+            throw new app_error_util_1.AppError(`Brand not found or deleted for brand_id: ${carData.brand_id}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BRAND_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BRAND_NOT_FOUND,
+                details: {
+                    field: 'brand_id',
+                    reason: 'The selected brand does not exist, is deleted, or the wrong ID type was sent.',
+                },
+            });
         }
         // Validate body_type_id
         const bodyType = await body_type_model_1.BodyType.findOne({ body_type_id: carData.body_type_id, is_deleted: false });
         if (!bodyType) {
-            throw new app_error_util_1.AppError('Body type not found', 404);
+            throw new app_error_util_1.AppError(`Body type not found or deleted for body_type_id: ${carData.body_type_id}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BODY_TYPE_NOT_FOUND,
+                details: {
+                    field: 'body_type_id',
+                    reason: 'The selected body type does not exist, is deleted, or the wrong ID type was sent.',
+                },
+            });
         }
         // Validate fuel_type_id if provided
         if (carData.fuel_type_id) {
             const fuelType = await fuel_type_model_1.FuelType.findOne({ fuel_type_id: carData.fuel_type_id, is_deleted: false });
             if (!fuelType) {
-                throw new app_error_util_1.AppError('Fuel type not found', 404);
+                throw new app_error_util_1.AppError(`Fuel type not found or deleted for fuel_type_id: ${carData.fuel_type_id}`, 404, {
+                    userMessage: errorMessages_1.USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+                    errorCode: errorMessages_1.ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+                    details: {
+                        field: 'fuel_type_id',
+                        reason: 'The selected fuel type does not exist, is deleted, or the wrong ID type was sent.',
+                    },
+                });
             }
         }
         // Normalize launch status fields
@@ -295,14 +237,28 @@ class CarService {
         if (carData.brand_id !== undefined) {
             const brand = await brand_model_1.Brand.findOne({ brand_id: carData.brand_id, is_deleted: false });
             if (!brand) {
-                throw new app_error_util_1.AppError('Brand not found or deleted', 404);
+                throw new app_error_util_1.AppError(`Brand not found or deleted for brand_id: ${carData.brand_id}`, 404, {
+                    userMessage: errorMessages_1.USER_MESSAGES.BRAND_NOT_FOUND,
+                    errorCode: errorMessages_1.ERROR_CODES.BRAND_NOT_FOUND,
+                    details: {
+                        field: 'brand_id',
+                        reason: 'The selected brand does not exist, is deleted, or the wrong ID type was sent.',
+                    },
+                });
             }
             updateData.brand_id = carData.brand_id;
         }
         if (carData.body_type_id !== undefined) {
             const bodyType = await body_type_model_1.BodyType.findOne({ body_type_id: carData.body_type_id, is_deleted: false });
             if (!bodyType) {
-                throw new app_error_util_1.AppError('Body type not found or deleted', 404);
+                throw new app_error_util_1.AppError(`Body type not found or deleted for body_type_id: ${carData.body_type_id}`, 404, {
+                    userMessage: errorMessages_1.USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+                    errorCode: errorMessages_1.ERROR_CODES.BODY_TYPE_NOT_FOUND,
+                    details: {
+                        field: 'body_type_id',
+                        reason: 'The selected body type does not exist, is deleted, or the wrong ID type was sent.',
+                    },
+                });
             }
             updateData.body_type_id = carData.body_type_id;
         }
@@ -310,7 +266,14 @@ class CarService {
             if (carData.fuel_type_id) {
                 const fuelTypeDoc = await fuel_type_model_1.FuelType.findOne({ fuel_type_id: carData.fuel_type_id, is_deleted: false });
                 if (!fuelTypeDoc) {
-                    throw new app_error_util_1.AppError('Fuel type not found or deleted', 404);
+                    throw new app_error_util_1.AppError(`Fuel type not found or deleted for fuel_type_id: ${carData.fuel_type_id}`, 404, {
+                        userMessage: errorMessages_1.USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+                        errorCode: errorMessages_1.ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+                        details: {
+                            field: 'fuel_type_id',
+                            reason: 'The selected fuel type does not exist, is deleted, or the wrong ID type was sent.',
+                        },
+                    });
                 }
             }
             updateData.fuel_type_id = carData.fuel_type_id;
@@ -378,28 +341,56 @@ class CarService {
             updateData.noindex = carData.noindex;
         const car = await car_model_1.Car.findOneAndUpdate({ car_id: carId, is_deleted: false }, updateData, { returnDocument: 'after' });
         if (!car) {
-            throw new app_error_util_1.AppError('Car not found', 404);
+            throw new app_error_util_1.AppError('Car not found', 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
+                details: {
+                    field: 'car_id',
+                    reason: 'The car does not exist or has already been deleted.',
+                },
+            });
         }
         return car;
     }
     static async deleteCar(carId) {
         const car = await car_model_1.Car.findOneAndUpdate({ car_id: carId, is_deleted: false }, { is_deleted: true }, { returnDocument: 'after' });
         if (!car) {
-            throw new app_error_util_1.AppError('Car not found', 404);
+            throw new app_error_util_1.AppError(`Car not found or deleted for car_id: ${carId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
+                details: {
+                    field: 'car_id',
+                    reason: 'The car does not exist or has already been deleted.',
+                },
+            });
         }
         return car;
     }
     static async restoreCar(carId) {
         const car = await car_model_1.Car.findOneAndUpdate({ car_id: carId, is_deleted: true }, { is_deleted: false }, { returnDocument: 'after' });
         if (!car) {
-            throw new app_error_util_1.AppError('Car not found', 404);
+            throw new app_error_util_1.AppError(`Car not found for car_id: ${carId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
+                details: {
+                    field: 'car_id',
+                    reason: 'The car does not exist in the deleted records.',
+                },
+            });
         }
         return car;
     }
     static async togglePublish(carId) {
         const car = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false });
         if (!car) {
-            throw new app_error_util_1.AppError('Car not found', 404);
+            throw new app_error_util_1.AppError(`Car not found or deleted for car_id: ${carId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
+                details: {
+                    field: 'car_id',
+                    reason: 'The car does not exist or has been deleted.',
+                },
+            });
         }
         car.is_published = !car.is_published;
         await car.save();
@@ -408,7 +399,14 @@ class CarService {
     static async markLaunched(carId) {
         const car = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false });
         if (!car) {
-            throw new app_error_util_1.AppError('Car not found', 404);
+            throw new app_error_util_1.AppError(`Car not found or deleted for car_id: ${carId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
+                details: {
+                    field: 'car_id',
+                    reason: 'The car does not exist or has been deleted.',
+                },
+            });
         }
         const today = new Date();
         car.is_upcoming = false;
@@ -421,10 +419,26 @@ class CarService {
     static async markUpcoming(carId, data) {
         const car = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false });
         if (!car) {
-            throw new app_error_util_1.AppError('Car not found', 404);
+            throw new app_error_util_1.AppError(`Car not found or deleted for car_id: ${carId}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
+                details: {
+                    field: 'car_id',
+                    reason: 'The car does not exist or has been deleted.',
+                },
+            });
         }
         if (!data.expected_exshowroom_price || !data.expected_launch_date) {
-            throw new app_error_util_1.AppError('expected_exshowroom_price and expected_launch_date are required for upcoming cars', 400);
+            throw new app_error_util_1.AppError('expected_exshowroom_price and expected_launch_date are required for upcoming cars', 400, {
+                userMessage: errorMessages_1.USER_MESSAGES.VALIDATION_ERROR,
+                errorCode: errorMessages_1.ERROR_CODES.VALIDATION_ERROR,
+                details: {
+                    fields: {
+                        expected_exshowroom_price: 'Expected ex-showroom price is required for upcoming cars.',
+                        expected_launch_date: 'Expected launch date is required for upcoming cars.',
+                    },
+                },
+            });
         }
         car.is_upcoming = true;
         car.is_launched = false;

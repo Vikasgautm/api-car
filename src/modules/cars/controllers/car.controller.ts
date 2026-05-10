@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { ResponseUtil } from "../../../shared/utils/response.util";
 import { catchAsync } from "../../../utils/catchAsync";
@@ -27,7 +28,18 @@ export class CarController {
   static getPublicCarBySlug = catchAsync(async (req: Request, res: Response) => {
     const result = await CarService.getCarBySlug(req.params.slug as string);
     if (!result) {
-      throw new AppError('Car not found', 404);
+      throw new AppError(
+        `Car not found for slug: ${req.params.slug}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.CAR_NOT_FOUND,
+          errorCode: ERROR_CODES.CAR_NOT_FOUND,
+          details: {
+            field: 'slug',
+            reason: 'The car does not exist or has been deleted.',
+          },
+        }
+      );
     }
     return ResponseUtil.success(res, result, "Car retrieved successfully");
   });
@@ -41,7 +53,18 @@ export class CarController {
   static getAdminCarById = catchAsync(async (req: Request, res: Response) => {
     const car = await CarService.getCarById(req.params.id as string);
     if (!car) {
-      throw new AppError("Car not found", 404);
+      throw new AppError(
+        `Car not found for car_id: ${req.params.id}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.CAR_NOT_FOUND,
+          errorCode: ERROR_CODES.CAR_NOT_FOUND,
+          details: {
+            field: 'car_id',
+            reason: 'The car does not exist or has been deleted.',
+          },
+        }
+      );
     }
     return ResponseUtil.success(res, car, "Car retrieved successfully");
   });

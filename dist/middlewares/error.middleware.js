@@ -47,7 +47,43 @@ const errorMiddleware = (err, req, res, next) => {
     }
     // Handle AppError with errors array
     if (err instanceof app_error_util_1.AppError && err.errors) {
-        return response_util_1.ResponseUtil.error(res, err.message, err.statusCode, err.code, err.errors);
+        return response_util_1.ResponseUtil.error(res, err.userMessage || err.message, err.statusCode, err.errorCode || err.code, err.errors, err.details);
+    }
+    // Handle AppError with userMessage
+    if (err instanceof app_error_util_1.AppError) {
+        const response = {
+            success: false,
+            message: err.userMessage || err.message,
+            statusCode: err.statusCode,
+            timestamp: new Date().toISOString(),
+        };
+        if (err.errorCode) {
+            response.errorCode = err.errorCode;
+        }
+        else if (err.code) {
+            response.error = err.code;
+        }
+        if (err.details) {
+            response.details = err.details;
+        }
+        // Log technical details for debugging
+        logger_1.logger.error('API Error', {
+            userMessage: err.userMessage,
+            technicalMessage: err.message,
+            errorCode: err.errorCode || err.code,
+            statusCode: err.statusCode,
+            details: err.details,
+            route: req.originalUrl,
+            method: req.method,
+        });
+        // Add debug info in development
+        if (process.env.NODE_ENV === "development") {
+            response.debug = {
+                technicalMessage: err.message,
+                stack: err.stack,
+            };
+        }
+        return res.status(err.statusCode).json(response);
     }
     if (process.env.NODE_ENV === "development") {
         res.status(err.statusCode).json({

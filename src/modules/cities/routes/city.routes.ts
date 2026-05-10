@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { protect, restrictTo } from '../../../middlewares/auth.middleware';
-import { validateIdParam, validatePaginationQuery, validateSlugParam } from '../../../shared/validation';
+import { validatePaginationQuery, validateSlugParam, validateUuidIdParam } from '../../../shared/validation';
 import { CityController } from '../controllers/city.controller';
 
 const router = Router();
@@ -15,10 +15,10 @@ adminRouter.use(protect);
 adminRouter.use(restrictTo('admin', 'super_admin'));
 
 adminRouter.get('/', validatePaginationQuery, CityController.getAllAdminCities);
-adminRouter.get('/:id', validateIdParam, CityController.getAdminCityById);
+adminRouter.get('/:id', validateUuidIdParam, CityController.getAdminCityById);
 adminRouter.post('/', CityController.createCity);
-adminRouter.put('/:id', validateIdParam, CityController.updateCity);
-adminRouter.delete('/:id', validateIdParam, CityController.deleteCity);
+adminRouter.put('/:id', validateUuidIdParam, CityController.updateCity);
+adminRouter.delete('/:id', validateUuidIdParam, CityController.deleteCity);
 
 router.use('/admin', adminRouter);
 

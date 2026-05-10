@@ -4,7 +4,7 @@ export declare class CreateVariantDto {
     variant_name: string;
     slug?: string;
     model_year: number;
-    fuel_type_id: string;
+    fuel_type_id?: string;
     transmission_type: 'manual' | 'automatic' | 'cvt' | 'dct' | 'amt';
     drivetrain?: string;
     seating_capacity?: number;
@@ -13,6 +13,7 @@ export declare class CreateVariantDto {
     expected_launch_date?: Date;
     specs_normalized?: SpecsNormalized;
     hidden_spec_keys?: string[];
+    hidden_sections?: string[];
     is_published?: boolean;
     meta_title?: string;
     meta_description?: string;

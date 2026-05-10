@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { BodyType, IBodyType } from "../../../models/body-type.model";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { FilterUtil } from "../../../shared/utils/filter.util";
@@ -117,7 +118,18 @@ export class BodyTypeService {
     );
 
     if (!bodyType) {
-      throw new AppError('Body type not found', 404);
+      throw new AppError(
+        `Body type not found or deleted for body_type_id: ${bodyTypeId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.BODY_TYPE_NOT_FOUND,
+          details: {
+            field: 'body_type_id',
+            reason: 'The body type does not exist or has been deleted.',
+          },
+        }
+      );
     }
 
     return bodyType;
@@ -128,7 +140,18 @@ export class BodyTypeService {
     const existingBodyType = await BodyType.findOne({ body_type_id: bodyTypeId });
     
     if (!existingBodyType) {
-      throw new AppError('Body type not found', 404);
+      throw new AppError(
+        `Body type not found for body_type_id: ${bodyTypeId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.BODY_TYPE_NOT_FOUND,
+          details: {
+            field: 'body_type_id',
+            reason: 'The body type does not exist.',
+          },
+        }
+      );
     }
     
     // If already deleted, return success (idempotent)
@@ -154,7 +177,18 @@ export class BodyTypeService {
     );
 
     if (!bodyType) {
-      throw new AppError('Body type not found', 404);
+      throw new AppError(
+        `Body type not found for body_type_id: ${bodyTypeId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.BODY_TYPE_NOT_FOUND,
+          details: {
+            field: 'body_type_id',
+            reason: 'The body type does not exist in the deleted records.',
+          },
+        }
+      );
     }
 
     return bodyType;
@@ -163,7 +197,18 @@ export class BodyTypeService {
   static async togglePublish(bodyTypeId: string) {
     const bodyType = await BodyType.findOne({ body_type_id: bodyTypeId, is_deleted: false });
     if (!bodyType) {
-      throw new AppError('Body type not found', 404);
+      throw new AppError(
+        `Body type not found or deleted for body_type_id: ${bodyTypeId}`,
+        404,
+        {
+          userMessage: USER_MESSAGES.BODY_TYPE_NOT_FOUND,
+          errorCode: ERROR_CODES.BODY_TYPE_NOT_FOUND,
+          details: {
+            field: 'body_type_id',
+            reason: 'The body type does not exist or has been deleted.',
+          },
+        }
+      );
     }
 
     bodyType.is_published = !bodyType.is_published;

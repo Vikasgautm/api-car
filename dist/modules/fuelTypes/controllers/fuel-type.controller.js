@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FuelTypeController = void 0;
+const errorMessages_1 = require("../../../constants/errorMessages");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
@@ -20,7 +21,14 @@ class FuelTypeController {
     static getPublicFuelTypeBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const fuelType = await fuel_type_service_1.FuelTypeService.getFuelTypeBySlug(req.params.slug);
         if (!fuelType) {
-            throw new app_error_util_1.AppError("Fuel type not found", 404);
+            throw new app_error_util_1.AppError(`Fuel type not found for slug: ${req.params.slug}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+                details: {
+                    field: 'slug',
+                    reason: 'The fuel type does not exist or has been deleted.',
+                },
+            });
         }
         return response_util_1.ResponseUtil.success(res, fuelType, "Fuel type retrieved successfully");
     });
@@ -32,7 +40,14 @@ class FuelTypeController {
     static getAdminFuelTypeById = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const fuelType = await fuel_type_service_1.FuelTypeService.getFuelTypeById(req.params.id);
         if (!fuelType) {
-            throw new app_error_util_1.AppError("Fuel type not found", 404);
+            throw new app_error_util_1.AppError(`Fuel type not found for fuel_type_id: ${req.params.id}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.FUEL_TYPE_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.FUEL_TYPE_NOT_FOUND,
+                details: {
+                    field: 'fuel_type_id',
+                    reason: 'The fuel type does not exist or has been deleted.',
+                },
+            });
         }
         return response_util_1.ResponseUtil.success(res, fuelType, "Fuel type retrieved successfully");
     });

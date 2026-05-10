@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImportService = void 0;
 const uuid_1 = require("uuid");
+const errorMessages_1 = require("../../../constants/errorMessages");
 const body_type_model_1 = require("../../../models/body-type.model");
 const brand_model_1 = require("../../../models/brand.model");
 const car_variant_model_1 = require("../../../models/car-variant.model");
@@ -184,7 +185,14 @@ class ImportService {
         // Verify car exists
         const car = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false });
         if (!car) {
-            throw new app_error_util_1.AppError('Car not found', 404);
+            throw new app_error_util_1.AppError('Car not found', 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
+                details: {
+                    field: 'car_id',
+                    reason: 'The car does not exist or has been deleted.',
+                },
+            });
         }
         for (const url of urls) {
             try {
@@ -313,7 +321,14 @@ class ImportService {
         // Verify car exists
         const car = await car_model_1.Car.findOne({ car_id, is_deleted: false });
         if (!car) {
-            throw new app_error_util_1.AppError('Car not found', 404);
+            throw new app_error_util_1.AppError(`Car not found for car_id: ${car_id}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
+                details: {
+                    field: 'car_id',
+                    reason: 'The car does not exist or has been deleted.',
+                },
+            });
         }
         for (const item of items) {
             try {

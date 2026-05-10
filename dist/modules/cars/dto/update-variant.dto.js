@@ -16,7 +16,11 @@ class UpdateVariantDto {
     is_upcoming;
     specs_normalized;
     hidden_spec_keys;
+    hidden_sections;
     is_published;
+    is_archived;
+    archived_at;
+    archived_by;
     meta_title;
     meta_description;
     meta_keywords;

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BrandController = void 0;
+const errorMessages_1 = require("../../../constants/errorMessages");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
@@ -20,7 +21,14 @@ class BrandController {
     static getPublicBrandBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const brand = await brand_service_1.BrandService.getBrandBySlug(req.params.slug);
         if (!brand) {
-            throw new app_error_util_1.AppError("Brand not found", 404);
+            throw new app_error_util_1.AppError(`Brand not found for slug: ${req.params.slug}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BRAND_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BRAND_NOT_FOUND,
+                details: {
+                    field: 'slug',
+                    reason: 'The brand does not exist or has been deleted.',
+                },
+            });
         }
         return response_util_1.ResponseUtil.success(res, brand, "Brand retrieved successfully");
     });
@@ -32,7 +40,14 @@ class BrandController {
     static getAdminBrandById = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const brand = await brand_service_1.BrandService.getBrandById(req.params.id);
         if (!brand) {
-            throw new app_error_util_1.AppError("Brand not found", 404);
+            throw new app_error_util_1.AppError(`Brand not found for brand_id: ${req.params.id}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.BRAND_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.BRAND_NOT_FOUND,
+                details: {
+                    field: 'brand_id',
+                    reason: 'The brand does not exist or has been deleted.',
+                },
+            });
         }
         return response_util_1.ResponseUtil.success(res, brand, "Brand retrieved successfully");
     });
@@ -79,7 +94,13 @@ class BrandController {
         };
         const validation = update_brand_dto_1.UpdateBrandDto.validate(updateDto);
         if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+            throw new app_error_util_1.AppError(validation.errors.join(', '), 400, {
+                userMessage: errorMessages_1.USER_MESSAGES.VALIDATION_ERROR,
+                errorCode: errorMessages_1.ERROR_CODES.VALIDATION_ERROR,
+                details: {
+                    fields: validation.errors,
+                },
+            });
         }
         const brand = await brand_service_1.BrandService.updateBrand(req.params.id, updateDto);
         return response_util_1.ResponseUtil.success(res, brand, "Brand updated successfully");

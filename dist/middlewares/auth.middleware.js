@@ -39,10 +39,10 @@ const protect = async (req, res, next) => {
     }
     catch (error) {
         if (error instanceof jsonwebtoken_1.default.JsonWebTokenError) {
-            return next(app_error_util_1.AppError.tokenInvalid('Invalid token. Please log in again.'));
+            return next(app_error_util_1.AppError.tokenInvalid());
         }
         if (error instanceof jsonwebtoken_1.default.TokenExpiredError) {
-            return next(app_error_util_1.AppError.tokenExpired('Token expired. Please log in again.'));
+            return next(app_error_util_1.AppError.tokenExpired());
         }
         return next(app_error_util_1.AppError.unauthorized('Invalid token or expired. Please log in again.'));
     }

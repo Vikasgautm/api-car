@@ -5,6 +5,7 @@ import { UpdateUpcomingCarsJob } from "./jobs/updateUpcomingCars.job";
 import { createDefaultSuperAdmin } from "./seeds/admin.seed";
 import { seedCities } from "./seeds/city.seed";
 import { logger } from "./utils/logger";
+import { seedFuelTypes } from "./seeds/fuel-type.seed";
 
 const startServer = async () => {
   try {
@@ -18,6 +19,9 @@ const startServer = async () => {
 
     // Seed cities from JSON file
     await seedCities();
+
+    // Seed default fuel types
+    await seedFuelTypes();
 
     // Start auto-launch cron job
     UpdateUpcomingCarsJob.start();

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarVariantController = void 0;
+const errorMessages_1 = require("../../../constants/errorMessages");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
@@ -15,20 +16,33 @@ class CarVariantController {
             is_published: true,
         };
         const result = await car_variant_service_1.CarVariantService.getAllVariants(filterDto, false);
-        const filteredVariants = result.variants.map((variant) => ({
-            ...variant,
-            specs_normalized: car_variant_service_1.CarVariantService.removeHiddenSpecKeys(variant.specs_normalized, variant.hidden_spec_keys),
-        }));
+        const filteredVariants = result.variants.map((variant) => {
+            let filteredSpecs = car_variant_service_1.CarVariantService.removeHiddenSpecKeys(variant.specs_normalized, variant.hidden_spec_keys);
+            filteredSpecs = car_variant_service_1.CarVariantService.removeHiddenSections(filteredSpecs, variant.hidden_sections);
+            return {
+                ...variant,
+                specs_normalized: filteredSpecs,
+            };
+        });
         return response_util_1.ResponseUtil.paginated(res, filteredVariants, result.pagination, 'Variants retrieved successfully');
     });
     static getPublicVariantBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const variant = await car_variant_service_1.CarVariantService.getVariantBySlug(req.params.slug);
         if (!variant) {
-            throw new app_error_util_1.AppError('Variant not found', 404);
+            throw new app_error_util_1.AppError(`Variant not found for slug: ${req.params.slug}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.VARIANT_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.VARIANT_NOT_FOUND,
+                details: {
+                    field: 'slug',
+                    reason: 'The variant does not exist or has been deleted.',
+                },
+            });
         }
+        let filteredSpecs = car_variant_service_1.CarVariantService.removeHiddenSpecKeys(variant.specs_normalized, variant.hidden_spec_keys);
+        filteredSpecs = car_variant_service_1.CarVariantService.removeHiddenSections(filteredSpecs, variant.hidden_sections);
         const filteredVariant = {
             ...variant,
-            specs_normalized: car_variant_service_1.CarVariantService.removeHiddenSpecKeys(variant.specs_normalized, variant.hidden_spec_keys),
+            specs_normalized: filteredSpecs,
         };
         return response_util_1.ResponseUtil.success(res, filteredVariant, 'Variant retrieved successfully');
     });
@@ -40,7 +54,14 @@ class CarVariantController {
     static getAdminVariantById = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const variant = await car_variant_service_1.CarVariantService.getVariantById(req.params.id);
         if (!variant) {
-            throw new app_error_util_1.AppError('Variant not found', 404);
+            throw new app_error_util_1.AppError(`Variant not found for variant_id: ${req.params.id}`, 404, {
+                userMessage: errorMessages_1.USER_MESSAGES.VARIANT_NOT_FOUND,
+                errorCode: errorMessages_1.ERROR_CODES.VARIANT_NOT_FOUND,
+                details: {
+                    field: 'variant_id',
+                    reason: 'The variant does not exist or has been deleted.',
+                },
+            });
         }
         return response_util_1.ResponseUtil.success(res, variant, 'Variant retrieved successfully');
     });
@@ -109,6 +130,15 @@ class CarVariantController {
     static unpublishVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const variant = await car_variant_service_1.CarVariantService.unpublishVariant(req.params.id);
         return response_util_1.ResponseUtil.success(res, variant, 'Variant unpublished successfully');
+    });
+    static archiveVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const archivedBy = req.user?.userId || undefined;
+        const variant = await car_variant_service_1.CarVariantService.archiveVariant(req.params.id, archivedBy);
+        return response_util_1.ResponseUtil.success(res, variant, 'Variant archived successfully');
+    });
+    static unarchiveVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const variant = await car_variant_service_1.CarVariantService.unarchiveVariant(req.params.id);
+        return response_util_1.ResponseUtil.success(res, variant, 'Variant unarchived successfully');
     });
 }
 exports.CarVariantController = CarVariantController;

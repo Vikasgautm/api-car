@@ -14,7 +14,11 @@ export declare class UpdateVariantDto {
     is_upcoming?: boolean;
     specs_normalized?: SpecsNormalized;
     hidden_spec_keys?: string[];
+    hidden_sections?: string[];
     is_published?: boolean;
+    is_archived?: boolean;
+    archived_at?: Date;
+    archived_by?: string;
     meta_title?: string;
     meta_description?: string;
     meta_keywords?: string;
