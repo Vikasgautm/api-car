@@ -38,13 +38,13 @@ export declare class BodyTypeService {
     } & {
         id: string;
     }>;
-    static deleteBodyType(bodyTypeId: string): Promise<import("mongoose").Document<unknown, {}, IBodyType, {}, import("mongoose").DefaultSchemaOptions> & IBodyType & Required<{
+    static deleteBodyType(bodyTypeId: string): Promise<(import("mongoose").Document<unknown, {}, IBodyType, {}, import("mongoose").DefaultSchemaOptions> & IBodyType & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
-    }>;
+    }) | null>;
     static restoreBodyType(bodyTypeId: string): Promise<import("mongoose").Document<unknown, {}, IBodyType, {}, import("mongoose").DefaultSchemaOptions> & IBodyType & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {

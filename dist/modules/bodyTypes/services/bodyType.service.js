@@ -103,10 +103,17 @@ class BodyTypeService {
         return bodyType;
     }
     static async deleteBodyType(bodyTypeId) {
-        const bodyType = await body_type_model_1.BodyType.findOneAndUpdate({ body_type_id: bodyTypeId, is_deleted: false }, { is_deleted: true }, { returnDocument: 'after' });
-        if (!bodyType) {
+        // First check if body type exists at all
+        const existingBodyType = await body_type_model_1.BodyType.findOne({ body_type_id: bodyTypeId });
+        if (!existingBodyType) {
             throw new app_error_util_1.AppError('Body type not found', 404);
         }
+        // If already deleted, return success (idempotent)
+        if (existingBodyType.is_deleted) {
+            return existingBodyType;
+        }
+        // Otherwise, soft delete it
+        const bodyType = await body_type_model_1.BodyType.findOneAndUpdate({ body_type_id: bodyTypeId, is_deleted: false }, { is_deleted: true }, { returnDocument: 'after' });
         return bodyType;
     }
     static async restoreBodyType(bodyTypeId) {

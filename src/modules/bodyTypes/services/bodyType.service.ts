@@ -124,15 +124,24 @@ export class BodyTypeService {
   }
 
   static async deleteBodyType(bodyTypeId: string) {
+    // First check if body type exists at all
+    const existingBodyType = await BodyType.findOne({ body_type_id: bodyTypeId });
+    
+    if (!existingBodyType) {
+      throw new AppError('Body type not found', 404);
+    }
+    
+    // If already deleted, return success (idempotent)
+    if (existingBodyType.is_deleted) {
+      return existingBodyType;
+    }
+    
+    // Otherwise, soft delete it
     const bodyType = await BodyType.findOneAndUpdate(
       { body_type_id: bodyTypeId, is_deleted: false },
       { is_deleted: true },
       { returnDocument: 'after' }
     );
-
-    if (!bodyType) {
-      throw new AppError('Body type not found', 404);
-    }
 
     return bodyType;
   }
