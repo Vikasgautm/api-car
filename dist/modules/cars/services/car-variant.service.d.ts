@@ -3,6 +3,9 @@ export declare class CarVariantService {
     private static SECTION_NAME_TO_KEY_MAP;
     static removeHiddenSpecKeys(specs_normalized: SpecsNormalized | undefined, hidden_spec_keys?: string[]): SpecsNormalized | undefined;
     static removeHiddenSections(specs_normalized: SpecsNormalized | undefined, hidden_sections: string[] | undefined): SpecsNormalized | undefined;
+    static applyFuelTypeFilter(specs_normalized: SpecsNormalized | undefined, fuel_type_id: string): SpecsNormalized | undefined;
+    static removeEmptyValues(specs_normalized: SpecsNormalized | undefined): SpecsNormalized | undefined;
+    static autoHideEmptySections(specs_normalized: SpecsNormalized | undefined): SpecsNormalized | undefined;
     static getAllVariants(filterDto: any, includeDeleted?: boolean): Promise<{
         variants: (ICarVariant & Required<{
             _id: import("mongoose").Types.ObjectId;

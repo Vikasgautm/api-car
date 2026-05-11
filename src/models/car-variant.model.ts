@@ -10,6 +10,14 @@ export interface EnginePerformance {
   valves_per_cylinder?: number;
   fuel_system?: string;
   turbocharger?: boolean;
+  gearbox?: string;
+  alternate_fuel_type?: string;
+  cng_power_torque?: string;
+  electric_assist?: string;
+  drive_modes?: string;
+  acceleration_0_100?: string;
+  top_speed?: string;
+  idle_start_stop?: boolean;
 }
 
 export interface MileageRange {
@@ -18,14 +26,34 @@ export interface MileageRange {
   highway_mileage?: string;
   fuel_tank_capacity?: string;
   emission_standard?: string;
+  real_mileage?: string;
+  e20_compatibility?: boolean;
+  cng_mileage?: string;
+  cng_tank_capacity?: string;
 }
 
 export interface BatteryCharging {
   battery_capacity?: string;
+  battery_type?: string;
   charging_time?: string;
   charging_options?: string[];
   electric_range?: string;
   motor_type?: string;
+  motor_power_kw?: string;
+  motor_torque_nm?: string;
+  number_of_motors?: number;
+  drivetrain_ev?: string;
+  ac_charging_time?: string;
+  dc_fast_charging_time?: string;
+  fast_charge_0_80?: string;
+  charging_port_type?: string;
+  charging_time_7kw?: string;
+  charging_time_50kw?: string;
+  regenerative_braking?: boolean;
+  real_range?: string;
+  real_world_range?: number;
+  battery_wltp_km?: number;
+  ev_mode?: string;
 }
 
 export interface DimensionsPracticality {
@@ -35,7 +63,10 @@ export interface DimensionsPracticality {
   wheelbase?: string;
   ground_clearance?: string;
   boot_space?: string;
+  boot_space_folded?: string;
+  frunk_space?: string;
   seating_capacity?: number;
+  number_of_rows?: number;
   doors?: number;
   kerb_weight?: string;
   gross_vehicle_weight?: string;
@@ -45,6 +76,7 @@ export interface SuspensionSteeringBrakes {
   front_suspension?: string;
   rear_suspension?: string;
   steering_type?: string;
+  steering_adjustment?: string;
   steering_column?: string;
   front_brake_type?: string;
   rear_brake_type?: string;
@@ -145,7 +177,13 @@ export interface Interior {
   dashboard_type?: string;
   instrument_cluster?: string;
   digital_driver_display?: boolean;
+  interior_theme?: string;
+  dashboard_material?: string;
+  soft_touch_dashboard?: boolean;
   ambient_lighting?: boolean;
+  multi_color_ambient_lighting?: boolean;
+  leather_wrapped_steering?: boolean;
+  leather_wrapped_gear_knob?: boolean;
   sunroof?: string;
   panoramic_sunroof?: boolean;
   moonroof?: boolean;
@@ -160,12 +198,18 @@ export interface Exterior {
   led_tail_lights?: boolean;
   drl?: boolean;
   fog_lights?: string;
+  automatic_headlamps?: boolean;
+  follow_me_home?: boolean;
   roof_rails?: boolean;
   body_color?: string;
   body_type?: string;
   spoiler?: boolean;
   skid_plate?: boolean;
   alloy_wheels_design?: string;
+  orvm_type?: string;
+  orvm_indicators?: boolean;
+  rear_wiper?: boolean;
+  rear_defogger?: boolean;
 }
 
 export interface Warranty {
@@ -272,6 +316,14 @@ const variantSchema = new Schema<ICarVariant>(
         compression_ratio: String,
         fuel_system: String,
         turbocharger: Boolean,
+        gearbox: String,
+        alternate_fuel_type: String,
+        cng_power_torque: String,
+        electric_assist: String,
+        drive_modes: String,
+        acceleration_0_100: String,
+        top_speed: String,
+        idle_start_stop: Boolean,
       },
       mileage_range: {
         arai_mileage: String,
@@ -279,13 +331,33 @@ const variantSchema = new Schema<ICarVariant>(
         highway_mileage: String,
         fuel_tank_capacity: String,
         emission_standard: String,
+        real_mileage: String,
+        e20_compatibility: Boolean,
+        cng_mileage: String,
+        cng_tank_capacity: String,
       },
       battery_charging: {
         battery_capacity: String,
+        battery_type: String,
         charging_time: String,
         charging_options: [String],
         electric_range: String,
         motor_type: String,
+        motor_power_kw: String,
+        motor_torque_nm: String,
+        number_of_motors: { type: Number, min: 0 },
+        drivetrain_ev: String,
+        ac_charging_time: String,
+        dc_fast_charging_time: String,
+        fast_charge_0_80: String,
+        charging_port_type: String,
+        charging_time_7kw: String,
+        charging_time_50kw: String,
+        regenerative_braking: Boolean,
+        real_range: String,
+        real_world_range: { type: Number, min: 0 },
+        battery_wltp_km: { type: Number, min: 0 },
+        ev_mode: String,
       },
       dimensions_practicality: {
         length: String,
@@ -294,7 +366,10 @@ const variantSchema = new Schema<ICarVariant>(
         wheelbase: String,
         ground_clearance: String,
         boot_space: String,
+        boot_space_folded: String,
+        frunk_space: String,
         seating_capacity: { type: Number, min: 2, max: 10 },
+        number_of_rows: { type: Number, min: 1, max: 4 },
         doors: { type: Number, min: 2, max: 5 },
         kerb_weight: String,
         gross_vehicle_weight: String,
@@ -303,6 +378,7 @@ const variantSchema = new Schema<ICarVariant>(
         front_suspension: String,
         rear_suspension: String,
         steering_type: String,
+        steering_adjustment: String,
         steering_column: String,
         front_brake_type: String,
         rear_brake_type: String,
@@ -396,7 +472,13 @@ const variantSchema = new Schema<ICarVariant>(
         dashboard_type: String,
         instrument_cluster: String,
         digital_driver_display: Boolean,
+        interior_theme: String,
+        dashboard_material: String,
+        soft_touch_dashboard: Boolean,
         ambient_lighting: Boolean,
+        multi_color_ambient_lighting: Boolean,
+        leather_wrapped_steering: Boolean,
+        leather_wrapped_gear_knob: Boolean,
         sunroof: String,
         panoramic_sunroof: Boolean,
         moonroof: Boolean,
@@ -410,12 +492,18 @@ const variantSchema = new Schema<ICarVariant>(
         led_tail_lights: Boolean,
         drl: Boolean,
         fog_lights: String,
+        automatic_headlamps: Boolean,
+        follow_me_home: Boolean,
         roof_rails: Boolean,
         body_color: String,
         body_type: String,
         spoiler: Boolean,
         skid_plate: Boolean,
         alloy_wheels_design: String,
+        orvm_type: String,
+        orvm_indicators: Boolean,
+        rear_wiper: Boolean,
+        rear_defogger: Boolean,
       },
       warranty: {
         basic_warranty_years: { type: Number, min: 0 },

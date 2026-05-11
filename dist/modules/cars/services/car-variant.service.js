@@ -10,6 +10,79 @@ const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
+const FUEL_SPEC_RULES = {
+    engine_performance: {
+        engine_type: { hideFor: ['ev'] },
+        displacement: { hideFor: ['ev'] },
+        max_power: { hideFor: ['ev'] },
+        max_torque: { hideFor: ['ev'] },
+        cylinders: { hideFor: ['ev'] },
+        valves_per_cylinder: { hideFor: ['ev'] },
+        turbocharger: { hideFor: ['ev'] },
+        fuel_system: { hideFor: ['ev'] },
+        cng_power_torque: { hideFor: ['ice', 'ev', 'hybrid'] },
+        electric_assist: { hideFor: ['ice', 'cng', 'ev'] },
+        idle_start_stop: { hideFor: ['ev'] },
+    },
+    mileage_range: {
+        arai_mileage: { hideFor: ['ev'] },
+        real_mileage: { hideFor: ['ev'] },
+        city_mileage: { hideFor: ['ev'] },
+        highway_mileage: { hideFor: ['ev'] },
+        fuel_tank_capacity: { hideFor: ['ev'] },
+        emission_standard: { hideFor: ['ev'] },
+        e20_compatibility: { hideFor: ['ev'] },
+        cng_mileage: { hideFor: ['ice', 'ev', 'hybrid'] },
+        cng_tank_capacity: { hideFor: ['ice', 'ev', 'hybrid'] },
+    },
+    battery_charging: {
+        motor_type: { hideFor: ['ice', 'cng'] },
+        motor_power_kw: { hideFor: ['ice', 'cng'] },
+        motor_torque_nm: { hideFor: ['ice', 'cng'] },
+        number_of_motors: { hideFor: ['ice', 'cng'] },
+        ev_mode: { hideFor: ['ice', 'cng', 'ev'] },
+        battery_wltp_km: { hideFor: ['ice', 'cng', 'hybrid'] },
+        real_world_range: { hideFor: ['ice', 'cng'] },
+        battery_capacity: { hideFor: ['ice', 'cng'] },
+        battery_type: { hideFor: ['ice', 'cng'] },
+        charging_port_type: { hideFor: ['ice', 'cng', 'hybrid'] },
+        ac_charging_time: { hideFor: ['ice', 'cng', 'hybrid'] },
+        dc_fast_charging_time: { hideFor: ['ice', 'cng', 'hybrid'] },
+        fast_charge_0_80: { hideFor: ['ice', 'cng', 'hybrid'] },
+        charging_time_7kw: { hideFor: ['ice', 'cng', 'hybrid'] },
+        charging_time_50kw: { hideFor: ['ice', 'cng', 'hybrid'] },
+        regenerative_braking: { hideFor: ['ice', 'cng'] },
+    },
+    dimensions_practicality: {
+        frunk_space: { hideFor: ['ice', 'cng', 'hybrid'] },
+    },
+    suspension_steering_brakes: {},
+    tyres_wheels: {},
+    safety: {},
+    adas: {},
+    comfort_convenience: {},
+    infotainment_connectivity: {},
+    connected_car: {},
+    interior: {},
+    exterior: {},
+    warranty: {
+        battery_warranty_years: { hideFor: ['ice', 'cng'] },
+        battery_warranty_km: { hideFor: ['ice', 'cng'] },
+    },
+};
+// Fields whose value should be overridden for specific fuel types
+const FUEL_VALUE_OVERRIDES = {};
+// Transmission/gearbox overrides live at the variant top level, handled separately in the controller.
+const normalizeFuel = (fuelTypeId) => {
+    const lower = fuelTypeId.toLowerCase();
+    if (lower.includes('electric') || lower === 'ev' || lower === 'bev')
+        return 'ev';
+    if (lower.includes('cng') || lower.includes('natural gas'))
+        return 'cng';
+    if (lower.includes('hybrid'))
+        return 'hybrid';
+    return 'ice';
+};
 class CarVariantService {
     static SECTION_NAME_TO_KEY_MAP = {
         'Engine & Performance': 'engine_performance',
@@ -64,6 +137,59 @@ class CarVariantService {
             }
             else if (!key) {
                 console.warn(`Unknown section name in hidden_sections: ${sectionName}`);
+            }
+        }
+        return result;
+    }
+    // Step 1 — remove fields that should be hidden for the variant's fuel type
+    static applyFuelTypeFilter(specs_normalized, fuel_type_id) {
+        if (!specs_normalized)
+            return specs_normalized;
+        const fuel = normalizeFuel(fuel_type_id);
+        const result = JSON.parse(JSON.stringify(specs_normalized));
+        for (const sectionKey of Object.keys(FUEL_SPEC_RULES)) {
+            const section = result[sectionKey];
+            if (!section)
+                continue;
+            const fieldRules = FUEL_SPEC_RULES[sectionKey];
+            for (const [fieldKey, rule] of Object.entries(fieldRules)) {
+                if (rule.hideFor.includes(fuel)) {
+                    delete section[fieldKey];
+                }
+            }
+        }
+        // Transmission-type forced values (top-level, not in specs_normalized)
+        // These are handled in the controller as they're not inside specs_normalized.
+        return result;
+    }
+    // Step 2 — remove null/undefined/empty keys from every section
+    static removeEmptyValues(specs_normalized) {
+        if (!specs_normalized)
+            return specs_normalized;
+        const result = {};
+        for (const [sectionKey, section] of Object.entries(specs_normalized)) {
+            if (!section || typeof section !== 'object')
+                continue;
+            const cleaned = {};
+            for (const [k, v] of Object.entries(section)) {
+                if (v !== null && v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0)) {
+                    cleaned[k] = v;
+                }
+            }
+            if (Object.keys(cleaned).length > 0) {
+                result[sectionKey] = cleaned;
+            }
+        }
+        return result;
+    }
+    // Step 3 — remove entire sections where all fields were removed by steps 1+2
+    static autoHideEmptySections(specs_normalized) {
+        if (!specs_normalized)
+            return specs_normalized;
+        const result = {};
+        for (const [sectionKey, section] of Object.entries(specs_normalized)) {
+            if (section && typeof section === 'object' && Object.keys(section).length > 0) {
+                result[sectionKey] = section;
             }
         }
         return result;

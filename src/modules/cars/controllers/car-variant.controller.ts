@@ -18,6 +18,9 @@ export class CarVariantController {
     const filteredVariants = result.variants.map((variant: any) => {
       let filteredSpecs = CarVariantService.removeHiddenSpecKeys(variant.specs_normalized, variant.hidden_spec_keys);
       filteredSpecs = CarVariantService.removeHiddenSections(filteredSpecs, variant.hidden_sections);
+      filteredSpecs = CarVariantService.applyFuelTypeFilter(filteredSpecs, variant.fuel_type_id || '');
+      filteredSpecs = CarVariantService.removeEmptyValues(filteredSpecs);
+      filteredSpecs = CarVariantService.autoHideEmptySections(filteredSpecs);
       return {
         ...variant,
         specs_normalized: filteredSpecs,
@@ -44,6 +47,9 @@ export class CarVariantController {
     }
     let filteredSpecs = CarVariantService.removeHiddenSpecKeys(variant.specs_normalized, variant.hidden_spec_keys);
     filteredSpecs = CarVariantService.removeHiddenSections(filteredSpecs, variant.hidden_sections);
+    filteredSpecs = CarVariantService.applyFuelTypeFilter(filteredSpecs, variant.fuel_type_id || '');
+    filteredSpecs = CarVariantService.removeEmptyValues(filteredSpecs);
+    filteredSpecs = CarVariantService.autoHideEmptySections(filteredSpecs);
     const filteredVariant = {
       ...variant,
       specs_normalized: filteredSpecs,

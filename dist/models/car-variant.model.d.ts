@@ -8,6 +8,14 @@ export interface EnginePerformance {
     valves_per_cylinder?: number;
     fuel_system?: string;
     turbocharger?: boolean;
+    gearbox?: string;
+    alternate_fuel_type?: string;
+    cng_power_torque?: string;
+    electric_assist?: string;
+    drive_modes?: string;
+    acceleration_0_100?: string;
+    top_speed?: string;
+    idle_start_stop?: boolean;
 }
 export interface MileageRange {
     arai_mileage?: string;
@@ -15,13 +23,33 @@ export interface MileageRange {
     highway_mileage?: string;
     fuel_tank_capacity?: string;
     emission_standard?: string;
+    real_mileage?: string;
+    e20_compatibility?: boolean;
+    cng_mileage?: string;
+    cng_tank_capacity?: string;
 }
 export interface BatteryCharging {
     battery_capacity?: string;
+    battery_type?: string;
     charging_time?: string;
     charging_options?: string[];
     electric_range?: string;
     motor_type?: string;
+    motor_power_kw?: string;
+    motor_torque_nm?: string;
+    number_of_motors?: number;
+    drivetrain_ev?: string;
+    ac_charging_time?: string;
+    dc_fast_charging_time?: string;
+    fast_charge_0_80?: string;
+    charging_port_type?: string;
+    charging_time_7kw?: string;
+    charging_time_50kw?: string;
+    regenerative_braking?: boolean;
+    real_range?: string;
+    real_world_range?: number;
+    battery_wltp_km?: number;
+    ev_mode?: string;
 }
 export interface DimensionsPracticality {
     length?: string;
@@ -30,7 +58,10 @@ export interface DimensionsPracticality {
     wheelbase?: string;
     ground_clearance?: string;
     boot_space?: string;
+    boot_space_folded?: string;
+    frunk_space?: string;
     seating_capacity?: number;
+    number_of_rows?: number;
     doors?: number;
     kerb_weight?: string;
     gross_vehicle_weight?: string;
@@ -39,6 +70,7 @@ export interface SuspensionSteeringBrakes {
     front_suspension?: string;
     rear_suspension?: string;
     steering_type?: string;
+    steering_adjustment?: string;
     steering_column?: string;
     front_brake_type?: string;
     rear_brake_type?: string;
@@ -132,7 +164,13 @@ export interface Interior {
     dashboard_type?: string;
     instrument_cluster?: string;
     digital_driver_display?: boolean;
+    interior_theme?: string;
+    dashboard_material?: string;
+    soft_touch_dashboard?: boolean;
     ambient_lighting?: boolean;
+    multi_color_ambient_lighting?: boolean;
+    leather_wrapped_steering?: boolean;
+    leather_wrapped_gear_knob?: boolean;
     sunroof?: string;
     panoramic_sunroof?: boolean;
     moonroof?: boolean;
@@ -146,12 +184,18 @@ export interface Exterior {
     led_tail_lights?: boolean;
     drl?: boolean;
     fog_lights?: string;
+    automatic_headlamps?: boolean;
+    follow_me_home?: boolean;
     roof_rails?: boolean;
     body_color?: string;
     body_type?: string;
     spoiler?: boolean;
     skid_plate?: boolean;
     alloy_wheels_design?: string;
+    orvm_type?: string;
+    orvm_indicators?: boolean;
+    rear_wiper?: boolean;
+    rear_defogger?: boolean;
 }
 export interface Warranty {
     basic_warranty_years?: number;
