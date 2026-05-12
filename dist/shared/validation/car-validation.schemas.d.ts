@@ -15,7 +15,7 @@ export declare const createCarSchema: z.ZodObject<{
     gallery_summary: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
         upcoming: "upcoming";
-        on_sale: "on_sale";
+        launched: "launched";
         discontinued: "discontinued";
     }>>>;
     is_electric: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
@@ -77,7 +77,7 @@ export declare const updateCarSchema: z.ZodObject<{
     gallery_summary: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     status: z.ZodOptional<z.ZodOptional<z.ZodOptional<z.ZodEnum<{
         upcoming: "upcoming";
-        on_sale: "on_sale";
+        launched: "launched";
         discontinued: "discontinued";
     }>>>>;
     is_electric: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
@@ -174,7 +174,7 @@ export declare const carFilterSchema: z.ZodObject<{
     body_type_id: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
         upcoming: "upcoming";
-        on_sale: "on_sale";
+        launched: "launched";
         discontinued: "discontinued";
     }>>>;
     is_electric: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{

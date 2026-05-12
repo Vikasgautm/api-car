@@ -73,11 +73,11 @@ const FUEL_SPEC_RULES = {
 // Fields whose value should be overridden for specific fuel types
 const FUEL_VALUE_OVERRIDES = {};
 // Transmission/gearbox overrides live at the variant top level, handled separately in the controller.
-const normalizeFuel = (fuelTypeId) => {
-    const lower = fuelTypeId.toLowerCase();
+const normalizeFuel = (fuelNameOrSlug) => {
+    const lower = (fuelNameOrSlug || '').toLowerCase();
     if (lower.includes('electric') || lower === 'ev' || lower === 'bev')
         return 'ev';
-    if (lower.includes('cng') || lower.includes('natural gas'))
+    if (lower.includes('cng') || lower.includes('natural gas') || lower.includes('compressed'))
         return 'cng';
     if (lower.includes('hybrid'))
         return 'hybrid';
@@ -141,11 +141,24 @@ class CarVariantService {
         }
         return result;
     }
-    // Step 1 — remove fields that should be hidden for the variant's fuel type
-    static applyFuelTypeFilter(specs_normalized, fuel_type_id) {
+    // Step 1 — remove fields that should be hidden for the variant's fuel type.
+    // fuel_type_ref may be a raw UUID string, a slug/name string, or a Mongoose-populated
+    // object {name, slug} — all three are handled.
+    static applyFuelTypeFilter(specs_normalized, fuel_type_ref) {
         if (!specs_normalized)
             return specs_normalized;
-        const fuel = normalizeFuel(fuel_type_id);
+        let fuelIdentifier;
+        if (typeof fuel_type_ref === 'string') {
+            fuelIdentifier = fuel_type_ref;
+        }
+        else if (fuel_type_ref && typeof fuel_type_ref === 'object') {
+            // Populated Mongoose document: prefer slug, fall back to name
+            fuelIdentifier = fuel_type_ref.slug || fuel_type_ref.name || '';
+        }
+        else {
+            fuelIdentifier = '';
+        }
+        const fuel = normalizeFuel(fuelIdentifier);
         const result = JSON.parse(JSON.stringify(specs_normalized));
         for (const sectionKey of Object.keys(FUEL_SPEC_RULES)) {
             const section = result[sectionKey];
@@ -328,6 +341,7 @@ class CarVariantService {
             transmission_type: variantData.transmission_type,
             drivetrain: variantData.drivetrain,
             seating_capacity: variantData.seating_capacity,
+            body_type: variantData.body_type,
             ex_showroom_price: variantData.ex_showroom_price,
             expected_price: variantData.expected_price,
             expected_launch_date: variantData.expected_launch_date,
@@ -366,6 +380,8 @@ class CarVariantService {
         }
         if (variantData.model_year !== undefined)
             updateData.model_year = variantData.model_year;
+        if (variantData.body_type !== undefined)
+            updateData.body_type = variantData.body_type;
         if (variantData.fuel_type_id !== undefined) {
             // fuel_type_id is now optional - only validate if provided and not empty
             if (variantData.fuel_type_id) {

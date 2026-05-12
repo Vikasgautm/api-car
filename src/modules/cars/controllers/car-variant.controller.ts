@@ -92,11 +92,13 @@ export class CarVariantController {
       transmission_type: req.body.transmission_type,
       drivetrain: req.body.drivetrain,
       seating_capacity: req.body.seating_capacity,
+      body_type: req.body.body_type,
       ex_showroom_price: req.body.ex_showroom_price,
       expected_price: req.body.expected_price,
       expected_launch_date: req.body.expected_launch_date,
       specs_normalized: req.body.specs_normalized,
       hidden_spec_keys: req.body.hidden_spec_keys,
+      hidden_sections: req.body.hidden_sections,
       is_published: req.body.is_published,
     };
 
@@ -118,11 +120,13 @@ export class CarVariantController {
       transmission_type: req.body.transmission_type,
       drivetrain: req.body.drivetrain,
       seating_capacity: req.body.seating_capacity,
+      body_type: req.body.body_type,
       ex_showroom_price: req.body.ex_showroom_price,
       expected_price: req.body.expected_price,
       expected_launch_date: req.body.expected_launch_date,
       specs_normalized: req.body.specs_normalized,
       hidden_spec_keys: req.body.hidden_spec_keys,
+      hidden_sections: req.body.hidden_sections,
       is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
     };
 

@@ -41,7 +41,7 @@ export declare const paginationSchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const publishStatusSchema: z.ZodOptional<z.ZodEnum<{
     upcoming: "upcoming";
-    on_sale: "on_sale";
+    launched: "launched";
     discontinued: "discontinued";
 }>>;
 export declare const transmissionTypeSchema: z.ZodEnum<{
