@@ -28,7 +28,7 @@ export const paginationSchema = z.object({
   is_featured: booleanStringSchema.optional(),
 });
 
-export const publishStatusSchema = z.enum(['upcoming', 'launched', 'discontinued']).optional();
+export const publishStatusSchema = z.enum(['upcoming', 'launched', 'discontinued', 'archived', 'disabled']).optional();
 
 export const transmissionTypeSchema = z.enum(['manual', 'automatic', 'cvt', 'dct', 'amt']);
 

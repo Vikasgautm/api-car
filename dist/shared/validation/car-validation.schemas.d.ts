@@ -17,6 +17,8 @@ export declare const createCarSchema: z.ZodObject<{
         upcoming: "upcoming";
         launched: "launched";
         discontinued: "discontinued";
+        archived: "archived";
+        disabled: "disabled";
     }>>>;
     is_electric: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
         true: "true";
@@ -54,6 +56,10 @@ export declare const createCarSchema: z.ZodObject<{
         true: "true";
         false: "false";
     }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    tag_ids: z.ZodOptional<z.ZodUnion<readonly [z.ZodArray<z.ZodString>, z.ZodPipe<z.ZodString, z.ZodTransform<string[], string>>]>>;
+    editor_user_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    seo_owner_user_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    reviewer_user_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     meta_title: z.ZodOptional<z.ZodString>;
     meta_description: z.ZodOptional<z.ZodString>;
     meta_keywords: z.ZodOptional<z.ZodString>;
@@ -79,6 +85,8 @@ export declare const updateCarSchema: z.ZodObject<{
         upcoming: "upcoming";
         launched: "launched";
         discontinued: "discontinued";
+        archived: "archived";
+        disabled: "disabled";
     }>>>>;
     is_electric: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
         true: "true";
@@ -116,6 +124,10 @@ export declare const updateCarSchema: z.ZodObject<{
         true: "true";
         false: "false";
     }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    tag_ids: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodArray<z.ZodString>, z.ZodPipe<z.ZodString, z.ZodTransform<string[], string>>]>>>;
+    editor_user_id: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+    seo_owner_user_id: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+    reviewer_user_id: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     meta_title: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     meta_description: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     meta_keywords: z.ZodOptional<z.ZodOptional<z.ZodString>>;
@@ -176,6 +188,8 @@ export declare const carFilterSchema: z.ZodObject<{
         upcoming: "upcoming";
         launched: "launched";
         discontinued: "discontinued";
+        archived: "archived";
+        disabled: "disabled";
     }>>>;
     is_electric: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
         true: "true";
@@ -191,5 +205,19 @@ export declare const carFilterSchema: z.ZodObject<{
     }>]>>;
     min_price: z.ZodOptional<z.ZodNumber>;
     max_price: z.ZodOptional<z.ZodNumber>;
+    tag_ids: z.ZodOptional<z.ZodUnion<readonly [z.ZodArray<z.ZodString>, z.ZodString]>>;
+    tag_slugs: z.ZodOptional<z.ZodUnion<readonly [z.ZodArray<z.ZodString>, z.ZodString]>>;
+    mileage_class: z.ZodOptional<z.ZodUnion<readonly [z.ZodArray<z.ZodEnum<{
+        weak: "weak";
+        average: "average";
+        good: "good";
+        excellent: "excellent";
+    }>>, z.ZodString]>>;
+    range_class: z.ZodOptional<z.ZodUnion<readonly [z.ZodArray<z.ZodEnum<{
+        weak: "weak";
+        average: "average";
+        good: "good";
+        excellent: "excellent";
+    }>>, z.ZodString]>>;
 }, z.core.$strict>;
 //# sourceMappingURL=car-validation.schemas.d.ts.map

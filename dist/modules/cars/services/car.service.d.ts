@@ -1,4 +1,5 @@
 import { ICar } from "../../../models/car.model";
+import { AuditActor } from "../../../shared/utils/audit.util";
 export declare class CarService {
     static getAllCars(filterDto: any, includeDeleted?: boolean): Promise<{
         cars: (ICar & Required<{
@@ -30,43 +31,48 @@ export declare class CarService {
         } & {
             id: string;
         })[];
+        tags: never[] | (import("../../../models/tag.model").ITag & Required<{
+            _id: import("mongoose").Types.ObjectId;
+        }> & {
+            __v: number;
+        })[];
     } | null>;
-    static createCar(carData: any): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
+    static createCar(carData: any, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static updateCar(carId: string, carData: any): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
+    static updateCar(carId: string, carData: any, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static deleteCar(carId: string): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
+    static deleteCar(carId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static restoreCar(carId: string): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
+    static restoreCar(carId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static togglePublish(carId: string): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
+    static togglePublish(carId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static markLaunched(carId: string): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
+    static markLaunched(carId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
@@ -76,7 +82,7 @@ export declare class CarService {
     static markUpcoming(carId: string, data: {
         expected_exshowroom_price?: number;
         expected_launch_date?: string;
-    }): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
+    }, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;

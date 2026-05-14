@@ -29,7 +29,9 @@ const thumbnailUpload = UploadService.createUploadMiddleware({
 
 adminRouter.post('/', validateBody(createCarSchema), thumbnailUpload, CarController.createCar);
 adminRouter.put('/:id', validateUuidIdParam, validateBody(updateCarSchema), thumbnailUpload, CarController.updateCar);
-adminRouter.delete('/:id', validateUuidIdParam, CarController.deleteCar);
+// Direct hard-delete is now reserved for super_admin. Day-to-day removals go
+// through the OTP-gated deletion workflow (`POST /deletion-requests/admin`).
+adminRouter.delete('/:id', validateUuidIdParam, restrictTo('super_admin'), CarController.deleteCar);
 adminRouter.patch('/restore/:id', validateUuidIdParam, CarController.restoreCar);
 adminRouter.patch('/:id/publish', validateUuidIdParam, CarController.togglePublish);
 adminRouter.patch('/:id/mark-launched', validateUuidIdParam, CarController.markLaunched);

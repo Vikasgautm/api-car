@@ -28,6 +28,10 @@ class UpdateCarDto {
     is_recommended;
     is_latest;
     top_selling;
+    tag_ids;
+    editor_user_id;
+    seo_owner_user_id;
+    reviewer_user_id;
     meta_title;
     meta_description;
     meta_keywords;

@@ -11,6 +11,8 @@ export interface IUser extends Document {
     email: string;
     password?: string;
     phone?: string;
+    whatsapp_phone?: string;
+    whatsapp_opt_in?: boolean;
     profile_pic?: string;
     role: UserRole;
     is_email_verified: boolean;

@@ -20,6 +20,9 @@ export declare class UpdateVariantDto {
     is_archived?: boolean;
     archived_at?: Date;
     archived_by?: string;
+    editor_user_id?: string | null;
+    seo_owner_user_id?: string | null;
+    reviewer_user_id?: string | null;
     meta_title?: string;
     meta_description?: string;
     meta_keywords?: string;

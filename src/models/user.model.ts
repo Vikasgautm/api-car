@@ -14,6 +14,8 @@ export interface IUser extends Document {
   email: string;
   password?: string;
   phone?: string;
+  whatsapp_phone?: string;
+  whatsapp_opt_in?: boolean;
   profile_pic?: string;
   role: UserRole;
   is_email_verified: boolean;
@@ -52,6 +54,11 @@ const userSchema = new Schema<IUser>(
       type: String,
       trim: true,
     },
+    whatsapp_phone: {
+      type: String,
+      trim: true,
+    },
+    whatsapp_opt_in: { type: Boolean, default: false },
     profile_pic: { type: String },
     role: {
       type: String,

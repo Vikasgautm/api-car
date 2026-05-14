@@ -5,7 +5,9 @@ import { UpdateUpcomingCarsJob } from "./jobs/updateUpcomingCars.job";
 import { createDefaultSuperAdmin } from "./seeds/admin.seed";
 import { seedCities } from "./seeds/city.seed";
 import { logger } from "./utils/logger";
+import { computeMileageClassesIfNeeded } from "./seeds/compute-mileage-classes.seed";
 import { seedFuelTypes } from "./seeds/fuel-type.seed";
+import { seedIntentTags } from "./seeds/intent-tags.seed";
 
 const startServer = async () => {
   try {
@@ -22,6 +24,12 @@ const startServer = async () => {
 
     // Seed default fuel types
     await seedFuelTypes();
+
+    // Seed intent taxonomy (intent category + 19 default intent tags)
+    await seedIntentTags();
+
+    // Backfill mileage / EV-range classifications for any variant or car still missing them.
+    await computeMileageClassesIfNeeded();
 
     // Start auto-launch cron job
     UpdateUpcomingCarsJob.start();

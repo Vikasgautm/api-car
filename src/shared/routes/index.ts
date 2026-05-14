@@ -1,5 +1,9 @@
 import { Router } from 'express';
+import auditRoutes from '../../modules/audit/routes/audit.routes';
 import authRoutes from '../../modules/auth/routes/auth.routes';
+import deletionWorkflowRoutes from '../../modules/deletion-workflow/routes/deletion-workflow.routes';
+import discoveryRoutes from '../../modules/discovery/routes/discovery.routes';
+import seoPresetRoutes from '../../modules/discovery/routes/seo-preset.routes';
 import blogRoutes from '../../modules/blogs/routes/blog.routes';
 import bodyTypeRoutes from '../../modules/bodyTypes/routes/bodyType.routes';
 import brandRoutes from '../../modules/brands/routes/brand.routes';
@@ -13,7 +17,9 @@ import imageCategoryRoutes from '../../modules/images/routes/image-category.rout
 import imageSubcategoryRoutes from '../../modules/images/routes/image-subcategory.routes';
 import imageRoutes from '../../modules/images/routes/image.routes';
 import importRoutes from '../../modules/imports/routes/import.routes';
+import intelligenceRoutes from '../../modules/intelligence/routes/intelligence.routes';
 import settingsRoutes from '../../modules/settings/routes/settings.routes';
+import taxonomyRoutes from '../../modules/taxonomy/routes/taxonomy.routes';
 import userRoutes from '../../modules/users/routes/user.routes';
 
 const router = Router();
@@ -34,5 +40,11 @@ router.use('/image-subcategories', imageSubcategoryRoutes);
 router.use('/imports', importRoutes);
 router.use('/users', userRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/taxonomy', taxonomyRoutes);
+router.use('/intelligence', intelligenceRoutes);
+router.use('/audit', auditRoutes);
+router.use('/deletion-requests', deletionWorkflowRoutes);
+router.use('/discover', discoveryRoutes);
+router.use('/seo-presets', seoPresetRoutes);
 
 export default router;

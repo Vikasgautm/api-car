@@ -32,6 +32,13 @@ export const createCarSchema = z.object({
   is_latest: booleanOrString.optional(),
   top_selling: booleanOrString.optional(),
   is_launched: booleanOrString.optional(),
+  tag_ids: z.union([
+    z.array(z.string()),
+    z.string().transform((s) => s.split(',').map((v) => v.trim()).filter(Boolean)),
+  ]).optional(),
+  editor_user_id: z.string().nullable().optional(),
+  seo_owner_user_id: z.string().nullable().optional(),
+  reviewer_user_id: z.string().nullable().optional(),
 }).extend(metaFieldsSchema.shape).strict();
 
 export const updateCarSchema = createCarSchema.partial().strict();
@@ -67,4 +74,20 @@ export const carFilterSchema = z.object({
   is_featured: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(),
   min_price: z.number().nonnegative().optional(),
   max_price: z.number().nonnegative().optional(),
+  tag_ids: z.union([
+    z.array(z.string()),
+    z.string(),
+  ]).optional(),
+  tag_slugs: z.union([
+    z.array(z.string()),
+    z.string(),
+  ]).optional(),
+  mileage_class: z.union([
+    z.array(z.enum(['weak', 'average', 'good', 'excellent'])),
+    z.string(),
+  ]).optional(),
+  range_class: z.union([
+    z.array(z.enum(['weak', 'average', 'good', 'excellent'])),
+    z.string(),
+  ]).optional(),
 }).strict();

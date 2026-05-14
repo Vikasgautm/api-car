@@ -1,5 +1,6 @@
 import { Document } from "mongoose";
-export type CarStatus = 'upcoming' | 'launched' | 'discontinued';
+import { MileageClass } from "../constants/mileage-benchmarks";
+export type CarStatus = 'upcoming' | 'launched' | 'discontinued' | 'archived' | 'disabled';
 export interface ICar extends Document {
     car_id: string;
     name: string;
@@ -28,11 +29,27 @@ export interface ICar extends Document {
     is_electric: boolean;
     is_published: boolean;
     is_deleted: boolean;
+    archived_at?: Date | null;
+    archived_by?: string | null;
+    disabled_at?: Date | null;
+    disabled_by?: string | null;
+    discontinued_at?: Date | null;
+    discontinued_by?: string | null;
+    redirect_to_slug?: string | null;
     is_featured: boolean;
     is_popular: boolean;
     is_recommended: boolean;
     is_latest: boolean;
     top_selling: boolean;
+    tag_ids: string[];
+    best_mileage_class?: MileageClass | null;
+    best_mileage_value?: number | null;
+    best_range_class?: MileageClass | null;
+    best_range_value?: number | null;
+    editor_user_id?: string | null;
+    seo_owner_user_id?: string | null;
+    reviewer_user_id?: string | null;
+    last_reviewed_at?: Date | null;
     meta_title?: string;
     meta_description?: string;
     meta_keywords?: string;

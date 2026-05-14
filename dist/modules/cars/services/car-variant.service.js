@@ -6,7 +6,9 @@ const errorMessages_1 = require("../../../constants/errorMessages");
 const car_variant_model_1 = require("../../../models/car-variant.model");
 const car_model_1 = require("../../../models/car.model");
 const fuel_type_model_1 = require("../../../models/fuel-type.model");
+const mileage_recompute_service_1 = require("../../../shared/services/mileage-recompute.service");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
+const audit_util_1 = require("../../../shared/utils/audit.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
@@ -294,7 +296,7 @@ class CarVariantService {
             .populate("car_id", "name slug")
             .populate("fuel_type_id", "name slug");
     }
-    static async createVariant(variantData) {
+    static async createVariant(variantData, actor = null) {
         const car = await car_model_1.Car.findOne({ car_id: variantData.car_id, is_deleted: false }).lean();
         if (!car) {
             throw new app_error_util_1.AppError(`Car not found or deleted for car_id: ${variantData.car_id}`, 404, {
@@ -352,10 +354,21 @@ class CarVariantService {
             is_deleted: false,
             is_archived: false,
         };
-        return await car_variant_model_1.CarVariant.create(variant);
+        const created = await car_variant_model_1.CarVariant.create(variant);
+        await mileage_recompute_service_1.MileageRecomputeService.recomputeVariant(created.variant_id);
+        await mileage_recompute_service_1.MileageRecomputeService.recomputeCarAggregatesOnly(created.car_id);
+        await audit_util_1.AuditUtil.recordEvent({
+            entity_type: 'variant',
+            entity_id: created.variant_id,
+            action: 'create',
+            actor,
+            new_value: { variant_id: created.variant_id, variant_name: created.variant_name, car_id: created.car_id },
+        });
+        return created;
     }
-    static async updateVariant(variantId, variantData) {
+    static async updateVariant(variantId, variantData, actor = null) {
         const updateData = {};
+        const before = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId, is_deleted: false }).lean();
         if (variantData.variant_name !== undefined) {
             updateData.variant_name = variantData.variant_name;
             const newSlug = slug_util_1.SlugUtil.generate(variantData.variant_name);
@@ -419,6 +432,12 @@ class CarVariantService {
             updateData.hidden_sections = variantData.hidden_sections;
         if (variantData.is_published !== undefined)
             updateData.is_published = variantData.is_published;
+        if (variantData.editor_user_id !== undefined)
+            updateData.editor_user_id = variantData.editor_user_id || null;
+        if (variantData.seo_owner_user_id !== undefined)
+            updateData.seo_owner_user_id = variantData.seo_owner_user_id || null;
+        if (variantData.reviewer_user_id !== undefined)
+            updateData.reviewer_user_id = variantData.reviewer_user_id || null;
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false }, updateData, { returnDocument: 'after' });
         if (!variant) {
             throw new app_error_util_1.AppError(`Variant not found or deleted for variant_id: ${variantId}`, 404, {
@@ -430,9 +449,39 @@ class CarVariantService {
                 },
             });
         }
+        // Reclassify only when classification inputs changed.
+        const classificationInputsChanged = variantData.specs_normalized !== undefined ||
+            variantData.fuel_type_id !== undefined ||
+            variantData.car_id !== undefined ||
+            variantData.body_type !== undefined;
+        if (classificationInputsChanged) {
+            await mileage_recompute_service_1.MileageRecomputeService.recomputeVariant(variant.variant_id);
+            await mileage_recompute_service_1.MileageRecomputeService.recomputeCarAggregatesOnly(variant.car_id);
+        }
+        await audit_util_1.AuditUtil.recordChanges({
+            entity_type: 'variant',
+            entity_id: variant.variant_id,
+            before,
+            after: variant.toObject(),
+            fieldsToTrack: audit_util_1.VARIANT_AUDIT_FIELDS,
+            actor,
+        });
+        // Emit a marker row when the specs blob was modified — the diff for the full
+        // nested object is too noisy to store per-field but we still want to surface
+        // "specs were edited" in the timeline.
+        if (variantData.specs_normalized !== undefined) {
+            await audit_util_1.AuditUtil.recordEvent({
+                entity_type: 'variant',
+                entity_id: variant.variant_id,
+                action: 'update',
+                field: 'specs_normalized',
+                new_value: { changed: true },
+                actor,
+            });
+        }
         return variant;
     }
-    static async deleteVariant(variantId) {
+    static async deleteVariant(variantId, actor = null) {
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false }, { is_deleted: true }, { returnDocument: 'after' });
         if (!variant) {
             throw new app_error_util_1.AppError(`Variant not found or deleted for variant_id: ${variantId}`, 404, {
@@ -444,9 +493,16 @@ class CarVariantService {
                 },
             });
         }
+        await mileage_recompute_service_1.MileageRecomputeService.recomputeCarAggregatesOnly(variant.car_id);
+        await audit_util_1.AuditUtil.recordEvent({
+            entity_type: 'variant',
+            entity_id: variant.variant_id,
+            action: 'delete',
+            actor,
+        });
         return variant;
     }
-    static async restoreVariant(variantId) {
+    static async restoreVariant(variantId, actor = null) {
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: true }, { is_deleted: false }, { returnDocument: 'after' });
         if (!variant) {
             throw new app_error_util_1.AppError(`Variant not found for variant_id: ${variantId}`, 404, {
@@ -458,9 +514,16 @@ class CarVariantService {
                 },
             });
         }
+        await mileage_recompute_service_1.MileageRecomputeService.recomputeCarAggregatesOnly(variant.car_id);
+        await audit_util_1.AuditUtil.recordEvent({
+            entity_type: 'variant',
+            entity_id: variant.variant_id,
+            action: 'restore',
+            actor,
+        });
         return variant;
     }
-    static async togglePublish(variantId) {
+    static async togglePublish(variantId, actor = null) {
         const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId, is_deleted: false });
         if (!variant) {
             throw new app_error_util_1.AppError(`Variant not found or deleted for variant_id: ${variantId}`, 404, {
@@ -472,11 +535,21 @@ class CarVariantService {
                 },
             });
         }
+        const previous = variant.is_published;
         variant.is_published = !variant.is_published;
         await variant.save();
+        await audit_util_1.AuditUtil.recordEvent({
+            entity_type: 'variant',
+            entity_id: variant.variant_id,
+            action: variant.is_published ? 'publish' : 'unpublish',
+            field: 'is_published',
+            old_value: previous,
+            new_value: variant.is_published,
+            actor,
+        });
         return variant;
     }
-    static async publishVariant(variantId) {
+    static async publishVariant(variantId, actor = null) {
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false }, { is_published: true }, { returnDocument: 'after' });
         if (!variant) {
             throw new app_error_util_1.AppError(`Variant not found or deleted for variant_id: ${variantId}`, 404, {
@@ -488,9 +561,17 @@ class CarVariantService {
                 },
             });
         }
+        await audit_util_1.AuditUtil.recordEvent({
+            entity_type: 'variant',
+            entity_id: variant.variant_id,
+            action: 'publish',
+            field: 'is_published',
+            new_value: true,
+            actor,
+        });
         return variant;
     }
-    static async unpublishVariant(variantId) {
+    static async unpublishVariant(variantId, actor = null) {
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false }, { is_published: false }, { returnDocument: 'after' });
         if (!variant) {
             throw new app_error_util_1.AppError(`Variant not found or deleted for variant_id: ${variantId}`, 404, {
@@ -502,9 +583,17 @@ class CarVariantService {
                 },
             });
         }
+        await audit_util_1.AuditUtil.recordEvent({
+            entity_type: 'variant',
+            entity_id: variant.variant_id,
+            action: 'unpublish',
+            field: 'is_published',
+            new_value: false,
+            actor,
+        });
         return variant;
     }
-    static async archiveVariant(variantId, archivedBy) {
+    static async archiveVariant(variantId, archivedBy, actor = null) {
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false, is_archived: false }, {
             is_archived: true,
             archived_at: new Date(),
@@ -520,9 +609,18 @@ class CarVariantService {
                 },
             });
         }
+        await mileage_recompute_service_1.MileageRecomputeService.recomputeCarAggregatesOnly(variant.car_id);
+        await audit_util_1.AuditUtil.recordEvent({
+            entity_type: 'variant',
+            entity_id: variant.variant_id,
+            action: 'archive',
+            field: 'is_archived',
+            new_value: true,
+            actor,
+        });
         return variant;
     }
-    static async unarchiveVariant(variantId) {
+    static async unarchiveVariant(variantId, actor = null) {
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false, is_archived: true }, {
             is_archived: false,
             archived_at: null,
@@ -538,6 +636,15 @@ class CarVariantService {
                 },
             });
         }
+        await mileage_recompute_service_1.MileageRecomputeService.recomputeCarAggregatesOnly(variant.car_id);
+        await audit_util_1.AuditUtil.recordEvent({
+            entity_type: 'variant',
+            entity_id: variant.variant_id,
+            action: 'unarchive',
+            field: 'is_archived',
+            new_value: false,
+            actor,
+        });
         return variant;
     }
 }

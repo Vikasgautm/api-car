@@ -33,6 +33,13 @@ exports.createCarSchema = zod_1.z.object({
     is_latest: booleanOrString.optional(),
     top_selling: booleanOrString.optional(),
     is_launched: booleanOrString.optional(),
+    tag_ids: zod_1.z.union([
+        zod_1.z.array(zod_1.z.string()),
+        zod_1.z.string().transform((s) => s.split(',').map((v) => v.trim()).filter(Boolean)),
+    ]).optional(),
+    editor_user_id: zod_1.z.string().nullable().optional(),
+    seo_owner_user_id: zod_1.z.string().nullable().optional(),
+    reviewer_user_id: zod_1.z.string().nullable().optional(),
 }).extend(common_validation_schemas_1.metaFieldsSchema.shape).strict();
 exports.updateCarSchema = exports.createCarSchema.partial().strict();
 // Car Variant DTO schemas
@@ -64,5 +71,21 @@ exports.carFilterSchema = zod_1.z.object({
     is_featured: zod_1.z.union([zod_1.z.boolean(), zod_1.z.enum(['true', 'false'])]).optional(),
     min_price: zod_1.z.number().nonnegative().optional(),
     max_price: zod_1.z.number().nonnegative().optional(),
+    tag_ids: zod_1.z.union([
+        zod_1.z.array(zod_1.z.string()),
+        zod_1.z.string(),
+    ]).optional(),
+    tag_slugs: zod_1.z.union([
+        zod_1.z.array(zod_1.z.string()),
+        zod_1.z.string(),
+    ]).optional(),
+    mileage_class: zod_1.z.union([
+        zod_1.z.array(zod_1.z.enum(['weak', 'average', 'good', 'excellent'])),
+        zod_1.z.string(),
+    ]).optional(),
+    range_class: zod_1.z.union([
+        zod_1.z.array(zod_1.z.enum(['weak', 'average', 'good', 'excellent'])),
+        zod_1.z.string(),
+    ]).optional(),
 }).strict();
 //# sourceMappingURL=car-validation.schemas.js.map

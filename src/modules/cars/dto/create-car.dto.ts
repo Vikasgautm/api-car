@@ -12,7 +12,7 @@ export class CreateCarDto {
   thumbnail_alt?: string;
   gallery?: Array<{ url: string; alt?: string }>;
   gallery_summary?: string;
-  status?: 'upcoming' | 'launched' | 'discontinued';
+  status?: 'upcoming' | 'launched' | 'discontinued' | 'archived' | 'disabled';
   is_upcoming?: boolean;
   is_launched?: boolean;
   expected_exshowroom_price?: number;
@@ -26,6 +26,10 @@ export class CreateCarDto {
   is_recommended?: boolean;
   is_latest?: boolean;
   top_selling?: boolean;
+  tag_ids?: string[];
+  editor_user_id?: string | null;
+  seo_owner_user_id?: string | null;
+  reviewer_user_id?: string | null;
   meta_title?: string;
   meta_description?: string;
   meta_keywords?: string;

@@ -1,4 +1,5 @@
 import { ICarVariant, SpecsNormalized } from "../../../models/car-variant.model";
+import { AuditActor } from "../../../shared/utils/audit.util";
 export declare class CarVariantService {
     private static SECTION_NAME_TO_KEY_MAP;
     static removeHiddenSpecKeys(specs_normalized: SpecsNormalized | undefined, hidden_spec_keys?: string[]): SpecsNormalized | undefined;
@@ -31,63 +32,63 @@ export declare class CarVariantService {
     } & {
         id: string;
     }) | null>;
-    static createVariant(variantData: any): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
+    static createVariant(variantData: any, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static updateVariant(variantId: string, variantData: any): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
+    static updateVariant(variantId: string, variantData: any, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static deleteVariant(variantId: string): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
+    static deleteVariant(variantId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static restoreVariant(variantId: string): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
+    static restoreVariant(variantId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static togglePublish(variantId: string): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
+    static togglePublish(variantId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static publishVariant(variantId: string): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
+    static publishVariant(variantId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static unpublishVariant(variantId: string): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
+    static unpublishVariant(variantId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static archiveVariant(variantId: string, archivedBy?: string): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
+    static archiveVariant(variantId: string, archivedBy?: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    static unarchiveVariant(variantId: string): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
+    static unarchiveVariant(variantId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;

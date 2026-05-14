@@ -5,8 +5,8 @@ export declare const carPreviewSchema: z.ZodObject<{
 export declare const carSaveSchema: z.ZodObject<{
     url: z.ZodString;
     mode: z.ZodEnum<{
-        update: "update";
         create: "create";
+        update: "update";
         merge: "merge";
     }>;
     car_id: z.ZodOptional<z.ZodString>;
@@ -30,8 +30,8 @@ export declare const variantPreviewSchema: z.ZodObject<{
 export declare const variantSaveSchema: z.ZodObject<{
     car_id: z.ZodString;
     mode: z.ZodEnum<{
-        update: "update";
         create: "create";
+        update: "update";
         merge: "merge";
     }>;
     items: z.ZodArray<z.ZodObject<{

@@ -22,7 +22,7 @@ const carSchema = new mongoose_1.Schema({
     gallery_summary: { type: String },
     status: {
         type: String,
-        enum: ['upcoming', 'launched', 'discontinued'],
+        enum: ['upcoming', 'launched', 'discontinued', 'archived', 'disabled'],
         default: 'launched'
     },
     is_upcoming: { type: Boolean, default: false },
@@ -34,11 +34,27 @@ const carSchema = new mongoose_1.Schema({
     is_electric: { type: Boolean, default: false },
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
+    archived_at: { type: Date, default: null },
+    archived_by: { type: String, default: null },
+    disabled_at: { type: Date, default: null },
+    disabled_by: { type: String, default: null },
+    discontinued_at: { type: Date, default: null },
+    discontinued_by: { type: String, default: null },
+    redirect_to_slug: { type: String, default: null },
     is_featured: { type: Boolean, default: false },
     is_popular: { type: Boolean, default: false },
     is_recommended: { type: Boolean, default: false },
     is_latest: { type: Boolean, default: false },
     top_selling: { type: Boolean, default: false },
+    tag_ids: { type: [String], default: [] },
+    best_mileage_class: { type: String, enum: ['weak', 'average', 'good', 'excellent', null], default: null },
+    best_mileage_value: { type: Number, default: null },
+    best_range_class: { type: String, enum: ['weak', 'average', 'good', 'excellent', null], default: null },
+    best_range_value: { type: Number, default: null },
+    editor_user_id: { type: String, default: null },
+    seo_owner_user_id: { type: String, default: null },
+    reviewer_user_id: { type: String, default: null },
+    last_reviewed_at: { type: Date, default: null },
     // SEO fields
     meta_title: { type: String },
     meta_description: { type: String, maxlength: 160 },
@@ -69,5 +85,19 @@ carSchema.index({ launch_date: 1 });
 carSchema.index({ name: 'text' });
 carSchema.index({ brand_id: 1, is_published: 1, is_deleted: 1 });
 carSchema.index({ body_type_id: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ tag_ids: 1 });
+carSchema.index({ tag_ids: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ best_mileage_class: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ best_range_class: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ best_mileage_value: -1 });
+carSchema.index({ best_range_value: -1 });
+carSchema.index({ editor_user_id: 1 });
+carSchema.index({ seo_owner_user_id: 1 });
+carSchema.index({ reviewer_user_id: 1 });
+carSchema.index({ last_reviewed_at: -1 });
+carSchema.index({ status: 1, is_deleted: 1, is_published: 1 });
+carSchema.index({ archived_at: -1 });
+carSchema.index({ disabled_at: -1 });
+carSchema.index({ discontinued_at: -1 });
 exports.Car = (0, mongoose_1.model)("Car", carSchema);
 //# sourceMappingURL=car.model.js.map

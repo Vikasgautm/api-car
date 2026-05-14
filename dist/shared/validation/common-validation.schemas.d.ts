@@ -43,6 +43,8 @@ export declare const publishStatusSchema: z.ZodOptional<z.ZodEnum<{
     upcoming: "upcoming";
     launched: "launched";
     discontinued: "discontinued";
+    archived: "archived";
+    disabled: "disabled";
 }>>;
 export declare const transmissionTypeSchema: z.ZodEnum<{
     manual: "manual";
@@ -57,10 +59,10 @@ export declare const answerFormatSchema: z.ZodEnum<{
     markdown: "markdown";
 }>;
 export declare const userRoleSchema: z.ZodEnum<{
-    super_admin: "super_admin";
-    admin: "admin";
-    editor: "editor";
     user: "user";
+    editor: "editor";
+    admin: "admin";
+    super_admin: "super_admin";
 }>;
 export declare const metaFieldsSchema: z.ZodObject<{
     meta_title: z.ZodOptional<z.ZodString>;

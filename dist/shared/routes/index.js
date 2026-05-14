@@ -4,7 +4,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const audit_routes_1 = __importDefault(require("../../modules/audit/routes/audit.routes"));
 const auth_routes_1 = __importDefault(require("../../modules/auth/routes/auth.routes"));
+const deletion_workflow_routes_1 = __importDefault(require("../../modules/deletion-workflow/routes/deletion-workflow.routes"));
+const discovery_routes_1 = __importDefault(require("../../modules/discovery/routes/discovery.routes"));
+const seo_preset_routes_1 = __importDefault(require("../../modules/discovery/routes/seo-preset.routes"));
 const blog_routes_1 = __importDefault(require("../../modules/blogs/routes/blog.routes"));
 const bodyType_routes_1 = __importDefault(require("../../modules/bodyTypes/routes/bodyType.routes"));
 const brand_routes_1 = __importDefault(require("../../modules/brands/routes/brand.routes"));
@@ -18,7 +22,9 @@ const image_category_routes_1 = __importDefault(require("../../modules/images/ro
 const image_subcategory_routes_1 = __importDefault(require("../../modules/images/routes/image-subcategory.routes"));
 const image_routes_1 = __importDefault(require("../../modules/images/routes/image.routes"));
 const import_routes_1 = __importDefault(require("../../modules/imports/routes/import.routes"));
+const intelligence_routes_1 = __importDefault(require("../../modules/intelligence/routes/intelligence.routes"));
 const settings_routes_1 = __importDefault(require("../../modules/settings/routes/settings.routes"));
+const taxonomy_routes_1 = __importDefault(require("../../modules/taxonomy/routes/taxonomy.routes"));
 const user_routes_1 = __importDefault(require("../../modules/users/routes/user.routes"));
 const router = (0, express_1.Router)();
 router.use('/auth', auth_routes_1.default);
@@ -37,5 +43,11 @@ router.use('/image-subcategories', image_subcategory_routes_1.default);
 router.use('/imports', import_routes_1.default);
 router.use('/users', user_routes_1.default);
 router.use('/settings', settings_routes_1.default);
+router.use('/taxonomy', taxonomy_routes_1.default);
+router.use('/intelligence', intelligence_routes_1.default);
+router.use('/audit', audit_routes_1.default);
+router.use('/deletion-requests', deletion_workflow_routes_1.default);
+router.use('/discover', discovery_routes_1.default);
+router.use('/seo-presets', seo_preset_routes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map

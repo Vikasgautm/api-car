@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
+import { AuthRequest } from "../../../types/auth";
 import { AppError } from "../../../shared/utils/app-error.util";
+import { AuditUtil } from "../../../shared/utils/audit.util";
 import { ResponseUtil } from "../../../shared/utils/response.util";
 import { catchAsync } from "../../../utils/catchAsync";
 import { CreateCarDto } from "../dto/create-car.dto";
@@ -12,6 +14,27 @@ interface MulterRequest extends Request {
   files?: {
     [fieldname: string]: Express.Multer.File[];
   } | Express.Multer.File[];
+}
+
+function parseTagIds(input: unknown): string[] | undefined {
+  if (input === undefined || input === null || input === '') return undefined;
+  if (Array.isArray(input)) {
+    return input.map(v => String(v).trim()).filter(Boolean);
+  }
+  if (typeof input === 'string') {
+    const trimmed = input.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed.map(v => String(v).trim()).filter(Boolean);
+      } catch {
+        // fall through to csv split
+      }
+    }
+    return trimmed.split(',').map(v => v.trim()).filter(Boolean);
+  }
+  return undefined;
 }
 
 export class CarController {
@@ -26,22 +49,58 @@ export class CarController {
   });
 
   static getPublicCarBySlug = catchAsync(async (req: Request, res: Response) => {
-    const result = await CarService.getCarBySlug(req.params.slug as string);
+    const slug = req.params.slug as string;
+    const result = await CarService.getCarBySlug(slug);
     if (!result) {
       throw new AppError(
-        `Car not found for slug: ${req.params.slug}`,
+        `Car not found for slug: ${slug}`,
         404,
         {
           userMessage: USER_MESSAGES.CAR_NOT_FOUND,
           errorCode: ERROR_CODES.CAR_NOT_FOUND,
-          details: {
-            field: 'slug',
-            reason: 'The car does not exist or has been deleted.',
-          },
+          details: { field: 'slug', reason: 'The car does not exist or has been deleted.' },
         }
       );
     }
-    return ResponseUtil.success(res, result, "Car retrieved successfully");
+
+    const car = result.car as any;
+
+    // Replacement model → 301 Moved Permanently to the new slug.
+    if (car.redirect_to_slug && car.redirect_to_slug !== slug) {
+      res.setHeader('Location', `/cars/${car.redirect_to_slug}`);
+      return res.status(301).json({
+        success: false,
+        statusCode: 301,
+        message: 'This car has been replaced',
+        data: { redirect_to_slug: car.redirect_to_slug },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Archived / disabled → 410 Gone. Slug is preserved so SEO equity isn't lost,
+    // and we still hand the frontend the car body so a graceful "no longer
+    // available" page can render with metadata.
+    if (car.status === 'archived' || car.status === 'disabled') {
+      return res.status(410).json({
+        success: false,
+        statusCode: 410,
+        message: car.status === 'archived' ? 'This car has been archived' : 'This car has been disabled',
+        data: { ...result, gone: true, gone_reason: car.status },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Discontinued → still served (good for SEO) but with a flag the frontend uses
+    // to render a "Discontinued model" banner.
+    if (car.status === 'discontinued') {
+      return ResponseUtil.success(
+        res,
+        { ...result, discontinued: true },
+        'Car retrieved (discontinued)'
+      );
+    }
+
+    return ResponseUtil.success(res, result, 'Car retrieved successfully');
   });
 
   // Admin routes
@@ -115,6 +174,10 @@ export class CarController {
       is_recommended: req.body.is_recommended,
       is_latest: req.body.is_latest,
       top_selling: req.body.top_selling,
+      tag_ids: parseTagIds(req.body.tag_ids),
+      editor_user_id: req.body.editor_user_id,
+      seo_owner_user_id: req.body.seo_owner_user_id,
+      reviewer_user_id: req.body.reviewer_user_id,
       meta_title: req.body.meta_title,
       meta_description: req.body.meta_description,
       meta_keywords: req.body.meta_keywords,
@@ -128,7 +191,7 @@ export class CarController {
       throw new AppError(validation.errors.join(', '), 400);
     }
 
-    const car = await CarService.createCar(createDto);
+    const car = await CarService.createCar(createDto, AuditUtil.actorFromRequest(req as AuthRequest));
     return ResponseUtil.created(res, car, "Car created successfully");
   });
 
@@ -178,6 +241,10 @@ export class CarController {
       is_recommended: req.body.is_recommended !== undefined ? req.body.is_recommended === 'true' || req.body.is_recommended === true : undefined,
       is_latest: req.body.is_latest !== undefined ? req.body.is_latest === 'true' || req.body.is_latest === true : undefined,
       top_selling: req.body.top_selling !== undefined ? req.body.top_selling === 'true' || req.body.top_selling === true : undefined,
+      tag_ids: parseTagIds(req.body.tag_ids),
+      editor_user_id: req.body.editor_user_id,
+      seo_owner_user_id: req.body.seo_owner_user_id,
+      reviewer_user_id: req.body.reviewer_user_id,
       meta_title: req.body.meta_title,
       meta_description: req.body.meta_description,
       meta_keywords: req.body.meta_keywords,
@@ -191,36 +258,37 @@ export class CarController {
       throw new AppError(validation.errors.join(', '), 400);
     }
 
-    const car = await CarService.updateCar(req.params.id as string, updateDto);
+    const car = await CarService.updateCar(req.params.id as string, updateDto, AuditUtil.actorFromRequest(req as AuthRequest));
     return ResponseUtil.success(res, car, "Car updated successfully");
   });
 
   static deleteCar = catchAsync(async (req: Request, res: Response) => {
-    const car = await CarService.deleteCar(req.params.id as string);
+    const car = await CarService.deleteCar(req.params.id as string, AuditUtil.actorFromRequest(req as AuthRequest));
     return ResponseUtil.success(res, car, "Car deleted successfully");
   });
 
   static restoreCar = catchAsync(async (req: Request, res: Response) => {
-    const car = await CarService.restoreCar(req.params.id as string);
+    const car = await CarService.restoreCar(req.params.id as string, AuditUtil.actorFromRequest(req as AuthRequest));
     return ResponseUtil.success(res, car, "Car restored successfully");
   });
 
   static togglePublish = catchAsync(async (req: Request, res: Response) => {
-    const car = await CarService.togglePublish(req.params.id as string);
+    const car = await CarService.togglePublish(req.params.id as string, AuditUtil.actorFromRequest(req as AuthRequest));
     return ResponseUtil.success(res, car, "Car publish status toggled successfully");
   });
 
   static markLaunched = catchAsync(async (req: Request, res: Response) => {
-    const car = await CarService.markLaunched(req.params.id as string);
+    const car = await CarService.markLaunched(req.params.id as string, AuditUtil.actorFromRequest(req as AuthRequest));
     return ResponseUtil.success(res, car, "Car marked as launched successfully");
   });
 
   static markUpcoming = catchAsync(async (req: Request, res: Response) => {
     const { expected_exshowroom_price, expected_launch_date } = req.body;
-    const car = await CarService.markUpcoming(req.params.id as string, {
-      expected_exshowroom_price,
-      expected_launch_date,
-    });
+    const car = await CarService.markUpcoming(
+      req.params.id as string,
+      { expected_exshowroom_price, expected_launch_date },
+      AuditUtil.actorFromRequest(req as AuthRequest)
+    );
     return ResponseUtil.success(res, car, "Car marked as upcoming successfully");
   });
 }

@@ -1,4 +1,5 @@
 import { Document } from 'mongoose';
+import { MileageClass, MileageSource } from '../constants/mileage-benchmarks';
 export interface EnginePerformance {
     engine_type?: string;
     displacement?: string;
@@ -244,6 +245,16 @@ export interface ICarVariant extends Document {
     is_archived: boolean;
     archived_at?: Date;
     archived_by?: string;
+    mileage_class?: MileageClass | null;
+    mileage_class_value?: number | null;
+    mileage_class_source?: MileageSource | null;
+    range_class?: MileageClass | null;
+    range_class_value?: number | null;
+    range_class_source?: MileageSource | null;
+    editor_user_id?: string | null;
+    seo_owner_user_id?: string | null;
+    reviewer_user_id?: string | null;
+    last_reviewed_at?: Date | null;
     meta_title?: string;
     meta_description?: string;
     meta_keywords?: string;

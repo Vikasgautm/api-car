@@ -5,10 +5,10 @@ export declare const registerSchema: z.ZodObject<{
     password: z.ZodString;
     phone: z.ZodOptional<z.ZodString>;
     role: z.ZodOptional<z.ZodEnum<{
-        super_admin: "super_admin";
-        admin: "admin";
-        editor: "editor";
         user: "user";
+        editor: "editor";
+        admin: "admin";
+        super_admin: "super_admin";
     }>>;
 }, z.core.$strict>;
 export declare const loginSchema: z.ZodObject<{
@@ -29,10 +29,10 @@ export declare const adminUpdateUserSchema: z.ZodObject<{
     phone: z.ZodUnion<[z.ZodOptional<z.ZodString>, z.ZodLiteral<"">]>;
     profile_pic: z.ZodUnion<[z.ZodOptional<z.ZodString>, z.ZodLiteral<"">]>;
     role: z.ZodOptional<z.ZodEnum<{
-        super_admin: "super_admin";
-        admin: "admin";
-        editor: "editor";
         user: "user";
+        editor: "editor";
+        admin: "admin";
+        super_admin: "super_admin";
     }>>;
     is_email_verified: z.ZodOptional<z.ZodBoolean>;
     theme: z.ZodOptional<z.ZodString>;
@@ -60,10 +60,10 @@ export declare const userFilterSchema: z.ZodObject<{
         false: "false";
     }>, z.ZodTransform<boolean, "0" | "1" | "true" | "false">>]>>;
     role: z.ZodOptional<z.ZodEnum<{
-        super_admin: "super_admin";
-        admin: "admin";
-        editor: "editor";
         user: "user";
+        editor: "editor";
+        admin: "admin";
+        super_admin: "super_admin";
     }>>;
     is_email_verified: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
         true: "true";

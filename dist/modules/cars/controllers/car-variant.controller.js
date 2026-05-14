@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarVariantController = void 0;
 const errorMessages_1 = require("../../../constants/errorMessages");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
+const audit_util_1 = require("../../../shared/utils/audit.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
 const create_variant_dto_1 = require("../dto/create-variant.dto");
@@ -94,7 +95,7 @@ class CarVariantController {
         if (!validation.valid) {
             throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
         }
-        const variant = await car_variant_service_1.CarVariantService.createVariant(createDto);
+        const variant = await car_variant_service_1.CarVariantService.createVariant(createDto, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.created(res, variant, 'Variant created successfully');
     });
     static updateVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -114,41 +115,44 @@ class CarVariantController {
             hidden_spec_keys: req.body.hidden_spec_keys,
             hidden_sections: req.body.hidden_sections,
             is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
+            editor_user_id: req.body.editor_user_id,
+            seo_owner_user_id: req.body.seo_owner_user_id,
+            reviewer_user_id: req.body.reviewer_user_id,
         };
         const validation = update_variant_dto_1.UpdateVariantDto.validate(updateDto);
         if (!validation.valid) {
             throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
         }
-        const variant = await car_variant_service_1.CarVariantService.updateVariant(req.params.id, updateDto);
+        const variant = await car_variant_service_1.CarVariantService.updateVariant(req.params.id, updateDto, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, variant, 'Variant updated successfully');
     });
     static deleteVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const variant = await car_variant_service_1.CarVariantService.deleteVariant(req.params.id);
+        const variant = await car_variant_service_1.CarVariantService.deleteVariant(req.params.id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, variant, 'Variant deleted successfully');
     });
     static restoreVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const variant = await car_variant_service_1.CarVariantService.restoreVariant(req.params.id);
+        const variant = await car_variant_service_1.CarVariantService.restoreVariant(req.params.id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, variant, 'Variant restored successfully');
     });
     static togglePublish = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const variant = await car_variant_service_1.CarVariantService.togglePublish(req.params.id);
+        const variant = await car_variant_service_1.CarVariantService.togglePublish(req.params.id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, variant, 'Variant publish status toggled successfully');
     });
     static publishVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const variant = await car_variant_service_1.CarVariantService.publishVariant(req.params.id);
+        const variant = await car_variant_service_1.CarVariantService.publishVariant(req.params.id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, variant, 'Variant published successfully');
     });
     static unpublishVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const variant = await car_variant_service_1.CarVariantService.unpublishVariant(req.params.id);
+        const variant = await car_variant_service_1.CarVariantService.unpublishVariant(req.params.id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, variant, 'Variant unpublished successfully');
     });
     static archiveVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const archivedBy = req.user?.userId || undefined;
-        const variant = await car_variant_service_1.CarVariantService.archiveVariant(req.params.id, archivedBy);
+        const actor = audit_util_1.AuditUtil.actorFromRequest(req);
+        const variant = await car_variant_service_1.CarVariantService.archiveVariant(req.params.id, actor.user_id || undefined, actor);
         return response_util_1.ResponseUtil.success(res, variant, 'Variant archived successfully');
     });
     static unarchiveVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const variant = await car_variant_service_1.CarVariantService.unarchiveVariant(req.params.id);
+        const variant = await car_variant_service_1.CarVariantService.unarchiveVariant(req.params.id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, variant, 'Variant unarchived successfully');
     });
 }

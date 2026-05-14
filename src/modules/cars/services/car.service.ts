@@ -5,7 +5,11 @@ import { Brand } from "../../../models/brand.model";
 import { CarVariant } from "../../../models/car-variant.model";
 import { Car, ICar } from "../../../models/car.model";
 import { FuelType } from "../../../models/fuel-type.model";
+import { Tag } from "../../../models/tag.model";
+import { TagService } from "../../taxonomy/services/tag.service";
+import { MileageRecomputeService } from "../../../shared/services/mileage-recompute.service";
 import { AppError } from "../../../shared/utils/app-error.util";
+import { AuditActor, AuditUtil, CAR_AUDIT_FIELDS } from "../../../shared/utils/audit.util";
 import { normalizeCarLaunchStatus } from "../../../shared/utils/car-launch-status.util";
 import { FilterUtil } from "../../../shared/utils/filter.util";
 import { PaginationUtil } from "../../../shared/utils/pagination.util";
@@ -32,6 +36,10 @@ export class CarService {
         min_price,
         max_price,
         is_deleted,
+        tag_ids,
+        tag_slugs,
+        mileage_class,
+        range_class,
         sortBy = 'name',
         sortOrder = 'asc',
       } = filterDto;
@@ -46,6 +54,10 @@ export class CarService {
 
     if (is_published !== undefined) filter.is_published = is_published;
     if (is_featured !== undefined) filter.is_featured = is_featured;
+    // Public callers must never see archived / disabled cars even if a stale row
+    // has is_published=true. Applied after the status branch below so a
+    // `?status=archived` query from a public caller cannot bypass it.
+    const isPublicListing = is_published === true || is_published === 'true';
     if (is_popular !== undefined) filter.is_popular = is_popular;
     if (is_recommended !== undefined) filter.is_recommended = is_recommended;
     if (is_latest !== undefined) filter.is_latest = is_latest;
@@ -67,6 +79,17 @@ export class CarService {
       }
     }
     
+    if (isPublicListing) {
+      // Refuse archived/disabled — these are public-hidden no matter what the
+      // status param requested above.
+      if (filter.status && typeof filter.status === 'string' && (filter.status === 'archived' || filter.status === 'disabled')) {
+        // No public access to archived/disabled lists. Force an empty result.
+        filter.status = '__never_match__';
+      } else if (!filter.status) {
+        filter.status = { $nin: ['archived', 'disabled'] };
+      }
+    }
+
     if (brand_id !== undefined) {
       const brand = await Brand.findOne({ brand_id, is_deleted: false });
       if (brand) {
@@ -100,6 +123,48 @@ export class CarService {
     }
     if (is_electric !== undefined) filter.is_electric = is_electric;
 
+    // Tag filtering: accept either tag_ids (csv or array) or tag_slugs (csv or array).
+    const requestedTagIds: string[] = Array.isArray(tag_ids)
+      ? tag_ids.map(String).filter(Boolean)
+      : typeof tag_ids === 'string' && tag_ids.length > 0
+        ? tag_ids.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+    const requestedTagSlugs: string[] = Array.isArray(tag_slugs)
+      ? tag_slugs.map(String).filter(Boolean)
+      : typeof tag_slugs === 'string' && tag_slugs.length > 0
+        ? tag_slugs.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+
+    if (requestedTagSlugs.length > 0) {
+      const resolvedIds = await Tag.find({
+        slug: { $in: requestedTagSlugs },
+        is_deleted: false,
+        is_published: true,
+      }).distinct('tag_id');
+      requestedTagIds.push(...resolvedIds);
+    }
+
+    if (requestedTagIds.length > 0) {
+      filter.tag_ids = { $in: requestedTagIds };
+    }
+
+    const parseClassList = (input: unknown): string[] =>
+      Array.isArray(input)
+        ? input.map(String).filter(Boolean)
+        : typeof input === 'string' && input.length > 0
+          ? input.split(',').map(s => s.trim()).filter(Boolean)
+          : [];
+
+    const mileageClassValues = parseClassList(mileage_class);
+    if (mileageClassValues.length > 0) {
+      filter.best_mileage_class = { $in: mileageClassValues };
+    }
+
+    const rangeClassValues = parseClassList(range_class);
+    if (rangeClassValues.length > 0) {
+      filter.best_range_class = { $in: rangeClassValues };
+    }
+
     if (q) {
       const searchFilter = FilterUtil.buildSearchFilter(
         ['name', 'short_description', 'description'],
@@ -129,7 +194,7 @@ export class CarService {
 
     const [cars, total] = await Promise.all([
       Car.find(filter)
-        .select('car_id name slug brand_id body_type_id short_description thumbnail status is_upcoming is_launched expected_exshowroom_price expected_launch_date exshowroom_price is_electric is_published is_featured is_popular is_recommended is_latest top_selling meta_title meta_description')
+        .select('car_id name slug brand_id body_type_id short_description thumbnail status is_upcoming is_launched expected_exshowroom_price expected_launch_date exshowroom_price is_electric is_published is_featured is_popular is_recommended is_latest top_selling tag_ids best_mileage_class best_mileage_value best_range_class best_range_value meta_title meta_description')
         .sort(sortFilter)
         .skip(skip)
         .limit(validatedLimit)
@@ -155,16 +220,25 @@ export class CarService {
 
     if (!car) return null;
 
-    const variants = await CarVariant.find({
-      car_id: car.car_id as string,
-      is_published: true,
-      is_deleted: false,
-    } as any);
+    const [variants, tags] = await Promise.all([
+      CarVariant.find({
+        car_id: car.car_id as string,
+        is_published: true,
+        is_deleted: false,
+      } as any),
+      car.tag_ids && car.tag_ids.length > 0
+        ? Tag.find({
+            tag_id: { $in: car.tag_ids },
+            is_published: true,
+            is_deleted: false,
+          }).lean()
+        : Promise.resolve([]),
+    ]);
 
-    return { car, variants };
+    return { car, variants, tags };
   }
 
-  static async createCar(carData: any) {
+  static async createCar(carData: any, actor: AuditActor | null = null) {
     // Validate brand_id
     const brand = await Brand.findOne({ brand_id: carData.brand_id, is_deleted: false });
     if (!brand) {
@@ -233,6 +307,21 @@ export class CarService {
       carData.slug = slug;
     }
 
+    let resolvedTagIds: string[] = [];
+    if (Array.isArray(carData.tag_ids) && carData.tag_ids.length > 0) {
+      const { valid, invalid } = await TagService.validateTagIds(carData.tag_ids);
+      if (invalid.length > 0) {
+        throw new AppError(
+          `Unknown or deleted tag_id(s): ${invalid.join(', ')}`,
+          400,
+          {
+            details: { field: 'tag_ids', invalid_ids: invalid },
+          }
+        );
+      }
+      resolvedTagIds = valid;
+    }
+
     const car: Partial<ICar> = {
       car_id,
       name: carData.name,
@@ -261,6 +350,7 @@ export class CarService {
       is_recommended: carData.is_recommended || false,
       is_latest: carData.is_latest || false,
       top_selling: carData.top_selling || false,
+      tag_ids: resolvedTagIds,
       is_deleted: false,
       meta_title: carData.meta_title,
       meta_description: carData.meta_description,
@@ -270,11 +360,20 @@ export class CarService {
       noindex: carData.noindex,
     };
 
-    return await Car.create(car);
+    const created = await Car.create(car);
+    await AuditUtil.recordEvent({
+      entity_type: 'car',
+      entity_id: created.car_id,
+      action: 'create',
+      actor,
+      new_value: { car_id: created.car_id, name: created.name, slug: created.slug },
+    });
+    return created;
   }
 
-  static async updateCar(carId: string, carData: any) {
+  static async updateCar(carId: string, carData: any, actor: AuditActor | null = null) {
     const updateData: Partial<ICar> = {};
+    const before = await Car.findOne({ car_id: carId, is_deleted: false } as any).lean();
 
     // Normalize launch status fields
     const normalizedData = normalizeCarLaunchStatus(carData);
@@ -374,7 +473,32 @@ export class CarService {
     if (carData.is_recommended !== undefined) updateData.is_recommended = carData.is_recommended;
     if (carData.is_latest !== undefined) updateData.is_latest = carData.is_latest;
     if (carData.top_selling !== undefined) updateData.top_selling = carData.top_selling;
-    
+
+    if (carData.editor_user_id !== undefined) updateData.editor_user_id = carData.editor_user_id || null;
+    if (carData.seo_owner_user_id !== undefined) updateData.seo_owner_user_id = carData.seo_owner_user_id || null;
+    if (carData.reviewer_user_id !== undefined) updateData.reviewer_user_id = carData.reviewer_user_id || null;
+
+    if (carData.tag_ids !== undefined) {
+      if (!Array.isArray(carData.tag_ids)) {
+        throw new AppError('tag_ids must be an array of tag UUIDs', 400);
+      }
+      if (carData.tag_ids.length === 0) {
+        updateData.tag_ids = [];
+      } else {
+        const { valid, invalid } = await TagService.validateTagIds(carData.tag_ids);
+        if (invalid.length > 0) {
+          throw new AppError(
+            `Unknown or deleted tag_id(s): ${invalid.join(', ')}`,
+            400,
+            {
+              details: { field: 'tag_ids', invalid_ids: invalid },
+            }
+          );
+        }
+        updateData.tag_ids = valid;
+      }
+    }
+
     if (carData.meta_title !== undefined) updateData.meta_title = carData.meta_title;
     if (carData.meta_description !== undefined) updateData.meta_description = carData.meta_description;
     if (carData.meta_keywords !== undefined) updateData.meta_keywords = carData.meta_keywords;
@@ -403,10 +527,28 @@ export class CarService {
       );
     }
 
+    // Reclassify all variants when the inputs that drive classification change.
+    if (
+      carData.body_type_id !== undefined ||
+      carData.fuel_type_id !== undefined ||
+      carData.is_electric !== undefined
+    ) {
+      await MileageRecomputeService.recomputeCar(car.car_id);
+    }
+
+    await AuditUtil.recordChanges({
+      entity_type: 'car',
+      entity_id: car.car_id,
+      before,
+      after: car.toObject(),
+      fieldsToTrack: CAR_AUDIT_FIELDS,
+      actor,
+    });
+
     return car;
   }
 
-  static async deleteCar(carId: string) {
+  static async deleteCar(carId: string, actor: AuditActor | null = null) {
     const car = await Car.findOneAndUpdate(
       { car_id: carId, is_deleted: false },
       { is_deleted: true },
@@ -428,10 +570,16 @@ export class CarService {
       );
     }
 
+    await AuditUtil.recordEvent({
+      entity_type: 'car',
+      entity_id: car.car_id,
+      action: 'delete',
+      actor,
+    });
     return car;
   }
 
-  static async restoreCar(carId: string) {
+  static async restoreCar(carId: string, actor: AuditActor | null = null) {
     const car = await Car.findOneAndUpdate(
       { car_id: carId, is_deleted: true },
       { is_deleted: false },
@@ -453,10 +601,16 @@ export class CarService {
       );
     }
 
+    await AuditUtil.recordEvent({
+      entity_type: 'car',
+      entity_id: car.car_id,
+      action: 'restore',
+      actor,
+    });
     return car;
   }
 
-  static async togglePublish(carId: string) {
+  static async togglePublish(carId: string, actor: AuditActor | null = null) {
     const car = await Car.findOne({ car_id: carId, is_deleted: false });
     if (!car) {
       throw new AppError(
@@ -473,13 +627,24 @@ export class CarService {
       );
     }
 
+    const previous = car.is_published;
     car.is_published = !car.is_published;
     await car.save();
+
+    await AuditUtil.recordEvent({
+      entity_type: 'car',
+      entity_id: car.car_id,
+      action: car.is_published ? 'publish' : 'unpublish',
+      field: 'is_published',
+      old_value: previous,
+      new_value: car.is_published,
+      actor,
+    });
 
     return car;
   }
 
-  static async markLaunched(carId: string) {
+  static async markLaunched(carId: string, actor: AuditActor | null = null) {
     const car = await Car.findOne({ car_id: carId, is_deleted: false });
     if (!car) {
       throw new AppError(
@@ -497,18 +662,30 @@ export class CarService {
     }
 
     const today = new Date();
-    
+
     car.is_upcoming = false;
     car.is_launched = true;
     car.status = 'launched';
     car.is_latest = true;
-    
+
     await car.save();
+
+    await AuditUtil.recordEvent({
+      entity_type: 'car',
+      entity_id: car.car_id,
+      action: 'mark_launched',
+      new_value: { launched_at: today },
+      actor,
+    });
 
     return car;
   }
 
-  static async markUpcoming(carId: string, data: { expected_exshowroom_price?: number; expected_launch_date?: string }) {
+  static async markUpcoming(
+    carId: string,
+    data: { expected_exshowroom_price?: number; expected_launch_date?: string },
+    actor: AuditActor | null = null
+  ) {
     const car = await Car.findOne({ car_id: carId, is_deleted: false });
     if (!car) {
       throw new AppError(
@@ -547,8 +724,19 @@ export class CarService {
     car.status = 'upcoming';
     car.expected_exshowroom_price = data.expected_exshowroom_price;
     car.expected_launch_date = new Date(data.expected_launch_date);
-    
+
     await car.save();
+
+    await AuditUtil.recordEvent({
+      entity_type: 'car',
+      entity_id: car.car_id,
+      action: 'mark_upcoming',
+      new_value: {
+        expected_exshowroom_price: data.expected_exshowroom_price,
+        expected_launch_date: data.expected_launch_date,
+      },
+      actor,
+    });
 
     return car;
   }

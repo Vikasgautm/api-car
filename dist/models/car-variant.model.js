@@ -250,6 +250,16 @@ const variantSchema = new mongoose_1.Schema({
     is_archived: { type: Boolean, default: false },
     archived_at: { type: Date },
     archived_by: { type: String },
+    mileage_class: { type: String, enum: ['weak', 'average', 'good', 'excellent', null], default: null },
+    mileage_class_value: { type: Number, default: null },
+    mileage_class_source: { type: String, default: null },
+    range_class: { type: String, enum: ['weak', 'average', 'good', 'excellent', null], default: null },
+    range_class_value: { type: Number, default: null },
+    range_class_source: { type: String, default: null },
+    editor_user_id: { type: String, default: null },
+    seo_owner_user_id: { type: String, default: null },
+    reviewer_user_id: { type: String, default: null },
+    last_reviewed_at: { type: Date, default: null },
     // SEO fields
     meta_title: { type: String },
     meta_description: { type: String, maxlength: 160 },
@@ -271,5 +281,11 @@ variantSchema.index({ car_id: 1, is_published: 1, is_deleted: 1, is_archived: 1 
 variantSchema.index({ expected_launch_date: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
 variantSchema.index({ ex_showroom_price: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
 variantSchema.index({ expected_price: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ mileage_class: 1 });
+variantSchema.index({ range_class: 1 });
+variantSchema.index({ editor_user_id: 1 });
+variantSchema.index({ seo_owner_user_id: 1 });
+variantSchema.index({ reviewer_user_id: 1 });
+variantSchema.index({ last_reviewed_at: -1 });
 exports.CarVariant = (0, mongoose_1.model)('CarVariant', variantSchema);
 //# sourceMappingURL=car-variant.model.js.map

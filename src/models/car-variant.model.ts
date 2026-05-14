@@ -1,4 +1,5 @@
 import { Document, Schema, model } from 'mongoose';
+import { MileageClass, MileageSource } from '../constants/mileage-benchmarks';
 
 // Specs normalized interfaces
 export interface EnginePerformance {
@@ -262,6 +263,18 @@ export interface ICarVariant extends Document {
   is_archived: boolean;
   archived_at?: Date;
   archived_by?: string;
+  // Mileage / EV-range intelligence (auto-computed; see MileageClassifierService)
+  mileage_class?: MileageClass | null;
+  mileage_class_value?: number | null;
+  mileage_class_source?: MileageSource | null;
+  range_class?: MileageClass | null;
+  range_class_value?: number | null;
+  range_class_source?: MileageSource | null;
+  // Content ownership
+  editor_user_id?: string | null;
+  seo_owner_user_id?: string | null;
+  reviewer_user_id?: string | null;
+  last_reviewed_at?: Date | null;
   // SEO fields
   meta_title?: string;
   meta_description?: string;
@@ -520,6 +533,16 @@ const variantSchema = new Schema<ICarVariant>(
     is_archived: { type: Boolean, default: false },
     archived_at: { type: Date },
     archived_by: { type: String },
+    mileage_class: { type: String, enum: ['weak', 'average', 'good', 'excellent', null], default: null },
+    mileage_class_value: { type: Number, default: null },
+    mileage_class_source: { type: String, default: null },
+    range_class: { type: String, enum: ['weak', 'average', 'good', 'excellent', null], default: null },
+    range_class_value: { type: Number, default: null },
+    range_class_source: { type: String, default: null },
+    editor_user_id: { type: String, default: null },
+    seo_owner_user_id: { type: String, default: null },
+    reviewer_user_id: { type: String, default: null },
+    last_reviewed_at: { type: Date, default: null },
     // SEO fields
     meta_title: { type: String },
     meta_description: { type: String, maxlength: 160 },
@@ -544,5 +567,11 @@ variantSchema.index({ car_id: 1, is_published: 1, is_deleted: 1, is_archived: 1 
 variantSchema.index({ expected_launch_date: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
 variantSchema.index({ ex_showroom_price: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
 variantSchema.index({ expected_price: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ mileage_class: 1 });
+variantSchema.index({ range_class: 1 });
+variantSchema.index({ editor_user_id: 1 });
+variantSchema.index({ seo_owner_user_id: 1 });
+variantSchema.index({ reviewer_user_id: 1 });
+variantSchema.index({ last_reviewed_at: -1 });
 
 export const CarVariant = model<ICarVariant>('CarVariant', variantSchema);

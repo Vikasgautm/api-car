@@ -3,11 +3,36 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarController = void 0;
 const errorMessages_1 = require("../../../constants/errorMessages");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
+const audit_util_1 = require("../../../shared/utils/audit.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
 const create_car_dto_1 = require("../dto/create-car.dto");
 const update_car_dto_1 = require("../dto/update-car.dto");
 const car_service_1 = require("../services/car.service");
+function parseTagIds(input) {
+    if (input === undefined || input === null || input === '')
+        return undefined;
+    if (Array.isArray(input)) {
+        return input.map(v => String(v).trim()).filter(Boolean);
+    }
+    if (typeof input === 'string') {
+        const trimmed = input.trim();
+        if (!trimmed)
+            return [];
+        if (trimmed.startsWith('[')) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed))
+                    return parsed.map(v => String(v).trim()).filter(Boolean);
+            }
+            catch {
+                // fall through to csv split
+            }
+        }
+        return trimmed.split(',').map(v => v.trim()).filter(Boolean);
+    }
+    return undefined;
+}
 class CarController {
     // Public routes
     static getAllPublicCars = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -19,18 +44,45 @@ class CarController {
         return response_util_1.ResponseUtil.paginated(res, result.cars, result.pagination, 'Cars retrieved successfully');
     });
     static getPublicCarBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const result = await car_service_1.CarService.getCarBySlug(req.params.slug);
+        const slug = req.params.slug;
+        const result = await car_service_1.CarService.getCarBySlug(slug);
         if (!result) {
-            throw new app_error_util_1.AppError(`Car not found for slug: ${req.params.slug}`, 404, {
+            throw new app_error_util_1.AppError(`Car not found for slug: ${slug}`, 404, {
                 userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
                 errorCode: errorMessages_1.ERROR_CODES.CAR_NOT_FOUND,
-                details: {
-                    field: 'slug',
-                    reason: 'The car does not exist or has been deleted.',
-                },
+                details: { field: 'slug', reason: 'The car does not exist or has been deleted.' },
             });
         }
-        return response_util_1.ResponseUtil.success(res, result, "Car retrieved successfully");
+        const car = result.car;
+        // Replacement model → 301 Moved Permanently to the new slug.
+        if (car.redirect_to_slug && car.redirect_to_slug !== slug) {
+            res.setHeader('Location', `/cars/${car.redirect_to_slug}`);
+            return res.status(301).json({
+                success: false,
+                statusCode: 301,
+                message: 'This car has been replaced',
+                data: { redirect_to_slug: car.redirect_to_slug },
+                timestamp: new Date().toISOString(),
+            });
+        }
+        // Archived / disabled → 410 Gone. Slug is preserved so SEO equity isn't lost,
+        // and we still hand the frontend the car body so a graceful "no longer
+        // available" page can render with metadata.
+        if (car.status === 'archived' || car.status === 'disabled') {
+            return res.status(410).json({
+                success: false,
+                statusCode: 410,
+                message: car.status === 'archived' ? 'This car has been archived' : 'This car has been disabled',
+                data: { ...result, gone: true, gone_reason: car.status },
+                timestamp: new Date().toISOString(),
+            });
+        }
+        // Discontinued → still served (good for SEO) but with a flag the frontend uses
+        // to render a "Discontinued model" banner.
+        if (car.status === 'discontinued') {
+            return response_util_1.ResponseUtil.success(res, { ...result, discontinued: true }, 'Car retrieved (discontinued)');
+        }
+        return response_util_1.ResponseUtil.success(res, result, 'Car retrieved successfully');
     });
     // Admin routes
     static getAllAdminCars = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -96,6 +148,10 @@ class CarController {
             is_recommended: req.body.is_recommended,
             is_latest: req.body.is_latest,
             top_selling: req.body.top_selling,
+            tag_ids: parseTagIds(req.body.tag_ids),
+            editor_user_id: req.body.editor_user_id,
+            seo_owner_user_id: req.body.seo_owner_user_id,
+            reviewer_user_id: req.body.reviewer_user_id,
             meta_title: req.body.meta_title,
             meta_description: req.body.meta_description,
             meta_keywords: req.body.meta_keywords,
@@ -107,7 +163,7 @@ class CarController {
         if (!validation.valid) {
             throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
         }
-        const car = await car_service_1.CarService.createCar(createDto);
+        const car = await car_service_1.CarService.createCar(createDto, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.created(res, car, "Car created successfully");
     });
     static updateCar = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -155,6 +211,10 @@ class CarController {
             is_recommended: req.body.is_recommended !== undefined ? req.body.is_recommended === 'true' || req.body.is_recommended === true : undefined,
             is_latest: req.body.is_latest !== undefined ? req.body.is_latest === 'true' || req.body.is_latest === true : undefined,
             top_selling: req.body.top_selling !== undefined ? req.body.top_selling === 'true' || req.body.top_selling === true : undefined,
+            tag_ids: parseTagIds(req.body.tag_ids),
+            editor_user_id: req.body.editor_user_id,
+            seo_owner_user_id: req.body.seo_owner_user_id,
+            reviewer_user_id: req.body.reviewer_user_id,
             meta_title: req.body.meta_title,
             meta_description: req.body.meta_description,
             meta_keywords: req.body.meta_keywords,
@@ -166,31 +226,28 @@ class CarController {
         if (!validation.valid) {
             throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
         }
-        const car = await car_service_1.CarService.updateCar(req.params.id, updateDto);
+        const car = await car_service_1.CarService.updateCar(req.params.id, updateDto, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, car, "Car updated successfully");
     });
     static deleteCar = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const car = await car_service_1.CarService.deleteCar(req.params.id);
+        const car = await car_service_1.CarService.deleteCar(req.params.id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, car, "Car deleted successfully");
     });
     static restoreCar = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const car = await car_service_1.CarService.restoreCar(req.params.id);
+        const car = await car_service_1.CarService.restoreCar(req.params.id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, car, "Car restored successfully");
     });
     static togglePublish = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const car = await car_service_1.CarService.togglePublish(req.params.id);
+        const car = await car_service_1.CarService.togglePublish(req.params.id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, car, "Car publish status toggled successfully");
     });
     static markLaunched = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const car = await car_service_1.CarService.markLaunched(req.params.id);
+        const car = await car_service_1.CarService.markLaunched(req.params.id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, car, "Car marked as launched successfully");
     });
     static markUpcoming = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const { expected_exshowroom_price, expected_launch_date } = req.body;
-        const car = await car_service_1.CarService.markUpcoming(req.params.id, {
-            expected_exshowroom_price,
-            expected_launch_date,
-        });
+        const car = await car_service_1.CarService.markUpcoming(req.params.id, { expected_exshowroom_price, expected_launch_date }, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, car, "Car marked as upcoming successfully");
     });
 }

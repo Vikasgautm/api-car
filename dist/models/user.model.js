@@ -39,6 +39,11 @@ const userSchema = new mongoose_1.Schema({
         type: String,
         trim: true,
     },
+    whatsapp_phone: {
+        type: String,
+        trim: true,
+    },
+    whatsapp_opt_in: { type: Boolean, default: false },
     profile_pic: { type: String },
     role: {
         type: String,

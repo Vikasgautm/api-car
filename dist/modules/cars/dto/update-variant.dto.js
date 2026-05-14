@@ -22,6 +22,9 @@ class UpdateVariantDto {
     is_archived;
     archived_at;
     archived_by;
+    editor_user_id;
+    seo_owner_user_id;
+    reviewer_user_id;
     meta_title;
     meta_description;
     meta_keywords;

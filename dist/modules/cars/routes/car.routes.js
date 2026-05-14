@@ -25,7 +25,9 @@ const thumbnailUpload = upload_service_1.UploadService.createUploadMiddleware({
 });
 adminRouter.post('/', (0, validate_middleware_1.validateBody)(validation_1.createCarSchema), thumbnailUpload, car_controller_1.CarController.createCar);
 adminRouter.put('/:id', validation_1.validateUuidIdParam, (0, validate_middleware_1.validateBody)(validation_1.updateCarSchema), thumbnailUpload, car_controller_1.CarController.updateCar);
-adminRouter.delete('/:id', validation_1.validateUuidIdParam, car_controller_1.CarController.deleteCar);
+// Direct hard-delete is now reserved for super_admin. Day-to-day removals go
+// through the OTP-gated deletion workflow (`POST /deletion-requests/admin`).
+adminRouter.delete('/:id', validation_1.validateUuidIdParam, (0, auth_middleware_1.restrictTo)('super_admin'), car_controller_1.CarController.deleteCar);
 adminRouter.patch('/restore/:id', validation_1.validateUuidIdParam, car_controller_1.CarController.restoreCar);
 adminRouter.patch('/:id/publish', validation_1.validateUuidIdParam, car_controller_1.CarController.togglePublish);
 adminRouter.patch('/:id/mark-launched', validation_1.validateUuidIdParam, car_controller_1.CarController.markLaunched);

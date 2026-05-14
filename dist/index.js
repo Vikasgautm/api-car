@@ -10,7 +10,9 @@ const updateUpcomingCars_job_1 = require("./jobs/updateUpcomingCars.job");
 const admin_seed_1 = require("./seeds/admin.seed");
 const city_seed_1 = require("./seeds/city.seed");
 const logger_1 = require("./utils/logger");
+const compute_mileage_classes_seed_1 = require("./seeds/compute-mileage-classes.seed");
 const fuel_type_seed_1 = require("./seeds/fuel-type.seed");
+const intent_tags_seed_1 = require("./seeds/intent-tags.seed");
 const startServer = async () => {
     try {
         // MongoDB Connection
@@ -23,6 +25,10 @@ const startServer = async () => {
         await (0, city_seed_1.seedCities)();
         // Seed default fuel types
         await (0, fuel_type_seed_1.seedFuelTypes)();
+        // Seed intent taxonomy (intent category + 19 default intent tags)
+        await (0, intent_tags_seed_1.seedIntentTags)();
+        // Backfill mileage / EV-range classifications for any variant or car still missing them.
+        await (0, compute_mileage_classes_seed_1.computeMileageClassesIfNeeded)();
         // Start auto-launch cron job
         updateUpcomingCars_job_1.UpdateUpcomingCarsJob.start();
         // Start Express Server
