@@ -28,6 +28,14 @@ export declare class CreateCarDto {
     is_latest?: boolean;
     top_selling?: boolean;
     tag_ids?: string[];
+    model_family?: string;
+    generation_start_year?: number;
+    generation_end_year?: number;
+    generation_label?: string;
+    is_current?: boolean;
+    is_facelift?: boolean;
+    predecessor_car_id?: string | null;
+    successor_car_id?: string | null;
     editor_user_id?: string | null;
     seo_owner_user_id?: string | null;
     reviewer_user_id?: string | null;

@@ -15,6 +15,7 @@ const adminRouter = (0, express_1.Router)();
 adminRouter.use(auth_middleware_1.protect);
 adminRouter.use((0, auth_middleware_1.restrictTo)('admin', 'super_admin'));
 adminRouter.get('/', validation_1.validatePaginationQuery, car_controller_1.CarController.getAllAdminCars);
+adminRouter.get('/:id/dependencies', validation_1.validateUuidIdParam, car_controller_1.CarController.getCarDependencies);
 adminRouter.get('/:id', validation_1.validateUuidIdParam, car_controller_1.CarController.getAdminCarById);
 const thumbnailUpload = upload_service_1.UploadService.createUploadMiddleware({
     fieldName: 'thumbnail',
@@ -32,6 +33,7 @@ adminRouter.patch('/restore/:id', validation_1.validateUuidIdParam, car_controll
 adminRouter.patch('/:id/publish', validation_1.validateUuidIdParam, car_controller_1.CarController.togglePublish);
 adminRouter.patch('/:id/mark-launched', validation_1.validateUuidIdParam, car_controller_1.CarController.markLaunched);
 adminRouter.patch('/:id/mark-upcoming', validation_1.validateUuidIdParam, car_controller_1.CarController.markUpcoming);
+adminRouter.post('/:id/promote-to-current', validation_1.validateUuidIdParam, car_controller_1.CarController.promoteToCurrent);
 router.use('/admin', adminRouter);
 // Legacy routes for backward compatibility
 router.get('/', validation_1.validatePaginationQuery, car_controller_1.CarController.getAllPublicCars);

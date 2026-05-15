@@ -5,9 +5,12 @@ const uuid_1 = require("uuid");
 const errorMessages_1 = require("../../../constants/errorMessages");
 const body_type_model_1 = require("../../../models/body-type.model");
 const brand_model_1 = require("../../../models/brand.model");
+const car_image_model_1 = require("../../../models/car-image.model");
 const car_variant_model_1 = require("../../../models/car-variant.model");
 const car_model_1 = require("../../../models/car.model");
+const faq_model_1 = require("../../../models/faq.model");
 const fuel_type_model_1 = require("../../../models/fuel-type.model");
+const redirect_model_1 = require("../../../models/redirect.model");
 const tag_model_1 = require("../../../models/tag.model");
 const tag_service_1 = require("../../taxonomy/services/tag.service");
 const mileage_recompute_service_1 = require("../../../shared/services/mileage-recompute.service");
@@ -20,7 +23,7 @@ const slug_util_1 = require("../../../shared/utils/slug.util");
 class CarService {
     static async getAllCars(filterDto, includeDeleted = false) {
         try {
-            const { page = 1, limit = 10, q, brand_id, body_type_id, fuel_type_id, status, is_electric, is_published, is_featured, is_popular, is_recommended, is_latest, top_selling, min_price, max_price, is_deleted, tag_ids, tag_slugs, mileage_class, range_class, sortBy = 'name', sortOrder = 'asc', } = filterDto;
+            const { page = 1, limit = 10, q, brand_id, body_type_id, fuel_type_id, status, is_electric, is_published, is_featured, is_popular, is_recommended, is_latest, top_selling, min_price, max_price, is_deleted, tag_ids, tag_slugs, mileage_class, range_class, model_family, is_current, sortBy = 'name', sortOrder = 'asc', } = filterDto;
             const filter = {};
             if (is_deleted === 'true' || is_deleted === true) {
                 filter.is_deleted = true;
@@ -109,6 +112,12 @@ class CarService {
             }
             if (is_electric !== undefined)
                 filter.is_electric = is_electric;
+            if (model_family !== undefined && typeof model_family === 'string' && model_family.trim() !== '') {
+                filter.model_family = model_family.trim().toLowerCase();
+            }
+            if (is_current !== undefined) {
+                filter.is_current = is_current === true || is_current === 'true';
+            }
             // Tag filtering: accept either tag_ids (csv or array) or tag_slugs (csv or array).
             const requestedTagIds = Array.isArray(tag_ids)
                 ? tag_ids.map(String).filter(Boolean)
@@ -145,8 +154,38 @@ class CarService {
                 filter.best_range_class = { $in: rangeClassValues };
             }
             if (q) {
-                const searchFilter = filter_util_1.FilterUtil.buildSearchFilter(['name', 'short_description', 'description'], q);
-                Object.assign(filter, searchFilter);
+                // Year-aware search: when the query contains a 4-digit year (e.g. "Creta 2022"),
+                // map it onto the generation whose [start_year, end_year ?? this year] covers
+                // that year. We don't carve separate pages for every calendar year — instead
+                // the system surfaces the correct generation. The non-year tokens still feed
+                // the regular text search.
+                const yearMatch = String(q).match(/\b(19|20|21)\d{2}\b/);
+                const stripped = yearMatch ? String(q).replace(yearMatch[0], '').trim() : String(q).trim();
+                const andClauses = [];
+                if (stripped) {
+                    const searchFilter = filter_util_1.FilterUtil.buildSearchFilter(['name', 'short_description', 'description'], stripped);
+                    if (searchFilter.$or)
+                        andClauses.push({ $or: searchFilter.$or });
+                }
+                if (yearMatch) {
+                    const year = Number(yearMatch[0]);
+                    const thisYear = new Date().getFullYear();
+                    andClauses.push({ generation_start_year: { $lte: year } });
+                    andClauses.push({
+                        $or: [
+                            { generation_end_year: { $gte: year } },
+                            // Open-ended generations (still current) — null end_year covers up
+                            // through this year.
+                            ...(year <= thisYear ? [{ generation_end_year: null }] : []),
+                        ],
+                    });
+                }
+                if (andClauses.length === 1) {
+                    Object.assign(filter, andClauses[0]);
+                }
+                else if (andClauses.length > 1) {
+                    filter.$and = andClauses;
+                }
             }
             const priceFilter = {};
             if (min_price !== undefined)
@@ -167,7 +206,7 @@ class CarService {
             const sortFilter = filter_util_1.FilterUtil.buildSortFilter(sortBy, sortOrder);
             const [cars, total] = await Promise.all([
                 car_model_1.Car.find(filter)
-                    .select('car_id name slug brand_id body_type_id short_description thumbnail status is_upcoming is_launched expected_exshowroom_price expected_launch_date exshowroom_price is_electric is_published is_featured is_popular is_recommended is_latest top_selling tag_ids best_mileage_class best_mileage_value best_range_class best_range_value meta_title meta_description')
+                    .select('car_id name slug brand_id body_type_id short_description thumbnail status is_upcoming is_launched expected_exshowroom_price expected_launch_date exshowroom_price is_electric is_published is_featured is_popular is_recommended is_latest top_selling tag_ids best_mileage_class best_mileage_value best_range_class best_range_value meta_title meta_description model_family generation_start_year generation_end_year generation_label is_current is_facelift')
                     .sort(sortFilter)
                     .skip(skip)
                     .limit(validatedLimit)
@@ -296,6 +335,16 @@ class CarService {
             is_latest: carData.is_latest || false,
             top_selling: carData.top_selling || false,
             tag_ids: resolvedTagIds,
+            model_family: typeof carData.model_family === 'string' && carData.model_family.trim() !== ''
+                ? carData.model_family.trim().toLowerCase()
+                : null,
+            generation_start_year: carData.generation_start_year ?? null,
+            generation_end_year: carData.generation_end_year ?? null,
+            generation_label: carData.generation_label ?? null,
+            is_current: carData.is_current === true,
+            is_facelift: carData.is_facelift === true,
+            predecessor_car_id: carData.predecessor_car_id ?? null,
+            successor_car_id: carData.successor_car_id ?? null,
             is_deleted: false,
             meta_title: carData.meta_title,
             meta_description: carData.meta_description,
@@ -304,7 +353,16 @@ class CarService {
             canonical_url: carData.canonical_url,
             noindex: carData.noindex,
         };
-        const created = await car_model_1.Car.create(car);
+        let created;
+        try {
+            created = await car_model_1.Car.create(car);
+        }
+        catch (err) {
+            if (err?.code === 11000 && err?.keyPattern?.is_current && car.model_family) {
+                throw new app_error_util_1.AppError(`Another car in model_family "${car.model_family}" is already marked as current. Demote it first or use the Promote-to-current workflow.`, 409);
+            }
+            throw err;
+        }
         await audit_util_1.AuditUtil.recordEvent({
             entity_type: 'car',
             entity_id: created.car_id,
@@ -448,7 +506,37 @@ class CarService {
             updateData.canonical_url = carData.canonical_url;
         if (carData.noindex !== undefined)
             updateData.noindex = carData.noindex;
-        const car = await car_model_1.Car.findOneAndUpdate({ car_id: carId, is_deleted: false }, updateData, { returnDocument: 'after' });
+        // Generation / lifecycle fields
+        if (carData.model_family !== undefined) {
+            updateData.model_family = typeof carData.model_family === 'string' && carData.model_family.trim() !== ''
+                ? carData.model_family.trim().toLowerCase()
+                : null;
+        }
+        if (carData.generation_start_year !== undefined)
+            updateData.generation_start_year = carData.generation_start_year;
+        if (carData.generation_end_year !== undefined)
+            updateData.generation_end_year = carData.generation_end_year;
+        if (carData.generation_label !== undefined)
+            updateData.generation_label = carData.generation_label;
+        if (carData.is_current !== undefined)
+            updateData.is_current = carData.is_current === true;
+        if (carData.is_facelift !== undefined)
+            updateData.is_facelift = carData.is_facelift === true;
+        if (carData.predecessor_car_id !== undefined)
+            updateData.predecessor_car_id = carData.predecessor_car_id || null;
+        if (carData.successor_car_id !== undefined)
+            updateData.successor_car_id = carData.successor_car_id || null;
+        let car;
+        try {
+            car = await car_model_1.Car.findOneAndUpdate({ car_id: carId, is_deleted: false }, updateData, { returnDocument: 'after' });
+        }
+        catch (err) {
+            if (err?.code === 11000 && err?.keyPattern?.is_current) {
+                const family = updateData.model_family ?? before?.model_family ?? '(unknown)';
+                throw new app_error_util_1.AppError(`Another car in model_family "${family}" is already marked as current. Demote it first or use the Promote-to-current workflow.`, 409);
+            }
+            throw err;
+        }
         if (!car) {
             throw new app_error_util_1.AppError('Car not found', 404, {
                 userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,
@@ -474,6 +562,260 @@ class CarService {
             actor,
         });
         return car;
+    }
+    /**
+     * Aggregate the set of related records / SEO surface area for a car.
+     * Surfaced in the deletion dialog so an admin sees what they're about to
+     * orphan before they OTP their way through a hard delete.
+     *
+     * inbound_redirects = Redirect rows pointing TO this car (deleting it would
+     *   break those redirects' destinations). outbound_redirects = rows whose
+     *   old_url is the car's own URL (typically created BY a prior promotion).
+     */
+    static async getDependencies(carId) {
+        const car = await car_model_1.Car.findOne({ car_id: carId }).lean();
+        if (!car)
+            throw app_error_util_1.AppError.carNotFound(carId);
+        const carUrl = `/cars/${car.slug}`;
+        const [variants_count, images_count, faqs_count, inbound_redirects_count, outbound_redirects_count, sibling_generations_count,] = await Promise.all([
+            car_variant_model_1.CarVariant.countDocuments({ car_id: carId, is_deleted: false }),
+            car_image_model_1.CarImage.countDocuments({ car_id: carId, is_deleted: false }),
+            faq_model_1.FAQ.countDocuments({ related_cars: carId, is_deleted: false }),
+            redirect_model_1.Redirect.countDocuments({ new_url: carUrl, is_deleted: false }),
+            redirect_model_1.Redirect.countDocuments({ old_url: carUrl, is_deleted: false }),
+            car.model_family
+                ? car_model_1.Car.countDocuments({
+                    model_family: car.model_family,
+                    car_id: { $ne: carId },
+                    is_deleted: false,
+                })
+                : Promise.resolve(0),
+        ]);
+        const warnings = [];
+        if (car.is_published) {
+            warnings.push('Car is currently published — removing it will pull a live page from the site.');
+        }
+        if (car.is_current) {
+            warnings.push('Car is marked as the CURRENT generation for its model_family. Demote or promote a replacement before deleting.');
+        }
+        if (inbound_redirects_count > 0) {
+            warnings.push(`${inbound_redirects_count} redirect(s) point AT this car's URL. Deleting it leaves them pointing nowhere.`);
+        }
+        if (variants_count > 0) {
+            warnings.push(`${variants_count} variant(s) belong to this car and will be orphaned.`);
+        }
+        return {
+            car_id: car.car_id,
+            name: car.name,
+            slug: car.slug,
+            is_published: !!car.is_published,
+            is_current: !!car.is_current,
+            status: car.status,
+            model_family: car.model_family ?? null,
+            counts: {
+                variants: variants_count,
+                images: images_count,
+                faqs: faqs_count,
+                inbound_redirects: inbound_redirects_count,
+                outbound_redirects: outbound_redirects_count,
+                sibling_generations: sibling_generations_count,
+            },
+            warnings,
+        };
+    }
+    /**
+     * Promote a car to be the current generation of its model_family.
+     *
+     * Atomicity: Mongo transactions aren't available on every topology, so we
+     * run sequential writes and explicitly roll back the slugs we changed if a
+     * later step fails. This is safer than partial state without a transaction —
+     * the worst case (a crash mid-rollback) leaves the system in a state the
+     * admin can manually correct, and we audit every step.
+     *
+     * Slug collisions hard-fail with a message naming the conflicting slug, per
+     * the locked design — no auto-suffix, no silent retry.
+     */
+    static async promoteToCurrent(carId, input = {}, actor = null) {
+        const incoming = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false }).lean();
+        if (!incoming)
+            throw app_error_util_1.AppError.carNotFound(carId);
+        if (!incoming.model_family) {
+            throw new app_error_util_1.AppError('Cannot promote: this car has no model_family set. Set it on the car first.', 400);
+        }
+        if (!incoming.generation_start_year) {
+            throw new app_error_util_1.AppError('Cannot promote: this car has no generation_start_year set. The current generation needs a start year to derive the predecessor end year and archived slug.', 400);
+        }
+        if (incoming.is_current) {
+            throw new app_error_util_1.AppError(`Car "${incoming.slug}" is already the current generation of "${incoming.model_family}". Nothing to promote.`, 409);
+        }
+        if (incoming.status === 'archived' || incoming.status === 'disabled') {
+            throw new app_error_util_1.AppError(`Cannot promote a car with status "${incoming.status}". Restore it to launched or upcoming first.`, 409);
+        }
+        // Resolve the clean canonical slug. Default: {brand.slug}-{model_family}.
+        let base_slug = (input.base_slug ?? '').trim().toLowerCase();
+        if (!base_slug) {
+            const brand = await brand_model_1.Brand.findOne({ brand_id: incoming.brand_id, is_deleted: false }).lean();
+            if (!brand) {
+                throw new app_error_util_1.AppError('Cannot derive base_slug — brand not found. Pass an explicit base_slug in the request body.', 400);
+            }
+            base_slug = `${brand.slug}-${incoming.model_family}`;
+        }
+        if (!/^[a-z0-9][a-z0-9-]*$/.test(base_slug)) {
+            throw new app_error_util_1.AppError('base_slug must be a slug-style token (lowercase letters, digits, hyphens).', 400);
+        }
+        const outgoing = await car_model_1.Car.findOne({
+            model_family: incoming.model_family,
+            is_current: true,
+            is_deleted: false,
+            car_id: { $ne: incoming.car_id },
+        }).lean();
+        let outgoing_archived_slug = null;
+        if (outgoing) {
+            if (!outgoing.generation_start_year) {
+                throw new app_error_util_1.AppError(`Cannot promote: the existing current generation "${outgoing.slug}" has no generation_start_year, so we can't derive its archived slug. Set it on that car first.`, 400);
+            }
+            outgoing_archived_slug = `${base_slug}-${outgoing.generation_start_year}`;
+            const archivedClash = await car_model_1.Car.findOne({
+                slug: outgoing_archived_slug,
+                car_id: { $nin: [outgoing.car_id, incoming.car_id] },
+                is_deleted: false,
+            }).lean();
+            if (archivedClash) {
+                throw new app_error_util_1.AppError(`Cannot promote: "${outgoing_archived_slug}" is already in the database (car_id: ${archivedClash.car_id}). Resolve the conflict first.`, 409);
+            }
+        }
+        const baseClash = await car_model_1.Car.findOne({
+            slug: base_slug,
+            car_id: { $nin: [incoming.car_id, outgoing?.car_id].filter(Boolean) },
+            is_deleted: false,
+        }).lean();
+        if (baseClash) {
+            throw new app_error_util_1.AppError(`Cannot promote: "${base_slug}" is already in the database (car_id: ${baseClash.car_id}). Resolve the conflict first.`, 409);
+        }
+        // Capture pre-state for rollback + audit.
+        const original_incoming_slug = incoming.slug;
+        const original_outgoing_slug = outgoing?.slug ?? null;
+        const now = new Date();
+        // Step 1 — demote the outgoing current (if any). Must run BEFORE step 2 or
+        // the partial unique index will reject having two `is_current` rows.
+        if (outgoing && outgoing_archived_slug) {
+            const outgoingUpdate = {
+                slug: outgoing_archived_slug,
+                status: 'archived',
+                is_current: false,
+                archived_at: now,
+                archived_by: actor?.user_id ?? null,
+                generation_end_year: incoming.generation_start_year - 1,
+                successor_car_id: incoming.car_id,
+                // Backward-compat per-car 301 (the Redirect table is the new path,
+                // but anything still reading redirect_to_slug keeps working).
+                redirect_to_slug: base_slug,
+            };
+            try {
+                await car_model_1.Car.findOneAndUpdate({ car_id: outgoing.car_id, is_deleted: false }, outgoingUpdate);
+            }
+            catch (err) {
+                if (err?.code === 11000) {
+                    throw new app_error_util_1.AppError(`Cannot promote: archived slug "${outgoing_archived_slug}" collides with an existing row. Resolve manually.`, 409);
+                }
+                throw err;
+            }
+        }
+        // Step 2 — promote the incoming.
+        const incomingUpdate = {
+            slug: base_slug,
+            status: 'launched',
+            is_current: true,
+            is_upcoming: false,
+            is_launched: true,
+            predecessor_car_id: outgoing?.car_id ?? null,
+            // Clear any stale redirect that pointed elsewhere.
+            redirect_to_slug: null,
+        };
+        let promoted;
+        try {
+            promoted = await car_model_1.Car.findOneAndUpdate({ car_id: incoming.car_id, is_deleted: false }, incomingUpdate, { returnDocument: 'after' });
+        }
+        catch (err) {
+            // Rollback step 1.
+            if (outgoing && original_outgoing_slug) {
+                await car_model_1.Car.findOneAndUpdate({ car_id: outgoing.car_id }, {
+                    slug: original_outgoing_slug,
+                    status: outgoing.status,
+                    is_current: true,
+                    archived_at: outgoing.archived_at ?? null,
+                    archived_by: outgoing.archived_by ?? null,
+                    generation_end_year: outgoing.generation_end_year ?? null,
+                    successor_car_id: outgoing.successor_car_id ?? null,
+                    redirect_to_slug: outgoing.redirect_to_slug ?? null,
+                }).catch(() => { });
+            }
+            if (err?.code === 11000) {
+                throw new app_error_util_1.AppError(`Cannot promote: "${base_slug}" collides with an existing row. Resolve manually.`, 409);
+            }
+            throw err;
+        }
+        // Step 3 — write a Redirect row pointing the incoming's previous URL at
+        // its new canonical URL, so anyone with a bookmark/backlink lands correctly.
+        // Skip if the slug didn't change (admin promoted a car that was already at
+        // the base slug) or if the slug ends up identical somehow.
+        let redirect_created = false;
+        if (original_incoming_slug && original_incoming_slug !== base_slug) {
+            const old_url = `/cars/${original_incoming_slug}`;
+            const new_url = `/cars/${base_slug}`;
+            try {
+                await redirect_model_1.Redirect.create({
+                    redirect_id: (0, uuid_1.v4)(),
+                    old_url,
+                    new_url,
+                    type: '301',
+                    reason: input.reason
+                        ? `Promoted to current — ${input.reason}`
+                        : `Promoted ${incoming.car_id} to current generation`,
+                    created_by: actor?.user_id ?? null,
+                });
+                redirect_created = true;
+            }
+            catch (err) {
+                if (err?.code !== 11000)
+                    throw err;
+                // Already exists — leave the existing row alone (it might point at the
+                // same destination already). Surfacing this in the audit event below.
+            }
+        }
+        await audit_util_1.AuditUtil.recordEvent({
+            entity_type: 'car',
+            entity_id: incoming.car_id,
+            action: 'update',
+            field: 'promote_to_current',
+            old_value: {
+                slug: original_incoming_slug,
+                is_current: false,
+                outgoing_car_id: outgoing?.car_id ?? null,
+                outgoing_slug_was: original_outgoing_slug,
+            },
+            new_value: {
+                slug: base_slug,
+                is_current: true,
+                model_family: incoming.model_family,
+                outgoing_archived_as: outgoing_archived_slug,
+                redirect_created,
+                reason: input.reason ?? null,
+            },
+            actor,
+        });
+        return {
+            promoted,
+            outgoing: outgoing
+                ? {
+                    car_id: outgoing.car_id,
+                    previous_slug: original_outgoing_slug,
+                    archived_slug: outgoing_archived_slug,
+                }
+                : null,
+            base_slug,
+            redirect_created,
+        };
     }
     static async deleteCar(carId, actor = null) {
         const car = await car_model_1.Car.findOneAndUpdate({ car_id: carId, is_deleted: false }, { is_deleted: true }, { returnDocument: 'after' });

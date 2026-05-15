@@ -18,6 +18,7 @@ import imageSubcategoryRoutes from '../../modules/images/routes/image-subcategor
 import imageRoutes from '../../modules/images/routes/image.routes';
 import importRoutes from '../../modules/imports/routes/import.routes';
 import intelligenceRoutes from '../../modules/intelligence/routes/intelligence.routes';
+import redirectRoutes from '../../modules/redirects/routes/redirect.routes';
 import settingsRoutes from '../../modules/settings/routes/settings.routes';
 import taxonomyRoutes from '../../modules/taxonomy/routes/taxonomy.routes';
 import userRoutes from '../../modules/users/routes/user.routes';
@@ -44,6 +45,7 @@ router.use('/taxonomy', taxonomyRoutes);
 router.use('/intelligence', intelligenceRoutes);
 router.use('/audit', auditRoutes);
 router.use('/deletion-requests', deletionWorkflowRoutes);
+router.use('/redirects', redirectRoutes);
 router.use('/discover', discoveryRoutes);
 router.use('/seo-presets', seoPresetRoutes);
 

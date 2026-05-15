@@ -23,6 +23,7 @@ const image_subcategory_routes_1 = __importDefault(require("../../modules/images
 const image_routes_1 = __importDefault(require("../../modules/images/routes/image.routes"));
 const import_routes_1 = __importDefault(require("../../modules/imports/routes/import.routes"));
 const intelligence_routes_1 = __importDefault(require("../../modules/intelligence/routes/intelligence.routes"));
+const redirect_routes_1 = __importDefault(require("../../modules/redirects/routes/redirect.routes"));
 const settings_routes_1 = __importDefault(require("../../modules/settings/routes/settings.routes"));
 const taxonomy_routes_1 = __importDefault(require("../../modules/taxonomy/routes/taxonomy.routes"));
 const user_routes_1 = __importDefault(require("../../modules/users/routes/user.routes"));
@@ -47,6 +48,7 @@ router.use('/taxonomy', taxonomy_routes_1.default);
 router.use('/intelligence', intelligence_routes_1.default);
 router.use('/audit', audit_routes_1.default);
 router.use('/deletion-requests', deletion_workflow_routes_1.default);
+router.use('/redirects', redirect_routes_1.default);
 router.use('/discover', discovery_routes_1.default);
 router.use('/seo-presets', seo_preset_routes_1.default);
 exports.default = router;

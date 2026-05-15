@@ -8,6 +8,7 @@ import { catchAsync } from "../../../utils/catchAsync";
 import { CreateCarDto } from "../dto/create-car.dto";
 import { UpdateCarDto } from "../dto/update-car.dto";
 import { CarService } from "../services/car.service";
+import { RedirectService } from "../../redirects/services/redirect.service";
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
@@ -50,6 +51,23 @@ export class CarController {
 
   static getPublicCarBySlug = catchAsync(async (req: Request, res: Response) => {
     const slug = req.params.slug as string;
+
+    // Step 1 — consult the standalone Redirect table first. This is the new
+    // canonical source of truth; it takes precedence over per-car redirect_to_slug
+    // so admins can stage redirects independently of the car entity lifecycle.
+    const redirectHit = await RedirectService.resolve(`/cars/${slug}`);
+    if (redirectHit) {
+      RedirectService.recordHit(redirectHit.redirect_id);
+      res.setHeader('Location', redirectHit.new_url);
+      return res.status(Number(redirectHit.type) || 301).json({
+        success: false,
+        statusCode: Number(redirectHit.type) || 301,
+        message: 'This URL has been redirected',
+        data: { redirect_to: redirectHit.new_url, type: redirectHit.type },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     const result = await CarService.getCarBySlug(slug);
     if (!result) {
       throw new AppError(
@@ -65,7 +83,8 @@ export class CarController {
 
     const car = result.car as any;
 
-    // Replacement model → 301 Moved Permanently to the new slug.
+    // Step 2 — backward-compat per-car redirect_to_slug. Kept until all callers
+    // migrate to the Redirect table; both are written by lifecycle workflows.
     if (car.redirect_to_slug && car.redirect_to_slug !== slug) {
       res.setHeader('Location', `/cars/${car.redirect_to_slug}`);
       return res.status(301).json({
@@ -108,6 +127,26 @@ export class CarController {
     const includeDeleted = req.query.include_deleted === 'true';
     const result = await CarService.getAllCars(req.query, includeDeleted);
     return ResponseUtil.paginated(res, result.cars, result.pagination, 'Cars retrieved successfully');
+  });
+
+  static getCarDependencies = catchAsync(async (req: Request, res: Response) => {
+    const dependencies = await CarService.getDependencies(req.params.id as string);
+    return ResponseUtil.success(res, dependencies, 'Car dependencies retrieved successfully');
+  });
+
+  static promoteToCurrent = catchAsync(async (req: AuthRequest, res: Response) => {
+    const actor = req.user
+      ? { user_id: req.user.user_id, email: req.user.email, role: req.user.role }
+      : null;
+    const result = await CarService.promoteToCurrent(
+      req.params.id as string,
+      {
+        base_slug: typeof req.body?.base_slug === 'string' ? req.body.base_slug : undefined,
+        reason: typeof req.body?.reason === 'string' ? req.body.reason : undefined,
+      },
+      actor
+    );
+    return ResponseUtil.success(res, result, 'Car promoted to current generation');
   });
 
   static getAdminCarById = catchAsync(async (req: Request, res: Response) => {

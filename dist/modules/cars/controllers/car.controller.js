@@ -9,6 +9,7 @@ const catchAsync_1 = require("../../../utils/catchAsync");
 const create_car_dto_1 = require("../dto/create-car.dto");
 const update_car_dto_1 = require("../dto/update-car.dto");
 const car_service_1 = require("../services/car.service");
+const redirect_service_1 = require("../../redirects/services/redirect.service");
 function parseTagIds(input) {
     if (input === undefined || input === null || input === '')
         return undefined;
@@ -45,6 +46,21 @@ class CarController {
     });
     static getPublicCarBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const slug = req.params.slug;
+        // Step 1 — consult the standalone Redirect table first. This is the new
+        // canonical source of truth; it takes precedence over per-car redirect_to_slug
+        // so admins can stage redirects independently of the car entity lifecycle.
+        const redirectHit = await redirect_service_1.RedirectService.resolve(`/cars/${slug}`);
+        if (redirectHit) {
+            redirect_service_1.RedirectService.recordHit(redirectHit.redirect_id);
+            res.setHeader('Location', redirectHit.new_url);
+            return res.status(Number(redirectHit.type) || 301).json({
+                success: false,
+                statusCode: Number(redirectHit.type) || 301,
+                message: 'This URL has been redirected',
+                data: { redirect_to: redirectHit.new_url, type: redirectHit.type },
+                timestamp: new Date().toISOString(),
+            });
+        }
         const result = await car_service_1.CarService.getCarBySlug(slug);
         if (!result) {
             throw new app_error_util_1.AppError(`Car not found for slug: ${slug}`, 404, {
@@ -54,7 +70,8 @@ class CarController {
             });
         }
         const car = result.car;
-        // Replacement model → 301 Moved Permanently to the new slug.
+        // Step 2 — backward-compat per-car redirect_to_slug. Kept until all callers
+        // migrate to the Redirect table; both are written by lifecycle workflows.
         if (car.redirect_to_slug && car.redirect_to_slug !== slug) {
             res.setHeader('Location', `/cars/${car.redirect_to_slug}`);
             return res.status(301).json({
@@ -89,6 +106,20 @@ class CarController {
         const includeDeleted = req.query.include_deleted === 'true';
         const result = await car_service_1.CarService.getAllCars(req.query, includeDeleted);
         return response_util_1.ResponseUtil.paginated(res, result.cars, result.pagination, 'Cars retrieved successfully');
+    });
+    static getCarDependencies = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const dependencies = await car_service_1.CarService.getDependencies(req.params.id);
+        return response_util_1.ResponseUtil.success(res, dependencies, 'Car dependencies retrieved successfully');
+    });
+    static promoteToCurrent = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const actor = req.user
+            ? { user_id: req.user.user_id, email: req.user.email, role: req.user.role }
+            : null;
+        const result = await car_service_1.CarService.promoteToCurrent(req.params.id, {
+            base_slug: typeof req.body?.base_slug === 'string' ? req.body.base_slug : undefined,
+            reason: typeof req.body?.reason === 'string' ? req.body.reason : undefined,
+        }, actor);
+        return response_util_1.ResponseUtil.success(res, result, 'Car promoted to current generation');
     });
     static getAdminCarById = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const car = await car_service_1.CarService.getCarById(req.params.id);

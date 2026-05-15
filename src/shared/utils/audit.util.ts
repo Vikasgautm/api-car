@@ -182,6 +182,14 @@ export const CAR_AUDIT_FIELDS = [
   'og_image',
   'canonical_url',
   'noindex',
+  'model_family',
+  'generation_start_year',
+  'generation_end_year',
+  'generation_label',
+  'is_current',
+  'is_facelift',
+  'predecessor_car_id',
+  'successor_car_id',
 ];
 
 /**

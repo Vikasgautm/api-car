@@ -36,6 +36,14 @@ export interface ICar extends Document {
     discontinued_at?: Date | null;
     discontinued_by?: string | null;
     redirect_to_slug?: string | null;
+    model_family?: string | null;
+    generation_start_year?: number | null;
+    generation_end_year?: number | null;
+    generation_label?: string | null;
+    is_current: boolean;
+    is_facelift: boolean;
+    predecessor_car_id?: string | null;
+    successor_car_id?: string | null;
     is_featured: boolean;
     is_popular: boolean;
     is_recommended: boolean;

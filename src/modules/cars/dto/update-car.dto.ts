@@ -27,6 +27,14 @@ export class UpdateCarDto {
   is_latest?: boolean;
   top_selling?: boolean;
   tag_ids?: string[];
+  model_family?: string | null;
+  generation_start_year?: number | null;
+  generation_end_year?: number | null;
+  generation_label?: string | null;
+  is_current?: boolean;
+  is_facelift?: boolean;
+  predecessor_car_id?: string | null;
+  successor_car_id?: string | null;
   editor_user_id?: string | null;
   seo_owner_user_id?: string | null;
   reviewer_user_id?: string | null;
@@ -78,6 +86,27 @@ export class UpdateCarDto {
     }
     if (dto.status === 'launched' && dto.is_upcoming === true) {
       errors.push('status cannot be launched when is_upcoming is true');
+    }
+
+    // Generation metadata sanity
+    if (dto.model_family !== undefined && dto.model_family !== null && !/^[a-z0-9][a-z0-9-]*$/.test(String(dto.model_family).trim().toLowerCase())) {
+      errors.push('model_family must be a slug-style token (lowercase letters, digits, hyphens)');
+    }
+    if (dto.generation_start_year !== undefined && dto.generation_start_year !== null && (dto.generation_start_year < 1900 || dto.generation_start_year > 2200)) {
+      errors.push('generation_start_year must be between 1900 and 2200');
+    }
+    if (dto.generation_end_year !== undefined && dto.generation_end_year !== null && (dto.generation_end_year < 1900 || dto.generation_end_year > 2200)) {
+      errors.push('generation_end_year must be between 1900 and 2200');
+    }
+    if (
+      dto.generation_start_year !== undefined && dto.generation_start_year !== null &&
+      dto.generation_end_year !== undefined && dto.generation_end_year !== null &&
+      dto.generation_end_year < dto.generation_start_year
+    ) {
+      errors.push('generation_end_year cannot be earlier than generation_start_year');
+    }
+    if (dto.is_current === true && dto.model_family !== undefined && (dto.model_family === null || String(dto.model_family).trim() === '')) {
+      errors.push('is_current can only be true when model_family is set');
     }
 
     return { valid: errors.length === 0, errors };

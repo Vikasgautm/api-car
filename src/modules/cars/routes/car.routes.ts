@@ -17,6 +17,7 @@ adminRouter.use(protect);
 adminRouter.use(restrictTo('admin', 'super_admin'));
 
 adminRouter.get('/', validatePaginationQuery, CarController.getAllAdminCars);
+adminRouter.get('/:id/dependencies', validateUuidIdParam, CarController.getCarDependencies);
 adminRouter.get('/:id', validateUuidIdParam, CarController.getAdminCarById);
 
 const thumbnailUpload = UploadService.createUploadMiddleware({
@@ -36,6 +37,7 @@ adminRouter.patch('/restore/:id', validateUuidIdParam, CarController.restoreCar)
 adminRouter.patch('/:id/publish', validateUuidIdParam, CarController.togglePublish);
 adminRouter.patch('/:id/mark-launched', validateUuidIdParam, CarController.markLaunched);
 adminRouter.patch('/:id/mark-upcoming', validateUuidIdParam, CarController.markUpcoming);
+adminRouter.post('/:id/promote-to-current', validateUuidIdParam, CarController.promoteToCurrent);
 
 router.use('/admin', adminRouter);
 

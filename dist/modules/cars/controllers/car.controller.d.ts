@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { AuthRequest } from "../../../types/auth";
 interface MulterRequest extends Request {
     file?: Express.Multer.File;
     files?: {
@@ -9,6 +10,8 @@ export declare class CarController {
     static getAllPublicCars: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
     static getPublicCarBySlug: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
     static getAllAdminCars: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
+    static getCarDependencies: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
+    static promoteToCurrent: (req: AuthRequest, res: Response, next: import("express").NextFunction) => void;
     static getAdminCarById: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
     static createCar: (req: MulterRequest, res: Response, next: import("express").NextFunction) => void;
     static updateCar: (req: MulterRequest, res: Response, next: import("express").NextFunction) => void;

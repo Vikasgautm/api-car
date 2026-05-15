@@ -51,6 +51,64 @@ export declare class CarService {
     } & {
         id: string;
     }>;
+    /**
+     * Aggregate the set of related records / SEO surface area for a car.
+     * Surfaced in the deletion dialog so an admin sees what they're about to
+     * orphan before they OTP their way through a hard delete.
+     *
+     * inbound_redirects = Redirect rows pointing TO this car (deleting it would
+     *   break those redirects' destinations). outbound_redirects = rows whose
+     *   old_url is the car's own URL (typically created BY a prior promotion).
+     */
+    static getDependencies(carId: string): Promise<{
+        car_id: string;
+        name: string;
+        slug: string;
+        is_published: boolean;
+        is_current: boolean;
+        status: import("../../../models/car.model").CarStatus;
+        model_family: string | null;
+        counts: {
+            variants: number;
+            images: number;
+            faqs: number;
+            inbound_redirects: number;
+            outbound_redirects: number;
+            sibling_generations: number;
+        };
+        warnings: string[];
+    }>;
+    /**
+     * Promote a car to be the current generation of its model_family.
+     *
+     * Atomicity: Mongo transactions aren't available on every topology, so we
+     * run sequential writes and explicitly roll back the slugs we changed if a
+     * later step fails. This is safer than partial state without a transaction —
+     * the worst case (a crash mid-rollback) leaves the system in a state the
+     * admin can manually correct, and we audit every step.
+     *
+     * Slug collisions hard-fail with a message naming the conflicting slug, per
+     * the locked design — no auto-suffix, no silent retry.
+     */
+    static promoteToCurrent(carId: string, input?: {
+        base_slug?: string;
+        reason?: string;
+    }, actor?: AuditActor | null): Promise<{
+        promoted: (import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
+            _id: import("mongoose").Types.ObjectId;
+        }> & {
+            __v: number;
+        } & {
+            id: string;
+        }) | null;
+        outgoing: {
+            car_id: string;
+            previous_slug: string | null;
+            archived_slug: string | null;
+        } | null;
+        base_slug: string;
+        redirect_created: boolean;
+    }>;
     static deleteCar(carId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {

@@ -40,6 +40,15 @@ export interface ICar extends Document {
   discontinued_by?: string | null;
   // SEO redirect: when set, public lookups 301 to this slug.
   redirect_to_slug?: string | null;
+  // Generation/lifecycle (manual model_family — see project plan Gap 1)
+  model_family?: string | null;
+  generation_start_year?: number | null;
+  generation_end_year?: number | null;
+  generation_label?: string | null;
+  is_current: boolean;
+  is_facelift: boolean;
+  predecessor_car_id?: string | null;
+  successor_car_id?: string | null;
   is_featured: boolean;
   is_popular: boolean;
   is_recommended: boolean;
@@ -105,6 +114,14 @@ const carSchema = new Schema<ICar>(
     discontinued_at: { type: Date, default: null },
     discontinued_by: { type: String, default: null },
     redirect_to_slug: { type: String, default: null },
+    model_family: { type: String, default: null, trim: true, lowercase: true },
+    generation_start_year: { type: Number, default: null, min: 1900, max: 2200 },
+    generation_end_year: { type: Number, default: null, min: 1900, max: 2200 },
+    generation_label: { type: String, default: null, trim: true, maxlength: 120 },
+    is_current: { type: Boolean, default: false },
+    is_facelift: { type: Boolean, default: false },
+    predecessor_car_id: { type: String, default: null },
+    successor_car_id: { type: String, default: null },
     is_featured: { type: Boolean, default: false },
     is_popular: { type: Boolean, default: false },
     is_recommended: { type: Boolean, default: false },
@@ -166,5 +183,25 @@ carSchema.index({ status: 1, is_deleted: 1, is_published: 1 });
 carSchema.index({ archived_at: -1 });
 carSchema.index({ disabled_at: -1 });
 carSchema.index({ discontinued_at: -1 });
+
+// Generation / lifecycle indexes
+carSchema.index({ model_family: 1 });
+carSchema.index({ model_family: 1, is_current: 1 });
+carSchema.index({ model_family: 1, generation_start_year: 1 });
+// One current generation per model_family (DB-level safety net for the
+// promote-to-current workflow). Only enforced for rows that actually have a
+// model_family set and are flagged current, so cars without a family yet
+// don't collide on null.
+carSchema.index(
+  { model_family: 1, is_current: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      is_current: true,
+      model_family: { $type: 'string' },
+    },
+    name: 'uniq_current_per_family',
+  }
+);
 
 export const Car = model<ICar>("Car", carSchema);

@@ -57,6 +57,20 @@ export declare const createCarSchema: z.ZodObject<{
         false: "false";
     }>, z.ZodTransform<boolean, "true" | "false">>]>>;
     tag_ids: z.ZodOptional<z.ZodUnion<readonly [z.ZodArray<z.ZodString>, z.ZodPipe<z.ZodString, z.ZodTransform<string[], string>>]>>;
+    model_family: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    generation_start_year: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+    generation_end_year: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+    generation_label: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    is_current: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    is_facelift: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    predecessor_car_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    successor_car_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     editor_user_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     seo_owner_user_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     reviewer_user_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -125,6 +139,20 @@ export declare const updateCarSchema: z.ZodObject<{
         false: "false";
     }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
     tag_ids: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodArray<z.ZodString>, z.ZodPipe<z.ZodString, z.ZodTransform<string[], string>>]>>>;
+    model_family: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+    generation_start_year: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>>;
+    generation_end_year: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>>;
+    generation_label: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+    is_current: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    is_facelift: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    predecessor_car_id: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+    successor_car_id: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     editor_user_id: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     seo_owner_user_id: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     reviewer_user_id: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;

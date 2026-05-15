@@ -28,6 +28,14 @@ export declare class UpdateCarDto {
     is_latest?: boolean;
     top_selling?: boolean;
     tag_ids?: string[];
+    model_family?: string | null;
+    generation_start_year?: number | null;
+    generation_end_year?: number | null;
+    generation_label?: string | null;
+    is_current?: boolean;
+    is_facelift?: boolean;
+    predecessor_car_id?: string | null;
+    successor_car_id?: string | null;
     editor_user_id?: string | null;
     seo_owner_user_id?: string | null;
     reviewer_user_id?: string | null;
