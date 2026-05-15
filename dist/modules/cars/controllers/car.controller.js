@@ -165,6 +165,7 @@ class CarController {
         }
         const createDto = {
             name: req.body.name,
+            slug: req.body.slug,
             brand_id: req.body.brand_id,
             body_type_id: req.body.body_type_id,
             fuel_type_id: req.body.fuel_type_id,
@@ -197,6 +198,14 @@ class CarController {
             og_image: req.body.og_image,
             canonical_url: req.body.canonical_url,
             noindex: req.body.noindex,
+            model_family: req.body.model_family,
+            generation_start_year: req.body.generation_start_year != null && req.body.generation_start_year !== '' ? Number(req.body.generation_start_year) : req.body.generation_start_year,
+            generation_end_year: req.body.generation_end_year != null && req.body.generation_end_year !== '' ? Number(req.body.generation_end_year) : req.body.generation_end_year,
+            generation_label: req.body.generation_label,
+            is_current: req.body.is_current !== undefined ? req.body.is_current === 'true' || req.body.is_current === true : undefined,
+            is_facelift: req.body.is_facelift !== undefined ? req.body.is_facelift === 'true' || req.body.is_facelift === true : undefined,
+            predecessor_car_id: req.body.predecessor_car_id,
+            successor_car_id: req.body.successor_car_id,
         };
         const validation = create_car_dto_1.CreateCarDto.validate(createDto);
         if (!validation.valid) {
@@ -227,6 +236,7 @@ class CarController {
         }
         const updateDto = {
             name: req.body.name,
+            slug: req.body.slug,
             brand_id: req.body.brand_id,
             body_type_id: req.body.body_type_id,
             fuel_type_id: req.body.fuel_type_id,
@@ -260,6 +270,14 @@ class CarController {
             og_image: req.body.og_image,
             canonical_url: req.body.canonical_url,
             noindex: req.body.noindex,
+            model_family: req.body.model_family,
+            generation_start_year: req.body.generation_start_year != null && req.body.generation_start_year !== '' ? Number(req.body.generation_start_year) : req.body.generation_start_year,
+            generation_end_year: req.body.generation_end_year != null && req.body.generation_end_year !== '' ? Number(req.body.generation_end_year) : req.body.generation_end_year,
+            generation_label: req.body.generation_label,
+            is_current: req.body.is_current !== undefined ? req.body.is_current === 'true' || req.body.is_current === true : undefined,
+            is_facelift: req.body.is_facelift !== undefined ? req.body.is_facelift === 'true' || req.body.is_facelift === true : undefined,
+            predecessor_car_id: req.body.predecessor_car_id,
+            successor_car_id: req.body.successor_car_id,
         };
         const validation = update_car_dto_1.UpdateCarDto.validate(updateDto);
         if (!validation.valid) {

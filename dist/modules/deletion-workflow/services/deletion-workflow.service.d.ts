@@ -9,16 +9,16 @@ export interface CreateRequestInput {
 }
 export interface CreateRequestResult {
     request_id: string;
-    channel: 'whatsapp' | 'console';
+    channel: 'email' | 'console';
     sent_to_masked: string;
     expires_at: Date;
     fallback_used: boolean;
 }
 export declare class DeletionWorkflowService {
     /**
-     * Create a deletion request. Generates an OTP, persists its hash, sends the code
-     * via WhatsApp (or dev-console fallback), and writes an audit row. The OTP itself
-     * is never returned.
+     * Create a deletion request. Generates an OTP, persists its hash, sends the
+     * code via email (or dev-console fallback), and writes an audit row. The OTP
+     * itself is never returned.
      */
     static create(input: CreateRequestInput, actor: AuditActor & {
         user_id: string;

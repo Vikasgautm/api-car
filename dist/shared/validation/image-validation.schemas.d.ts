@@ -40,17 +40,17 @@ export declare const imageFilterSchema: z.ZodObject<{
     q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
     is_deleted: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
         0: "0";
         1: "1";
-        true: "true";
         false: "false";
-    }>, z.ZodTransform<boolean, "0" | "1" | "true" | "false">>]>>;
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
     is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
         0: "0";
         1: "1";
-        true: "true";
         false: "false";
-    }>, z.ZodTransform<boolean, "0" | "1" | "true" | "false">>]>>;
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
     folder: z.ZodOptional<z.ZodString>;
     is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
         true: "true";

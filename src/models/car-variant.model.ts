@@ -237,7 +237,17 @@ export interface SpecsNormalized {
   warranty?: Warranty;
 }
 
-export type TransmissionType = 'manual' | 'automatic' | 'cvt' | 'dct' | 'amt';
+export type TransmissionType =
+  | 'manual'
+  | 'automatic'
+  | 'amt'
+  | 'cvt'
+  | 'dct'
+  | 'dsg'
+  | 'imt'
+  | 'torque_converter'
+  | 'single_speed_ev'
+  | 'e_cvt';
 
 export interface ICarVariant extends Document {
   variant_id: string;
@@ -297,9 +307,20 @@ const variantSchema = new Schema<ICarVariant>(
       max: 2100
     },
     fuel_type_id: { type: String },
-    transmission_type: { 
-      type: String, 
-      enum: ['manual', 'automatic', 'cvt', 'dct', 'amt']
+    transmission_type: {
+      type: String,
+      enum: [
+        'manual',
+        'automatic',
+        'amt',
+        'cvt',
+        'dct',
+        'dsg',
+        'imt',
+        'torque_converter',
+        'single_speed_ev',
+        'e_cvt',
+      ],
     },
     drivetrain: { type:String },
     seating_capacity: {

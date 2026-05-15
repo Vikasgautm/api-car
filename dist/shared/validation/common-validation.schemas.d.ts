@@ -5,11 +5,11 @@ export declare const slugSchema: z.ZodString;
 export declare const emailSchema: z.ZodString;
 export declare const urlSchema: z.ZodString;
 export declare const booleanStringSchema: z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    true: "true";
     0: "0";
     1: "1";
-    true: "true";
     false: "false";
-}>, z.ZodTransform<boolean, "0" | "1" | "true" | "false">>]>;
+}>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>;
 export declare const paginationSchema: z.ZodObject<{
     page: z.ZodOptional<z.ZodDefault<z.ZodCoercedNumber<unknown>>>;
     limit: z.ZodOptional<z.ZodDefault<z.ZodCoercedNumber<unknown>>>;
@@ -21,23 +21,23 @@ export declare const paginationSchema: z.ZodObject<{
     q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
     is_deleted: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
         0: "0";
         1: "1";
-        true: "true";
         false: "false";
-    }>, z.ZodTransform<boolean, "0" | "1" | "true" | "false">>]>>;
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
     is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
         0: "0";
         1: "1";
-        true: "true";
         false: "false";
-    }>, z.ZodTransform<boolean, "0" | "1" | "true" | "false">>]>>;
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
     is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
         0: "0";
         1: "1";
-        true: "true";
         false: "false";
-    }>, z.ZodTransform<boolean, "0" | "1" | "true" | "false">>]>>;
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
 }, z.core.$strip>;
 export declare const publishStatusSchema: z.ZodOptional<z.ZodEnum<{
     upcoming: "upcoming";
@@ -49,9 +49,14 @@ export declare const publishStatusSchema: z.ZodOptional<z.ZodEnum<{
 export declare const transmissionTypeSchema: z.ZodEnum<{
     manual: "manual";
     automatic: "automatic";
+    amt: "amt";
     cvt: "cvt";
     dct: "dct";
-    amt: "amt";
+    dsg: "dsg";
+    imt: "imt";
+    torque_converter: "torque_converter";
+    single_speed_ev: "single_speed_ev";
+    e_cvt: "e_cvt";
 }>;
 export declare const answerFormatSchema: z.ZodEnum<{
     text: "text";

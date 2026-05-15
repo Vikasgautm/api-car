@@ -276,6 +276,7 @@ export class CarService {
         body_type: c.body_type_id ? bodyTypeMap.get(c.body_type_id) ?? null : null,
         seo_health_issues: health.seo_health_issues,
         completeness_score: health.completeness_score,
+        completeness_misses: health.completeness_misses,
       };
     });
 
@@ -373,15 +374,37 @@ export class CarService {
     const normalizedData = normalizeCarLaunchStatus(carData);
 
     const car_id = uuidv4();
-    const slug = SlugUtil.generate(carData.name);
 
-    const existingSlug = await Car.findOne({ slug, is_deleted: false });
-    if (existingSlug) {
-      const existingSlugs = (await Car.find({ is_deleted: false }).select('slug')).map(c => c.slug);
-      const uniqueSlug = SlugUtil.generateUnique(carData.name, existingSlugs);
-      carData.slug = uniqueSlug;
+    // Slug resolution: caller-provided slug HARD FAILS on collision (matches the
+    // lifecycle locked decision — admin owns the SEO URL). Otherwise derive from
+    // name, with auto-suffix on collision so create never silently breaks.
+    if (typeof carData.slug === 'string' && carData.slug.trim() !== '') {
+      const requestedSlug = carData.slug.trim().toLowerCase();
+      if (!SlugUtil.validate(requestedSlug)) {
+        throw new AppError(
+          `Invalid slug "${requestedSlug}". Use lowercase letters, digits, and hyphens only.`,
+          400
+        );
+      }
+      const collidingCar = await Car.findOne({ slug: requestedSlug, is_deleted: false })
+        .select('car_id name')
+        .lean();
+      if (collidingCar) {
+        throw new AppError(
+          `Slug "${requestedSlug}" is already in use by car "${collidingCar.name}" (${collidingCar.car_id}).`,
+          409
+        );
+      }
+      carData.slug = requestedSlug;
     } else {
-      carData.slug = slug;
+      const slug = SlugUtil.generate(carData.name);
+      const existingSlug = await Car.findOne({ slug, is_deleted: false });
+      if (existingSlug) {
+        const existingSlugs = (await Car.find({ is_deleted: false }).select('slug')).map(c => c.slug);
+        carData.slug = SlugUtil.generateUnique(carData.name, existingSlugs);
+      } else {
+        carData.slug = slug;
+      }
     }
 
     let resolvedTagIds: string[] = [];
@@ -540,12 +563,45 @@ export class CarService {
       updateData.fuel_type_id = carData.fuel_type_id;
     }
 
+    // Slug resolution order (locked behaviour from yesterday's lifecycle work):
+    //   1. If the caller passed an explicit slug, validate uniqueness and HARD
+    //      FAIL on collision — the admin is taking ownership of the SEO URL.
+    //   2. Else if the name changed, regenerate from name and only adopt it if
+    //      the regenerated slug is unused (silent skip preserves the existing
+    //      slug, never auto-suffixes — same rule as Promote-to-current).
+    if (carData.slug !== undefined && typeof carData.slug === 'string') {
+      const requestedSlug = carData.slug.trim().toLowerCase();
+      if (requestedSlug) {
+        if (!SlugUtil.validate(requestedSlug)) {
+          throw new AppError(
+            `Invalid slug "${requestedSlug}". Use lowercase letters, digits, and hyphens only.`,
+            400
+          );
+        }
+        const collidingCar = await Car.findOne({
+          slug: requestedSlug,
+          car_id: { $ne: carId },
+          is_deleted: false,
+        }).select('car_id name').lean();
+        if (collidingCar) {
+          throw new AppError(
+            `Slug "${requestedSlug}" is already in use by car "${collidingCar.name}" (${collidingCar.car_id}). Pick a different slug or rename the other car.`,
+            409
+          );
+        }
+        updateData.slug = requestedSlug;
+      }
+    }
     if (carData.name !== undefined) {
       updateData.name = carData.name;
-      const newSlug = SlugUtil.generate(carData.name);
-      const existingSlug = await Car.findOne({ slug: newSlug, car_id: { $ne: carId }, is_deleted: false });
-      if (!existingSlug) {
-        updateData.slug = newSlug;
+      // Only auto-regenerate from name if the caller didn't already set the
+      // slug explicitly above.
+      if (updateData.slug === undefined) {
+        const newSlug = SlugUtil.generate(carData.name);
+        const existingSlug = await Car.findOne({ slug: newSlug, car_id: { $ne: carId }, is_deleted: false });
+        if (!existingSlug) {
+          updateData.slug = newSlug;
+        }
       }
     }
 

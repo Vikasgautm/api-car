@@ -1,4 +1,4 @@
-import { SpecsNormalized } from '../../../models/car-variant.model';
+import { SpecsNormalized, TransmissionType } from '../../../models/car-variant.model';
 
 export class UpdateVariantDto {
   car_id?: string;
@@ -6,7 +6,7 @@ export class UpdateVariantDto {
   slug?: string;
   model_year?: number;
   fuel_type_id?: string;
-  transmission_type?: 'manual' | 'automatic' | 'cvt' | 'dct' | 'amt';
+  transmission_type?: TransmissionType;
   drivetrain?: string;
   seating_capacity?: number;
   body_type?: string;

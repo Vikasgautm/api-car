@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { SpecsNormalized } from '../../../models/car-variant.model';
 import { IVariantSpecKey, VariantSpecKey } from '../../../models/variant-spec-key.model';
-import { getSpecMapping, guessCategory, isInvalidLabel, normalizeLabel, parseSpecValue } from '../../../modules/variants/utils/spec-key-map';
+import { deriveFeatureFlags, getSpecMapping, guessCategory, isInvalidLabel, normalizeLabel, parseSpecValue } from '../../../modules/variants/utils/spec-key-map';
 import { ExtractedSpec, MatchedSpec, MatchType, UnmatchedSpec } from '../types/import.types';
 
 export class KeyMatcher {
@@ -305,19 +305,14 @@ export class KeyMatcher {
 
   private static parseValueByDataType(value: string, dataType: string): any {
     if (!value) return null;
-    
+
     const trimmed = value.trim();
-    
+
     switch (dataType) {
       case 'boolean': {
-        const lower = trimmed.toLowerCase();
-        if (lower === 'yes' || lower === 'true' || lower === 'available' || lower === 'with' || lower === 'powered') {
-          return true;
-        }
-        if (lower === 'no' || lower === 'false' || lower === 'not available' || lower === 'none') {
-          return false;
-        }
-        return null;
+        // Mirror parseSpecValue's permissive boolean rules so DB-fallback matches
+        // behave identically to canonical SPEC_LABEL_MAP matches.
+        return parseSpecValue(trimmed, 'boolean');
       }
       
       case 'number': {
@@ -409,6 +404,19 @@ export class KeyMatcher {
         if (!specsNormalized.infotainment_connectivity) specsNormalized.infotainment_connectivity = {};
         specsNormalized.infotainment_connectivity.apple_carplay = true;
       }
+    }
+
+    // Layer 3 — Feature Intelligence. Derived flags power SEO categories,
+    // buyer filters, "cars with X" landing pages, and comparison tables.
+    // Stored under specs_raw.derived so the variant schema stays untouched.
+    const rootFuelType = matchedSpecs.find(m => m.suggested_path === 'fuel_type')?.source_value;
+    const rootTransmission = matchedSpecs.find(m => m.suggested_path === 'transmission_type')?.source_value;
+    const derived = deriveFeatureFlags(specsNormalized, specsRaw, {
+      fuel_type: typeof rootFuelType === 'string' ? rootFuelType : undefined,
+      transmission_type: typeof rootTransmission === 'string' ? rootTransmission : undefined,
+    });
+    if (Object.keys(derived).length > 0) {
+      specsRaw.derived = derived;
     }
 
     return { specs_normalized: specsNormalized, specs_raw: specsRaw };

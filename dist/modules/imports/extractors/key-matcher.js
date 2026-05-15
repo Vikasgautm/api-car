@@ -288,14 +288,9 @@ class KeyMatcher {
         const trimmed = value.trim();
         switch (dataType) {
             case 'boolean': {
-                const lower = trimmed.toLowerCase();
-                if (lower === 'yes' || lower === 'true' || lower === 'available' || lower === 'with' || lower === 'powered') {
-                    return true;
-                }
-                if (lower === 'no' || lower === 'false' || lower === 'not available' || lower === 'none') {
-                    return false;
-                }
-                return null;
+                // Mirror parseSpecValue's permissive boolean rules so DB-fallback matches
+                // behave identically to canonical SPEC_LABEL_MAP matches.
+                return (0, spec_key_map_1.parseSpecValue)(trimmed, 'boolean');
             }
             case 'number': {
                 const numMatch = trimmed.match(/[\d.]+/);
@@ -378,6 +373,18 @@ class KeyMatcher {
                     specsNormalized.infotainment_connectivity = {};
                 specsNormalized.infotainment_connectivity.apple_carplay = true;
             }
+        }
+        // Layer 3 — Feature Intelligence. Derived flags power SEO categories,
+        // buyer filters, "cars with X" landing pages, and comparison tables.
+        // Stored under specs_raw.derived so the variant schema stays untouched.
+        const rootFuelType = matchedSpecs.find(m => m.suggested_path === 'fuel_type')?.source_value;
+        const rootTransmission = matchedSpecs.find(m => m.suggested_path === 'transmission_type')?.source_value;
+        const derived = (0, spec_key_map_1.deriveFeatureFlags)(specsNormalized, specsRaw, {
+            fuel_type: typeof rootFuelType === 'string' ? rootFuelType : undefined,
+            transmission_type: typeof rootTransmission === 'string' ? rootTransmission : undefined,
+        });
+        if (Object.keys(derived).length > 0) {
+            specsRaw.derived = derived;
         }
         return { specs_normalized: specsNormalized, specs_raw: specsRaw };
     }

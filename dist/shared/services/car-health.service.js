@@ -71,7 +71,30 @@ class CarHealthService {
             (pricingOk ? 1 : 0) +
             (thumbnailOk ? 1 : 0);
         const completeness_score = Math.round((earned / 9) * 100);
-        return { seo_health_issues: issues, completeness_score };
+        const completeness_misses = [];
+        if (descCredit === 0) {
+            completeness_misses.push({ key: 'description', label: 'No description', severity: 'missing' });
+        }
+        else if (descCredit < 1) {
+            completeness_misses.push({ key: 'description', label: `Description too short (under ${DESCRIPTION_STRONG_CHARS} chars)`, severity: 'weak' });
+        }
+        if (!variantsOk)
+            completeness_misses.push({ key: 'variants', label: 'No variants added', severity: 'missing' });
+        if (!thumbnailOk)
+            completeness_misses.push({ key: 'thumbnail', label: 'No thumbnail image', severity: 'missing' });
+        if (!imagesOk)
+            completeness_misses.push({ key: 'images', label: 'No gallery images', severity: 'missing' });
+        if (faqCount === 0)
+            completeness_misses.push({ key: 'faq', label: 'No FAQs linked', severity: 'missing' });
+        if (!metaOk)
+            completeness_misses.push({ key: 'meta', label: 'Missing meta title or description', severity: 'missing' });
+        if (!fuelOk)
+            completeness_misses.push({ key: 'fuel_types', label: 'No fuel types aggregated from variants', severity: 'missing' });
+        if (!bodyTypeOk)
+            completeness_misses.push({ key: 'body_type', label: 'Body type unset', severity: 'missing' });
+        if (!pricingOk)
+            completeness_misses.push({ key: 'pricing', label: 'No price on any variant (ex-showroom or expected)', severity: 'missing' });
+        return { seo_health_issues: issues, completeness_score, completeness_misses };
     }
 }
 exports.CarHealthService = CarHealthService;

@@ -11,6 +11,7 @@ const booleanOrString = zod_1.z.union([
 // Car DTO schemas
 exports.createCarSchema = zod_1.z.object({
     name: zod_1.z.string().min(2, 'Name must be at least 2 characters'),
+    slug: zod_1.z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'slug must be lowercase letters, digits, and hyphens only').optional(),
     brand_id: common_validation_schemas_1.uuidSchema,
     body_type_id: common_validation_schemas_1.uuidSchema,
     fuel_type_id: common_validation_schemas_1.uuidSchema.optional(),

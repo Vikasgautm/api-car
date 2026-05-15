@@ -200,6 +200,7 @@ export class CarController {
 
     const createDto: CreateCarDto = {
       name: req.body.name,
+      slug: req.body.slug,
       brand_id: req.body.brand_id,
       body_type_id: req.body.body_type_id,
       fuel_type_id: req.body.fuel_type_id,
@@ -232,6 +233,14 @@ export class CarController {
       og_image: req.body.og_image,
       canonical_url: req.body.canonical_url,
       noindex: req.body.noindex,
+      model_family: req.body.model_family,
+      generation_start_year: req.body.generation_start_year != null && req.body.generation_start_year !== '' ? Number(req.body.generation_start_year) : req.body.generation_start_year,
+      generation_end_year: req.body.generation_end_year != null && req.body.generation_end_year !== '' ? Number(req.body.generation_end_year) : req.body.generation_end_year,
+      generation_label: req.body.generation_label,
+      is_current: req.body.is_current !== undefined ? req.body.is_current === 'true' || req.body.is_current === true : undefined,
+      is_facelift: req.body.is_facelift !== undefined ? req.body.is_facelift === 'true' || req.body.is_facelift === true : undefined,
+      predecessor_car_id: req.body.predecessor_car_id,
+      successor_car_id: req.body.successor_car_id,
     };
 
     const validation = CreateCarDto.validate(createDto);
@@ -266,6 +275,7 @@ export class CarController {
 
     const updateDto: UpdateCarDto = {
       name: req.body.name,
+      slug: req.body.slug,
       brand_id: req.body.brand_id,
       body_type_id: req.body.body_type_id,
       fuel_type_id: req.body.fuel_type_id,
@@ -299,6 +309,14 @@ export class CarController {
       og_image: req.body.og_image,
       canonical_url: req.body.canonical_url,
       noindex: req.body.noindex,
+      model_family: req.body.model_family,
+      generation_start_year: req.body.generation_start_year != null && req.body.generation_start_year !== '' ? Number(req.body.generation_start_year) : req.body.generation_start_year,
+      generation_end_year: req.body.generation_end_year != null && req.body.generation_end_year !== '' ? Number(req.body.generation_end_year) : req.body.generation_end_year,
+      generation_label: req.body.generation_label,
+      is_current: req.body.is_current !== undefined ? req.body.is_current === 'true' || req.body.is_current === true : undefined,
+      is_facelift: req.body.is_facelift !== undefined ? req.body.is_facelift === 'true' || req.body.is_facelift === true : undefined,
+      predecessor_car_id: req.body.predecessor_car_id,
+      successor_car_id: req.body.successor_car_id,
     };
 
     const validation = UpdateCarDto.validate(updateDto);

@@ -1,7 +1,15 @@
 export type SeoIssue = 'Missing Meta' | 'Weak Content' | 'Missing FAQ' | 'Missing Images';
+export type CompletenessKey = 'description' | 'variants' | 'images' | 'thumbnail' | 'faq' | 'meta' | 'fuel_types' | 'body_type' | 'pricing';
+export type CompletenessSeverity = 'missing' | 'weak';
+export interface CompletenessMiss {
+    key: CompletenessKey;
+    label: string;
+    severity: CompletenessSeverity;
+}
 export interface CarHealth {
     seo_health_issues: SeoIssue[];
     completeness_score: number;
+    completeness_misses: CompletenessMiss[];
 }
 export interface CarHealthInput {
     car_id: string;

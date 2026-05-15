@@ -1,4 +1,4 @@
-import { SpecsNormalized } from '../../../models/car-variant.model';
+import { SpecsNormalized, TransmissionType } from '../../../models/car-variant.model';
 import { ValidationUtil } from '../../../shared/utils/validation.util';
 
 export class CreateVariantDto {
@@ -7,7 +7,7 @@ export class CreateVariantDto {
   slug?: string;
   model_year!: number;
   fuel_type_id?: string;
-  transmission_type!: 'manual' | 'automatic' | 'cvt' | 'dct' | 'amt';
+  transmission_type!: TransmissionType;
   drivetrain?: string;
   seating_capacity?: number;
   body_type?: string;

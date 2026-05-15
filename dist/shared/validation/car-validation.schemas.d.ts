@@ -1,6 +1,7 @@
 import { z } from 'zod';
 export declare const createCarSchema: z.ZodObject<{
     name: z.ZodString;
+    slug: z.ZodOptional<z.ZodString>;
     brand_id: z.ZodString;
     body_type_id: z.ZodString;
     fuel_type_id: z.ZodOptional<z.ZodString>;
@@ -83,6 +84,7 @@ export declare const createCarSchema: z.ZodObject<{
 }, z.core.$strict>;
 export declare const updateCarSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
+    slug: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     brand_id: z.ZodOptional<z.ZodString>;
     body_type_id: z.ZodOptional<z.ZodString>;
     fuel_type_id: z.ZodOptional<z.ZodOptional<z.ZodString>>;
@@ -171,9 +173,14 @@ export declare const createVariantSchema: z.ZodObject<{
     transmission_type: z.ZodEnum<{
         manual: "manual";
         automatic: "automatic";
+        amt: "amt";
         cvt: "cvt";
         dct: "dct";
-        amt: "amt";
+        dsg: "dsg";
+        imt: "imt";
+        torque_converter: "torque_converter";
+        single_speed_ev: "single_speed_ev";
+        e_cvt: "e_cvt";
     }>;
     drivetrain: z.ZodOptional<z.ZodString>;
     seating_capacity: z.ZodOptional<z.ZodNumber>;
@@ -190,9 +197,14 @@ export declare const updateVariantSchema: z.ZodObject<{
     transmission_type: z.ZodOptional<z.ZodEnum<{
         manual: "manual";
         automatic: "automatic";
+        amt: "amt";
         cvt: "cvt";
         dct: "dct";
-        amt: "amt";
+        dsg: "dsg";
+        imt: "imt";
+        torque_converter: "torque_converter";
+        single_speed_ev: "single_speed_ev";
+        e_cvt: "e_cvt";
     }>>;
     drivetrain: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     seating_capacity: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;

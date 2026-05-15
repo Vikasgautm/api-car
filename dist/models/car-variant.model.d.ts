@@ -220,7 +220,7 @@ export interface SpecsNormalized {
     exterior?: Exterior;
     warranty?: Warranty;
 }
-export type TransmissionType = 'manual' | 'automatic' | 'cvt' | 'dct' | 'amt';
+export type TransmissionType = 'manual' | 'automatic' | 'amt' | 'cvt' | 'dct' | 'dsg' | 'imt' | 'torque_converter' | 'single_speed_ev' | 'e_cvt';
 export interface ICarVariant extends Document {
     variant_id: string;
     car_id: string;

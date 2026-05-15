@@ -47,9 +47,9 @@ export declare const variantSaveSchema: z.ZodObject<{
             transmission_type: z.ZodOptional<z.ZodNullable<z.ZodEnum<{
                 manual: "manual";
                 automatic: "automatic";
+                amt: "amt";
                 cvt: "cvt";
                 dct: "dct";
-                amt: "amt";
             }>>>;
             specs_normalized: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
             is_published: z.ZodBoolean;

@@ -16,7 +16,18 @@ const variantSchema = new mongoose_1.Schema({
     fuel_type_id: { type: String },
     transmission_type: {
         type: String,
-        enum: ['manual', 'automatic', 'cvt', 'dct', 'amt']
+        enum: [
+            'manual',
+            'automatic',
+            'amt',
+            'cvt',
+            'dct',
+            'dsg',
+            'imt',
+            'torque_converter',
+            'single_speed_ev',
+            'e_cvt',
+        ],
     },
     drivetrain: { type: String },
     seating_capacity: {

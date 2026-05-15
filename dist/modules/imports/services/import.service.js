@@ -10,6 +10,7 @@ const car_model_1 = require("../../../models/car.model");
 const fuel_type_model_1 = require("../../../models/fuel-type.model");
 const import_log_model_1 = require("../../../models/import-log.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
+const mileage_recompute_service_1 = require("../../../shared/services/mileage-recompute.service");
 const cardekho_extractor_1 = require("../extractors/cardekho.extractor");
 const key_matcher_1 = require("../extractors/key-matcher");
 class ImportService {
@@ -495,6 +496,19 @@ class ImportService {
                 errors.push(`Failed to save variant from ${item.url}: ${error.message}`);
             }
         }
+        // Bulk import skips the per-write recompute hooks the CRUD path uses, so the
+        // parent car's denormalised aggregates (variant_count, min/max price,
+        // aggregated_fuel_types, incomplete_variant_count) stay stale until the next
+        // single-variant edit. Recompute once at the end — the import is scoped to a
+        // single car_id, so this is one hop, not N.
+        if (variantIds.length > 0) {
+            try {
+                await mileage_recompute_service_1.MileageRecomputeService.recomputeCarAggregatesOnly(car_id);
+            }
+            catch (err) {
+                warnings.push(`Saved ${variantIds.length} variant(s) but failed to refresh car aggregates: ${err?.message ?? err}. Run /cars/admin/recompute-aggregates to fix.`);
+            }
+        }
         return {
             success: errors.length === 0,
             variant_ids: variantIds,
@@ -551,18 +565,39 @@ class ImportService {
             return 'dct';
         if (normalized === 'amt')
             return 'amt';
-        // Fuzzy matches
-        if (normalized.includes('manual'))
-            return 'manual';
-        if (normalized.includes('automatic') || normalized.includes('auto'))
-            return 'automatic';
-        if (normalized.includes('cvt') || normalized.includes('continuously variable'))
-            return 'cvt';
+        if (normalized === 'dsg')
+            return 'dsg';
+        if (normalized === 'imt')
+            return 'imt';
+        if (normalized === 'e-cvt' || normalized === 'ecvt')
+            return 'e_cvt';
+        if (normalized === 'torque converter')
+            return 'torque_converter';
+        if (normalized === 'single speed' || normalized === 'single-speed' || normalized === 'single speed ev')
+            return 'single_speed_ev';
+        // Fuzzy matches — order matters: check specific (DSG/iMT/e-CVT/EV) before
+        // generic (manual/automatic) so "DSG (auto)" doesn't degrade to 'automatic'.
+        if (normalized.includes('dsg'))
+            return 'dsg';
+        if (normalized.includes('imt') || normalized.includes('intelligent manual'))
+            return 'imt';
+        if (normalized.includes('e-cvt') || normalized.includes('ecvt'))
+            return 'e_cvt';
+        if (normalized.includes('torque converter'))
+            return 'torque_converter';
+        if (normalized.includes('single speed') || normalized.includes('single-speed') || normalized.includes('reduction gear'))
+            return 'single_speed_ev';
         if (normalized.includes('dct') || normalized.includes('dual clutch') || normalized.includes('dual-clutch'))
             return 'dct';
         if (normalized.includes('amt') || normalized.includes('automated manual'))
             return 'amt';
-        return null; // Return null if no match
+        if (normalized.includes('cvt') || normalized.includes('continuously variable'))
+            return 'cvt';
+        if (normalized.includes('manual'))
+            return 'manual';
+        if (normalized.includes('automatic') || normalized.includes('auto'))
+            return 'automatic';
+        return null;
     }
     static convertSpecsTypes(payload) {
         if (!payload.specs_normalized) {

@@ -24,7 +24,18 @@ exports.paginationSchema = zod_1.z.object({
     is_featured: exports.booleanStringSchema.optional(),
 });
 exports.publishStatusSchema = zod_1.z.enum(['upcoming', 'launched', 'discontinued', 'archived', 'disabled']).optional();
-exports.transmissionTypeSchema = zod_1.z.enum(['manual', 'automatic', 'cvt', 'dct', 'amt']);
+exports.transmissionTypeSchema = zod_1.z.enum([
+    'manual',
+    'automatic',
+    'amt',
+    'cvt',
+    'dct',
+    'dsg',
+    'imt',
+    'torque_converter',
+    'single_speed_ev',
+    'e_cvt',
+]);
 exports.answerFormatSchema = zod_1.z.enum(['text', 'html', 'markdown']);
 exports.userRoleSchema = zod_1.z.enum(['super_admin', 'admin', 'editor', 'user']);
 // Meta field schemas

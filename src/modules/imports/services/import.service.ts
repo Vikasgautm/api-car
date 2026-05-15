@@ -7,6 +7,7 @@ import { Car } from '../../../models/car.model';
 import { FuelType } from '../../../models/fuel-type.model';
 import { ImportLog } from '../../../models/import-log.model';
 import { AppError } from '../../../shared/utils/app-error.util';
+import { MileageRecomputeService } from '../../../shared/services/mileage-recompute.service';
 import { CarDekhoExtractor } from '../extractors/cardekho.extractor';
 import { KeyMatcher } from '../extractors/key-matcher';
 import {
@@ -581,6 +582,19 @@ export class ImportService {
       }
     }
 
+    // Bulk import skips the per-write recompute hooks the CRUD path uses, so the
+    // parent car's denormalised aggregates (variant_count, min/max price,
+    // aggregated_fuel_types, incomplete_variant_count) stay stale until the next
+    // single-variant edit. Recompute once at the end — the import is scoped to a
+    // single car_id, so this is one hop, not N.
+    if (variantIds.length > 0) {
+      try {
+        await MileageRecomputeService.recomputeCarAggregatesOnly(car_id);
+      } catch (err: any) {
+        warnings.push(`Saved ${variantIds.length} variant(s) but failed to refresh car aggregates: ${err?.message ?? err}. Run /cars/admin/recompute-aggregates to fix.`);
+      }
+    }
+
     return {
       success: errors.length === 0,
       variant_ids: variantIds,
@@ -626,24 +640,35 @@ export class ImportService {
 
   private static normalizeTransmission(transmission: string): TransmissionType | null {
     if (!transmission) return null;
-    
+
     const normalized = transmission.toLowerCase().trim();
-    
+
     // Direct matches
     if (normalized === 'manual') return 'manual';
     if (normalized === 'automatic') return 'automatic';
     if (normalized === 'cvt') return 'cvt';
     if (normalized === 'dct') return 'dct';
     if (normalized === 'amt') return 'amt';
-    
-    // Fuzzy matches
-    if (normalized.includes('manual')) return 'manual';
-    if (normalized.includes('automatic') || normalized.includes('auto')) return 'automatic';
-    if (normalized.includes('cvt') || normalized.includes('continuously variable')) return 'cvt';
+    if (normalized === 'dsg') return 'dsg';
+    if (normalized === 'imt') return 'imt';
+    if (normalized === 'e-cvt' || normalized === 'ecvt') return 'e_cvt';
+    if (normalized === 'torque converter') return 'torque_converter';
+    if (normalized === 'single speed' || normalized === 'single-speed' || normalized === 'single speed ev') return 'single_speed_ev';
+
+    // Fuzzy matches — order matters: check specific (DSG/iMT/e-CVT/EV) before
+    // generic (manual/automatic) so "DSG (auto)" doesn't degrade to 'automatic'.
+    if (normalized.includes('dsg')) return 'dsg';
+    if (normalized.includes('imt') || normalized.includes('intelligent manual')) return 'imt';
+    if (normalized.includes('e-cvt') || normalized.includes('ecvt')) return 'e_cvt';
+    if (normalized.includes('torque converter')) return 'torque_converter';
+    if (normalized.includes('single speed') || normalized.includes('single-speed') || normalized.includes('reduction gear')) return 'single_speed_ev';
     if (normalized.includes('dct') || normalized.includes('dual clutch') || normalized.includes('dual-clutch')) return 'dct';
     if (normalized.includes('amt') || normalized.includes('automated manual')) return 'amt';
-    
-    return null; // Return null if no match
+    if (normalized.includes('cvt') || normalized.includes('continuously variable')) return 'cvt';
+    if (normalized.includes('manual')) return 'manual';
+    if (normalized.includes('automatic') || normalized.includes('auto')) return 'automatic';
+
+    return null;
   }
 
   private static convertSpecsTypes(payload: any): any {

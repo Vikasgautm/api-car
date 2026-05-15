@@ -1,0 +1,27 @@
+import { OtpDeliveryChannel } from '../../models/deletion-request.model';
+export interface SendOtpEmailResult {
+    channel: OtpDeliveryChannel;
+    sent_to: string;
+    fallback_used: boolean;
+}
+export declare class EmailService {
+    private static transporter;
+    static isConfigured(): boolean;
+    private static getTransporter;
+    /**
+     * Send a delete-approval OTP via email. Mirrors WhatsAppService.sendOtp's
+     * contract so DeletionWorkflowService can swap channels without churn.
+     *
+     * - When SMTP credentials are present, sends a plain-text + HTML email
+     *   containing the 6-digit OTP and a short summary of what's being approved.
+     * - When not configured, falls back to logging the OTP to the server console
+     *   (development only). Production throws so admins know the OTP didn't ship.
+     */
+    static sendOtp(recipient: string, otp: string, ctx?: {
+        request_id?: string;
+        reason?: string;
+        action?: string;
+        entity_label?: string;
+    }): Promise<SendOtpEmailResult>;
+}
+//# sourceMappingURL=email.service.d.ts.map

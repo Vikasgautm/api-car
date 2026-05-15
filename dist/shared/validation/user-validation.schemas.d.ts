@@ -48,17 +48,17 @@ export declare const userFilterSchema: z.ZodObject<{
     q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
     is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
         0: "0";
         1: "1";
-        true: "true";
         false: "false";
-    }>, z.ZodTransform<boolean, "0" | "1" | "true" | "false">>]>>;
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
     is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+        true: "true";
         0: "0";
         1: "1";
-        true: "true";
         false: "false";
-    }>, z.ZodTransform<boolean, "0" | "1" | "true" | "false">>]>>;
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
     role: z.ZodOptional<z.ZodEnum<{
         user: "user";
         editor: "editor";

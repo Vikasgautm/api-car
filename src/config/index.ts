@@ -27,16 +27,30 @@ export const config = {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   },
   whatsapp: {
-    // Meta WhatsApp Cloud API. When any of these are missing the service falls
-    // back to a console log so dev environments work without WhatsApp credentials.
+    // Kept around for one release in case we need to fall back. Deletion OTP
+    // now ships over SMTP — see `email` below.
     phone_number_id: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
     access_token: process.env.WHATSAPP_ACCESS_TOKEN || '',
     otp_template_name: process.env.WHATSAPP_OTP_TEMPLATE_NAME || 'delete_otp_v1',
     otp_template_language: process.env.WHATSAPP_OTP_TEMPLATE_LANGUAGE || 'en_US',
     api_version: process.env.WHATSAPP_API_VERSION || 'v18.0',
   },
+  email: {
+    // SMTP config for transactional email (delete-approval OTP).
+    // When any of host/user/pass are missing the EmailService falls back to a
+    // server-console log in development; production refuses to start the workflow.
+    smtp_host: process.env.SMTP_HOST || '',
+    smtp_port: Number(process.env.SMTP_PORT || 587),
+    smtp_secure: process.env.SMTP_SECURE === 'true', // true for 465, false for 587/STARTTLS
+    smtp_user: process.env.SMTP_USER || '',
+    smtp_pass: process.env.SMTP_PASS || '',
+    from: process.env.SMTP_FROM || 'CarSalahakar <no-reply@carsalahakar.com>',
+  },
   deletion_workflow: {
-    otp_ttl_seconds: Number(process.env.DELETION_OTP_TTL_SECONDS || 600), // 10 min
-    otp_max_attempts: Number(process.env.DELETION_OTP_MAX_ATTEMPTS || 5),
+    otp_ttl_seconds: Number(process.env.DELETION_OTP_TTL_SECONDS) || 600, // 10 min
+    otp_max_attempts: Number(process.env.DELETION_OTP_MAX_ATTEMPTS) || 5,
+    // Per-action approval recipient. Centralised here so we don't scatter the
+    // OTP email across user records — every deletion goes to this inbox.
+    otp_email_recipient: process.env.DELETION_OTP_EMAIL || 'kameshkumar511@gmail.com',
   },
 };

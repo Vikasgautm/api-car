@@ -29,9 +29,18 @@ export declare const config: {
         otp_template_language: string;
         api_version: string;
     };
+    email: {
+        smtp_host: string;
+        smtp_port: number;
+        smtp_secure: boolean;
+        smtp_user: string;
+        smtp_pass: string;
+        from: string;
+    };
     deletion_workflow: {
         otp_ttl_seconds: number;
         otp_max_attempts: number;
+        otp_email_recipient: string;
     };
 };
 //# sourceMappingURL=index.d.ts.map

@@ -30,7 +30,18 @@ export const paginationSchema = z.object({
 
 export const publishStatusSchema = z.enum(['upcoming', 'launched', 'discontinued', 'archived', 'disabled']).optional();
 
-export const transmissionTypeSchema = z.enum(['manual', 'automatic', 'cvt', 'dct', 'amt']);
+export const transmissionTypeSchema = z.enum([
+  'manual',
+  'automatic',
+  'amt',
+  'cvt',
+  'dct',
+  'dsg',
+  'imt',
+  'torque_converter',
+  'single_speed_ev',
+  'e_cvt',
+]);
 
 export const answerFormatSchema = z.enum(['text', 'html', 'markdown']);
 

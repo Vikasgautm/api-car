@@ -8,12 +8,35 @@ export type SeoIssue =
   | 'Missing FAQ'
   | 'Missing Images';
 
+// One row per failed/partial completeness check, surfaced as an insights drawer
+// so admins know exactly what needs fixing instead of guessing from a percent.
+export type CompletenessKey =
+  | 'description'
+  | 'variants'
+  | 'images'
+  | 'thumbnail'
+  | 'faq'
+  | 'meta'
+  | 'fuel_types'
+  | 'body_type'
+  | 'pricing';
+
+export type CompletenessSeverity = 'missing' | 'weak';
+
+export interface CompletenessMiss {
+  key: CompletenessKey;
+  label: string;
+  severity: CompletenessSeverity;
+}
+
 export interface CarHealth {
   seo_health_issues: SeoIssue[];
   // 0–100 integer percent. Each of 9 checks contributes ~11.11%; the description
   // check is split into full/partial credit so prose-rich cars don't get penalised
   // for being slightly under the threshold.
   completeness_score: number;
+  // Ordered list of checks that did not pass. Empty means score = 100.
+  completeness_misses: CompletenessMiss[];
 }
 
 // Inputs the scorer needs from each car. Kept loose because the cars service
@@ -115,6 +138,21 @@ export class CarHealthService {
 
     const completeness_score = Math.round((earned / 9) * 100);
 
-    return { seo_health_issues: issues, completeness_score };
+    const completeness_misses: CompletenessMiss[] = [];
+    if (descCredit === 0) {
+      completeness_misses.push({ key: 'description', label: 'No description', severity: 'missing' });
+    } else if (descCredit < 1) {
+      completeness_misses.push({ key: 'description', label: `Description too short (under ${DESCRIPTION_STRONG_CHARS} chars)`, severity: 'weak' });
+    }
+    if (!variantsOk) completeness_misses.push({ key: 'variants', label: 'No variants added', severity: 'missing' });
+    if (!thumbnailOk) completeness_misses.push({ key: 'thumbnail', label: 'No thumbnail image', severity: 'missing' });
+    if (!imagesOk) completeness_misses.push({ key: 'images', label: 'No gallery images', severity: 'missing' });
+    if (faqCount === 0) completeness_misses.push({ key: 'faq', label: 'No FAQs linked', severity: 'missing' });
+    if (!metaOk) completeness_misses.push({ key: 'meta', label: 'Missing meta title or description', severity: 'missing' });
+    if (!fuelOk) completeness_misses.push({ key: 'fuel_types', label: 'No fuel types aggregated from variants', severity: 'missing' });
+    if (!bodyTypeOk) completeness_misses.push({ key: 'body_type', label: 'Body type unset', severity: 'missing' });
+    if (!pricingOk) completeness_misses.push({ key: 'pricing', label: 'No price on any variant (ex-showroom or expected)', severity: 'missing' });
+
+    return { seo_health_issues: issues, completeness_score, completeness_misses };
   }
 }

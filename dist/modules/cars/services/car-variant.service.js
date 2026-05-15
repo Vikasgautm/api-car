@@ -218,14 +218,18 @@ class CarVariantService {
         else if (!includeDeleted) {
             filter.is_deleted = false;
         }
-        // By default, exclude archived variants unless explicitly requested
-        if (is_archived === undefined || is_archived === 'false') {
+        // By default, exclude archived variants unless explicitly requested.
+        // Accept boolean (from JSON callers) AND string ("true"/"false"/"all" from
+        // query-string callers). Previously the boolean `false` fell through both
+        // branches and silently disabled the filter — admins saw archived rows mixed
+        // into the active list.
+        if (is_archived === undefined || is_archived === false || is_archived === 'false') {
             filter.is_archived = false;
         }
-        else if (is_archived === 'true') {
+        else if (is_archived === true || is_archived === 'true') {
             filter.is_archived = true;
         }
-        // If is_archived === 'all', don't add any filter for is_archived
+        // is_archived === 'all' → no filter applied (show both).
         if (is_published !== undefined) {
             filter.is_published = is_published;
         }

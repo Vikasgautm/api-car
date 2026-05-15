@@ -8,7 +8,7 @@ import {
 } from '../../../models/deletion-request.model';
 import { User } from '../../../models/user.model';
 import { OtpService } from '../../../shared/services/otp.service';
-import { WhatsAppService } from '../../../shared/services/whatsapp.service';
+import { EmailService } from '../../../shared/services/email.service';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { AuditActor, AuditUtil } from '../../../shared/utils/audit.util';
 import { PaginationUtil } from '../../../shared/utils/pagination.util';
@@ -23,24 +23,25 @@ export interface CreateRequestInput {
 
 export interface CreateRequestResult {
   request_id: string;
-  channel: 'whatsapp' | 'console';
+  channel: 'email' | 'console';
   sent_to_masked: string;
   expires_at: Date;
   fallback_used: boolean;
 }
 
-function maskPhone(phone: string | null | undefined): string {
-  if (!phone) return '(no phone on file)';
-  const trimmed = phone.replace(/\s+/g, '');
-  if (trimmed.length <= 4) return trimmed;
-  return `${trimmed.slice(0, 3)}…${trimmed.slice(-2)}`;
+function maskEmail(email: string | null | undefined): string {
+  if (!email) return '(no email recipient configured)';
+  const [local, domain] = email.split('@');
+  if (!domain) return email;
+  const visible = local.slice(0, 2);
+  return `${visible}…@${domain}`;
 }
 
 export class DeletionWorkflowService {
   /**
-   * Create a deletion request. Generates an OTP, persists its hash, sends the code
-   * via WhatsApp (or dev-console fallback), and writes an audit row. The OTP itself
-   * is never returned.
+   * Create a deletion request. Generates an OTP, persists its hash, sends the
+   * code via email (or dev-console fallback), and writes an audit row. The OTP
+   * itself is never returned.
    */
   static async create(
     input: CreateRequestInput,
@@ -79,12 +80,21 @@ export class DeletionWorkflowService {
       );
     }
 
-    // Look up the actor to find a destination phone for the OTP.
+    // Verify the requester is a real user — we don't need their phone any more
+    // (email OTP goes to the centralised approval inbox), but we still want a
+    // 401 if the actor's user record was deleted between login and now.
     const requester = await User.findOne({ user_id: actor.user_id, is_deleted: false }).lean();
     if (!requester) {
       throw AppError.unauthorized('Requesting user no longer exists');
     }
-    const phoneTarget = requester.whatsapp_phone || requester.phone || '';
+
+    const emailRecipient = config.deletion_workflow.otp_email_recipient;
+    if (!emailRecipient) {
+      throw new AppError(
+        'No deletion OTP recipient configured (DELETION_OTP_EMAIL). Cannot send approval code.',
+        500
+      );
+    }
 
     const otp = OtpService.generate(6);
     const otpHash = await OtpService.hash(otp);
@@ -95,15 +105,17 @@ export class DeletionWorkflowService {
     // Send first so we don't persist a request the OTP never escaped.
     let sendResult;
     try {
-      sendResult = await WhatsAppService.sendOtp(phoneTarget, otp, {
+      sendResult = await EmailService.sendOtp(emailRecipient, otp, {
         request_id,
         reason: input.reason,
+        action: input.action,
+        entity_label: `${car.name} (${car.slug})`,
       });
     } catch (err: any) {
       throw new AppError(
-        `Failed to send WhatsApp OTP: ${err?.message ?? 'unknown error'}`,
+        `Failed to send approval email: ${err?.message ?? 'unknown error'}`,
         502,
-        { userMessage: 'Could not send the approval code. Check WhatsApp credentials or admin phone on file.' }
+        { userMessage: 'Could not send the approval code. Check SMTP credentials.' }
       );
     }
 
@@ -122,7 +134,7 @@ export class DeletionWorkflowService {
       otp_attempts: 0,
       otp_max_attempts: config.deletion_workflow.otp_max_attempts,
       otp_channel: sendResult.channel,
-      otp_sent_to: sendResult.channel === 'whatsapp' ? phoneTarget : 'console',
+      otp_sent_to: sendResult.channel === 'email' ? emailRecipient : 'console',
       status: 'pending',
     })) as IDeletionRequest;
 
@@ -142,9 +154,9 @@ export class DeletionWorkflowService {
 
     return {
       request_id: created.request_id,
-      channel: sendResult.channel,
+      channel: sendResult.channel === 'email' ? 'email' : 'console',
       sent_to_masked:
-        sendResult.channel === 'whatsapp' ? maskPhone(phoneTarget) : 'server console (dev fallback)',
+        sendResult.channel === 'email' ? maskEmail(emailRecipient) : 'server console (dev fallback)',
       expires_at: expiresAt,
       fallback_used: sendResult.fallback_used,
     };
