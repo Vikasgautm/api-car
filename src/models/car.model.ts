@@ -60,6 +60,18 @@ export interface ICar extends Document {
   best_mileage_value?: number | null;
   best_range_class?: MileageClass | null;
   best_range_value?: number | null;
+  // Aggregated operational intelligence (computed from variants).
+  // Maintained by MileageRecomputeService.recomputeCarAggregatesOnly().
+  variant_count: number;
+  // Variants missing one of {transmission_type, price, fuel_type_id}. Operational
+  // signal for editors — "this car has 2 variants that customers can't shop".
+  incomplete_variant_count: number;
+  min_variant_price?: number | null;
+  max_variant_price?: number | null;
+  aggregated_fuel_types: string[];
+  // Denormalised from the BodyType collection so cars can be sorted alphabetically
+  // by body type without a join. Maintained by createCar/updateCar/backfill.
+  body_type_name?: string | null;
   // Content ownership
   editor_user_id?: string | null;
   seo_owner_user_id?: string | null;
@@ -132,6 +144,12 @@ const carSchema = new Schema<ICar>(
     best_mileage_value: { type: Number, default: null },
     best_range_class: { type: String, enum: ['weak', 'average', 'good', 'excellent', null], default: null },
     best_range_value: { type: Number, default: null },
+    variant_count: { type: Number, default: 0 },
+    incomplete_variant_count: { type: Number, default: 0 },
+    min_variant_price: { type: Number, default: null },
+    max_variant_price: { type: Number, default: null },
+    aggregated_fuel_types: { type: [String], default: [] },
+    body_type_name: { type: String, default: null },
     editor_user_id: { type: String, default: null },
     seo_owner_user_id: { type: String, default: null },
     reviewer_user_id: { type: String, default: null },
@@ -175,6 +193,11 @@ carSchema.index({ best_mileage_class: 1, is_published: 1, is_deleted: 1 });
 carSchema.index({ best_range_class: 1, is_published: 1, is_deleted: 1 });
 carSchema.index({ best_mileage_value: -1 });
 carSchema.index({ best_range_value: -1 });
+carSchema.index({ aggregated_fuel_types: 1 });
+carSchema.index({ min_variant_price: 1 });
+carSchema.index({ max_variant_price: 1 });
+carSchema.index({ body_type_name: 1 });
+carSchema.index({ incomplete_variant_count: 1 });
 carSchema.index({ editor_user_id: 1 });
 carSchema.index({ seo_owner_user_id: 1 });
 carSchema.index({ reviewer_user_id: 1 });

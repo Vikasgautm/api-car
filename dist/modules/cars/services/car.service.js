@@ -13,6 +13,7 @@ const fuel_type_model_1 = require("../../../models/fuel-type.model");
 const redirect_model_1 = require("../../../models/redirect.model");
 const tag_model_1 = require("../../../models/tag.model");
 const tag_service_1 = require("../../taxonomy/services/tag.service");
+const car_health_service_1 = require("../../../shared/services/car-health.service");
 const mileage_recompute_service_1 = require("../../../shared/services/mileage-recompute.service");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const audit_util_1 = require("../../../shared/utils/audit.util");
@@ -206,15 +207,45 @@ class CarService {
             const sortFilter = filter_util_1.FilterUtil.buildSortFilter(sortBy, sortOrder);
             const [cars, total] = await Promise.all([
                 car_model_1.Car.find(filter)
-                    .select('car_id name slug brand_id body_type_id short_description thumbnail status is_upcoming is_launched expected_exshowroom_price expected_launch_date exshowroom_price is_electric is_published is_featured is_popular is_recommended is_latest top_selling tag_ids best_mileage_class best_mileage_value best_range_class best_range_value meta_title meta_description model_family generation_start_year generation_end_year generation_label is_current is_facelift')
+                    .select('car_id name slug brand_id body_type_id body_type_name short_description thumbnail status is_upcoming is_launched expected_exshowroom_price expected_launch_date exshowroom_price is_electric is_published is_featured is_popular is_recommended is_latest top_selling tag_ids best_mileage_class best_mileage_value best_range_class best_range_value variant_count incomplete_variant_count min_variant_price max_variant_price aggregated_fuel_types meta_title meta_description model_family generation_start_year generation_end_year generation_label is_current is_facelift')
                     .sort(sortFilter)
                     .skip(skip)
                     .limit(validatedLimit)
                     .lean(),
                 car_model_1.Car.countDocuments(filter),
             ]);
+            // Manual denormalisation: schema stores brand_id/body_type_id as plain strings
+            // (no `ref`), so populate() is a no-op. Look them up in batch and merge.
+            const brandIds = Array.from(new Set(cars.map((c) => c.brand_id).filter(Boolean)));
+            const bodyTypeIds = Array.from(new Set(cars.map((c) => c.body_type_id).filter(Boolean)));
+            const pageCarIds = cars.map((c) => c.car_id).filter(Boolean);
+            const [brandDocs, bodyTypeDocs, faqCounts] = await Promise.all([
+                brandIds.length > 0
+                    ? brand_model_1.Brand.find({ brand_id: { $in: brandIds }, is_deleted: false })
+                        .select('brand_id name slug')
+                        .lean()
+                    : Promise.resolve([]),
+                bodyTypeIds.length > 0
+                    ? body_type_model_1.BodyType.find({ body_type_id: { $in: bodyTypeIds }, is_deleted: false })
+                        .select('body_type_id name slug')
+                        .lean()
+                    : Promise.resolve([]),
+                car_health_service_1.CarHealthService.getFaqCountsByCar(pageCarIds),
+            ]);
+            const brandMap = new Map(brandDocs.map((b) => [b.brand_id, b]));
+            const bodyTypeMap = new Map(bodyTypeDocs.map((bt) => [bt.body_type_id, bt]));
+            const enrichedCars = cars.map((c) => {
+                const health = car_health_service_1.CarHealthService.compute(c, faqCounts.get(c.car_id) ?? 0);
+                return {
+                    ...c,
+                    brand: c.brand_id ? brandMap.get(c.brand_id) ?? null : null,
+                    body_type: c.body_type_id ? bodyTypeMap.get(c.body_type_id) ?? null : null,
+                    seo_health_issues: health.seo_health_issues,
+                    completeness_score: health.completeness_score,
+                };
+            });
             const paginationMeta = pagination_util_1.PaginationUtil.createPaginationMeta(page, validatedLimit, total);
-            return { cars, pagination: paginationMeta };
+            return { cars: enrichedCars, pagination: paginationMeta };
         }
         catch (error) {
             console.log(error);
@@ -312,6 +343,9 @@ class CarService {
             slug: carData.slug,
             brand_id: carData.brand_id,
             body_type_id: carData.body_type_id,
+            // Denorm — already fetched above, store the name so cars can sort/group
+            // by body type without a join.
+            body_type_name: bodyType.name,
             fuel_type_id: carData.fuel_type_id,
             short_description: carData.short_description,
             description: carData.description,
@@ -405,6 +439,7 @@ class CarService {
                 });
             }
             updateData.body_type_id = carData.body_type_id;
+            updateData.body_type_name = bodyType.name;
         }
         if (carData.fuel_type_id !== undefined) {
             if (carData.fuel_type_id) {
@@ -572,6 +607,38 @@ class CarService {
      *   break those redirects' destinations). outbound_redirects = rows whose
      *   old_url is the car's own URL (typically created BY a prior promotion).
      */
+    // One-shot maintenance: walk every non-deleted car and run the recompute hook.
+    // Use after schema migrations that add new aggregate fields, or after bulk
+    // variant imports that bypassed the per-write recompute hooks.
+    // Also backfills body_type_name (denorm from BodyType) for any cars where
+    // it's stale or missing — the recompute hook itself doesn't touch this field
+    // because body_type_id changes are driven by car-edit writes, not variant writes.
+    static async recomputeAggregatesAll() {
+        const cars = await car_model_1.Car.find({ is_deleted: false }).select('car_id body_type_id').lean();
+        // Batch-fetch all referenced body types so we don't N+1 the BodyType collection.
+        const bodyTypeIds = Array.from(new Set(cars.map(c => c.body_type_id).filter(Boolean)));
+        const bodyTypeDocs = bodyTypeIds.length > 0
+            ? await body_type_model_1.BodyType.find({ body_type_id: { $in: bodyTypeIds }, is_deleted: false })
+                .select('body_type_id name')
+                .lean()
+            : [];
+        const bodyTypeNameMap = new Map(bodyTypeDocs.map(bt => [bt.body_type_id, bt.name]));
+        let recomputed = 0;
+        let failed = 0;
+        for (const c of cars) {
+            try {
+                await mileage_recompute_service_1.MileageRecomputeService.recomputeCarAggregatesOnly(c.car_id);
+                const nextBodyTypeName = c.body_type_id ? bodyTypeNameMap.get(c.body_type_id) ?? null : null;
+                await car_model_1.Car.updateOne({ car_id: c.car_id }, { $set: { body_type_name: nextBodyTypeName } });
+                recomputed++;
+            }
+            catch (err) {
+                failed++;
+                console.error(`recomputeAggregatesAll: failed for car_id=${c.car_id}`, err);
+            }
+        }
+        return { scanned: cars.length, recomputed, failed };
+    }
     static async getDependencies(carId) {
         const car = await car_model_1.Car.findOne({ car_id: carId }).lean();
         if (!car)

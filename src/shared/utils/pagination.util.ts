@@ -32,14 +32,19 @@ export class PaginationUtil {
     limit: number,
     total: number
   ): PaginationMeta {
-    const totalPages = Math.ceil(total / limit);
+    // page/limit can arrive as strings from req.query (validateQuery does not
+    // assign coerced values back). Coerce here so consumers always receive
+    // numbers in the response envelope.
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = Math.max(1, Number(limit) || 1);
+    const totalPages = Math.ceil(total / limitNum);
     return {
-      page,
-      limit,
+      page: pageNum,
+      limit: limitNum,
       total,
       totalPages,
-      hasNext: page < totalPages,
-      hasPrev: page > 1,
+      hasNext: pageNum < totalPages,
+      hasPrev: pageNum > 1,
     };
   }
 

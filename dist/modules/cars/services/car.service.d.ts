@@ -2,11 +2,7 @@ import { ICar } from "../../../models/car.model";
 import { AuditActor } from "../../../shared/utils/audit.util";
 export declare class CarService {
     static getAllCars(filterDto: any, includeDeleted?: boolean): Promise<{
-        cars: (ICar & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        cars: any[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
     static getCarById(carId: string): Promise<(import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
@@ -60,6 +56,11 @@ export declare class CarService {
      *   break those redirects' destinations). outbound_redirects = rows whose
      *   old_url is the car's own URL (typically created BY a prior promotion).
      */
+    static recomputeAggregatesAll(): Promise<{
+        scanned: number;
+        recomputed: number;
+        failed: number;
+    }>;
     static getDependencies(carId: string): Promise<{
         car_id: string;
         name: string;

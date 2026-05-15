@@ -17,6 +17,7 @@ adminRouter.use(protect);
 adminRouter.use(restrictTo('admin', 'super_admin'));
 
 adminRouter.get('/', validatePaginationQuery, CarController.getAllAdminCars);
+adminRouter.post('/recompute-aggregates', restrictTo('super_admin'), CarController.recomputeAggregatesAll);
 adminRouter.get('/:id/dependencies', validateUuidIdParam, CarController.getCarDependencies);
 adminRouter.get('/:id', validateUuidIdParam, CarController.getAdminCarById);
 

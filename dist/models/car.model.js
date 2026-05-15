@@ -59,6 +59,12 @@ const carSchema = new mongoose_1.Schema({
     best_mileage_value: { type: Number, default: null },
     best_range_class: { type: String, enum: ['weak', 'average', 'good', 'excellent', null], default: null },
     best_range_value: { type: Number, default: null },
+    variant_count: { type: Number, default: 0 },
+    incomplete_variant_count: { type: Number, default: 0 },
+    min_variant_price: { type: Number, default: null },
+    max_variant_price: { type: Number, default: null },
+    aggregated_fuel_types: { type: [String], default: [] },
+    body_type_name: { type: String, default: null },
     editor_user_id: { type: String, default: null },
     seo_owner_user_id: { type: String, default: null },
     reviewer_user_id: { type: String, default: null },
@@ -99,6 +105,11 @@ carSchema.index({ best_mileage_class: 1, is_published: 1, is_deleted: 1 });
 carSchema.index({ best_range_class: 1, is_published: 1, is_deleted: 1 });
 carSchema.index({ best_mileage_value: -1 });
 carSchema.index({ best_range_value: -1 });
+carSchema.index({ aggregated_fuel_types: 1 });
+carSchema.index({ min_variant_price: 1 });
+carSchema.index({ max_variant_price: 1 });
+carSchema.index({ body_type_name: 1 });
+carSchema.index({ incomplete_variant_count: 1 });
 carSchema.index({ editor_user_id: 1 });
 carSchema.index({ seo_owner_user_id: 1 });
 carSchema.index({ reviewer_user_id: 1 });

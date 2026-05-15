@@ -111,6 +111,14 @@ class CarController {
         const dependencies = await car_service_1.CarService.getDependencies(req.params.id);
         return response_util_1.ResponseUtil.success(res, dependencies, 'Car dependencies retrieved successfully');
     });
+    // One-shot maintenance: recompute aggregated variant_count / price range /
+    // fuel-type labels for every non-deleted car. Use after deploying the new
+    // aggregate fields, or after bulk variant edits, to repopulate cars whose
+    // recompute hook never fired.
+    static recomputeAggregatesAll = (0, catchAsync_1.catchAsync)(async (_req, res) => {
+        const result = await car_service_1.CarService.recomputeAggregatesAll();
+        return response_util_1.ResponseUtil.success(res, result, 'Car aggregates recomputed');
+    });
     static promoteToCurrent = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const actor = req.user
             ? { user_id: req.user.user_id, email: req.user.email, role: req.user.role }

@@ -15,6 +15,7 @@ const adminRouter = (0, express_1.Router)();
 adminRouter.use(auth_middleware_1.protect);
 adminRouter.use((0, auth_middleware_1.restrictTo)('admin', 'super_admin'));
 adminRouter.get('/', validation_1.validatePaginationQuery, car_controller_1.CarController.getAllAdminCars);
+adminRouter.post('/recompute-aggregates', (0, auth_middleware_1.restrictTo)('super_admin'), car_controller_1.CarController.recomputeAggregatesAll);
 adminRouter.get('/:id/dependencies', validation_1.validateUuidIdParam, car_controller_1.CarController.getCarDependencies);
 adminRouter.get('/:id', validation_1.validateUuidIdParam, car_controller_1.CarController.getAdminCarById);
 const thumbnailUpload = upload_service_1.UploadService.createUploadMiddleware({

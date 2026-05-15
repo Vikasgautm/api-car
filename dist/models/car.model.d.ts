@@ -54,6 +54,12 @@ export interface ICar extends Document {
     best_mileage_value?: number | null;
     best_range_class?: MileageClass | null;
     best_range_value?: number | null;
+    variant_count: number;
+    incomplete_variant_count: number;
+    min_variant_price?: number | null;
+    max_variant_price?: number | null;
+    aggregated_fuel_types: string[];
+    body_type_name?: string | null;
     editor_user_id?: string | null;
     seo_owner_user_id?: string | null;
     reviewer_user_id?: string | null;
