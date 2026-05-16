@@ -4,10 +4,11 @@ exports.variantSaveSchema = exports.variantPreviewSchema = exports.carSaveSchema
 const zod_1 = require("zod");
 // URL validation
 const urlSchema = zod_1.z.string().url('Invalid URL format');
+const isSupportedImportUrl = (val) => val.includes('cardekho.com') || val.includes('carwale.com');
 // Car preview request validation
 exports.carPreviewSchema = zod_1.z.object({
-    url: urlSchema.refine((val) => val.includes('cardekho.com'), {
-        message: 'Only cardekho.com URLs are supported',
+    url: urlSchema.refine(isSupportedImportUrl, {
+        message: 'Only cardekho.com and carwale.com URLs are supported',
     }),
 });
 // Car save request validation
@@ -31,8 +32,8 @@ exports.carSaveSchema = zod_1.z.object({
 // Variant preview request validation
 exports.variantPreviewSchema = zod_1.z.object({
     car_id: zod_1.z.string().min(1, 'Car ID is required'),
-    urls: zod_1.z.array(urlSchema.refine((val) => val.includes('cardekho.com'), {
-        message: 'Only cardekho.com URLs are supported',
+    urls: zod_1.z.array(urlSchema.refine(isSupportedImportUrl, {
+        message: 'Only cardekho.com and carwale.com URLs are supported',
     })).min(1, 'At least one URL is required').max(20, 'Maximum 20 URLs allowed'),
 });
 // Variant save request validation

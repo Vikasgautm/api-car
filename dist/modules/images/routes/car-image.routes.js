@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../../../middlewares/auth.middleware");
+const rate_limit_middleware_1 = require("../../../middlewares/rate-limit.middleware");
 const upload_service_1 = require("../../../shared/services/upload.service");
 const validation_1 = require("../../../shared/validation");
 const car_image_controller_1 = require("../controllers/car-image.controller");
@@ -22,7 +23,7 @@ const carImageUpload = upload_service_1.UploadService.createUploadMiddleware({
     useCloudinary: true,
     folder: 'car-images',
 });
-adminRouter.post('/', carImageUpload, car_image_controller_1.CarImageController.createCarImage);
+adminRouter.post('/', rate_limit_middleware_1.uploadRateLimiter, carImageUpload, car_image_controller_1.CarImageController.createCarImage);
 adminRouter.put('/:id', validation_1.validateIdParam, carImageUpload, car_image_controller_1.CarImageController.updateCarImage);
 adminRouter.delete('/:id', validation_1.validateIdParam, car_image_controller_1.CarImageController.deleteCarImage);
 adminRouter.patch('/restore/:id', validation_1.validateIdParam, car_image_controller_1.CarImageController.restoreCarImage);

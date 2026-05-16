@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { protect, restrictTo } from '../../../middlewares/auth.middleware';
+import { uploadRateLimiter } from '../../../middlewares/rate-limit.middleware';
 import { UploadService } from '../../../shared/services/upload.service';
 import { validateIdParam, validatePaginationQuery } from '../../../shared/validation';
 import { ImageController } from '../controllers/image.controller';
@@ -18,6 +19,7 @@ const singleImageUpload = UploadService.createUploadMiddleware({
 router.post(
   '/upload',
   protect,
+  uploadRateLimiter,
   restrictTo('admin', 'super_admin'),
   singleImageUpload,
   ImageController.uploadImage
@@ -27,6 +29,7 @@ router.post(
 router.post(
   '/upload/save',
   protect,
+  uploadRateLimiter,
   restrictTo('admin', 'super_admin'),
   singleImageUpload,
   ImageController.uploadImageWithSave
@@ -45,6 +48,7 @@ const multipleImagesUpload = UploadService.createUploadMiddleware({
 router.post(
   '/upload/multiple',
   protect,
+  uploadRateLimiter,
   restrictTo('admin', 'super_admin'),
   multipleImagesUpload,
   ImageController.uploadMultipleImages
@@ -54,6 +58,7 @@ router.post(
 router.post(
   '/upload/multiple/save',
   protect,
+  uploadRateLimiter,
   restrictTo('admin', 'super_admin'),
   multipleImagesUpload,
   ImageController.uploadMultipleImagesWithSave

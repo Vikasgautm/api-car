@@ -22,7 +22,7 @@ const variantSpecKeySchema = new mongoose_1.Schema({
     fuel_type_visibility: { type: [String], default: [] },
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
-    display_order: { type: Number, default: 0 },
+    sort_order: { type: Number, default: 0 },
 }, {
     timestamps: true,
 });

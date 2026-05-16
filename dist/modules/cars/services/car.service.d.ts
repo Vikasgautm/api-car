@@ -1,5 +1,5 @@
-import { ICar } from "../../../models/car.model";
 import { AuditActor } from "../../../shared/utils/audit.util";
+import { ICar } from '../../../models/car.model';
 export declare class CarService {
     static getAllCars(filterDto: any, includeDeleted?: boolean): Promise<{
         cars: any[];

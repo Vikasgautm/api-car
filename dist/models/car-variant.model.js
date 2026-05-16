@@ -30,12 +30,8 @@ const variantSchema = new mongoose_1.Schema({
         ],
     },
     drivetrain: { type: String },
-    seating_capacity: {
-        type: Number,
-        min: 2,
-        max: 10
-    },
     body_type: { type: String },
+    seating_capacity: { type: Number, min: 2, max: 10 },
     ex_showroom_price: {
         type: Number,
         min: 0
@@ -298,5 +294,12 @@ variantSchema.index({ editor_user_id: 1 });
 variantSchema.index({ seo_owner_user_id: 1 });
 variantSchema.index({ reviewer_user_id: 1 });
 variantSchema.index({ last_reviewed_at: -1 });
+// Additional compound indexes for common query patterns
+variantSchema.index({ car_id: 1, fuel_type_id: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ car_id: 1, transmission_type: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ car_id: 1, model_year: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ ex_showroom_price: 1, car_id: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ mileage_class: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ range_class: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
 exports.CarVariant = (0, mongoose_1.model)('CarVariant', variantSchema);
 //# sourceMappingURL=car-variant.model.js.map

@@ -25,6 +25,7 @@ export interface ICar extends Document {
   is_upcoming: boolean;
   is_launched: boolean;
   expected_exshowroom_price?: number | null;
+  ex_showroom_price?: number | null;
   expected_launch_date?: Date | null;
   exshowroom_price?: number | null;
   launch_date?: Date | null;
@@ -68,7 +69,11 @@ export interface ICar extends Document {
   incomplete_variant_count: number;
   min_variant_price?: number | null;
   max_variant_price?: number | null;
-  aggregated_fuel_types: string[];
+  aggregated_fuel_types?: string[];
+  // SEO health and completeness metrics (persisted for filtering/sorting)
+  seo_health_issues?: string[];
+  completeness_score?: number;
+  completeness_misses?: Array<{ key: string; label: string; severity: string }>;
   // Denormalised from the BodyType collection so cars can be sorted alphabetically
   // by body type without a join. Maintained by createCar/updateCar/backfill.
   body_type_name?: string | null;
@@ -114,6 +119,7 @@ const carSchema = new Schema<ICar>(
     is_launched: { type: Boolean, default: true },
     expected_exshowroom_price: { type: Number, default: null },
     expected_launch_date: { type: Date, default: null },
+    ex_showroom_price: { type: Number, default: null },
     exshowroom_price: { type: Number, default: null },
     launch_date: { type: Date, default: null },
     is_electric: { type: Boolean, default: false },
@@ -148,6 +154,17 @@ const carSchema = new Schema<ICar>(
     incomplete_variant_count: { type: Number, default: 0 },
     min_variant_price: { type: Number, default: null },
     max_variant_price: { type: Number, default: null },
+    // SEO health and completeness metrics
+    seo_health_issues: { type: [String], default: [] },
+    completeness_score: { type: Number, default: 0 },
+    completeness_misses: {
+      type: [{
+        key: String,
+        label: String,
+        severity: String
+      }],
+      default: []
+    },
     aggregated_fuel_types: { type: [String], default: [] },
     body_type_name: { type: String, default: null },
     editor_user_id: { type: String, default: null },
@@ -211,6 +228,19 @@ carSchema.index({ discontinued_at: -1 });
 carSchema.index({ model_family: 1 });
 carSchema.index({ model_family: 1, is_current: 1 });
 carSchema.index({ model_family: 1, generation_start_year: 1 });
+// Additional compound indexes for common query patterns
+carSchema.index({ brand_id: 1, model_family: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ body_type_id: 1, model_family: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ is_electric: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ is_featured: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ is_popular: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ is_recommended: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ is_latest: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ top_selling: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ is_upcoming: 1, is_published: 1, is_deleted: 1 });
+// SEO health and completeness indexes
+carSchema.index({ completeness_score: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ seo_health_issues: 1, is_published: 1, is_deleted: 1 });
 // One current generation per model_family (DB-level safety net for the
 // promote-to-current workflow). Only enforced for rows that actually have a
 // model_family set and are flagged current, so cars without a family yet

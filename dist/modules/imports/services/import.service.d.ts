@@ -1,5 +1,8 @@
 import { CarPreviewResponse, ImportResult, SaveCarImportRequest, SaveVariantImportRequest, VariantPreviewResponse } from '../types/import.types';
 export declare class ImportService {
+    private static detectSource;
+    private static extractCarData;
+    private static extractVariantData;
     static previewCarImport(url: string, userId: string): Promise<CarPreviewResponse>;
     static saveCarImport(payload: SaveCarImportRequest, userId: string): Promise<ImportResult>;
     static previewVariantImport(carId: string, urls: string[], userId: string): Promise<VariantPreviewResponse>;

@@ -1,10 +1,13 @@
 import { Document } from 'mongoose';
 export interface IImageCategory extends Document {
+    category_id: string;
     name: string;
     slug: string;
     description?: string;
     is_active: boolean;
-    display_order: number;
+    is_published: boolean;
+    sort_order: number;
+    display_order?: number;
     is_deleted?: boolean;
     deleted_at?: Date;
 }

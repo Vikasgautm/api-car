@@ -4,12 +4,10 @@ import { BodyType } from "../../../models/body-type.model";
 import { Brand } from "../../../models/brand.model";
 import { CarImage } from "../../../models/car-image.model";
 import { CarVariant } from "../../../models/car-variant.model";
-import { Car, ICar } from "../../../models/car.model";
 import { FAQ } from "../../../models/faq.model";
 import { FuelType } from "../../../models/fuel-type.model";
 import { Redirect } from "../../../models/redirect.model";
 import { Tag } from "../../../models/tag.model";
-import { TagService } from "../../taxonomy/services/tag.service";
 import { CarHealthService } from "../../../shared/services/car-health.service";
 import { MileageRecomputeService } from "../../../shared/services/mileage-recompute.service";
 import { AppError } from "../../../shared/utils/app-error.util";
@@ -18,6 +16,8 @@ import { normalizeCarLaunchStatus } from "../../../shared/utils/car-launch-statu
 import { FilterUtil } from "../../../shared/utils/filter.util";
 import { PaginationUtil } from "../../../shared/utils/pagination.util";
 import { SlugUtil } from "../../../shared/utils/slug.util";
+import { Car, ICar } from '../../../models/car.model';
+import { TagService } from "../../taxonomy/services/tag.service";
 
 export class CarService {
   static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
@@ -253,12 +253,12 @@ export class CarService {
 
     const [brandDocs, bodyTypeDocs, faqCounts] = await Promise.all([
       brandIds.length > 0
-        ? Brand.find({ brand_id: { $in: brandIds }, is_deleted: false })
+        ? Brand.find({ brand_id: { $in: brandIds as string[] }, is_deleted: false })
             .select('brand_id name slug')
             .lean()
         : Promise.resolve([] as any[]),
       bodyTypeIds.length > 0
-        ? BodyType.find({ body_type_id: { $in: bodyTypeIds }, is_deleted: false })
+        ? BodyType.find({ body_type_id: { $in: bodyTypeIds as string[] }, is_deleted: false })
             .select('body_type_id name slug')
             .lean()
         : Promise.resolve([] as any[]),
@@ -400,7 +400,7 @@ export class CarService {
       const slug = SlugUtil.generate(carData.name);
       const existingSlug = await Car.findOne({ slug, is_deleted: false });
       if (existingSlug) {
-        const existingSlugs = (await Car.find({ is_deleted: false }).select('slug')).map(c => c.slug);
+        const existingSlugs = (await Car.find({ is_deleted: false }).select('slug')).map((c: ICar) => c.slug);
         carData.slug = SlugUtil.generateUnique(carData.name, existingSlugs);
       } else {
         carData.slug = slug;
@@ -751,9 +751,9 @@ export class CarService {
     const cars = await Car.find({ is_deleted: false }).select('car_id body_type_id').lean();
 
     // Batch-fetch all referenced body types so we don't N+1 the BodyType collection.
-    const bodyTypeIds = Array.from(new Set(cars.map(c => c.body_type_id).filter(Boolean)));
+    const bodyTypeIds = Array.from(new Set(cars.map((c: ICar) => c.body_type_id).filter(Boolean)));
     const bodyTypeDocs = bodyTypeIds.length > 0
-      ? await BodyType.find({ body_type_id: { $in: bodyTypeIds }, is_deleted: false })
+      ? await BodyType.find({ body_type_id: { $in: bodyTypeIds as string[] }, is_deleted: false })
           .select('body_type_id name')
           .lean()
       : [];

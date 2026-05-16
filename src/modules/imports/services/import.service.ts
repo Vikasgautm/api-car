@@ -9,6 +9,7 @@ import { ImportLog } from '../../../models/import-log.model';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { MileageRecomputeService } from '../../../shared/services/mileage-recompute.service';
 import { CarDekhoExtractor } from '../extractors/cardekho.extractor';
+import { CarWaleExtractor } from '../extractors/carwale.extractor';
 import { KeyMatcher } from '../extractors/key-matcher';
 import {
     CarPreviewResponse,
@@ -22,9 +23,27 @@ import {
 } from '../types/import.types';
 
 export class ImportService {
+  private static detectSource(url: string): 'cardekho' | 'carwale' {
+    if (url.includes('carwale.com')) return 'carwale';
+    return 'cardekho';
+  }
+
+  private static async extractCarData(url: string) {
+    return this.detectSource(url) === 'carwale'
+      ? CarWaleExtractor.extractCarData(url)
+      : CarDekhoExtractor.extractCarData(url);
+  }
+
+  private static async extractVariantData(url: string) {
+    return this.detectSource(url) === 'carwale'
+      ? CarWaleExtractor.extractVariantData(url)
+      : CarDekhoExtractor.extractVariantData(url);
+  }
+
   static async previewCarImport(url: string, userId: string): Promise<CarPreviewResponse> {
+    const source = this.detectSource(url);
     // Extract data from URL
-    const extracted = await CarDekhoExtractor.extractCarData(url);
+    const extracted = await this.extractCarData(url);
 
     // Check for existing car with same slug
     const existingCar = await Car.findOne({ 
@@ -100,7 +119,7 @@ export class ImportService {
     const import_id = uuidv4();
     await ImportLog.create({
       import_id,
-      source: 'cardekho',
+      source,
       import_type: 'car',
       source_url: url,
       status: 'previewed',
@@ -113,7 +132,7 @@ export class ImportService {
 
     return {
       success: true,
-      source: 'cardekho',
+      source,
       type: 'car',
       url,
       extracted,
@@ -239,8 +258,9 @@ export class ImportService {
     }
 
     for (const url of urls) {
+      const source = this.detectSource(url);
       try {
-        const extracted = await CarDekhoExtractor.extractVariantData(url);
+        const extracted = await this.extractVariantData(url);
 
         // Check for existing variant
         const existingVariant = await CarVariant.findOne({
@@ -354,7 +374,7 @@ export class ImportService {
         // Create import log for each variant
         await ImportLog.create({
           import_id: uuidv4(),
-          source: 'cardekho',
+          source,
           import_type: 'variant',
           source_url: url,
           car_id: carId,
@@ -371,9 +391,11 @@ export class ImportService {
       }
     }
 
+    // All URLs in one batch should be from the same source — use first URL's source for the response.
+    const batchSource = urls.length > 0 ? this.detectSource(urls[0]) : 'cardekho';
     return {
       success: true,
-      source: 'cardekho',
+      source: batchSource,
       type: 'variants',
       car_id: carId,
       items,

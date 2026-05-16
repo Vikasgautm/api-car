@@ -15,6 +15,7 @@ export interface IVariantSpecKey extends Document {
   fuel_type_visibility?: string[];
   is_published: boolean;
   is_deleted: boolean;
+  sort_order?: number;
   display_order?: number;
 }
 
@@ -39,7 +40,7 @@ const variantSpecKeySchema = new Schema<IVariantSpecKey>(
     fuel_type_visibility: { type: [String], default: [] },
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
-    display_order: { type: Number, default: 0 },
+    sort_order: { type: Number, default: 0 },
   },
   {
     timestamps: true,

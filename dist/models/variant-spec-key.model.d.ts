@@ -13,6 +13,7 @@ export interface IVariantSpecKey extends Document {
     fuel_type_visibility?: string[];
     is_published: boolean;
     is_deleted: boolean;
+    sort_order?: number;
     display_order?: number;
 }
 export declare const VariantSpecKey: import("mongoose").Model<IVariantSpecKey, {}, {}, {}, Document<unknown, {}, IVariantSpecKey, {}, import("mongoose").DefaultSchemaOptions> & IVariantSpecKey & Required<{

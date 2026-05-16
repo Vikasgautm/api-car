@@ -215,17 +215,17 @@ class DeletionWorkflowService {
             const before = await car_model_1.Car.findOne({ car_id: carId }).lean();
             if (!before)
                 throw app_error_util_1.AppError.carNotFound(carId);
-            const updated = await car_model_1.Car.findOneAndUpdate({ car_id: carId }, { is_deleted: true }, { returnDocument: 'after' });
+            await car_model_1.Car.deleteOne({ car_id: carId });
             await audit_util_1.AuditUtil.recordEvent({
                 entity_type: 'car',
                 entity_id: carId,
                 action: 'delete',
-                field: 'is_deleted',
-                old_value: false,
-                new_value: true,
+                field: 'car_id',
+                old_value: carId,
+                new_value: null,
                 actor,
             });
-            return updated;
+            return before;
         }
         const update = {};
         let auditAction = 'archive';

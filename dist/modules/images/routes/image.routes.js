@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../../../middlewares/auth.middleware");
+const rate_limit_middleware_1 = require("../../../middlewares/rate-limit.middleware");
 const upload_service_1 = require("../../../shared/services/upload.service");
 const validation_1 = require("../../../shared/validation");
 const image_controller_1 = require("../controllers/image.controller");
@@ -14,9 +15,9 @@ const singleImageUpload = upload_service_1.UploadService.createUploadMiddleware(
     useCloudinary: true,
     folder: 'general',
 });
-router.post('/upload', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), singleImageUpload, image_controller_1.ImageController.uploadImage);
+router.post('/upload', auth_middleware_1.protect, rate_limit_middleware_1.uploadRateLimiter, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), singleImageUpload, image_controller_1.ImageController.uploadImage);
 // Single image upload with DB save (includes cleanup on failure)
-router.post('/upload/save', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), singleImageUpload, image_controller_1.ImageController.uploadImageWithSave);
+router.post('/upload/save', auth_middleware_1.protect, rate_limit_middleware_1.uploadRateLimiter, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), singleImageUpload, image_controller_1.ImageController.uploadImageWithSave);
 // Multiple images upload (returns metadata only, no DB save)
 const multipleImagesUpload = upload_service_1.UploadService.createUploadMiddleware({
     fieldName: 'images',
@@ -26,9 +27,9 @@ const multipleImagesUpload = upload_service_1.UploadService.createUploadMiddlewa
     useCloudinary: true,
     folder: 'general',
 });
-router.post('/upload/multiple', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), multipleImagesUpload, image_controller_1.ImageController.uploadMultipleImages);
+router.post('/upload/multiple', auth_middleware_1.protect, rate_limit_middleware_1.uploadRateLimiter, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), multipleImagesUpload, image_controller_1.ImageController.uploadMultipleImages);
 // Multiple images upload with DB save (includes cleanup on failure)
-router.post('/upload/multiple/save', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), multipleImagesUpload, image_controller_1.ImageController.uploadMultipleImagesWithSave);
+router.post('/upload/multiple/save', auth_middleware_1.protect, rate_limit_middleware_1.uploadRateLimiter, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), multipleImagesUpload, image_controller_1.ImageController.uploadMultipleImagesWithSave);
 // List images with pagination and filtering
 router.get('/', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), validation_1.validatePaginationQuery, image_controller_1.ImageController.listImages);
 // Get single image by ID

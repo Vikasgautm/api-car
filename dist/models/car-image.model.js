@@ -4,12 +4,13 @@ exports.CarImage = void 0;
 const mongoose_1 = require("mongoose");
 const uuid_1 = require("uuid");
 const carImageSchema = new mongoose_1.Schema({
-    image_uuid: {
+    car_image_id: {
         type: String,
         default: () => (0, uuid_1.v4)(),
         unique: true,
         required: true
     },
+    image_uuid: { type: String, sparse: true },
     car_id: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Car', required: true },
     variant_id: { type: mongoose_1.Schema.Types.ObjectId, ref: 'CarVariant' },
     category_id: { type: mongoose_1.Schema.Types.ObjectId, ref: 'ImageCategory' },
@@ -19,6 +20,7 @@ const carImageSchema = new mongoose_1.Schema({
     alt_text: { type: String },
     caption: { type: String },
     tags: { type: [String] },
+    sort_order: { type: Number, default: 0 },
     display_order: { type: Number, default: 0 },
     is_primary: { type: Boolean, default: false },
     is_published: { type: Boolean, default: false },
@@ -34,14 +36,14 @@ const carImageSchema = new mongoose_1.Schema({
 }, {
     timestamps: true,
 });
-carImageSchema.index({ car_id: 1, category_id: 1, display_order: 1 });
-carImageSchema.index({ car_id: 1, sub_category_id: 1, display_order: 1 });
+carImageSchema.index({ car_id: 1, category_id: 1, sort_order: 1 });
+carImageSchema.index({ car_id: 1, sub_category_id: 1, sort_order: 1 });
 carImageSchema.index({ car_id: 1, is_primary: 1, is_deleted: 1 });
 carImageSchema.index({ variant_id: 1, is_deleted: 1 });
 carImageSchema.index({ category_id: 1, sub_category_id: 1 });
 carImageSchema.index({ tags: 1 });
 carImageSchema.index({ is_published: 1, is_deleted: 1 });
-carImageSchema.index({ display_order: 1 });
+carImageSchema.index({ sort_order: 1 });
 carImageSchema.index({ car_id: 1, is_primary: 1 }, {
     unique: true,
     partialFilterExpression: {

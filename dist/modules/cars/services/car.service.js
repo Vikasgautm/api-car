@@ -7,12 +7,10 @@ const body_type_model_1 = require("../../../models/body-type.model");
 const brand_model_1 = require("../../../models/brand.model");
 const car_image_model_1 = require("../../../models/car-image.model");
 const car_variant_model_1 = require("../../../models/car-variant.model");
-const car_model_1 = require("../../../models/car.model");
 const faq_model_1 = require("../../../models/faq.model");
 const fuel_type_model_1 = require("../../../models/fuel-type.model");
 const redirect_model_1 = require("../../../models/redirect.model");
 const tag_model_1 = require("../../../models/tag.model");
-const tag_service_1 = require("../../taxonomy/services/tag.service");
 const car_health_service_1 = require("../../../shared/services/car-health.service");
 const mileage_recompute_service_1 = require("../../../shared/services/mileage-recompute.service");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
@@ -21,6 +19,8 @@ const car_launch_status_util_1 = require("../../../shared/utils/car-launch-statu
 const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
+const car_model_1 = require("../../../models/car.model");
+const tag_service_1 = require("../../taxonomy/services/tag.service");
 class CarService {
     static async getAllCars(filterDto, includeDeleted = false) {
         try {
@@ -338,7 +338,7 @@ class CarService {
             const slug = slug_util_1.SlugUtil.generate(carData.name);
             const existingSlug = await car_model_1.Car.findOne({ slug, is_deleted: false });
             if (existingSlug) {
-                const existingSlugs = (await car_model_1.Car.find({ is_deleted: false }).select('slug')).map(c => c.slug);
+                const existingSlugs = (await car_model_1.Car.find({ is_deleted: false }).select('slug')).map((c) => c.slug);
                 carData.slug = slug_util_1.SlugUtil.generateUnique(carData.name, existingSlugs);
             }
             else {
@@ -661,7 +661,7 @@ class CarService {
     static async recomputeAggregatesAll() {
         const cars = await car_model_1.Car.find({ is_deleted: false }).select('car_id body_type_id').lean();
         // Batch-fetch all referenced body types so we don't N+1 the BodyType collection.
-        const bodyTypeIds = Array.from(new Set(cars.map(c => c.body_type_id).filter(Boolean)));
+        const bodyTypeIds = Array.from(new Set(cars.map((c) => c.body_type_id).filter(Boolean)));
         const bodyTypeDocs = bodyTypeIds.length > 0
             ? await body_type_model_1.BodyType.find({ body_type_id: { $in: bodyTypeIds }, is_deleted: false })
                 .select('body_type_id name')

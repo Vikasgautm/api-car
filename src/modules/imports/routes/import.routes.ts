@@ -11,27 +11,33 @@ const router = Router();
 router.use(jwtAuthGuard);
 router.use(adminGuard);
 
-// Car import routes
-router.post('/cardekho/car/preview',
+// Car import routes (source auto-detected from URL domain)
+router.post('/car/preview',
   validateBody(carPreviewSchema),
   ImportController.previewCarImport
 );
 
-router.post('/cardekho/car/save',
+router.post('/car/save',
   validateBody(carSaveSchema),
   ImportController.saveCarImport
 );
 
-// Variant import routes
-router.post('/cardekho/variants/preview',
+// Variant import routes (source auto-detected from URL domain)
+router.post('/variants/preview',
   validateBody(variantPreviewSchema),
   ImportController.previewVariantImport
 );
 
-router.post('/cardekho/variants/save',
+router.post('/variants/save',
   validateBody(variantSaveSchema),
   ImportController.saveVariantImport
 );
+
+// Legacy cardekho aliases (kept for backwards compatibility with existing admin-car calls)
+router.post('/cardekho/car/preview', validateBody(carPreviewSchema), ImportController.previewCarImport);
+router.post('/cardekho/car/save', validateBody(carSaveSchema), ImportController.saveCarImport);
+router.post('/cardekho/variants/preview', validateBody(variantPreviewSchema), ImportController.previewVariantImport);
+router.post('/cardekho/variants/save', validateBody(variantSaveSchema), ImportController.saveVariantImport);
 
 // Import logs
 router.get('/logs', 

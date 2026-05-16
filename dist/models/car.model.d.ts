@@ -23,6 +23,7 @@ export interface ICar extends Document {
     is_upcoming: boolean;
     is_launched: boolean;
     expected_exshowroom_price?: number | null;
+    ex_showroom_price?: number | null;
     expected_launch_date?: Date | null;
     exshowroom_price?: number | null;
     launch_date?: Date | null;
@@ -58,7 +59,14 @@ export interface ICar extends Document {
     incomplete_variant_count: number;
     min_variant_price?: number | null;
     max_variant_price?: number | null;
-    aggregated_fuel_types: string[];
+    aggregated_fuel_types?: string[];
+    seo_health_issues?: string[];
+    completeness_score?: number;
+    completeness_misses?: Array<{
+        key: string;
+        label: string;
+        severity: string;
+    }>;
     body_type_name?: string | null;
     editor_user_id?: string | null;
     seo_owner_user_id?: string | null;

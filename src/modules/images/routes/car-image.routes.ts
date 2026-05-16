@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { protect, restrictTo } from '../../../middlewares/auth.middleware';
+import { uploadRateLimiter } from '../../../middlewares/rate-limit.middleware';
 import { UploadService } from '../../../shared/services/upload.service';
 import { validateIdParam, validatePaginationQuery } from '../../../shared/validation';
 import { CarImageController } from '../controllers/car-image.controller';
@@ -25,8 +26,7 @@ const carImageUpload = UploadService.createUploadMiddleware({
   useCloudinary: true,
   folder: 'car-images',
 });
-
-adminRouter.post('/', carImageUpload, CarImageController.createCarImage);
+adminRouter.post('/', uploadRateLimiter, carImageUpload, CarImageController.createCarImage);
 adminRouter.put('/:id', validateIdParam, carImageUpload, CarImageController.updateCarImage);
 adminRouter.delete('/:id', validateIdParam, CarImageController.deleteCarImage);
 adminRouter.patch('/restore/:id', validateIdParam, CarImageController.restoreCarImage);

@@ -43,6 +43,10 @@ export declare class DeletionWorkflowService {
             __v: number;
         } & {
             id: string;
+        }) | (import("../../../models/car.model").ICar & Required<{
+            _id: import("mongoose").Types.ObjectId;
+        }> & {
+            __v: number;
         }) | null;
     }>;
     /**

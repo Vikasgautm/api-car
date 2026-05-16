@@ -1,5 +1,6 @@
 import { Document } from 'mongoose';
 export interface IImage extends Document {
+    image_id: string;
     url: string;
     public_id?: string;
     original_name: string;

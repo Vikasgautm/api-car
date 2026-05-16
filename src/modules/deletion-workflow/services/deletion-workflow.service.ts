@@ -279,21 +279,17 @@ export class DeletionWorkflowService {
     if (request.action === 'hard_delete') {
       const before = await Car.findOne({ car_id: carId }).lean();
       if (!before) throw AppError.carNotFound(carId);
-      const updated = await Car.findOneAndUpdate(
-        { car_id: carId },
-        { is_deleted: true },
-        { returnDocument: 'after' }
-      );
+      await Car.deleteOne({ car_id: carId });
       await AuditUtil.recordEvent({
         entity_type: 'car',
         entity_id: carId,
         action: 'delete',
-        field: 'is_deleted',
-        old_value: false,
-        new_value: true,
+        field: 'car_id',
+        old_value: carId,
+        new_value: null,
         actor,
       });
-      return updated;
+      return before;
     }
 
     const update: Record<string, unknown> = {};

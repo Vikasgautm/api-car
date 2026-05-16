@@ -1,6 +1,7 @@
 import { Document, Schema } from 'mongoose';
 export interface ICarImage extends Document {
-    image_uuid: string;
+    car_image_id: string;
+    image_uuid?: string;
     car_id: Schema.Types.ObjectId;
     variant_id?: Schema.Types.ObjectId;
     category_id?: Schema.Types.ObjectId;
@@ -10,7 +11,8 @@ export interface ICarImage extends Document {
     alt_text?: string;
     caption?: string;
     tags?: string[];
-    display_order: number;
+    sort_order: number;
+    display_order?: number;
     is_primary: boolean;
     is_published: boolean;
     is_deleted: boolean;
