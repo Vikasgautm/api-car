@@ -74,6 +74,43 @@ class DiscoveryService {
         const allowedClasses = new Set(['weak', 'average', 'good', 'excellent']);
         const mileage_class = mileageClassRaw.filter(c => allowedClasses.has(c));
         const range_class = csvToArray(filters.range_class).filter(c => allowedClasses.has(c));
+        // Batch 5 — aggregate dimensions.
+        const vehicleSegments = csvToArray(filters.vehicle_segment);
+        const aggregatedTransmissionTypes = csvToArray(filters.transmission_types);
+        const aggregatedDriveTypes = csvToArray(filters.drive_types);
+        const collectBoolean = (input) => parseBoolean(input);
+        const feature_flags = {};
+        const featureMap = [
+            ['has_sunroof', 'sunroof_available'],
+            ['has_panoramic_sunroof', 'panoramic_sunroof_available'],
+            ['has_adas', 'adas_available'],
+            ['has_ventilated_seats', 'ventilated_seats_available'],
+            ['has_camera_360', 'camera_360_available'],
+            ['has_connected_car', 'connected_car_available'],
+            ['has_wireless_charger', 'wireless_charger_available'],
+            ['has_air_purifier', 'air_purifier_available'],
+        ];
+        for (const [src, dst] of featureMap) {
+            const v = collectBoolean(filters[src]);
+            if (v !== undefined)
+                feature_flags[dst] = v;
+        }
+        const intelligence_flags = {};
+        const intMap = [
+            'family_friendly',
+            'city_friendly',
+            'highway_friendly',
+            'offroad_ready',
+            'feature_loaded',
+            'premium_cabin',
+            'budget_friendly',
+            'performance_focused',
+        ];
+        for (const key of intMap) {
+            const v = collectBoolean(filters[key]);
+            if (v !== undefined)
+                intelligence_flags[key] = v;
+        }
         return {
             q: filters.q,
             tag_ids: Array.from(new Set(tagIds)),
@@ -93,6 +130,16 @@ class DiscoveryService {
             statuses,
             is_electric: parseBoolean(filters.is_electric),
             show_hidden_statuses: showHidden,
+            vehicle_segments: vehicleSegments,
+            aggregated_transmission_types: aggregatedTransmissionTypes,
+            aggregated_drive_types: aggregatedDriveTypes,
+            min_power_bhp: parseNumber(filters.min_power_bhp),
+            max_power_bhp: parseNumber(filters.max_power_bhp),
+            min_torque_nm: parseNumber(filters.min_torque_nm),
+            max_torque_nm: parseNumber(filters.max_torque_nm),
+            min_ncap_rating: parseNumber(filters.min_ncap_rating),
+            feature_flags,
+            intelligence_flags,
         };
     }
     /**
@@ -204,6 +251,55 @@ class DiscoveryService {
                 filter.tag_ids = { $in: resolved.tag_ids };
             }
         }
+        // ── Batch 5 — aggregate dimensions (cross-site connectivity) ──
+        if (excludeDimension !== 'vehicle_segment' && resolved.vehicle_segments.length > 0) {
+            filter.vehicle_segment = { $in: resolved.vehicle_segments };
+        }
+        if (excludeDimension !== 'transmission_types' && resolved.aggregated_transmission_types.length > 0) {
+            filter.aggregated_transmission_types = { $in: resolved.aggregated_transmission_types };
+        }
+        if (excludeDimension !== 'drive_types' && resolved.aggregated_drive_types.length > 0) {
+            filter.aggregated_drive_types = { $in: resolved.aggregated_drive_types };
+        }
+        if (resolved.min_power_bhp !== undefined || resolved.max_power_bhp !== undefined) {
+            const range = {};
+            if (resolved.min_power_bhp !== undefined)
+                range.$gte = resolved.min_power_bhp;
+            if (resolved.max_power_bhp !== undefined)
+                range.$lte = resolved.max_power_bhp;
+            // Match cars whose power range overlaps the requested range — use max_power_bhp
+            // for the lower bound and min_power_bhp for the upper bound. Simpler: filter on
+            // power_max_bhp >= min_requested AND power_min_bhp <= max_requested.
+            const conditions = [];
+            if (resolved.min_power_bhp !== undefined)
+                conditions.push({ power_max_bhp: { $gte: resolved.min_power_bhp } });
+            if (resolved.max_power_bhp !== undefined)
+                conditions.push({ power_min_bhp: { $lte: resolved.max_power_bhp } });
+            filter.$and = [...(Array.isArray(filter.$and) ? filter.$and : []), ...conditions];
+        }
+        if (resolved.min_torque_nm !== undefined || resolved.max_torque_nm !== undefined) {
+            const conditions = [];
+            if (resolved.min_torque_nm !== undefined)
+                conditions.push({ torque_max_nm: { $gte: resolved.min_torque_nm } });
+            if (resolved.max_torque_nm !== undefined)
+                conditions.push({ torque_min_nm: { $lte: resolved.max_torque_nm } });
+            filter.$and = [...(Array.isArray(filter.$and) ? filter.$and : []), ...conditions];
+        }
+        if (resolved.min_ncap_rating !== undefined) {
+            filter.best_ncap_rating = { $gte: resolved.min_ncap_rating };
+        }
+        if (excludeDimension !== 'features') {
+            for (const [key, value] of Object.entries(resolved.feature_flags)) {
+                if (value !== undefined)
+                    filter[key] = value;
+            }
+        }
+        if (excludeDimension !== 'intelligence') {
+            for (const [key, value] of Object.entries(resolved.intelligence_flags)) {
+                if (value !== undefined)
+                    filter[key] = value;
+            }
+        }
         if (variantMatchedCarIds !== null) {
             filter.car_id = { $in: variantMatchedCarIds };
         }
@@ -250,6 +346,11 @@ class DiscoveryService {
                     range_class: [],
                     is_electric: [],
                     tags: [],
+                    vehicle_segment: [],
+                    transmission_types: [],
+                    drive_types: [],
+                    features: [],
+                    intelligence: [],
                 },
                 applied: resolved,
             };
@@ -265,7 +366,17 @@ class DiscoveryService {
                 'is_upcoming is_launched expected_exshowroom_price exshowroom_price is_electric ' +
                 'is_published is_featured is_popular is_recommended is_latest top_selling tag_ids ' +
                 'best_mileage_class best_mileage_value best_range_class best_range_value ' +
-                'redirect_to_slug archived_at disabled_at discontinued_at meta_title meta_description')
+                'redirect_to_slug archived_at disabled_at discontinued_at meta_title meta_description ' +
+                // Batch 5 — include the aggregate fields so the public listing can render
+                // "Cars with sunroof / family-friendly" badges without a second fetch.
+                'vehicle_segment min_variant_price max_variant_price aggregated_fuel_types ' +
+                'aggregated_transmission_types aggregated_drive_types ' +
+                'power_min_bhp power_max_bhp torque_min_nm torque_max_nm ' +
+                'sunroof_available adas_available camera_360_available ventilated_seats_available ' +
+                'connected_car_available wireless_charger_available panoramic_sunroof_available ' +
+                'best_ncap_rating max_airbags max_seating_capacity ' +
+                'family_friendly city_friendly highway_friendly offroad_ready ' +
+                'feature_loaded premium_cabin budget_friendly performance_focused')
                 .sort(sort)
                 .skip(skip)
                 .limit(limit)
@@ -294,6 +405,10 @@ class DiscoveryService {
             { key: 'range_class', groupBy: '$best_range_class' },
             { key: 'is_electric', groupBy: '$is_electric' },
             { key: 'tags', groupBy: '$tag_ids', unwind: '$tag_ids' },
+            // Batch 5 — aggregate dimensions
+            { key: 'vehicle_segment', groupBy: '$vehicle_segment' },
+            { key: 'transmission_types', groupBy: '$aggregated_transmission_types', unwind: '$aggregated_transmission_types' },
+            { key: 'drive_types', groupBy: '$aggregated_drive_types', unwind: '$aggregated_drive_types' },
         ];
         const out = {
             brand: [],
@@ -304,6 +419,11 @@ class DiscoveryService {
             range_class: [],
             is_electric: [],
             tags: [],
+            vehicle_segment: [],
+            transmission_types: [],
+            drive_types: [],
+            features: [],
+            intelligence: [],
         };
         await Promise.all(dims.map(async (dim) => {
             const facetFilter = this.buildCarFilter(resolved, variantMatchedCarIds, dim.key);
@@ -318,6 +438,45 @@ class DiscoveryService {
                 .filter(r => r._id !== null && r._id !== undefined && r._id !== '')
                 .map(r => ({ value: String(r._id), count: r.count }));
         }));
+        // Batch 5 — count cars per feature-availability flag and per AI-intelligence
+        // flag. These are 8 boolean dimensions each, so we count them as a combined
+        // facet (one entry per flag rather than per group-by value).
+        const featureKeys = [];
+        const featureFields = [
+            { key: 'sunroof_available', label: 'Sunroof' },
+            { key: 'panoramic_sunroof_available', label: 'Panoramic sunroof' },
+            { key: 'adas_available', label: 'ADAS' },
+            { key: 'ventilated_seats_available', label: 'Ventilated seats' },
+            { key: 'camera_360_available', label: '360° camera' },
+            { key: 'connected_car_available', label: 'Connected car' },
+            { key: 'wireless_charger_available', label: 'Wireless charger' },
+            { key: 'air_purifier_available', label: 'Air purifier' },
+        ];
+        const intelligenceFields = [
+            { key: 'family_friendly', label: 'Family-friendly' },
+            { key: 'city_friendly', label: 'City-friendly' },
+            { key: 'highway_friendly', label: 'Highway-friendly' },
+            { key: 'offroad_ready', label: 'Offroad-ready' },
+            { key: 'feature_loaded', label: 'Feature-loaded' },
+            { key: 'premium_cabin', label: 'Premium cabin' },
+            { key: 'budget_friendly', label: 'Budget-friendly' },
+            { key: 'performance_focused', label: 'Performance-focused' },
+        ];
+        const featureFacetFilter = this.buildCarFilter(resolved, variantMatchedCarIds, 'features');
+        const intelligenceFacetFilter = this.buildCarFilter(resolved, variantMatchedCarIds, 'intelligence');
+        const [featureCountsArr, intelligenceCountsArr] = await Promise.all([
+            Promise.all(featureFields.map(async (f) => ({
+                ...f,
+                count: await car_model_1.Car.countDocuments({ ...featureFacetFilter, [f.key]: true }),
+            }))),
+            Promise.all(intelligenceFields.map(async (f) => ({
+                ...f,
+                count: await car_model_1.Car.countDocuments({ ...intelligenceFacetFilter, [f.key]: true }),
+            }))),
+        ]);
+        void featureKeys; // (lint silence) — kept for future per-flag exclusion granularity
+        out.features = featureCountsArr.filter(f => f.count > 0).map(f => ({ value: f.key, label: f.label, count: f.count }));
+        out.intelligence = intelligenceCountsArr.filter(f => f.count > 0).map(f => ({ value: f.key, label: f.label, count: f.count }));
         // Hydrate display labels for the slug-based facets so the frontend doesn't
         // have to re-query lookup tables.
         const [brands, bodyTypes, fuelTypes, tags] = await Promise.all([

@@ -38,7 +38,9 @@ exports.SPEC_LABEL_MAP = {
     'fuel supply system': norm('engine_performance', 'fuel_system', 'engine_performance.fuel_system', 'string'),
     'turbo charger': norm('engine_performance', 'turbocharger', 'engine_performance.turbocharger', 'boolean'),
     'turbocharger': norm('engine_performance', 'turbocharger', 'engine_performance.turbocharger', 'boolean'),
-    'super charger': raw('engine_performance', 'super_charger', 'boolean'),
+    // Promoted to typed schema home (was specs_raw.super_charger before Batch 1+2).
+    'super charger': norm('engine_performance', 'supercharger', 'engine_performance.supercharger', 'boolean'),
+    'supercharger': norm('engine_performance', 'supercharger', 'engine_performance.supercharger', 'boolean'),
     'compression ratio': raw('engine_performance', 'compression_ratio', 'string'),
     'transmission type': { category: 'engine_performance', key: 'transmission_type', rootKey: 'transmission_type', type: 'transmission' },
     'gearbox': raw('engine_performance', 'gearbox', 'string'),
@@ -77,7 +79,19 @@ exports.SPEC_LABEL_MAP = {
     'charging port': raw('battery_charging', 'charging_port', 'string'),
     'fast charging': raw('battery_charging', 'fast_charging', 'boolean'),
     'regenerative braking': norm('battery_charging', 'regenerative_braking', 'battery_charging.regenerative_braking', 'boolean'),
-    'regenerative braking levels': raw('battery_charging', 'regenerative_braking_levels', 'number'),
+    // Promoted to typed schema home (was specs_raw before Batch 1+2).
+    'regenerative braking levels': norm('battery_charging', 'regenerative_braking_levels', 'battery_charging.regenerative_braking_levels', 'number'),
+    // Batch 1+2 — new typed battery atoms.
+    'battery capacity kwh': norm('battery_charging', 'battery_capacity_kwh', 'battery_charging.battery_capacity_kwh', 'number'),
+    'battery chemistry': norm('battery_charging', 'battery_chemistry', 'battery_charging.battery_chemistry', 'string'),
+    'battery position': norm('battery_charging', 'battery_position', 'battery_charging.battery_position', 'string'),
+    'battery placement': norm('battery_charging', 'battery_position', 'battery_charging.battery_position', 'string'),
+    'battery cooling type': norm('battery_charging', 'battery_cooling_type', 'battery_charging.battery_cooling_type', 'string'),
+    'battery cooling': norm('battery_charging', 'battery_cooling_type', 'battery_charging.battery_cooling_type', 'string'),
+    'max ac charging speed': norm('battery_charging', 'max_ac_charging_speed_kw', 'battery_charging.max_ac_charging_speed_kw', 'number'),
+    'maximum ac charging speed': norm('battery_charging', 'max_ac_charging_speed_kw', 'battery_charging.max_ac_charging_speed_kw', 'number'),
+    'max dc charging speed': norm('battery_charging', 'max_dc_charging_speed_kw', 'battery_charging.max_dc_charging_speed_kw', 'number'),
+    'maximum dc charging speed': norm('battery_charging', 'max_dc_charging_speed_kw', 'battery_charging.max_dc_charging_speed_kw', 'number'),
     // ─── SUSPENSION, STEERING & BRAKES ────────────────────────────────────────
     'front suspension': norm('suspension_steering_brakes', 'front_suspension', 'suspension_steering_brakes.front_suspension', 'string'),
     'rear suspension': norm('suspension_steering_brakes', 'rear_suspension', 'suspension_steering_brakes.rear_suspension', 'string'),
@@ -142,8 +156,9 @@ exports.SPEC_LABEL_MAP = {
     'seat belt warning': norm('safety', 'seat_belt_warning', 'safety.seat_belt_warning', 'boolean'),
     'door ajar warning': raw('safety', 'door_ajar_warning', 'boolean'),
     'traction control': norm('safety', 'traction_control', 'safety.traction_control', 'boolean'),
-    'tyre pressure monitoring system tpms': raw('safety', 'tpms', 'boolean'),
-    'tpms': raw('safety', 'tpms', 'boolean'),
+    // Promoted to typed schema home (was specs_raw before Batch 1+2).
+    'tyre pressure monitoring system tpms': norm('safety', 'tpms', 'safety.tpms', 'boolean'),
+    'tpms': norm('safety', 'tpms', 'safety.tpms', 'boolean'),
     'engine immobilizer': norm('safety', 'engine_immobilizer', 'safety.engine_immobilizer', 'boolean'),
     'electronic stability control esc': norm('safety', 'esp', 'safety.esp', 'boolean'),
     'esc': norm('safety', 'esp', 'safety.esp', 'boolean'),
@@ -164,9 +179,20 @@ exports.SPEC_LABEL_MAP = {
     '360 view camera': norm('safety', 'camera_360', 'safety.camera_360', 'boolean'),
     '360 degree camera': norm('safety', 'camera_360', 'safety.camera_360', 'boolean'),
     '360 camera': norm('safety', 'camera_360', 'safety.camera_360', 'boolean'),
-    'bharat ncap safety rating': raw('safety', 'bharat_ncap_safety_rating', 'string'),
+    // Promoted to typed schema fields. parseSpecValue('5 Star', 'number') → 5,
+    // so labels like "5 Star (BNCAP) Rating" become safety.bncap_rating = 5.
+    // The original string is preserved alongside in specs_raw via the parser fallback.
+    'bharat ncap safety rating': norm('safety', 'bncap_rating', 'safety.bncap_rating', 'number'),
+    'bncap safety rating': norm('safety', 'bncap_rating', 'safety.bncap_rating', 'number'),
+    'bncap rating': norm('safety', 'bncap_rating', 'safety.bncap_rating', 'number'),
+    'bharat ncap rating': norm('safety', 'bncap_rating', 'safety.bncap_rating', 'number'),
     'bharat ncap child safety rating': raw('safety', 'bharat_ncap_child_safety_rating', 'string'),
-    'global ncap safety rating': raw('safety', 'global_ncap_safety_rating', 'string'),
+    'global ncap safety rating': norm('safety', 'global_ncap_rating', 'safety.global_ncap_rating', 'number'),
+    'global ncap rating': norm('safety', 'global_ncap_rating', 'safety.global_ncap_rating', 'number'),
+    'global ncap adult safety rating': norm('safety', 'global_ncap_rating', 'safety.global_ncap_rating', 'number'),
+    // Generic NCAP rating — overwritten in the CarWale-aliases section below to point here too.
+    'ncap rating adult': norm('safety', 'ncap_rating', 'safety.ncap_rating', 'number'),
+    'adas level': norm('safety', 'adas_level', 'safety.adas_level', 'number'),
     'pretensioners and force limiter seatbelts': raw('safety', 'pretensioners_force_limiter_seatbelts', 'string'),
     'pretensioners force limiter seatbelts': raw('safety', 'pretensioners_force_limiter_seatbelts', 'string'),
     'crash sensor': norm('safety', 'crash_sensor', 'safety.crash_sensor', 'boolean'),
@@ -183,10 +209,15 @@ exports.SPEC_LABEL_MAP = {
     'autonomous emergency braking': norm('adas', 'autonomous_emergency_braking', 'adas.autonomous_emergency_braking', 'boolean'),
     'traffic sign recognition': norm('adas', 'traffic_sign_recognition', 'adas.traffic_sign_recognition', 'boolean'),
     'speed assist system': raw('adas', 'speed_assist_system', 'boolean'),
-    'driver attention warning': raw('adas', 'driver_attention_warning', 'boolean'),
-    'adaptive high beam assist': raw('adas', 'adaptive_high_beam_assist', 'boolean'),
-    'rear cross traffic alert': raw('adas', 'rear_cross_traffic_alert', 'boolean'),
-    'rear cross traffic collision avoidance assist': raw('adas', 'rear_cross_traffic_collision_avoidance_assist', 'boolean'),
+    // Promoted to typed schema homes (were specs_raw before Batch 1+2).
+    'driver attention warning': norm('adas', 'driver_attention_warning', 'adas.driver_attention_warning', 'boolean'),
+    'driver drowsiness detection': norm('adas', 'driver_attention_warning', 'adas.driver_attention_warning', 'boolean'),
+    'adaptive high beam assist': norm('adas', 'adaptive_high_beam_assist', 'adas.adaptive_high_beam_assist', 'boolean'),
+    'high beam assist': norm('adas', 'adaptive_high_beam_assist', 'adas.adaptive_high_beam_assist', 'boolean'),
+    'rear cross traffic alert': norm('adas', 'rear_cross_traffic_alert', 'adas.rear_cross_traffic_alert', 'boolean'),
+    'rear cross traffic collision avoidance assist': norm('adas', 'rear_cross_traffic_alert', 'adas.rear_cross_traffic_alert', 'boolean'),
+    'safe exit warning': norm('adas', 'safe_exit_warning', 'adas.safe_exit_warning', 'boolean'),
+    'safe exit assist': norm('adas', 'safe_exit_warning', 'adas.safe_exit_warning', 'boolean'),
     // ─── COMFORT & CONVENIENCE ────────────────────────────────────────────────
     'power steering': raw('comfort_convenience', 'power_steering', 'boolean'),
     'air conditioner': raw('comfort_convenience', 'air_conditioner', 'boolean'),
@@ -233,7 +264,8 @@ exports.SPEC_LABEL_MAP = {
     'power windows': norm('comfort_convenience', 'power_windows', 'comfort_convenience.power_windows', 'string'),
     'cup holders': raw('comfort_convenience', 'cup_holders', 'string'),
     'remote start': norm('comfort_convenience', 'remote_start', 'comfort_convenience.remote_start', 'boolean'),
-    'remote engine start': norm('comfort_convenience', 'remote_start', 'comfort_convenience.remote_start', 'boolean'),
+    // 'remote engine start' label re-routed to connected_car.remote_engine_start_stop
+    // in the CarWale aliases section below (Batch 1+2 — that's the more specific app-side meaning).
     'steering mounted controls': norm('comfort_convenience', 'steering_mounted_controls', 'comfort_convenience.steering_mounted_controls', 'boolean'),
     // ─── INTERIOR ─────────────────────────────────────────────────────────────
     'tachometer': raw('interior', 'tachometer', 'boolean'),
@@ -255,8 +287,13 @@ exports.SPEC_LABEL_MAP = {
     'sunroof': norm('interior', 'sunroof', 'interior.sunroof', 'string'),
     'panoramic sunroof': norm('interior', 'panoramic_sunroof', 'interior.panoramic_sunroof', 'boolean'),
     'moonroof': norm('interior', 'moonroof', 'interior.moonroof', 'boolean'),
+    // Batch 1+2 — interior digital cluster atoms (typed homes added 2026-05-17).
+    'premium cabin materials': norm('interior', 'premium_cabin_materials', 'interior.premium_cabin_materials', 'boolean'),
+    'premium materials': norm('interior', 'premium_cabin_materials', 'interior.premium_cabin_materials', 'boolean'),
+    'steering controls': norm('interior', 'steering_controls', 'interior.steering_controls', 'boolean'),
     // ─── EXTERIOR ─────────────────────────────────────────────────────────────
-    'rain sensing wiper': raw('exterior', 'rain_sensing_wiper', 'boolean'),
+    // Promoted to typed schema home (Batch 1+2).
+    'rain sensing wiper': norm('exterior', 'rain_sensing_wipers', 'exterior.rain_sensing_wipers', 'boolean'),
     'rear window wiper': norm('comfort_convenience', 'rear_wiper', 'comfort_convenience.rear_wiper', 'boolean'),
     'rear wiper': norm('comfort_convenience', 'rear_wiper', 'comfort_convenience.rear_wiper', 'boolean'),
     'rear window washer': raw('exterior', 'rear_window_washer', 'boolean'),
@@ -355,7 +392,10 @@ exports.SPEC_LABEL_MAP = {
     'turbocharger supercharger': norm('engine_performance', 'turbocharger', 'engine_performance.turbocharger', 'boolean'),
     'fuel change over switch': raw('engine_performance', 'fuel_change_over_switch', 'boolean'),
     'direct start in cng': raw('engine_performance', 'direct_start_cng', 'boolean'),
-    'terrain modes': raw('engine_performance', 'terrain_modes', 'string'),
+    // Promoted to typed schema home (Batch 1+2).
+    'terrain modes': norm('engine_performance', 'terrain_modes', 'engine_performance.terrain_modes', 'string'),
+    'terrain response': norm('engine_performance', 'terrain_modes', 'engine_performance.terrain_modes', 'string'),
+    'off road modes': norm('engine_performance', 'terrain_modes', 'engine_performance.terrain_modes', 'string'),
     'chassis type': raw('dimensions_practicality', 'chassis_type', 'string'),
     'clutch type': raw('engine_performance', 'clutch_type', 'string'),
     'acceleration': norm('engine_performance', 'acceleration_0_100', 'engine_performance.acceleration_0_100', 'string'),
@@ -367,8 +407,14 @@ exports.SPEC_LABEL_MAP = {
     'dc fast charging': raw('battery_charging', 'charging_time_dc', 'string'),
     'ac fast charging': raw('battery_charging', 'charging_time_ac_fast', 'string'),
     'charger connection type': raw('battery_charging', 'charger_connection_type', 'string'),
-    'vehicle to vehicle charging v2v': raw('battery_charging', 'v2v_charging', 'boolean'),
-    'vehicle to load technology v2l': raw('battery_charging', 'v2l_technology', 'boolean'),
+    // Promoted to typed schema homes (Batch 1+2).
+    'vehicle to vehicle charging v2v': norm('battery_charging', 'vehicle_to_vehicle', 'battery_charging.vehicle_to_vehicle', 'boolean'),
+    'vehicle to vehicle': norm('battery_charging', 'vehicle_to_vehicle', 'battery_charging.vehicle_to_vehicle', 'boolean'),
+    'v2v charging': norm('battery_charging', 'vehicle_to_vehicle', 'battery_charging.vehicle_to_vehicle', 'boolean'),
+    'vehicle to load technology v2l': norm('battery_charging', 'vehicle_to_load', 'battery_charging.vehicle_to_load', 'boolean'),
+    'vehicle to load': norm('battery_charging', 'vehicle_to_load', 'battery_charging.vehicle_to_load', 'boolean'),
+    'v2l technology': norm('battery_charging', 'vehicle_to_load', 'battery_charging.vehicle_to_load', 'boolean'),
+    'v2l charging': norm('battery_charging', 'vehicle_to_load', 'battery_charging.vehicle_to_load', 'boolean'),
     'ingress protection ip for motor and battery pack': raw('battery_charging', 'ip_rating', 'string'),
     'portable ev charging cable': raw('battery_charging', 'portable_charging_cable', 'boolean'),
     'charging indicator on light bar': raw('battery_charging', 'charging_indicator', 'boolean'),
@@ -399,11 +445,12 @@ exports.SPEC_LABEL_MAP = {
     'lane functions': norm('adas', 'lane_keep_assist', 'adas.lane_keep_assist', 'boolean'),
     'automatic emergency braking aeb': norm('adas', 'automatic_emergency_braking', 'adas.automatic_emergency_braking', 'boolean'),
     'blind spot detection': norm('adas', 'blind_spot_monitoring', 'adas.blind_spot_monitoring', 'boolean'),
-    'high beam assist': raw('adas', 'adaptive_high_beam_assist', 'boolean'),
+    // 'high beam assist' was promoted to typed adas.adaptive_high_beam_assist
+    // in the main ADAS section above (deduped here to avoid object-literal collision).
     'emergency brake light flashing': raw('safety', 'emergency_brake_light_flashing', 'boolean'),
     'traffic sign recognition tsr': norm('adas', 'traffic_sign_recognition', 'adas.traffic_sign_recognition', 'boolean'),
     'rear collision assist': raw('adas', 'rear_collision_assist', 'boolean'),
-    'safe exit warning sew': raw('adas', 'safe_exit_warning', 'boolean'),
+    'safe exit warning sew': norm('adas', 'safe_exit_warning', 'adas.safe_exit_warning', 'boolean'),
     'leading vehicle departure alert lvda': raw('adas', 'leading_vehicle_departure_alert', 'boolean'),
     'cornering brake control cbc': raw('safety', 'cornering_brake_control', 'boolean'),
     'brake sway control': raw('safety', 'brake_sway_control', 'boolean'),
@@ -416,9 +463,10 @@ exports.SPEC_LABEL_MAP = {
     // ─── Passive safety ───────────────────────────────────────────────────────
     // "N Airbags" labels pre-processed in CarWaleExtractor → label="Airbags", value=N
     'airbags': norm('safety', 'airbags', 'safety.airbags', 'number'),
-    'ncap rating': raw('safety', 'ncap_rating', 'string'),
-    'ncap rating not tested': raw('safety', 'ncap_rating', 'string'),
-    'ncap rating 1 star ancap rating': raw('safety', 'ncap_rating', 'string'),
+    // Promoted: parseSpecValue('5 Star', 'number') returns 5. "Not Tested" → null.
+    'ncap rating': norm('safety', 'ncap_rating', 'safety.ncap_rating', 'number'),
+    'ncap rating not tested': norm('safety', 'ncap_rating', 'safety.ncap_rating', 'number'),
+    'ncap rating 1 star ancap rating': norm('safety', 'ncap_rating', 'safety.ncap_rating', 'number'),
     // "N Star (X NCAP) Rating" pre-processed in CarWaleExtractor → label="NCAP Rating", value="N Star"
     'rear middle three point seatbelt': raw('safety', 'rear_middle_seatbelt', 'boolean'),
     'child seat anchor points': norm('safety', 'isofix', 'safety.isofix', 'boolean'),
@@ -458,7 +506,7 @@ exports.SPEC_LABEL_MAP = {
     'keyless central locking': norm('safety', 'central_locking', 'safety.central_locking', 'boolean'),
     'manual key operated central locking': norm('safety', 'central_locking', 'safety.central_locking', 'boolean'),
     'speed sensing door lock': raw('safety', 'speed_sensing_auto_door_lock', 'boolean'),
-    'rain sensing wipers': raw('exterior', 'rain_sensing_wiper', 'boolean'),
+    'rain sensing wipers': norm('exterior', 'rain_sensing_wipers', 'exterior.rain_sensing_wipers', 'boolean'),
     'electrically adjustable orvms': raw('exterior', 'electrically_adjustable_orvms', 'boolean'),
     'auto folding adjustable orvms': raw('exterior', 'auto_folding_orvms', 'boolean'),
     'memory orvms': raw('exterior', 'memory_orvms', 'boolean'),
@@ -466,7 +514,7 @@ exports.SPEC_LABEL_MAP = {
     'electric boot tailgate release': raw('comfort_convenience', 'electric_boot_release', 'boolean'),
     'capless fuel fillers lid': raw('exterior', 'capless_fuel_lid', 'boolean'),
     // ─── Sunroof & windows ────────────────────────────────────────────────────
-    'remote sunroof open close via app': raw('connected_car', 'remote_sunroof', 'boolean'),
+    'remote sunroof open close via app': norm('connected_car', 'remote_sunroof', 'connected_car.remote_sunroof', 'boolean'),
     'voice controlled panoramic sunroof': norm('interior', 'panoramic_sunroof', 'interior.panoramic_sunroof', 'boolean'),
     'electrically adjustable sunroof': norm('interior', 'sunroof', 'interior.sunroof', 'string'),
     'window sunshade': raw('interior', 'window_sunshade', 'boolean'),
@@ -500,20 +548,22 @@ exports.SPEC_LABEL_MAP = {
     'fuel consumption': raw('mileage_range', 'fuel_consumption_info', 'string'),
     'analogue instrument cluster': raw('interior', 'instrument_cluster_type', 'string'),
     'analogue tachometer': raw('interior', 'tachometer_type', 'string'),
-    'gear indicator': raw('interior', 'gear_indicator', 'boolean'),
-    'shift indicator': raw('interior', 'shift_indicator', 'boolean'),
-    'gear shift indicator': raw('interior', 'shift_indicator', 'boolean'),
-    'dynamic shift indicator': raw('interior', 'shift_indicator', 'boolean'),
+    // Promoted to the new driver_display_controls sub-section (Batch 1+2).
+    'gear indicator': norm('driver_display_controls', 'gear_indicator', 'driver_display_controls.gear_indicator', 'boolean'),
+    'shift indicator': norm('driver_display_controls', 'gear_indicator', 'driver_display_controls.gear_indicator', 'boolean'),
+    'gear shift indicator': norm('driver_display_controls', 'gear_indicator', 'driver_display_controls.gear_indicator', 'boolean'),
+    'dynamic shift indicator': norm('driver_display_controls', 'gear_indicator', 'driver_display_controls.gear_indicator', 'boolean'),
     'trip meter with 2 trips electronic': raw('interior', 'trip_meter', 'boolean'),
-    'digital clock': raw('interior', 'digital_clock', 'boolean'),
+    // Promoted to typed schema homes (Batch 1+2 added typed interior digital atoms).
+    'digital clock': norm('interior', 'digital_clock', 'interior.digital_clock', 'boolean'),
     'average speed': raw('interior', 'average_speed_display', 'boolean'),
     'navigation on instrument cluster': raw('interior', 'navigation_on_cluster', 'boolean'),
     'tyre position display': raw('safety', 'tyre_position_display', 'boolean'),
     'outside temperature gauge': raw('interior', 'outside_temp_gauge', 'boolean'),
     'low battery warning': raw('safety', 'low_battery_warning', 'boolean'),
     'cng fuel gauge': raw('interior', 'cng_fuel_gauge', 'boolean'),
-    'digital speedometer': raw('interior', 'digital_speedometer', 'boolean'),
-    'digital tachometer': raw('interior', 'tachometer_type', 'string'),
+    'digital speedometer': norm('interior', 'digital_speedometer', 'interior.digital_speedometer', 'boolean'),
+    'digital tachometer': norm('interior', 'digital_tachometer', 'interior.digital_tachometer', 'boolean'),
     // ─── Steering ─────────────────────────────────────────────────────────────
     'power assisted electric steering': norm('suspension_steering_brakes', 'steering_type', 'suspension_steering_brakes.steering_type', 'string'),
     'power assisted steering': norm('suspension_steering_brakes', 'steering_type', 'suspension_steering_brakes.steering_type', 'string'),
@@ -531,27 +581,47 @@ exports.SPEC_LABEL_MAP = {
     'led daytime running lights': norm('exterior', 'drl', 'exterior.drl', 'boolean'),
     'ambient interior lighting': norm('interior', 'ambient_lighting', 'interior.ambient_lighting', 'boolean'),
     'sequential turn indicators': raw('exterior', 'sequential_turn_indicators', 'boolean'),
-    'welcome and goodbye animation': raw('exterior', 'welcome_goodbye_animation', 'boolean'),
+    // Promoted to typed schema home (Batch 1+2).
+    'welcome and goodbye animation': norm('exterior', 'welcome_goodbye_animation', 'exterior.welcome_goodbye_animation', 'boolean'),
+    'welcome goodbye animation': norm('exterior', 'welcome_goodbye_animation', 'exterior.welcome_goodbye_animation', 'boolean'),
     'illuminated logo': raw('exterior', 'illuminated_logo', 'boolean'),
+    'flush door handles': norm('exterior', 'flush_door_handles', 'exterior.flush_door_handles', 'boolean'),
+    'flush fitting door handles': norm('exterior', 'flush_door_handles', 'exterior.flush_door_handles', 'boolean'),
+    'retractable door handles': norm('exterior', 'flush_door_handles', 'exterior.flush_door_handles', 'boolean'),
     // ─── Mobile app & connected car ───────────────────────────────────────────
-    'find my car': norm('connected_car', 'vehicle_tracking', 'connected_car.vehicle_tracking', 'boolean'),
+    // Promoted to typed schema home — find_my_car is its own field in the schema,
+    // distinct from vehicle_tracking. (Previously routed to vehicle_tracking; semantic mismatch.)
+    'find my car': norm('connected_car', 'find_my_car', 'connected_car.find_my_car', 'boolean'),
     'geo fence': norm('connected_car', 'geofencing', 'connected_car.geofencing', 'boolean'),
-    'remote car lock unlock via app': norm('connected_car', 'remote_vehicle_control', 'connected_car.remote_vehicle_control', 'boolean'),
-    'remote ac on off via app': raw('connected_car', 'remote_ac', 'boolean'),
-    'remote sunroof': raw('connected_car', 'remote_sunroof', 'boolean'),
-    'remote engine start stop': norm('comfort_convenience', 'remote_start', 'comfort_convenience.remote_start', 'boolean'),
+    'remote car lock unlock via app': norm('connected_car', 'remote_lock', 'connected_car.remote_lock', 'boolean'),
+    'remote door lock unlock': norm('connected_car', 'remote_lock', 'connected_car.remote_lock', 'boolean'),
+    // Promoted to typed schema homes (Batch 1+2 added typed connected_car atoms).
+    'remote ac on off via app': norm('connected_car', 'remote_ac', 'connected_car.remote_ac', 'boolean'),
+    'remote ac on off': norm('connected_car', 'remote_ac', 'connected_car.remote_ac', 'boolean'),
+    'remote ac': norm('connected_car', 'remote_ac', 'connected_car.remote_ac', 'boolean'),
+    'remote sunroof': norm('connected_car', 'remote_sunroof', 'connected_car.remote_sunroof', 'boolean'),
+    // Connected-car remote_engine_start_stop is distinct from the comfort-side remote_start
+    // (the latter is a physical key-fob feature; the former is an app feature).
+    'remote engine start stop': norm('connected_car', 'remote_engine_start_stop', 'connected_car.remote_engine_start_stop', 'boolean'),
+    'remote engine start': norm('connected_car', 'remote_engine_start_stop', 'connected_car.remote_engine_start_stop', 'boolean'),
     'alexa compatibility': raw('connected_car', 'alexa_compatibility', 'boolean'),
     'car light flashing and honking via app': raw('connected_car', 'remote_horn_lights', 'boolean'),
     'emergency call button': norm('connected_car', 'sos_emergency_assist', 'connected_car.sos_emergency_assist', 'boolean'),
+    'emergency sos button': norm('connected_car', 'emergency_sos_button', 'connected_car.emergency_sos_button', 'boolean'),
+    'physical sos button': norm('connected_car', 'emergency_sos_button', 'connected_car.emergency_sos_button', 'boolean'),
     'check vehicle status via app': norm('connected_car', 'app_connectivity', 'connected_car.app_connectivity', 'boolean'),
     'vehicle tracking via app': norm('connected_car', 'vehicle_tracking', 'connected_car.vehicle_tracking', 'boolean'),
     'connected car app': norm('connected_car', 'app_connectivity', 'connected_car.app_connectivity', 'boolean'),
-    'live location sharing': raw('connected_car', 'live_location_sharing', 'boolean'),
+    // Promoted to typed schema home (Batch 1+2).
+    'live location sharing': norm('connected_car', 'live_location', 'connected_car.live_location', 'boolean'),
+    'live location': norm('connected_car', 'live_location', 'connected_car.live_location', 'boolean'),
     'anti theft immobilisation': norm('safety', 'engine_immobilizer', 'safety.engine_immobilizer', 'boolean'),
     'service reminder via app': raw('connected_car', 'service_reminder', 'boolean'),
     'home to car connectivity': raw('connected_car', 'home_car_connectivity', 'boolean'),
     'in car remote': raw('connected_car', 'in_car_remote', 'boolean'),
-    'digital key': raw('connected_car', 'digital_key', 'boolean'),
+    'digital key': norm('connected_car', 'digital_key', 'connected_car.digital_key', 'boolean'),
+    'nfc digital key': norm('connected_car', 'digital_key', 'connected_car.digital_key', 'boolean'),
+    'phone as key': norm('connected_car', 'digital_key', 'connected_car.digital_key', 'boolean'),
     'driving analytics': raw('connected_car', 'driving_analytics', 'boolean'),
     'summon mode': raw('connected_car', 'summon_mode', 'boolean'),
     // ─── Exterior / design & styling ──────────────────────────────────────────
@@ -579,7 +649,8 @@ exports.SPEC_LABEL_MAP = {
     'split third row seat': raw('interior', 'third_row_seat_type', 'string'),
     'cup holder in rear armrest': raw('comfort_convenience', 'rear_cup_holder', 'boolean'),
     'driver armrest': raw('interior', 'driver_armrest', 'boolean'),
-    'rear armrest': raw('interior', 'rear_armrest', 'boolean'),
+    // Promoted to the new storage_cabin_practicality sub-section (Batch 1+2).
+    'rear armrest': norm('storage_cabin_practicality', 'rear_armrest', 'storage_cabin_practicality.rear_armrest', 'boolean'),
     'dead pedal for foot rest': raw('interior', 'dead_pedal', 'boolean'),
     'height adjustable seat belt': raw('safety', 'height_adjustable_seatbelt', 'boolean'),
     'massage seats': raw('comfort_convenience', 'massage_seats', 'boolean'),
@@ -587,13 +658,21 @@ exports.SPEC_LABEL_MAP = {
     // ─── Storage ──────────────────────────────────────────────────────────────
     // "Bootspace -N L" pre-processed in CarWaleExtractor → "Boot Space", value="N L"
     // ('boot space' already exists above)
-    'cabin boot access': raw('comfort_convenience', 'cabin_boot_access', 'boolean'),
+    // Promoted to the new storage_cabin_practicality sub-section (Batch 1+2).
+    'cabin boot access': norm('storage_cabin_practicality', 'cabin_boot_access', 'storage_cabin_practicality.cabin_boot_access', 'boolean'),
+    'cabin to boot pass through': norm('storage_cabin_practicality', 'cabin_boot_access', 'storage_cabin_practicality.cabin_boot_access', 'boolean'),
     'cupholders in front only': raw('comfort_convenience', 'cup_holders', 'string'),
-    'front and rear door pockets': raw('interior', 'door_pockets', 'boolean'),
-    'bottle holder in all doors': raw('interior', 'door_pockets', 'boolean'),
-    'front seatback pockets': raw('interior', 'seatback_pockets', 'boolean'),
-    'driver armrest storage': raw('interior', 'driver_armrest_storage', 'boolean'),
-    'sunglass holder': raw('interior', 'sunglass_holder', 'boolean'),
+    'front and rear door pockets': norm('storage_cabin_practicality', 'door_pockets', 'storage_cabin_practicality.door_pockets', 'boolean'),
+    'door pockets': norm('storage_cabin_practicality', 'door_pockets', 'storage_cabin_practicality.door_pockets', 'boolean'),
+    'bottle holder in all doors': norm('storage_cabin_practicality', 'door_pockets', 'storage_cabin_practicality.door_pockets', 'boolean'),
+    'front seatback pockets': norm('storage_cabin_practicality', 'front_seatback_pockets', 'storage_cabin_practicality.front_seatback_pockets', 'boolean'),
+    'seatback pockets': norm('storage_cabin_practicality', 'front_seatback_pockets', 'storage_cabin_practicality.front_seatback_pockets', 'boolean'),
+    'driver armrest storage': norm('storage_cabin_practicality', 'driver_armrest_storage', 'storage_cabin_practicality.driver_armrest_storage', 'boolean'),
+    'sunglass holder': norm('storage_cabin_practicality', 'sunglass_holder', 'storage_cabin_practicality.sunglass_holder', 'boolean'),
+    // New Batch 1+2 storage_cabin_practicality atoms — bottle holders + cupholders as numbers.
+    'bottle holders': norm('storage_cabin_practicality', 'bottle_holders', 'storage_cabin_practicality.bottle_holders', 'number'),
+    'cupholders front': norm('storage_cabin_practicality', 'cupholders_front', 'storage_cabin_practicality.cupholders_front', 'number'),
+    'cupholders rear': norm('storage_cabin_practicality', 'cupholders_rear', 'storage_cabin_practicality.cupholders_rear', 'number'),
     'boot open warning': raw('safety', 'boot_open_warning', 'boolean'),
     'lockable glovebox': raw('interior', 'lockable_glovebox', 'boolean'),
     'foldable seatback table': raw('interior', 'seatback_table', 'boolean'),
@@ -673,8 +752,10 @@ exports.SPEC_LABEL_MAP = {
     // ─── Lighting further ─────────────────────────────────────────────────────
     'cabin lamp front and rear and reading lamp': raw('exterior', 'cabin_lamp', 'boolean'),
     'cabin lamp front and rear': raw('exterior', 'cabin_lamp', 'boolean'),
-    'connected led': raw('exterior', 'connected_led', 'boolean'),
-    'connected led headlight and taillight': raw('exterior', 'connected_led', 'boolean'),
+    'connected led': norm('exterior', 'connected_led_taillight', 'exterior.connected_led_taillight', 'boolean'),
+    'connected led headlight and taillight': norm('exterior', 'connected_led_taillight', 'exterior.connected_led_taillight', 'boolean'),
+    'connected led taillight': norm('exterior', 'connected_led_taillight', 'exterior.connected_led_taillight', 'boolean'),
+    'connected led taillights': norm('exterior', 'connected_led_taillight', 'exterior.connected_led_taillight', 'boolean'),
     'front and orvms sequential turn indicators': raw('exterior', 'sequential_turn_indicators', 'boolean'),
     'front and rear sequential turn indicators': raw('exterior', 'sequential_turn_indicators', 'boolean'),
     'stop lamp': raw('exterior', 'stop_lamp', 'boolean'),
@@ -713,6 +794,20 @@ exports.SPEC_LABEL_MAP = {
     '2 x usb type c usb type a 12v power outlet': raw('infotainment_connectivity', 'usb_ports_present', 'boolean'),
     // ─── Instrument cluster further ───────────────────────────────────────────
     'digital and analog speedometer': norm('interior', 'instrument_cluster', 'interior.instrument_cluster', 'string'),
+    // ══════════════════════════════════════════════════════════════════════════
+    // Batch 1+2 — driver_display_controls sub-section (new typed home).
+    // Most of these duplicate labels that also exist for interior/safety/comfort —
+    // a label like "heads up display" lands in BOTH driver_display_controls.heads_up_display
+    // AND specs_raw.hud (the older mapping). We keep both wires hot so downstream
+    // code that reads either path keeps working.
+    // ══════════════════════════════════════════════════════════════════════════
+    'heads up display': norm('driver_display_controls', 'heads_up_display', 'driver_display_controls.heads_up_display', 'boolean'),
+    'head up display': norm('driver_display_controls', 'heads_up_display', 'driver_display_controls.heads_up_display', 'boolean'),
+    'distance to empty': norm('driver_display_controls', 'distance_to_empty', 'driver_display_controls.distance_to_empty', 'boolean'),
+    'distance to empty display': norm('driver_display_controls', 'distance_to_empty', 'driver_display_controls.distance_to_empty', 'boolean'),
+    'driving efficiency display': norm('driver_display_controls', 'driving_efficiency_display', 'driver_display_controls.driving_efficiency_display', 'boolean'),
+    'driving efficiency': norm('driver_display_controls', 'driving_efficiency_display', 'driver_display_controls.driving_efficiency_display', 'boolean'),
+    'efficiency display': norm('driver_display_controls', 'driving_efficiency_display', 'driver_display_controls.driving_efficiency_display', 'boolean'),
 };
 // Labels we never want to map — UI control text that leaks from extraction.
 exports.INVALID_LABELS = [
@@ -750,18 +845,42 @@ function getSpecMapping(label) {
     const normalized = normalizeLabel(label);
     return exports.SPEC_LABEL_MAP[normalized] || null;
 }
-/**
- * Parse a CarDekho-style spec value into the target type.
- *
- * Boolean handling is permissive on the positive side: any non-empty value
- * that is not in NEGATIVE_BOOLEAN_VALUES is treated as `true`. This is
- * deliberate — CarDekho frequently encodes presence as positional/descriptive
- * text ("Front Only", "All 4", "Driver and Passenger", "Bench Folding",
- * "Integrated", "With Storage", "Powered"). When the mapping declares
- * `type: 'boolean'`, the field is asking "does this car have feature X?" and
- * any descriptor implies yes. "Optional" is treated as false, since SEO
- * categories like "cars with sunroof" should only advertise standard fitment.
- */
+const UNIT_PATTERNS = [
+    // Mileage → "X kmpl"
+    { regex: /^([\d.]+)\s*(?:kmpl|km\/l|km per litre|km per liter|kpl)$/i, format: n => `${n} kmpl` },
+    // Battery / energy → "X kWh"
+    { regex: /^([\d.]+)\s*(?:kwh|kw-h|kilowatt[\s-]hours?)$/i, format: n => `${n} kWh` },
+    // Power → "X kW"
+    { regex: /^([\d.]+)\s*(?:kw|kilowatts?)$/i, format: n => `${n} kW` },
+    // Power → "X bhp"
+    { regex: /^([\d.]+)\s*(?:bhp|brake horsepower)$/i, format: n => `${n} bhp` },
+    // Power → "X ps"
+    { regex: /^([\d.]+)\s*(?:ps|pferdestärke)$/i, format: n => `${n} ps` },
+    // Torque → "X Nm"
+    { regex: /^([\d.]+)\s*(?:nm|newton[\s-]meters?)$/i, format: n => `${n} Nm` },
+    // Volume (tank/boot) → "X L"
+    { regex: /^([\d.]+)\s*(?:l|litres?|liters?|ltrs?)$/i, format: n => `${n} L` },
+    // Displacement → "X cc"
+    { regex: /^([\d.]+)\s*(?:cc|cm3|cm³)$/i, format: n => `${n} cc` },
+    // Weight → "X kg"
+    { regex: /^([\d.]+)\s*(?:kg|kilograms?)$/i, format: n => `${n} kg` },
+    // Dimension → "X mm"
+    { regex: /^([\d.]+)\s*(?:mm|millimetres?|millimeters?)$/i, format: n => `${n} mm` },
+    // Speed → "X kmph"
+    { regex: /^([\d.]+)\s*(?:kmph|km\/h|kph)$/i, format: n => `${n} kmph` },
+    // Range → "X km"
+    { regex: /^([\d.]+)\s*(?:km|kilometres?|kilometers?)$/i, format: n => `${n} km` },
+    // RPM → "X rpm"
+    { regex: /^([\d.]+)\s*(?:rpm|rev(?:olutions)? per min(?:ute)?)$/i, format: n => `${n} rpm` },
+];
+function normalizeUnitString(value) {
+    for (const { regex, format } of UNIT_PATTERNS) {
+        const match = value.match(regex);
+        if (match)
+            return format(match[1]);
+    }
+    return value;
+}
 function parseSpecValue(value, type) {
     if (!value)
         return null;
@@ -796,7 +915,7 @@ function parseSpecValue(value, type) {
             return trimmed;
         case 'string':
         default:
-            return trimmed;
+            return normalizeUnitString(trimmed);
     }
 }
 function guessCategory(label, section) {
@@ -982,17 +1101,21 @@ function deriveFeatureFlags(specs_normalized, specs_raw, rootFields) {
             derived.has_8_airbags = true;
     }
     // ── NCAP safety rating ──────────────────────────────────────────────────
-    const ncapRaw = specs_raw?.bharat_ncap_safety_rating ??
-        specs_raw?.global_ncap_safety_rating;
-    if (ncapRaw) {
-        const stars = parseInt(String(ncapRaw).match(/\d+/)?.[0] || '0', 10);
-        if (stars > 0) {
-            derived.ncap_stars = stars;
-            if (stars >= 5)
-                derived.is_5_star_safety = true;
-            else if (stars >= 4)
-                derived.is_4_star_safety = true;
-        }
+    // Prefer the Batch 1+2 typed fields. Fall back to the legacy specs_raw paths
+    // for imports that pre-date the schema promotion (won't be present going forward).
+    const safety = specs_normalized.safety;
+    const ncapStars = Math.max(typeof safety?.ncap_rating === 'number' ? safety.ncap_rating : 0, typeof safety?.bncap_rating === 'number' ? safety.bncap_rating : 0, typeof safety?.global_ncap_rating === 'number' ? safety.global_ncap_rating : 0, (() => {
+        const legacyRaw = specs_raw?.bharat_ncap_safety_rating ?? specs_raw?.global_ncap_safety_rating;
+        return legacyRaw
+            ? parseInt(String(legacyRaw).match(/\d+/)?.[0] || '0', 10)
+            : 0;
+    })());
+    if (ncapStars > 0) {
+        derived.ncap_stars = ncapStars;
+        if (ncapStars >= 5)
+            derived.is_5_star_safety = true;
+        else if (ncapStars >= 4)
+            derived.is_4_star_safety = true;
     }
     // ── ADAS ────────────────────────────────────────────────────────────────
     const adas = specs_normalized.adas;

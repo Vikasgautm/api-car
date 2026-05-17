@@ -12,18 +12,6 @@ export declare const INVALID_LABELS: string[];
 export declare function normalizeLabel(label: string): string;
 export declare function isInvalidLabel(label: string): boolean;
 export declare function getSpecMapping(label: string): SpecMapping | null;
-/**
- * Parse a CarDekho-style spec value into the target type.
- *
- * Boolean handling is permissive on the positive side: any non-empty value
- * that is not in NEGATIVE_BOOLEAN_VALUES is treated as `true`. This is
- * deliberate — CarDekho frequently encodes presence as positional/descriptive
- * text ("Front Only", "All 4", "Driver and Passenger", "Bench Folding",
- * "Integrated", "With Storage", "Powered"). When the mapping declares
- * `type: 'boolean'`, the field is asking "does this car have feature X?" and
- * any descriptor implies yes. "Optional" is treated as false, since SEO
- * categories like "cars with sunroof" should only advertise standard fitment.
- */
 export declare function parseSpecValue(value: string, type: SpecMapping['type']): any;
 export declare function guessCategory(label: string, section: string): string;
 export interface DerivedFeatureFlags {

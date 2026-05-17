@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarService = void 0;
 const uuid_1 = require("uuid");
@@ -12,6 +45,7 @@ const fuel_type_model_1 = require("../../../models/fuel-type.model");
 const redirect_model_1 = require("../../../models/redirect.model");
 const tag_model_1 = require("../../../models/tag.model");
 const car_health_service_1 = require("../../../shared/services/car-health.service");
+const car_aggregation_service_1 = require("../../../shared/services/car-aggregation.service");
 const mileage_recompute_service_1 = require("../../../shared/services/mileage-recompute.service");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const audit_util_1 = require("../../../shared/utils/audit.util");
@@ -672,7 +706,7 @@ class CarService {
         let failed = 0;
         for (const c of cars) {
             try {
-                await mileage_recompute_service_1.MileageRecomputeService.recomputeCarAggregatesOnly(c.car_id);
+                await car_aggregation_service_1.CarAggregationService.recomputeFullAggregates(c.car_id);
                 const nextBodyTypeName = c.body_type_id ? bodyTypeNameMap.get(c.body_type_id) ?? null : null;
                 await car_model_1.Car.updateOne({ car_id: c.car_id }, { $set: { body_type_name: nextBodyTypeName } });
                 recomputed++;
@@ -683,6 +717,30 @@ class CarService {
             }
         }
         return { scanned: cars.length, recomputed, failed };
+    }
+    /**
+     * Single-car aggregate recompute — backs the "Recompute from variants" admin
+     * button. Returns the computed snapshot so the UI can show what was written.
+     */
+    static async recomputeAggregatesForCar(carId) {
+        const car = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false }).select('car_id').lean();
+        if (!car)
+            throw app_error_util_1.AppError.carNotFound(carId);
+        const aggregates = await car_aggregation_service_1.CarAggregationService.recomputeFullAggregates(carId);
+        return aggregates;
+    }
+    /**
+     * Refine the car's AI intelligence flags using Claude Haiku 4.5.
+     * Only flags whose rule confidence is below threshold are sent to the LLM —
+     * unambiguous rule verdicts are kept as-is (saves tokens, avoids spurious flips).
+     * Returns null if no ambiguous flags exist (no LLM call was made).
+     */
+    static async refineAiFlagsForCar(carId) {
+        const car = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false }).select('car_id').lean();
+        if (!car)
+            throw app_error_util_1.AppError.carNotFound(carId);
+        const { CarIntelligenceLLMService } = await Promise.resolve().then(() => __importStar(require('../../../shared/services/car-intelligence-llm.service')));
+        return await CarIntelligenceLLMService.refineAmbiguousFlags(carId);
     }
     static async getDependencies(carId) {
         const car = await car_model_1.Car.findOne({ car_id: carId }).lean();

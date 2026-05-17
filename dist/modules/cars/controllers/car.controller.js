@@ -119,6 +119,21 @@ class CarController {
         const result = await car_service_1.CarService.recomputeAggregatesAll();
         return response_util_1.ResponseUtil.success(res, result, 'Car aggregates recomputed');
     });
+    // Per-car recompute. Backs the admin "Recompute from variants" button.
+    static recomputeAggregatesForCar = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const aggregates = await car_service_1.CarService.recomputeAggregatesForCar(req.params.id);
+        return response_util_1.ResponseUtil.success(res, aggregates, 'Car aggregates recomputed from variants');
+    });
+    // Refine ambiguous AI intelligence flags using Claude Haiku 4.5.
+    // Returns the LLM verdicts + token usage. If no flags are ambiguous, returns
+    // a 200 with a "nothing to refine" message and no LLM call is made.
+    static refineAiFlagsForCar = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const result = await car_service_1.CarService.refineAiFlagsForCar(req.params.id);
+        if (!result) {
+            return response_util_1.ResponseUtil.success(res, null, 'All AI flags have high rule-confidence — no LLM refinement needed');
+        }
+        return response_util_1.ResponseUtil.success(res, result, `Refined ${result.flags_reviewed.length} flag(s) via ${result.model_used}`);
+    });
     static promoteToCurrent = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const actor = req.user
             ? { user_id: req.user.user_id, email: req.user.email, role: req.user.role }

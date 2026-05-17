@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
+const crypto_1 = __importDefault(require("crypto"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const uuid_1 = require("uuid");
 const config_1 = require("../../../config");
@@ -109,6 +110,28 @@ class AuthService {
             throw new app_error_util_1.AppError('User not found', 404);
         }
         return this.sanitizeUser(user);
+    }
+    static async resetPassword(token, user_id, password) {
+        // Find user
+        const user = await user_model_1.User.findOne({ user_id, is_deleted: false }).select('+password_reset_token +password_reset_expires');
+        if (!user) {
+            throw new app_error_util_1.AppError('User not found', 404);
+        }
+        // Verify token
+        const tokenHash = crypto_1.default.createHash('sha256').update(token).digest('hex');
+        if (user.password_reset_token !== tokenHash) {
+            throw new app_error_util_1.AppError('Invalid reset token', 400);
+        }
+        // Check if token has expired
+        if (!user.password_reset_expires || user.password_reset_expires < new Date()) {
+            throw new app_error_util_1.AppError('Reset token has expired', 400);
+        }
+        // Update password and clear reset token
+        user.password = password;
+        user.password_reset_token = undefined;
+        user.password_reset_expires = undefined;
+        await user.save();
+        return { message: 'Password reset successfully' };
     }
     static async generateTokens(user) {
         const accessToken = jsonwebtoken_1.default.sign({

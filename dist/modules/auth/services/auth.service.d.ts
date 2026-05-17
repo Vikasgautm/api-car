@@ -21,6 +21,9 @@ export declare class AuthService {
         message: string;
     }>;
     static getProfile(user_id: string): Promise<any>;
+    static resetPassword(token: string, user_id: string, password: string): Promise<{
+        message: string;
+    }>;
     private static generateTokens;
     private static saveRefreshToken;
     private static parseExpiresIn;

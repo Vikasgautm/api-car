@@ -1,9 +1,15 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
+const crypto_1 = __importDefault(require("crypto"));
 const user_model_1 = require("../../../models/user.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
+const email_service_1 = require("../../../shared/services/email.service");
+const config_1 = require("../../../config");
 class UserService {
     static async getAllUsers(filterDto, includeDeleted = false) {
         const { page = 1, limit = 10, role, is_email_verified, is_active, is_deleted, q, sortBy = 'createdAt', sortOrder = 'desc', } = filterDto;
@@ -46,9 +52,9 @@ class UserService {
         return await user_model_1.User.findOne({ user_id: userId }).select("-password");
     }
     static async createUser(userData) {
-        const { name, email, role, status, password } = userData;
+        const { user_name, email, role, password, is_active } = userData;
         // Validate required fields
-        if (!name || !email || !role) {
+        if (!user_name || !email || !role) {
             throw new app_error_util_1.AppError('Name, email, and role are required', 400);
         }
         // Check if email already exists
@@ -56,19 +62,41 @@ class UserService {
         if (existingUser) {
             throw new app_error_util_1.AppError('User with this email already exists', 409);
         }
+        // Generate user_id from email (remove domain and special chars)
+        const user_id = email.split('@')[0].replace(/[^a-z0-9]/gi, '_').toLowerCase();
         // Create user
         const createData = {
-            name,
+            user_id,
+            user_name,
             email,
             role,
-            status: status || 'active',
+            is_active: is_active !== undefined ? is_active : true,
             is_deleted: false,
         };
-        // Only include password if provided
+        // If password provided, use it; otherwise generate reset token for invite
+        let resetToken;
         if (password) {
             createData.password = password;
         }
+        else {
+            // Generate password reset token for invite link
+            resetToken = crypto_1.default.randomBytes(32).toString('hex');
+            const resetHash = crypto_1.default.createHash('sha256').update(resetToken).digest('hex');
+            createData.password_reset_token = resetHash;
+            createData.password_reset_expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+        }
         const user = await user_model_1.User.create(createData);
+        // Send invite email if no password was provided
+        if (resetToken) {
+            const resetUrl = `${config_1.config.app.frontend_url}/auth/set-password?token=${resetToken}&user_id=${user.user_id}`;
+            try {
+                await email_service_1.EmailService.sendInviteEmail(email, user_name, resetUrl);
+            }
+            catch (error) {
+                console.error('Failed to send invite email:', error);
+                // Don't fail user creation if email sending fails
+            }
+        }
         return user;
     }
     static async deleteUser(userId) {

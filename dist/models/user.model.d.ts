@@ -21,6 +21,8 @@ export interface IUser extends Document {
     theme?: string;
     is_active?: boolean;
     last_login_at?: Date;
+    password_reset_token?: string;
+    password_reset_expires?: Date;
     comparePassword(password: string): Promise<boolean>;
 }
 export declare const User: import("mongoose").Model<IUser, {}, {}, {}, Document<unknown, {}, IUser, {}, import("mongoose").DefaultSchemaOptions> & IUser & Required<{

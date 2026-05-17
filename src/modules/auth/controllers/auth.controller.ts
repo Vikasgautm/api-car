@@ -88,4 +88,23 @@ export class AuthController {
       next(error);
     }
   }
+
+  static async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { token, user_id, password } = req.body;
+
+      if (!token || !user_id || !password) {
+        throw new AppError('Token, user_id, and password are required', 400);
+      }
+
+      if (password.length < 8) {
+        throw new AppError('Password must be at least 8 characters', 400);
+      }
+
+      const result = await AuthService.resetPassword(token, user_id, password);
+      return ResponseUtil.success(res, result, 'Password reset successfully');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

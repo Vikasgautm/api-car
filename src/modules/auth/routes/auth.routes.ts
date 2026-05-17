@@ -10,6 +10,7 @@ const router = Router();
 router.post('/register', validateBody(registerSchema), AuthController.register);
 router.post('/login', validateBody(loginSchema), AuthController.login);
 router.post('/refresh-token', validateBody(refreshTokenSchema), AuthController.refreshToken);
+router.post('/reset-password', AuthController.resetPassword);
 
 // Protected routes
 router.post('/logout', jwtAuthGuard, AuthController.logout);

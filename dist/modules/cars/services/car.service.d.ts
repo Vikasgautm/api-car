@@ -61,6 +61,18 @@ export declare class CarService {
         recomputed: number;
         failed: number;
     }>;
+    /**
+     * Single-car aggregate recompute — backs the "Recompute from variants" admin
+     * button. Returns the computed snapshot so the UI can show what was written.
+     */
+    static recomputeAggregatesForCar(carId: string): Promise<import("../../../shared/services/car-aggregation.service").CarAggregates | null>;
+    /**
+     * Refine the car's AI intelligence flags using Claude Haiku 4.5.
+     * Only flags whose rule confidence is below threshold are sent to the LLM —
+     * unambiguous rule verdicts are kept as-is (saves tokens, avoids spurious flips).
+     * Returns null if no ambiguous flags exist (no LLM call was made).
+     */
+    static refineAiFlagsForCar(carId: string): Promise<import("../../../shared/services/car-intelligence-llm.service").LLMRefinementResult | null>;
     static getDependencies(carId: string): Promise<{
         car_id: string;
         name: string;

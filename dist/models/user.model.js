@@ -57,6 +57,8 @@ const userSchema = new mongoose_1.Schema({
     theme: { type: String, default: "light" },
     is_active: { type: Boolean, default: true },
     last_login_at: { type: Date },
+    password_reset_token: { type: String, select: false },
+    password_reset_expires: { type: Date, select: false },
 }, { timestamps: true });
 userSchema.pre('save', async function () {
     const user = this;

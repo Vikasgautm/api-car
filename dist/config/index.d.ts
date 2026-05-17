@@ -7,6 +7,9 @@ export declare const config: {
     jwt_refresh_expires_in: string;
     env: string;
     cors_origin: string;
+    app: {
+        frontend_url: string;
+    };
     cloudinary_cloud_name: string | undefined;
     cloudinary_api_key: string | undefined;
     cloudinary_api_secret: string | undefined;

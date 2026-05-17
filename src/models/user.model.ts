@@ -24,6 +24,8 @@ export interface IUser extends Document {
   theme?: string;
   is_active?: boolean;
   last_login_at?: Date;
+  password_reset_token?: string;
+  password_reset_expires?: Date;
   comparePassword(password: string): Promise<boolean>;
 }
 
@@ -72,6 +74,8 @@ const userSchema = new Schema<IUser>(
     theme: { type: String, default: "light" },
     is_active: { type: Boolean, default: true },
     last_login_at: { type: Date },
+    password_reset_token: { type: String, select: false },
+    password_reset_expires: { type: Date, select: false },
   },
   { timestamps: true }
 );

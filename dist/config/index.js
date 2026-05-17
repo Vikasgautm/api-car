@@ -15,6 +15,9 @@ exports.config = {
     jwt_refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
     env: process.env.NODE_ENV || 'development',
     cors_origin: process.env.CORS_ORIGIN || '*',
+    app: {
+        frontend_url: process.env.FRONTEND_URL || 'http://localhost:5173',
+    },
     cloudinary_cloud_name: process.env.CLOUDINARY_NAME,
     cloudinary_api_key: process.env.CLOUDINARY_API_KEY,
     cloudinary_api_secret: process.env.CLOUDINARY_API_SECRET,

@@ -1,6 +1,9 @@
+import crypto from 'crypto';
 import { User } from "../../../models/user.model";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { PaginationUtil } from "../../../shared/utils/pagination.util";
+import { EmailService } from "../../../shared/services/email.service";
+import { config } from '../../../config';
 
 export class UserService {
   static async getAllUsers(filterDto: any, includeDeleted: boolean = false) {
@@ -67,10 +70,10 @@ export class UserService {
   }
 
   static async createUser(userData: Record<string, unknown>) {
-    const { name, email, role, status, password } = userData;
-    
+    const { user_name, email, role, password, is_active } = userData;
+
     // Validate required fields
-    if (!name || !email || !role) {
+    if (!user_name || !email || !role) {
       throw new AppError('Name, email, and role are required', 400);
     }
 
@@ -80,21 +83,44 @@ export class UserService {
       throw new AppError('User with this email already exists', 409);
     }
 
+    // Generate user_id from email (remove domain and special chars)
+    const user_id = (email as string).split('@')[0].replace(/[^a-z0-9]/gi, '_').toLowerCase();
+
     // Create user
     const createData: Record<string, unknown> = {
-      name,
+      user_id,
+      user_name,
       email,
       role,
-      status: status || 'active',
+      is_active: is_active !== undefined ? is_active : true,
       is_deleted: false,
     };
 
-    // Only include password if provided
+    // If password provided, use it; otherwise generate reset token for invite
+    let resetToken: string | undefined;
     if (password) {
       createData.password = password;
+    } else {
+      // Generate password reset token for invite link
+      resetToken = crypto.randomBytes(32).toString('hex');
+      const resetHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+      createData.password_reset_token = resetHash;
+      createData.password_reset_expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
     }
 
     const user = await User.create(createData);
+
+    // Send invite email if no password was provided
+    if (resetToken) {
+      const resetUrl = `${config.app.frontend_url}/auth/set-password?token=${resetToken}&user_id=${user.user_id}`;
+
+      try {
+        await EmailService.sendInviteEmail(email as string, user_name as string, resetUrl);
+      } catch (error) {
+        console.error('Failed to send invite email:', error);
+        // Don't fail user creation if email sending fails
+      }
+    }
 
     return user;
   }

@@ -10,10 +10,12 @@ const car_model_1 = require("../../../models/car.model");
 const fuel_type_model_1 = require("../../../models/fuel-type.model");
 const import_log_model_1 = require("../../../models/import-log.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
-const mileage_recompute_service_1 = require("../../../shared/services/mileage-recompute.service");
+const car_aggregation_service_1 = require("../../../shared/services/car-aggregation.service");
 const cardekho_extractor_1 = require("../extractors/cardekho.extractor");
 const carwale_extractor_1 = require("../extractors/carwale.extractor");
 const key_matcher_1 = require("../extractors/key-matcher");
+const spec_validator_1 = require("../validation/spec-validator");
+const seo_tag_generator_service_1 = require("./seo-tag-generator.service");
 class ImportService {
     static detectSource(url) {
         if (url.includes('carwale.com'))
@@ -285,6 +287,15 @@ class ImportService {
                 if (!normalizedTransmission) {
                     itemWarnings.push(`Transmission '${extracted.transmission}' could not be normalized to valid type`);
                 }
+                // Spec contradiction check — flag at preview so user can review before saving.
+                const specValidation = (0, spec_validator_1.validateVariantSpecs)({
+                    fuel_type_name: resolvedFuelType,
+                    specs_normalized: specs_normalized,
+                    specs_raw,
+                });
+                for (const err of specValidation.errors) {
+                    itemWarnings.push(`[Spec conflict] ${err.message}`);
+                }
                 if (existingVariant) {
                     itemWarnings.push(`Variant with similar name already exists: ${existingVariant.variant_name}`);
                 }
@@ -369,6 +380,24 @@ class ImportService {
                     }
                     // Build the correct save payload with proper field mapping
                     // Explicitly cast values to satisfy TypeScript
+                    // Hard-fail on impossible fuel-type / spec combinations.
+                    const fuelTypeIdStr = typeof cleanItemData.fuel_type_id === 'string' ? cleanItemData.fuel_type_id : undefined;
+                    const fuelTypeForValidation = fuelTypeIdStr
+                        ? (await fuel_type_model_1.FuelType.findOne({ fuel_type_id: fuelTypeIdStr }))?.name
+                        : undefined;
+                    const specValidation = (0, spec_validator_1.validateVariantSpecs)({
+                        fuel_type_name: fuelTypeForValidation,
+                        specs_normalized: cleanItemData.specs_normalized,
+                        specs_raw: cleanItemData.specs_raw,
+                    });
+                    if (!specValidation.valid) {
+                        const msg = specValidation.errors.map(e => e.message).join('; ');
+                        errors.push(`Spec conflict in ${item.url}: ${msg}`);
+                        continue;
+                    }
+                    // Generate SEO tags from derived flags in specs_raw.
+                    const generatedTags = seo_tag_generator_service_1.SEOTagGeneratorService.generateTagsFromDerivedFlags(cleanItemData.specs_raw);
+                    const bestForTags = seo_tag_generator_service_1.SEOTagGeneratorService.mergeTags(cleanItemData.best_for_tags, generatedTags);
                     let variantPayload = {
                         variant_id: (0, uuid_1.v4)(),
                         car_id: car_id,
@@ -385,6 +414,7 @@ class ImportService {
                         is_upcoming: Boolean(cleanItemData.is_upcoming || false),
                         specs_normalized: cleanItemData.specs_normalized && typeof cleanItemData.specs_normalized === 'object' && !Array.isArray(cleanItemData.specs_normalized) ? cleanItemData.specs_normalized : undefined,
                         specs_raw: cleanItemData.specs_raw && typeof cleanItemData.specs_raw === 'object' && !Array.isArray(cleanItemData.specs_raw) ? cleanItemData.specs_raw : undefined,
+                        best_for_tags: bestForTags,
                         hidden_spec_keys: Array.isArray(cleanItemData.hidden_spec_keys) ? cleanItemData.hidden_spec_keys : [],
                         is_published: Boolean(cleanItemData.is_published || false),
                         is_deleted: false,
@@ -492,6 +522,13 @@ class ImportService {
                     if (updateData.specs_normalized) {
                         updateData.specs_normalized = this.convertObjectTypes(updateData.specs_normalized);
                     }
+                    // Regenerate SEO tags from updated/merged specs_raw.
+                    const finalSpecsRaw = updateData.specs_raw || existingVariant.specs_raw;
+                    const updatedGeneratedTags = seo_tag_generator_service_1.SEOTagGeneratorService.generateTagsFromDerivedFlags(finalSpecsRaw);
+                    const updatedBestForTags = seo_tag_generator_service_1.SEOTagGeneratorService.mergeTags(updateData.best_for_tags || existingVariant.best_for_tags, updatedGeneratedTags);
+                    if (updatedBestForTags.length > 0) {
+                        updateData.best_for_tags = updatedBestForTags;
+                    }
                     console.log('[Variant Import] Update/Merge - Update payload after type conversion:', updateData);
                     console.log('═══════════════════════════════════════════════════════════════\n');
                     variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: item.variant_id, car_id, is_deleted: false }, updateData, { returnDocument: 'after' });
@@ -518,12 +555,13 @@ class ImportService {
         }
         // Bulk import skips the per-write recompute hooks the CRUD path uses, so the
         // parent car's denormalised aggregates (variant_count, min/max price,
-        // aggregated_fuel_types, incomplete_variant_count) stay stale until the next
-        // single-variant edit. Recompute once at the end — the import is scoped to a
-        // single car_id, so this is one hop, not N.
+        // engine_options, feature_availability, AI intelligence flags, etc.) stay
+        // stale until the next single-variant edit. Recompute once at the end via
+        // the full aggregation engine — the import is scoped to a single car_id,
+        // so this is one hop, not N.
         if (variantIds.length > 0) {
             try {
-                await mileage_recompute_service_1.MileageRecomputeService.recomputeCarAggregatesOnly(car_id);
+                await car_aggregation_service_1.CarAggregationService.recomputeFullAggregates(car_id);
             }
             catch (err) {
                 warnings.push(`Saved ${variantIds.length} variant(s) but failed to refresh car aggregates: ${err?.message ?? err}. Run /cars/admin/recompute-aggregates to fix.`);

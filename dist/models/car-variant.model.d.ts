@@ -9,11 +9,13 @@ export interface EnginePerformance {
     valves_per_cylinder?: number;
     fuel_system?: string;
     turbocharger?: boolean;
+    supercharger?: boolean;
     gearbox?: string;
     alternate_fuel_type?: string;
     cng_power_torque?: string;
     electric_assist?: string;
     drive_modes?: string;
+    terrain_modes?: string;
     acceleration_0_100?: string;
     top_speed?: string;
     idle_start_stop?: boolean;
@@ -24,6 +26,7 @@ export interface MileageRange {
     highway_mileage?: string;
     fuel_tank_capacity?: string;
     emission_standard?: string;
+    ethanol_compatibility?: string;
     real_mileage?: string;
     e20_compatibility?: boolean;
     cng_mileage?: string;
@@ -31,7 +34,11 @@ export interface MileageRange {
 }
 export interface BatteryCharging {
     battery_capacity?: string;
+    battery_capacity_kwh?: number;
     battery_type?: string;
+    battery_chemistry?: string;
+    battery_position?: string;
+    battery_cooling_type?: string;
     charging_time?: string;
     charging_options?: string[];
     electric_range?: string;
@@ -44,9 +51,14 @@ export interface BatteryCharging {
     dc_fast_charging_time?: string;
     fast_charge_0_80?: string;
     charging_port_type?: string;
+    max_ac_charging_speed_kw?: number;
+    max_dc_charging_speed_kw?: number;
     charging_time_7kw?: string;
     charging_time_50kw?: string;
     regenerative_braking?: boolean;
+    regenerative_braking_levels?: number;
+    vehicle_to_load?: boolean;
+    vehicle_to_vehicle?: boolean;
     real_range?: string;
     real_world_range?: number;
     battery_wltp_km?: number;
@@ -103,6 +115,11 @@ export interface Safety {
     engine_immobilizer?: boolean;
     central_locking?: boolean;
     child_safety_lock?: boolean;
+    tpms?: boolean;
+    ncap_rating?: number;
+    bncap_rating?: number;
+    global_ncap_rating?: number;
+    adas_level?: number;
 }
 export interface ADAS {
     adaptive_cruise_control?: boolean;
@@ -113,6 +130,32 @@ export interface ADAS {
     automatic_emergency_braking?: boolean;
     traffic_sign_recognition?: boolean;
     autonomous_emergency_braking?: boolean;
+    rear_cross_traffic_alert?: boolean;
+    driver_attention_warning?: boolean;
+    adaptive_high_beam_assist?: boolean;
+    safe_exit_warning?: boolean;
+}
+export interface StorageCabinPracticality {
+    cupholders_front?: number;
+    cupholders_rear?: number;
+    bottle_holders?: number;
+    cooled_glovebox?: boolean;
+    door_pockets?: boolean;
+    front_seatback_pockets?: boolean;
+    driver_armrest_storage?: boolean;
+    rear_armrest?: boolean;
+    cabin_boot_access?: boolean;
+    sunglass_holder?: boolean;
+}
+export interface DriverDisplayControls {
+    instrument_cluster?: string;
+    cluster_size?: string;
+    heads_up_display?: boolean;
+    gear_indicator?: boolean;
+    steering_mounted_controls?: boolean;
+    paddle_shifters?: boolean;
+    distance_to_empty?: boolean;
+    driving_efficiency_display?: boolean;
 }
 export interface ComfortConvenience {
     climate_control?: string;
@@ -160,11 +203,22 @@ export interface ConnectedCar {
     geofencing?: boolean;
     remote_vehicle_control?: boolean;
     sos_emergency_assist?: boolean;
+    find_my_car?: boolean;
+    live_location?: boolean;
+    remote_engine_start_stop?: boolean;
+    remote_lock?: boolean;
+    remote_ac?: boolean;
+    remote_sunroof?: boolean;
+    digital_key?: boolean;
+    emergency_sos_button?: boolean;
 }
 export interface Interior {
     dashboard_type?: string;
     instrument_cluster?: string;
     digital_driver_display?: boolean;
+    digital_speedometer?: boolean;
+    digital_tachometer?: boolean;
+    digital_clock?: boolean;
     interior_theme?: string;
     dashboard_material?: string;
     soft_touch_dashboard?: boolean;
@@ -172,6 +226,8 @@ export interface Interior {
     multi_color_ambient_lighting?: boolean;
     leather_wrapped_steering?: boolean;
     leather_wrapped_gear_knob?: boolean;
+    steering_controls?: boolean;
+    premium_cabin_materials?: boolean;
     sunroof?: string;
     panoramic_sunroof?: boolean;
     moonroof?: boolean;
@@ -197,6 +253,10 @@ export interface Exterior {
     orvm_indicators?: boolean;
     rear_wiper?: boolean;
     rear_defogger?: boolean;
+    connected_led_taillight?: boolean;
+    welcome_goodbye_animation?: boolean;
+    flush_door_handles?: boolean;
+    rain_sensing_wipers?: boolean;
 }
 export interface Warranty {
     basic_warranty_years?: number;
@@ -219,8 +279,11 @@ export interface SpecsNormalized {
     interior?: Interior;
     exterior?: Exterior;
     warranty?: Warranty;
+    storage_cabin_practicality?: StorageCabinPracticality;
+    driver_display_controls?: DriverDisplayControls;
 }
 export type TransmissionType = 'manual' | 'automatic' | 'amt' | 'cvt' | 'dct' | 'dsg' | 'imt' | 'torque_converter' | 'single_speed_ev' | 'e_cvt';
+export type VariantMarketStatus = 'available' | 'sold_out' | 'discontinued' | 'upcoming';
 export interface ICarVariant extends Document {
     variant_id: string;
     car_id: string;
@@ -236,6 +299,15 @@ export interface ICarVariant extends Document {
     expected_price?: number;
     expected_launch_date?: Date;
     is_upcoming: boolean;
+    variant_rank?: number;
+    trim_name?: string;
+    edition_name?: string;
+    on_road_price?: number;
+    emi_estimate?: number;
+    value_for_money_tag?: boolean;
+    best_for_tags?: string[];
+    variant_highlights?: string[];
+    market_status?: VariantMarketStatus;
     specs_normalized?: SpecsNormalized;
     specs_raw?: Record<string, any>;
     hidden_spec_keys?: string[];

@@ -26,6 +26,30 @@ export interface DiscoveryFilters {
     range_class?: string | string[];
     status?: string | string[];
     is_electric?: boolean | string;
+    vehicle_segment?: string | string[];
+    transmission_types?: string | string[];
+    drive_types?: string | string[];
+    min_power_bhp?: number | string;
+    max_power_bhp?: number | string;
+    min_torque_nm?: number | string;
+    max_torque_nm?: number | string;
+    min_ncap_rating?: number | string;
+    has_sunroof?: boolean | string;
+    has_panoramic_sunroof?: boolean | string;
+    has_adas?: boolean | string;
+    has_ventilated_seats?: boolean | string;
+    has_camera_360?: boolean | string;
+    has_connected_car?: boolean | string;
+    has_wireless_charger?: boolean | string;
+    has_air_purifier?: boolean | string;
+    family_friendly?: boolean | string;
+    city_friendly?: boolean | string;
+    highway_friendly?: boolean | string;
+    offroad_ready?: boolean | string;
+    feature_loaded?: boolean | string;
+    premium_cabin?: boolean | string;
+    budget_friendly?: boolean | string;
+    performance_focused?: boolean | string;
     page?: number | string;
     limit?: number | string;
     sortBy?: SortKey;
@@ -45,6 +69,11 @@ export interface DiscoveryFacets {
     range_class: DiscoveryFacetCount[];
     is_electric: DiscoveryFacetCount[];
     tags: DiscoveryFacetCount[];
+    vehicle_segment: DiscoveryFacetCount[];
+    transmission_types: DiscoveryFacetCount[];
+    drive_types: DiscoveryFacetCount[];
+    features: DiscoveryFacetCount[];
+    intelligence: DiscoveryFacetCount[];
 }
 export interface ResolvedFilters {
     q?: string;
@@ -65,6 +94,34 @@ export interface ResolvedFilters {
     statuses: string[];
     is_electric?: boolean;
     show_hidden_statuses: boolean;
+    vehicle_segments: string[];
+    aggregated_transmission_types: string[];
+    aggregated_drive_types: string[];
+    min_power_bhp?: number;
+    max_power_bhp?: number;
+    min_torque_nm?: number;
+    max_torque_nm?: number;
+    min_ncap_rating?: number;
+    feature_flags: Partial<{
+        sunroof_available: boolean;
+        panoramic_sunroof_available: boolean;
+        adas_available: boolean;
+        ventilated_seats_available: boolean;
+        camera_360_available: boolean;
+        connected_car_available: boolean;
+        wireless_charger_available: boolean;
+        air_purifier_available: boolean;
+    }>;
+    intelligence_flags: Partial<{
+        family_friendly: boolean;
+        city_friendly: boolean;
+        highway_friendly: boolean;
+        offroad_ready: boolean;
+        feature_loaded: boolean;
+        premium_cabin: boolean;
+        budget_friendly: boolean;
+        performance_focused: boolean;
+    }>;
 }
 export declare class DiscoveryService {
     /**
