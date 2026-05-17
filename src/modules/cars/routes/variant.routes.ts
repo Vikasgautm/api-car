@@ -35,6 +35,27 @@ adminRouter.get('/:id/differences', validateUuidIdParam, CarVariantController.ge
 adminRouter.get('/car/:carId/differences', CarVariantController.getCarVariantDifferences);
 adminRouter.get('/car/:carId/aggregates', CarVariantController.getModelAggregates);
 
+// Validation routes
+adminRouter.get('/:id/validate', validateUuidIdParam, CarVariantController.validateVariant);
+adminRouter.get('/car/:carId/validate', CarVariantController.validateCarVariants);
+adminRouter.post('/bulk/validate', CarVariantController.bulkValidate);
+
+// Completeness routes
+adminRouter.get('/:id/completeness', validateUuidIdParam, CarVariantController.getVariantCompleteness);
+adminRouter.get('/car/:carId/completeness', CarVariantController.getCarCompleteness);
+
+// Bulk operations routes
+adminRouter.post('/bulk/update-status', CarVariantController.bulkUpdateStatus);
+adminRouter.post('/bulk/publish', CarVariantController.bulkPublish);
+adminRouter.post('/bulk/update-visibility', CarVariantController.bulkUpdateVisibility);
+adminRouter.post('/bulk/update', CarVariantController.bulkUpdate);
+adminRouter.post('/bulk/export-csv', CarVariantController.bulkExportCsv);
+
+// Spec refinement routes
+adminRouter.get('/:id/refine-specs', validateUuidIdParam, CarVariantController.refineVariantSpecs);
+adminRouter.post('/:id/apply-refinement', validateUuidIdParam, CarVariantController.applyRefinementSuggestions);
+adminRouter.post('/bulk/refine-specs', CarVariantController.refineMultipleVariants);
+
 router.use('/admin', adminRouter);
 
 // Legacy routes for backward compatibility

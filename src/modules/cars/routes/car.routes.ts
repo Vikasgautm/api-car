@@ -41,6 +41,16 @@ adminRouter.patch('/:id/publish', validateUuidIdParam, CarController.togglePubli
 adminRouter.patch('/:id/mark-launched', validateUuidIdParam, CarController.markLaunched);
 adminRouter.patch('/:id/mark-upcoming', validateUuidIdParam, CarController.markUpcoming);
 adminRouter.post('/:id/promote-to-current', validateUuidIdParam, CarController.promoteToCurrent);
+// Lifecycle management routes
+adminRouter.post('/:id/lifecycle/transition', validateUuidIdParam, CarController.transitionLifecycleState);
+adminRouter.get('/:id/lifecycle/history', validateUuidIdParam, CarController.getLifecycleHistory);
+adminRouter.post('/:id/lifecycle/schedule', validateUuidIdParam, CarController.scheduleStateChange);
+adminRouter.get('/:id/seo/continuity', validateUuidIdParam, CarController.getSEOContinuityReport);
+adminRouter.get('/lifecycle/upcoming-launches', CarController.getUpcomingLaunches);
+// Scheduled launch management
+adminRouter.post('/lifecycle/process-scheduled', restrictTo('super_admin'), CarController.processScheduledLaunches);
+adminRouter.get('/lifecycle/scheduled-window', CarController.getScheduledLaunchesWindow);
+adminRouter.post('/:id/lifecycle/cancel-scheduled', validateUuidIdParam, CarController.cancelScheduledLaunch);
 
 router.use('/admin', adminRouter);
 

@@ -11,6 +11,10 @@ import { CarVariantService } from '../services/car-variant.service';
 import { VariantLifecycleService } from '../../variants/services/variant-lifecycle.service';
 import { DifferenceEngineService } from '../../variants/services/difference-engine.service';
 import { ModelAggregationService } from '../services/model-aggregation.service';
+import { VariantValidationService } from '../../variants/services/variant-validation.service';
+import { VariantCompletenessService } from '../../variants/services/variant-completeness.service';
+import { VariantBulkService } from '../../variants/services/variant-bulk.service';
+import { SpecRefinementService } from '../../variants/services/spec-refinement.service';
 
 export class CarVariantController {
   // Public routes
@@ -247,5 +251,108 @@ export class CarVariantController {
   static getModelAggregates = catchAsync(async (req: Request, res: Response) => {
     const aggregates = await ModelAggregationService.aggregateModelFromVariants(req.params.carId as string);
     return ResponseUtil.success(res, aggregates, 'Model aggregates retrieved');
+  });
+
+  // Validation endpoints
+  static validateVariant = catchAsync(async (req: Request, res: Response) => {
+    const validation = await VariantValidationService.validateVariant(req.params.id as string);
+    return ResponseUtil.success(res, validation, 'Variant validation completed');
+  });
+
+  static validateCarVariants = catchAsync(async (req: Request, res: Response) => {
+    const validations = await VariantValidationService.validateCarVariants(req.params.carId as string);
+    return ResponseUtil.success(res, validations, 'Car variants validation completed');
+  });
+
+  static bulkValidate = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids)) {
+      throw new AppError('variant_ids array is required', 400);
+    }
+    const validations = await VariantBulkService.bulkValidate(variant_ids);
+    return ResponseUtil.success(res, validations, 'Bulk validation completed');
+  });
+
+  // Completeness endpoints
+  static getVariantCompleteness = catchAsync(async (req: Request, res: Response) => {
+    const completeness = await VariantCompletenessService.getVariantCompleteness(req.params.id as string);
+    return ResponseUtil.success(res, completeness, 'Variant completeness retrieved');
+  });
+
+  static getCarCompleteness = catchAsync(async (req: Request, res: Response) => {
+    const report = await VariantCompletenessService.getCarCompleteness(req.params.carId as string);
+    return ResponseUtil.success(res, report, 'Car completeness report retrieved');
+  });
+
+  // Bulk operations endpoints
+  static bulkUpdateStatus = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids, status } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids) || !status) {
+      throw new AppError('variant_ids array and status are required', 400);
+    }
+    const result = await VariantBulkService.bulkUpdateStatus(variant_ids, status);
+    return ResponseUtil.success(res, result, 'Bulk status update completed');
+  });
+
+  static bulkPublish = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids, should_publish } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids) || should_publish === undefined) {
+      throw new AppError('variant_ids array and should_publish are required', 400);
+    }
+    const result = await VariantBulkService.bulkPublish(variant_ids, should_publish);
+    return ResponseUtil.success(res, result, 'Bulk publish update completed');
+  });
+
+  static bulkUpdateVisibility = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids, hidden_sections } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids) || !hidden_sections) {
+      throw new AppError('variant_ids array and hidden_sections are required', 400);
+    }
+    const result = await VariantBulkService.bulkUpdateVisibility(variant_ids, hidden_sections);
+    return ResponseUtil.success(res, result, 'Bulk visibility update completed');
+  });
+
+  static bulkUpdate = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids, updates } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids) || !updates) {
+      throw new AppError('variant_ids array and updates are required', 400);
+    }
+    const result = await VariantBulkService.bulkUpdate({ variant_ids, updates });
+    return ResponseUtil.success(res, result, 'Bulk update completed');
+  });
+
+  static bulkExportCsv = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids)) {
+      throw new AppError('variant_ids array is required', 400);
+    }
+    const csv = await VariantBulkService.bulkExportCsv(variant_ids);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="variants.csv"');
+    return res.send(csv);
+  });
+
+  // Spec refinement endpoints
+  static refineVariantSpecs = catchAsync(async (req: Request, res: Response) => {
+    const refinement = await SpecRefinementService.refineVariantSpecs(req.params.id as string);
+    return ResponseUtil.success(res, refinement, 'Spec refinement suggestions generated');
+  });
+
+  static applyRefinementSuggestions = catchAsync(async (req: Request, res: Response) => {
+    const { suggestions } = req.body;
+    if (!suggestions || !Array.isArray(suggestions)) {
+      throw new AppError('suggestions array is required', 400);
+    }
+    const updated = await SpecRefinementService.applyRefinementSuggestions(req.params.id as string, suggestions);
+    return ResponseUtil.success(res, updated, 'Refinement suggestions applied');
+  });
+
+  static refineMultipleVariants = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids)) {
+      throw new AppError('variant_ids array is required', 400);
+    }
+    const results = await SpecRefinementService.refineMultipleVariants(variant_ids);
+    return ResponseUtil.success(res, results, 'Spec refinement for multiple variants completed');
   });
 }

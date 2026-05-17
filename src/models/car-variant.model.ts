@@ -1,6 +1,22 @@
 import { Document, Schema, model } from 'mongoose';
 import { MileageClass, MileageSource } from '../constants/mileage-benchmarks';
 
+export type FieldVisibilityState = 'visible' | 'hidden' | 'partial' | 'teaser_only' | 'estimated';
+
+export interface FieldValue {
+  value: any;
+  is_estimated?: boolean;
+  visibility?: FieldVisibilityState;
+  source_confidence?: number;
+  label?: string;
+}
+
+export interface SectionVisibility {
+  section_key: string;
+  visibility: FieldVisibilityState;
+  hidden_fields?: string[];
+}
+
 // Specs normalized interfaces
 export interface EnginePerformance {
   engine_type?: string;
@@ -340,6 +356,11 @@ export interface ICarVariant extends Document {
   best_for_tags?: string[];
   variant_highlights?: string[];
   market_status?: VariantMarketStatus;
+  // Field-level visibility and estimation tracking
+  field_visibility?: Record<string, FieldVisibilityState>;
+  section_visibility?: SectionVisibility[];
+  estimated_fields?: Record<string, boolean>;
+  field_confidence_scores?: Record<string, number>;
   specs_normalized?: SpecsNormalized;
   specs_raw?: Record<string, any>;
   hidden_spec_keys?: string[];
@@ -424,6 +445,19 @@ const variantSchema = new Schema<ICarVariant>(
       enum: ['available', 'sold_out', 'discontinued', 'upcoming', null],
       default: null,
     },
+    // Field-level visibility and estimation tracking
+    field_visibility: { type: Schema.Types.Mixed, default: {} },
+    section_visibility: [{
+      section_key: { type: String, required: true },
+      visibility: {
+        type: String,
+        enum: ['visible', 'hidden', 'partial', 'teaser_only', 'estimated'],
+        default: 'visible',
+      },
+      hidden_fields: { type: [String], default: [] },
+    }],
+    estimated_fields: { type: Schema.Types.Mixed, default: {} },
+    field_confidence_scores: { type: Schema.Types.Mixed, default: {} },
     specs_normalized: {
       engine_performance: {
         engine_type: String,

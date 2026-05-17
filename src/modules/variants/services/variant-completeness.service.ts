@@ -1,0 +1,289 @@
+import { CarVariant, ICarVariant } from '../../../models/car-variant.model';
+import { Car } from '../../../models/car.model';
+import { AppError } from '../../../shared/utils/app-error.util';
+
+export interface CompletenessMetric {
+  variant_id: string;
+  variant_name: string;
+  overall_score: number;
+  basic_info_score: number;
+  specs_score: number;
+  seo_score: number;
+  pricing_score: number;
+  status_score: number;
+  missing_sections: string[];
+  empty_sections: string[];
+  recommendation: string;
+}
+
+export interface CarCompletenessReport {
+  car_id: string;
+  car_name: string;
+  avg_completeness: number;
+  total_variants: number;
+  variants_by_score: Record<string, number>;
+  critical_gaps: string[];
+  metrics: CompletenessMetric[];
+}
+
+export class VariantCompletenessService {
+  static async getVariantCompleteness(variantId: string): Promise<CompletenessMetric> {
+    const variant = await CarVariant.findById(variantId);
+
+    if (!variant) {
+      throw new AppError('Variant not found', 404);
+    }
+
+    const basicInfoScore = this.scoreBasicInfo(variant);
+    const specsScore = this.scoreSpecs(variant);
+    const seoScore = this.scoreSeo(variant);
+    const pricingScore = this.scorePricing(variant);
+    const statusScore = this.scoreStatus(variant);
+
+    const overallScore = Math.round((basicInfoScore + specsScore + seoScore + pricingScore + statusScore) / 5);
+
+    const missingFields = this.getMissingFields(variant);
+    const emptySections = this.getEmptySections(variant);
+    const recommendation = this.generateRecommendation(overallScore, missingFields, emptySections);
+
+    return {
+      variant_id: variantId,
+      variant_name: variant.variant_name,
+      overall_score: overallScore,
+      basic_info_score: basicInfoScore,
+      specs_score: specsScore,
+      seo_score: seoScore,
+      pricing_score: pricingScore,
+      status_score: statusScore,
+      missing_sections: emptySections,
+      empty_sections: missingFields,
+      recommendation,
+    };
+  }
+
+  static async getCarCompleteness(carId: string): Promise<CarCompletenessReport> {
+    const car = await Car.findById(carId);
+
+    if (!car) {
+      throw new AppError('Car not found', 404);
+    }
+
+    const variants = await CarVariant.find({ car_id: carId }).select('_id');
+    const metrics: CompletenessMetric[] = [];
+    let totalScore = 0;
+
+    for (const variant of variants) {
+      const metric = await this.getVariantCompleteness(variant._id.toString());
+      metrics.push(metric);
+      totalScore += metric.overall_score;
+    }
+
+    const avgCompleteness = variants.length > 0 ? Math.round(totalScore / variants.length) : 0;
+
+    // Score distribution
+    const variantsByScore: Record<string, number> = {
+      excellent: 0,
+      good: 0,
+      fair: 0,
+      poor: 0,
+    };
+
+    metrics.forEach((m) => {
+      if (m.overall_score >= 80) variantsByScore['excellent']++;
+      else if (m.overall_score >= 60) variantsByScore['good']++;
+      else if (m.overall_score >= 40) variantsByScore['fair']++;
+      else variantsByScore['poor']++;
+    });
+
+    // Critical gaps
+    const gapCounts: Record<string, number> = {};
+    metrics.forEach((m) => {
+      m.missing_sections.forEach((section) => {
+        gapCounts[section] = (gapCounts[section] || 0) + 1;
+      });
+    });
+
+    const criticalGaps = Object.entries(gapCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([field, count]) => `${field} (${count} variants missing)`);
+
+    return {
+      car_id: carId,
+      car_name: car.car_name,
+      avg_completeness: avgCompleteness,
+      total_variants: variants.length,
+      variants_by_score: variantsByScore,
+      critical_gaps: criticalGaps,
+      metrics,
+    };
+  }
+
+  private static scoreBasicInfo(variant: any): number {
+    let score = 0;
+    const checks = [
+      variant.variant_name,
+      variant.fuel_type_id,
+      variant.transmission_type,
+      variant.seating_capacity,
+      variant.body_type,
+    ];
+
+    const passed = checks.filter((c) => c).length;
+    score = Math.round((passed / checks.length) * 100);
+    return score;
+  }
+
+  private static scoreSpecs(variant: any): number {
+    if (!variant.specs_normalized || Object.keys(variant.specs_normalized).length === 0) {
+      return 0;
+    }
+
+    const specs = variant.specs_normalized;
+    const sections = Object.keys(specs).filter(
+      (k) => typeof specs[k] === 'object' && specs[k] !== null && !Array.isArray(specs[k])
+    );
+
+    if (sections.length === 0) return 0;
+
+    let filledSections = 0;
+    let totalFields = 0;
+
+    sections.forEach((section) => {
+      const sectionData = specs[section];
+      const fields = Object.keys(sectionData).filter((k) => sectionData[k]);
+
+      if (fields.length > 0) {
+        filledSections++;
+      }
+      totalFields += Object.keys(sectionData).length;
+    });
+
+    const sectionScore = (filledSections / sections.length) * 50;
+    const fieldScore = (Math.min(totalFields, 20) / 20) * 50;
+
+    return Math.round(sectionScore + fieldScore);
+  }
+
+  private static scoreSeo(variant: any): number {
+    let score = 0;
+    const checks = 0;
+    let passed = 0;
+
+    // Check if has slug
+    if (variant.slug) {
+      passed++;
+      score += 20;
+    }
+
+    // Check if published
+    if (variant.is_published) {
+      passed++;
+      score += 20;
+    }
+
+    // Check model year
+    if (variant.model_year) {
+      passed++;
+      score += 20;
+    }
+
+    // Check if has meaningful specs
+    if (
+      variant.specs_normalized &&
+      Object.keys(variant.specs_normalized).length > 5
+    ) {
+      passed++;
+      score += 20;
+    }
+
+    // Check variant status
+    if (variant.variant_status && variant.variant_status !== 'draft') {
+      passed++;
+      score += 20;
+    }
+
+    return score;
+  }
+
+  private static scorePricing(variant: any): number {
+    let score = 0;
+
+    if (variant.ex_showroom_price) {
+      score += 50;
+    } else if (variant.expected_price) {
+      score += 30;
+    }
+
+    if (variant.expected_launch_date || variant.model_year) {
+      score += 50;
+    } else {
+      score += 25;
+    }
+
+    return Math.min(100, score);
+  }
+
+  private static scoreStatus(variant: any): number {
+    const status = variant.variant_status;
+    const publishStatus: Record<string, number> = {
+      draft: 20,
+      incomplete: 40,
+      review_pending: 60,
+      hidden: 70,
+      upcoming: 80,
+      launched: 100,
+      discontinued: 60,
+    };
+
+    return publishStatus[status] || 20;
+  }
+
+  private static getMissingFields(variant: any): string[] {
+    const missing: string[] = [];
+
+    if (!variant.variant_name) missing.push('variant_name');
+    if (!variant.fuel_type_id) missing.push('fuel_type_id');
+    if (!variant.transmission_type) missing.push('transmission_type');
+    if (!variant.seating_capacity) missing.push('seating_capacity');
+    if (!variant.ex_showroom_price && !variant.expected_price) missing.push('pricing');
+    if (!variant.model_year && !variant.expected_launch_date) missing.push('year_or_launch_date');
+
+    return missing;
+  }
+
+  private static getEmptySections(variant: any): string[] {
+    const empty: string[] = [];
+
+    if (!variant.specs_normalized || Object.keys(variant.specs_normalized).length === 0) {
+      empty.push('specs_normalized');
+      return empty;
+    }
+
+    const specs = variant.specs_normalized;
+    Object.keys(specs).forEach((key) => {
+      if (
+        typeof specs[key] === 'object' &&
+        specs[key] !== null &&
+        !Array.isArray(specs[key]) &&
+        Object.keys(specs[key]).filter((k) => specs[key][k]).length === 0
+      ) {
+        empty.push(key);
+      }
+    });
+
+    return empty;
+  }
+
+  private static generateRecommendation(score: number, missing: string[], empty: string[]): string {
+    if (score >= 90) {
+      return 'Variant is ready for production publishing';
+    } else if (score >= 70) {
+      return `Good progress. Add: ${missing.slice(0, 2).join(', ')}`;
+    } else if (score >= 50) {
+      return `Fill critical sections: ${empty.slice(0, 3).join(', ')}`;
+    } else {
+      return 'Variant needs substantial completion work';
+    }
+  }
+}

@@ -8,7 +8,9 @@ import { catchAsync } from "../../../utils/catchAsync";
 import { CreateCarDto } from "../dto/create-car.dto";
 import { UpdateCarDto } from "../dto/update-car.dto";
 import { CarService } from "../services/car.service";
+import { CarLifecycleService } from "../services/car-lifecycle.service";
 import { RedirectService } from "../../redirects/services/redirect.service";
+import { ScheduledLaunchService } from "../../../shared/services/scheduled-launch.service";
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
@@ -373,5 +375,74 @@ export class CarController {
       AuditUtil.actorFromRequest(req as AuthRequest)
     );
     return ResponseUtil.success(res, car, "Car marked as upcoming successfully");
+  });
+
+  // Lifecycle management endpoints
+  static transitionLifecycleState = catchAsync(async (req: Request, res: Response) => {
+    const { new_state, reason } = req.body;
+    if (!new_state) {
+      throw new AppError('new_state is required', 400);
+    }
+    const car = await CarLifecycleService.transitionState(
+      req.params.id as string,
+      new_state,
+      AuditUtil.actorFromRequest(req as AuthRequest),
+      reason
+    );
+    return ResponseUtil.success(res, car, `Car transitioned to ${new_state} successfully`);
+  });
+
+  static getLifecycleHistory = catchAsync(async (req: Request, res: Response) => {
+    const history = await CarLifecycleService.getHistory(req.params.id as string);
+    return ResponseUtil.success(res, history, 'Lifecycle history retrieved successfully');
+  });
+
+  static scheduleStateChange = catchAsync(async (req: Request, res: Response) => {
+    const { new_state, scheduled_date, reason } = req.body;
+    if (!new_state || !scheduled_date) {
+      throw new AppError('new_state and scheduled_date are required', 400);
+    }
+    const result = await CarLifecycleService.scheduleStateChange(
+      req.params.id as string,
+      new_state,
+      new Date(scheduled_date),
+      AuditUtil.actorFromRequest(req as AuthRequest),
+      reason
+    );
+    return ResponseUtil.success(res, result, 'State change scheduled successfully');
+  });
+
+  static getSEOContinuityReport = catchAsync(async (req: Request, res: Response) => {
+    const report = await CarLifecycleService.getSEOContinuityReport(req.params.id as string);
+    return ResponseUtil.success(res, report, 'SEO continuity report retrieved successfully');
+  });
+
+  static getUpcomingLaunches = catchAsync(async (req: Request, res: Response) => {
+    const days = req.query.days ? Number(req.query.days) : 30;
+    const launches = await CarLifecycleService.getUpcomingLaunches(days);
+    return ResponseUtil.success(res, launches, 'Upcoming launches retrieved successfully');
+  });
+
+  static processScheduledLaunches = catchAsync(async (req: Request, res: Response) => {
+    const results = await ScheduledLaunchService.processScheduledLaunches();
+    return ResponseUtil.success(res, results, 'Scheduled launches processed');
+  });
+
+  static getScheduledLaunchesWindow = catchAsync(async (req: Request, res: Response) => {
+    const days = req.query.days ? Number(req.query.days) : 30;
+    const launches = await ScheduledLaunchService.getUpcomingLaunchesWindow(days);
+    return ResponseUtil.success(res, launches, 'Upcoming launches retrieved');
+  });
+
+  static cancelScheduledLaunch = catchAsync(async (req: Request, res: Response) => {
+    const { target_state } = req.body;
+    if (!target_state) {
+      throw new AppError('target_state is required', 400);
+    }
+    const result = await ScheduledLaunchService.cancelScheduledLaunch(
+      req.params.id as string,
+      target_state
+    );
+    return ResponseUtil.success(res, result, 'Scheduled launch cancelled');
   });
 }
