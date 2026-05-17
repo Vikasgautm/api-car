@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { ResponseUtil } from '../../../shared/utils/response.util';
 import { catchAsync } from '../../../utils/catchAsync';
 import { ImportService } from '../services/import.service';
+import { ImportReprocessService } from '../services/import-reprocess.service';
 
 export class ImportController {
   static previewCarImport = catchAsync(async (req: Request, res: Response) => {
@@ -42,5 +43,36 @@ export class ImportController {
 
     const logs = await ImportService.getImportLogs(userId, filter);
     return ResponseUtil.success(res, logs, 'Import logs retrieved successfully');
+  });
+
+  // Re-process a single variant through the current SPEC_LABEL_MAP.
+  static reprocessVariant = catchAsync(async (req: Request, res: Response) => {
+    const variant_id = Array.isArray(req.params.variant_id) ? req.params.variant_id[0] : req.params.variant_id;
+
+    const result = await ImportReprocessService.reprocessVariant(variant_id);
+    if (!result) {
+      return ResponseUtil.notFound(res, 'Variant not found or has no import history');
+    }
+
+    return ResponseUtil.success(res, result, 'Variant reprocessed successfully');
+  });
+
+  // Re-process all variants of a car.
+  static reprocessCar = catchAsync(async (req: Request, res: Response) => {
+    const car_id = Array.isArray(req.params.car_id) ? req.params.car_id[0] : req.params.car_id;
+
+    const results = await ImportReprocessService.reprocessCar(car_id);
+    return ResponseUtil.success(res, {
+      car_id,
+      total: results.length,
+      changed: results.filter(r => r.changed).length,
+      results: results.filter(r => r.changed), // Only show the changed ones
+    }, 'Car variants reprocessed successfully');
+  });
+
+  // Re-process ALL variants in the system (warning: heavy operation).
+  static reprocessAll = catchAsync(async (req: Request, res: Response) => {
+    const result = await ImportReprocessService.reprocessAll();
+    return ResponseUtil.success(res, result, 'All variants reprocessed successfully');
   });
 }

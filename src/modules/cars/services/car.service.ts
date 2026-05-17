@@ -9,6 +9,7 @@ import { FuelType } from "../../../models/fuel-type.model";
 import { Redirect } from "../../../models/redirect.model";
 import { Tag } from "../../../models/tag.model";
 import { CarHealthService } from "../../../shared/services/car-health.service";
+import { CarAggregationService } from "../../../shared/services/car-aggregation.service";
 import { MileageRecomputeService } from "../../../shared/services/mileage-recompute.service";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { AuditActor, AuditUtil, CAR_AUDIT_FIELDS } from "../../../shared/utils/audit.util";
@@ -763,7 +764,7 @@ export class CarService {
     let failed = 0;
     for (const c of cars) {
       try {
-        await MileageRecomputeService.recomputeCarAggregatesOnly(c.car_id);
+        await CarAggregationService.recomputeFullAggregates(c.car_id);
         const nextBodyTypeName = c.body_type_id ? bodyTypeNameMap.get(c.body_type_id) ?? null : null;
         await Car.updateOne({ car_id: c.car_id }, { $set: { body_type_name: nextBodyTypeName } });
         recomputed++;
@@ -773,6 +774,30 @@ export class CarService {
       }
     }
     return { scanned: cars.length, recomputed, failed };
+  }
+
+  /**
+   * Single-car aggregate recompute — backs the "Recompute from variants" admin
+   * button. Returns the computed snapshot so the UI can show what was written.
+   */
+  static async recomputeAggregatesForCar(carId: string) {
+    const car = await Car.findOne({ car_id: carId, is_deleted: false }).select('car_id').lean();
+    if (!car) throw AppError.carNotFound(carId);
+    const aggregates = await CarAggregationService.recomputeFullAggregates(carId);
+    return aggregates;
+  }
+
+  /**
+   * Refine the car's AI intelligence flags using Claude Haiku 4.5.
+   * Only flags whose rule confidence is below threshold are sent to the LLM —
+   * unambiguous rule verdicts are kept as-is (saves tokens, avoids spurious flips).
+   * Returns null if no ambiguous flags exist (no LLM call was made).
+   */
+  static async refineAiFlagsForCar(carId: string) {
+    const car = await Car.findOne({ car_id: carId, is_deleted: false }).select('car_id').lean();
+    if (!car) throw AppError.carNotFound(carId);
+    const { CarIntelligenceLLMService } = await import('../../../shared/services/car-intelligence-llm.service');
+    return await CarIntelligenceLLMService.refineAmbiguousFlags(carId);
   }
 
   static async getDependencies(carId: string) {

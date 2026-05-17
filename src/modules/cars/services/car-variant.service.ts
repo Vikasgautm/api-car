@@ -3,6 +3,7 @@ import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { CarVariant, ICarVariant, SpecsNormalized } from "../../../models/car-variant.model";
 import { Car } from "../../../models/car.model";
 import { FuelType } from "../../../models/fuel-type.model";
+import { CarAggregationService } from "../../../shared/services/car-aggregation.service";
 import { MileageRecomputeService } from "../../../shared/services/mileage-recompute.service";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { AuditActor, AuditUtil, VARIANT_AUDIT_FIELDS } from "../../../shared/utils/audit.util";
@@ -79,6 +80,10 @@ const FUEL_SPEC_RULES: Record<keyof SpecsNormalized, Record<string, FieldRule>> 
     battery_warranty_years: { hideFor: ['ice', 'cng'] },
     battery_warranty_km:    { hideFor: ['ice', 'cng'] },
   },
+  storage_cabin_practicality: {},
+  driver_display_controls: {
+    paddle_shifters: { hideFor: ['ev'] },
+  },
 };
 
 // Fields whose value should be overridden for specific fuel types
@@ -109,6 +114,8 @@ export class CarVariantService {
     'Interior': 'interior',
     'Exterior': 'exterior',
     'Warranty': 'warranty',
+    'Storage & Cabin Practicality': 'storage_cabin_practicality',
+    'Driver Display & Controls': 'driver_display_controls',
   };
 
   static removeHiddenSpecKeys(specs_normalized: SpecsNormalized | undefined, hidden_spec_keys: string[] = []): SpecsNormalized | undefined {
@@ -419,6 +426,15 @@ export class CarVariantService {
       ex_showroom_price: variantData.ex_showroom_price,
       expected_price: variantData.expected_price,
       expected_launch_date: variantData.expected_launch_date,
+      variant_rank: variantData.variant_rank,
+      trim_name: variantData.trim_name,
+      edition_name: variantData.edition_name,
+      on_road_price: variantData.on_road_price,
+      emi_estimate: variantData.emi_estimate,
+      value_for_money_tag: variantData.value_for_money_tag ?? false,
+      best_for_tags: variantData.best_for_tags || [],
+      variant_highlights: variantData.variant_highlights || [],
+      market_status: variantData.market_status,
       specs_normalized: variantData.specs_normalized,
       hidden_spec_keys: variantData.hidden_spec_keys || [],
       hidden_sections: variantData.hidden_sections || [],
@@ -429,7 +445,7 @@ export class CarVariantService {
 
     const created = await CarVariant.create(variant);
     await MileageRecomputeService.recomputeVariant(created.variant_id);
-    await MileageRecomputeService.recomputeCarAggregatesOnly(created.car_id);
+    await CarAggregationService.recomputeFullAggregates(created.car_id);
     await AuditUtil.recordEvent({
       entity_type: 'variant',
       entity_id: created.variant_id,
@@ -507,6 +523,15 @@ export class CarVariantService {
     if (variantData.editor_user_id !== undefined) updateData.editor_user_id = variantData.editor_user_id || null;
     if (variantData.seo_owner_user_id !== undefined) updateData.seo_owner_user_id = variantData.seo_owner_user_id || null;
     if (variantData.reviewer_user_id !== undefined) updateData.reviewer_user_id = variantData.reviewer_user_id || null;
+    if (variantData.variant_rank !== undefined) updateData.variant_rank = variantData.variant_rank;
+    if (variantData.trim_name !== undefined) updateData.trim_name = variantData.trim_name;
+    if (variantData.edition_name !== undefined) updateData.edition_name = variantData.edition_name;
+    if (variantData.on_road_price !== undefined) updateData.on_road_price = variantData.on_road_price;
+    if (variantData.emi_estimate !== undefined) updateData.emi_estimate = variantData.emi_estimate;
+    if (variantData.value_for_money_tag !== undefined) updateData.value_for_money_tag = variantData.value_for_money_tag;
+    if (variantData.best_for_tags !== undefined) updateData.best_for_tags = variantData.best_for_tags;
+    if (variantData.variant_highlights !== undefined) updateData.variant_highlights = variantData.variant_highlights;
+    if (variantData.market_status !== undefined) updateData.market_status = variantData.market_status;
 
     const variant = await CarVariant.findOneAndUpdate(
       { variant_id: variantId, is_deleted: false },
@@ -529,7 +554,9 @@ export class CarVariantService {
       );
     }
 
-    // Reclassify only when classification inputs changed.
+    // Reclassify the variant when classification inputs changed; always recompute
+    // the parent car aggregates because variant-level price/transmission/drive/rank
+    // edits all change the model-level rollup.
     const classificationInputsChanged =
       variantData.specs_normalized !== undefined ||
       variantData.fuel_type_id !== undefined ||
@@ -537,8 +564,8 @@ export class CarVariantService {
       variantData.body_type !== undefined;
     if (classificationInputsChanged) {
       await MileageRecomputeService.recomputeVariant(variant.variant_id);
-      await MileageRecomputeService.recomputeCarAggregatesOnly(variant.car_id);
     }
+    await CarAggregationService.recomputeFullAggregates(variant.car_id);
 
     await AuditUtil.recordChanges({
       entity_type: 'variant',
@@ -588,7 +615,7 @@ export class CarVariantService {
       );
     }
 
-    await MileageRecomputeService.recomputeCarAggregatesOnly(variant.car_id);
+    await CarAggregationService.recomputeFullAggregates(variant.car_id);
     await AuditUtil.recordEvent({
       entity_type: 'variant',
       entity_id: variant.variant_id,
@@ -620,7 +647,7 @@ export class CarVariantService {
       );
     }
 
-    await MileageRecomputeService.recomputeCarAggregatesOnly(variant.car_id);
+    await CarAggregationService.recomputeFullAggregates(variant.car_id);
     await AuditUtil.recordEvent({
       entity_type: 'variant',
       entity_id: variant.variant_id,
@@ -756,7 +783,7 @@ export class CarVariantService {
       );
     }
 
-    await MileageRecomputeService.recomputeCarAggregatesOnly(variant.car_id);
+    await CarAggregationService.recomputeFullAggregates(variant.car_id);
     await AuditUtil.recordEvent({
       entity_type: 'variant',
       entity_id: variant.variant_id,
@@ -794,7 +821,7 @@ export class CarVariantService {
       );
     }
 
-    await MileageRecomputeService.recomputeCarAggregatesOnly(variant.car_id);
+    await CarAggregationService.recomputeFullAggregates(variant.car_id);
     await AuditUtil.recordEvent({
       entity_type: 'variant',
       entity_id: variant.variant_id,

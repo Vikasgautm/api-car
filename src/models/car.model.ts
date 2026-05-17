@@ -62,14 +62,90 @@ export interface ICar extends Document {
   best_range_class?: MileageClass | null;
   best_range_value?: number | null;
   // Aggregated operational intelligence (computed from variants).
-  // Maintained by MileageRecomputeService.recomputeCarAggregatesOnly().
+  // Maintained by CarAggregationService.recomputeFullAggregates() — the model-level
+  // "source of truth derived from variants" promise. MileageRecomputeService is the
+  // legacy subset, still called for hot-path mileage recompute.
   variant_count: number;
   // Variants missing one of {transmission_type, price, fuel_type_id}. Operational
   // signal for editors — "this car has 2 variants that customers can't shop".
   incomplete_variant_count: number;
+  // Price aggregates
   min_variant_price?: number | null;
   max_variant_price?: number | null;
+  min_on_road_price?: number | null;
+  max_on_road_price?: number | null;
+  min_emi?: number | null;
+  max_emi?: number | null;
+  // Powertrain aggregates — derived from variant rows
   aggregated_fuel_types?: string[];
+  aggregated_transmission_types?: string[];
+  aggregated_drive_types?: string[];
+  // Distinct human-readable engine signatures, e.g. ["1.2L Petrol 88bhp", "1.5L Diesel 113bhp"]
+  engine_options?: string[];
+  // Distinct battery capacities in kWh for EVs, e.g. [40.5, 60]
+  battery_options?: number[];
+  // Performance aggregates (numeric — parsed from variant spec strings)
+  power_min_bhp?: number | null;
+  power_max_bhp?: number | null;
+  torque_min_nm?: number | null;
+  torque_max_nm?: number | null;
+  mileage_min_kmpl?: number | null;
+  mileage_max_kmpl?: number | null;
+  range_min_km?: number | null;
+  range_max_km?: number | null;
+  // Dimension aggregates (typically uniform across variants; pick max where it varies)
+  ground_clearance_mm?: number | null;
+  boot_space_l?: number | null;
+  wheelbase_mm?: number | null;
+  max_seating_capacity?: number | null;
+  // Feature availability flags — true if ANY variant has it. Drives SEO landing pages
+  // like "Cars with sunroof" / "Cars with 360 camera".
+  sunroof_available?: boolean;
+  adas_available?: boolean;
+  ventilated_seats_available?: boolean;
+  camera_360_available?: boolean;
+  connected_car_available?: boolean;
+  wireless_charger_available?: boolean;
+  air_purifier_available?: boolean;
+  panoramic_sunroof_available?: boolean;
+  // Safety aggregates — max() across variants
+  max_airbags?: number | null;
+  best_ncap_rating?: number | null;
+  best_bncap_rating?: number | null;
+  best_global_ncap_rating?: number | null;
+  best_adas_level?: number | null;
+  // Vehicle segment classification (manual; used for SEO/comparisons)
+  vehicle_segment?: string | null;
+  // AI intelligence flags — derived by rules engine in CarAggregationService.
+  // Recompute button overwrites these from rules; editors can manually flip
+  // until the next recompute. Hybrid LLM derivation is Batch 3.
+  family_friendly?: boolean;
+  city_friendly?: boolean;
+  highway_friendly?: boolean;
+  offroad_ready?: boolean;
+  feature_loaded?: boolean;
+  premium_cabin?: boolean;
+  budget_friendly?: boolean;
+  performance_focused?: boolean;
+  // SEO/taxonomy keys (free-form; populated by editors or future taxonomy engine)
+  seo_tags?: string[];
+  buyer_intent_tags?: string[];
+  search_intent_tags?: string[];
+  // AI intelligence audit subdoc.
+  // - confidence_scores: rule-pass confidence per flag (0..1; abs distance from
+  //   the decision boundary). Low score = ambiguous → eligible for LLM refinement.
+  // - flag_rationale: one-line "why" string for each flag (rules-derived or LLM-derived).
+  // - refined_by_llm: keys of flags whose CURRENT verdict came from the LLM rather
+  //   than the rules. The next recompute (rules) will clear the LLM verdict for any
+  //   flag whose rules confidence rises above the threshold.
+  // - last_refined_at: timestamp of the last LLM refinement call.
+  ai_intelligence_meta?: {
+    confidence_scores?: Record<string, number>;
+    flag_rationale?: Record<string, string>;
+    refined_by_llm?: string[];
+    last_refined_at?: Date | null;
+    model_used?: string | null;
+  };
   // SEO health and completeness metrics (persisted for filtering/sorting)
   seo_health_issues?: string[];
   completeness_score?: number;
@@ -154,6 +230,58 @@ const carSchema = new Schema<ICar>(
     incomplete_variant_count: { type: Number, default: 0 },
     min_variant_price: { type: Number, default: null },
     max_variant_price: { type: Number, default: null },
+    min_on_road_price: { type: Number, default: null },
+    max_on_road_price: { type: Number, default: null },
+    min_emi: { type: Number, default: null },
+    max_emi: { type: Number, default: null },
+    aggregated_transmission_types: { type: [String], default: [] },
+    aggregated_drive_types: { type: [String], default: [] },
+    engine_options: { type: [String], default: [] },
+    battery_options: { type: [Number], default: [] },
+    power_min_bhp: { type: Number, default: null },
+    power_max_bhp: { type: Number, default: null },
+    torque_min_nm: { type: Number, default: null },
+    torque_max_nm: { type: Number, default: null },
+    mileage_min_kmpl: { type: Number, default: null },
+    mileage_max_kmpl: { type: Number, default: null },
+    range_min_km: { type: Number, default: null },
+    range_max_km: { type: Number, default: null },
+    ground_clearance_mm: { type: Number, default: null },
+    boot_space_l: { type: Number, default: null },
+    wheelbase_mm: { type: Number, default: null },
+    max_seating_capacity: { type: Number, default: null },
+    sunroof_available: { type: Boolean, default: false },
+    adas_available: { type: Boolean, default: false },
+    ventilated_seats_available: { type: Boolean, default: false },
+    camera_360_available: { type: Boolean, default: false },
+    connected_car_available: { type: Boolean, default: false },
+    wireless_charger_available: { type: Boolean, default: false },
+    air_purifier_available: { type: Boolean, default: false },
+    panoramic_sunroof_available: { type: Boolean, default: false },
+    max_airbags: { type: Number, default: null },
+    best_ncap_rating: { type: Number, default: null, min: 0, max: 5 },
+    best_bncap_rating: { type: Number, default: null, min: 0, max: 5 },
+    best_global_ncap_rating: { type: Number, default: null, min: 0, max: 5 },
+    best_adas_level: { type: Number, default: null, min: 0, max: 5 },
+    vehicle_segment: { type: String, default: null, trim: true },
+    family_friendly: { type: Boolean, default: false },
+    city_friendly: { type: Boolean, default: false },
+    highway_friendly: { type: Boolean, default: false },
+    offroad_ready: { type: Boolean, default: false },
+    feature_loaded: { type: Boolean, default: false },
+    premium_cabin: { type: Boolean, default: false },
+    budget_friendly: { type: Boolean, default: false },
+    performance_focused: { type: Boolean, default: false },
+    seo_tags: { type: [String], default: [] },
+    buyer_intent_tags: { type: [String], default: [] },
+    search_intent_tags: { type: [String], default: [] },
+    ai_intelligence_meta: {
+      confidence_scores: { type: Schema.Types.Mixed, default: {} },
+      flag_rationale: { type: Schema.Types.Mixed, default: {} },
+      refined_by_llm: { type: [String], default: [] },
+      last_refined_at: { type: Date, default: null },
+      model_used: { type: String, default: null },
+    },
     // SEO health and completeness metrics
     seo_health_issues: { type: [String], default: [] },
     completeness_score: { type: Number, default: 0 },
@@ -241,6 +369,29 @@ carSchema.index({ is_upcoming: 1, is_published: 1, is_deleted: 1 });
 // SEO health and completeness indexes
 carSchema.index({ completeness_score: 1, is_published: 1, is_deleted: 1 });
 carSchema.index({ seo_health_issues: 1, is_published: 1, is_deleted: 1 });
+// Aggregated intelligence indexes — drive SEO landing pages ("cars with sunroof", "ADAS cars", etc.)
+carSchema.index({ aggregated_transmission_types: 1 });
+carSchema.index({ aggregated_drive_types: 1 });
+carSchema.index({ vehicle_segment: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ sunroof_available: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ adas_available: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ camera_360_available: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ ventilated_seats_available: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ connected_car_available: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ panoramic_sunroof_available: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ max_airbags: -1 });
+carSchema.index({ best_ncap_rating: -1 });
+carSchema.index({ power_max_bhp: -1 });
+carSchema.index({ torque_max_nm: -1 });
+carSchema.index({ family_friendly: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ city_friendly: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ offroad_ready: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ feature_loaded: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ premium_cabin: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ budget_friendly: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ performance_focused: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ seo_tags: 1 });
+carSchema.index({ buyer_intent_tags: 1 });
 // One current generation per model_family (DB-level safety net for the
 // promote-to-current workflow). Only enforced for rows that actually have a
 // model_family set and are flagged current, so cars without a family yet

@@ -11,11 +11,13 @@ export interface EnginePerformance {
   valves_per_cylinder?: number;
   fuel_system?: string;
   turbocharger?: boolean;
+  supercharger?: boolean;
   gearbox?: string;
   alternate_fuel_type?: string;
   cng_power_torque?: string;
   electric_assist?: string;
   drive_modes?: string;
+  terrain_modes?: string;
   acceleration_0_100?: string;
   top_speed?: string;
   idle_start_stop?: boolean;
@@ -27,6 +29,7 @@ export interface MileageRange {
   highway_mileage?: string;
   fuel_tank_capacity?: string;
   emission_standard?: string;
+  ethanol_compatibility?: string;
   real_mileage?: string;
   e20_compatibility?: boolean;
   cng_mileage?: string;
@@ -35,7 +38,11 @@ export interface MileageRange {
 
 export interface BatteryCharging {
   battery_capacity?: string;
+  battery_capacity_kwh?: number;
   battery_type?: string;
+  battery_chemistry?: string;
+  battery_position?: string;
+  battery_cooling_type?: string;
   charging_time?: string;
   charging_options?: string[];
   electric_range?: string;
@@ -48,9 +55,14 @@ export interface BatteryCharging {
   dc_fast_charging_time?: string;
   fast_charge_0_80?: string;
   charging_port_type?: string;
+  max_ac_charging_speed_kw?: number;
+  max_dc_charging_speed_kw?: number;
   charging_time_7kw?: string;
   charging_time_50kw?: string;
   regenerative_braking?: boolean;
+  regenerative_braking_levels?: number;
+  vehicle_to_load?: boolean;
+  vehicle_to_vehicle?: boolean;
   real_range?: string;
   real_world_range?: number;
   battery_wltp_km?: number;
@@ -111,6 +123,11 @@ export interface Safety {
   engine_immobilizer?: boolean;
   central_locking?: boolean;
   child_safety_lock?: boolean;
+  tpms?: boolean;
+  ncap_rating?: number;
+  bncap_rating?: number;
+  global_ncap_rating?: number;
+  adas_level?: number;
 }
 
 export interface ADAS {
@@ -122,6 +139,34 @@ export interface ADAS {
   automatic_emergency_braking?: boolean;
   traffic_sign_recognition?: boolean;
   autonomous_emergency_braking?: boolean;
+  rear_cross_traffic_alert?: boolean;
+  driver_attention_warning?: boolean;
+  adaptive_high_beam_assist?: boolean;
+  safe_exit_warning?: boolean;
+}
+
+export interface StorageCabinPracticality {
+  cupholders_front?: number;
+  cupholders_rear?: number;
+  bottle_holders?: number;
+  cooled_glovebox?: boolean;
+  door_pockets?: boolean;
+  front_seatback_pockets?: boolean;
+  driver_armrest_storage?: boolean;
+  rear_armrest?: boolean;
+  cabin_boot_access?: boolean;
+  sunglass_holder?: boolean;
+}
+
+export interface DriverDisplayControls {
+  instrument_cluster?: string;
+  cluster_size?: string;
+  heads_up_display?: boolean;
+  gear_indicator?: boolean;
+  steering_mounted_controls?: boolean;
+  paddle_shifters?: boolean;
+  distance_to_empty?: boolean;
+  driving_efficiency_display?: boolean;
 }
 
 export interface ComfortConvenience {
@@ -172,12 +217,23 @@ export interface ConnectedCar {
   geofencing?: boolean;
   remote_vehicle_control?: boolean;
   sos_emergency_assist?: boolean;
+  find_my_car?: boolean;
+  live_location?: boolean;
+  remote_engine_start_stop?: boolean;
+  remote_lock?: boolean;
+  remote_ac?: boolean;
+  remote_sunroof?: boolean;
+  digital_key?: boolean;
+  emergency_sos_button?: boolean;
 }
 
 export interface Interior {
   dashboard_type?: string;
   instrument_cluster?: string;
   digital_driver_display?: boolean;
+  digital_speedometer?: boolean;
+  digital_tachometer?: boolean;
+  digital_clock?: boolean;
   interior_theme?: string;
   dashboard_material?: string;
   soft_touch_dashboard?: boolean;
@@ -185,6 +241,8 @@ export interface Interior {
   multi_color_ambient_lighting?: boolean;
   leather_wrapped_steering?: boolean;
   leather_wrapped_gear_knob?: boolean;
+  steering_controls?: boolean;
+  premium_cabin_materials?: boolean;
   sunroof?: string;
   panoramic_sunroof?: boolean;
   moonroof?: boolean;
@@ -211,6 +269,10 @@ export interface Exterior {
   orvm_indicators?: boolean;
   rear_wiper?: boolean;
   rear_defogger?: boolean;
+  connected_led_taillight?: boolean;
+  welcome_goodbye_animation?: boolean;
+  flush_door_handles?: boolean;
+  rain_sensing_wipers?: boolean;
 }
 
 export interface Warranty {
@@ -235,6 +297,8 @@ export interface SpecsNormalized {
   interior?: Interior;
   exterior?: Exterior;
   warranty?: Warranty;
+  storage_cabin_practicality?: StorageCabinPracticality;
+  driver_display_controls?: DriverDisplayControls;
 }
 
 export type TransmissionType =
@@ -248,6 +312,8 @@ export type TransmissionType =
   | 'torque_converter'
   | 'single_speed_ev'
   | 'e_cvt';
+
+export type VariantMarketStatus = 'available' | 'sold_out' | 'discontinued' | 'upcoming';
 
 export interface ICarVariant extends Document {
   variant_id: string;
@@ -264,6 +330,16 @@ export interface ICarVariant extends Document {
   expected_price?: number;
   expected_launch_date?: Date;
   is_upcoming: boolean;
+  // Buyer-first attributes (Price & Variant Highlights category in the spec)
+  variant_rank?: number;
+  trim_name?: string;
+  edition_name?: string;
+  on_road_price?: number;
+  emi_estimate?: number;
+  value_for_money_tag?: boolean;
+  best_for_tags?: string[];
+  variant_highlights?: string[];
+  market_status?: VariantMarketStatus;
   specs_normalized?: SpecsNormalized;
   specs_raw?: Record<string, any>;
   hidden_spec_keys?: string[];
@@ -335,6 +411,19 @@ const variantSchema = new Schema<ICarVariant>(
     },
     expected_launch_date: { type: Date },
     is_upcoming: { type: Boolean, default: false },
+    variant_rank: { type: Number, default: null, min: 0 },
+    trim_name: { type: String, default: null, trim: true },
+    edition_name: { type: String, default: null, trim: true },
+    on_road_price: { type: Number, default: null, min: 0 },
+    emi_estimate: { type: Number, default: null, min: 0 },
+    value_for_money_tag: { type: Boolean, default: false },
+    best_for_tags: { type: [String], default: [] },
+    variant_highlights: { type: [String], default: [] },
+    market_status: {
+      type: String,
+      enum: ['available', 'sold_out', 'discontinued', 'upcoming', null],
+      default: null,
+    },
     specs_normalized: {
       engine_performance: {
         engine_type: String,
@@ -346,11 +435,13 @@ const variantSchema = new Schema<ICarVariant>(
         compression_ratio: String,
         fuel_system: String,
         turbocharger: Boolean,
+        supercharger: Boolean,
         gearbox: String,
         alternate_fuel_type: String,
         cng_power_torque: String,
         electric_assist: String,
         drive_modes: String,
+        terrain_modes: String,
         acceleration_0_100: String,
         top_speed: String,
         idle_start_stop: Boolean,
@@ -361,6 +452,7 @@ const variantSchema = new Schema<ICarVariant>(
         highway_mileage: String,
         fuel_tank_capacity: String,
         emission_standard: String,
+        ethanol_compatibility: String,
         real_mileage: String,
         e20_compatibility: Boolean,
         cng_mileage: String,
@@ -368,7 +460,11 @@ const variantSchema = new Schema<ICarVariant>(
       },
       battery_charging: {
         battery_capacity: String,
+        battery_capacity_kwh: { type: Number, min: 0 },
         battery_type: String,
+        battery_chemistry: String,
+        battery_position: String,
+        battery_cooling_type: String,
         charging_time: String,
         charging_options: [String],
         electric_range: String,
@@ -381,9 +477,14 @@ const variantSchema = new Schema<ICarVariant>(
         dc_fast_charging_time: String,
         fast_charge_0_80: String,
         charging_port_type: String,
+        max_ac_charging_speed_kw: { type: Number, min: 0 },
+        max_dc_charging_speed_kw: { type: Number, min: 0 },
         charging_time_7kw: String,
         charging_time_50kw: String,
         regenerative_braking: Boolean,
+        regenerative_braking_levels: { type: Number, min: 0 },
+        vehicle_to_load: Boolean,
+        vehicle_to_vehicle: Boolean,
         real_range: String,
         real_world_range: { type: Number, min: 0 },
         battery_wltp_km: { type: Number, min: 0 },
@@ -440,6 +541,11 @@ const variantSchema = new Schema<ICarVariant>(
         engine_immobilizer: Boolean,
         central_locking: Boolean,
         child_safety_lock: Boolean,
+        tpms: Boolean,
+        ncap_rating: { type: Number, min: 0, max: 5 },
+        bncap_rating: { type: Number, min: 0, max: 5 },
+        global_ncap_rating: { type: Number, min: 0, max: 5 },
+        adas_level: { type: Number, min: 0, max: 5 },
       },
       adas: {
         adaptive_cruise_control: Boolean,
@@ -450,6 +556,10 @@ const variantSchema = new Schema<ICarVariant>(
         automatic_emergency_braking: Boolean,
         traffic_sign_recognition: Boolean,
         autonomous_emergency_braking: Boolean,
+        rear_cross_traffic_alert: Boolean,
+        driver_attention_warning: Boolean,
+        adaptive_high_beam_assist: Boolean,
+        safe_exit_warning: Boolean,
       },
       comfort_convenience: {
         climate_control: String,
@@ -497,11 +607,22 @@ const variantSchema = new Schema<ICarVariant>(
         geofencing: Boolean,
         remote_vehicle_control: Boolean,
         sos_emergency_assist: Boolean,
+        find_my_car: Boolean,
+        live_location: Boolean,
+        remote_engine_start_stop: Boolean,
+        remote_lock: Boolean,
+        remote_ac: Boolean,
+        remote_sunroof: Boolean,
+        digital_key: Boolean,
+        emergency_sos_button: Boolean,
       },
       interior: {
         dashboard_type: String,
         instrument_cluster: String,
         digital_driver_display: Boolean,
+        digital_speedometer: Boolean,
+        digital_tachometer: Boolean,
+        digital_clock: Boolean,
         interior_theme: String,
         dashboard_material: String,
         soft_touch_dashboard: Boolean,
@@ -509,6 +630,8 @@ const variantSchema = new Schema<ICarVariant>(
         multi_color_ambient_lighting: Boolean,
         leather_wrapped_steering: Boolean,
         leather_wrapped_gear_knob: Boolean,
+        steering_controls: Boolean,
+        premium_cabin_materials: Boolean,
         sunroof: String,
         panoramic_sunroof: Boolean,
         moonroof: Boolean,
@@ -534,12 +657,38 @@ const variantSchema = new Schema<ICarVariant>(
         orvm_indicators: Boolean,
         rear_wiper: Boolean,
         rear_defogger: Boolean,
+        connected_led_taillight: Boolean,
+        welcome_goodbye_animation: Boolean,
+        flush_door_handles: Boolean,
+        rain_sensing_wipers: Boolean,
       },
       warranty: {
         basic_warranty_years: { type: Number, min: 0 },
         basic_warranty_km: { type: Number, min: 0 },
         battery_warranty_years: { type: Number, min: 0 },
         battery_warranty_km: { type: Number, min: 0 },
+      },
+      storage_cabin_practicality: {
+        cupholders_front: { type: Number, min: 0 },
+        cupholders_rear: { type: Number, min: 0 },
+        bottle_holders: { type: Number, min: 0 },
+        cooled_glovebox: Boolean,
+        door_pockets: Boolean,
+        front_seatback_pockets: Boolean,
+        driver_armrest_storage: Boolean,
+        rear_armrest: Boolean,
+        cabin_boot_access: Boolean,
+        sunglass_holder: Boolean,
+      },
+      driver_display_controls: {
+        instrument_cluster: String,
+        cluster_size: String,
+        heads_up_display: Boolean,
+        gear_indicator: Boolean,
+        steering_mounted_controls: Boolean,
+        paddle_shifters: Boolean,
+        distance_to_empty: Boolean,
+        driving_efficiency_display: Boolean,
       },
     },
     specs_raw: { type: Schema.Types.Mixed },
@@ -597,5 +746,9 @@ variantSchema.index({ car_id: 1, model_year: 1, is_published: 1, is_deleted: 1, 
 variantSchema.index({ ex_showroom_price: 1, car_id: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
 variantSchema.index({ mileage_class: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
 variantSchema.index({ range_class: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ car_id: 1, variant_rank: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+variantSchema.index({ value_for_money_tag: 1 });
+variantSchema.index({ market_status: 1 });
+variantSchema.index({ on_road_price: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
 
 export const CarVariant = model<ICarVariant>('CarVariant', variantSchema);
