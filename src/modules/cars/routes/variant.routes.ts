@@ -25,6 +25,15 @@ adminRouter.patch('/:id/publish/enable', validateUuidIdParam, CarVariantControll
 adminRouter.patch('/:id/publish/disable', validateUuidIdParam, CarVariantController.unpublishVariant);
 adminRouter.patch('/:id/archive', validateUuidIdParam, CarVariantController.archiveVariant);
 adminRouter.patch('/:id/unarchive', validateUuidIdParam, CarVariantController.unarchiveVariant);
+// Lifecycle & visibility routes
+adminRouter.patch('/:id/visibility', validateUuidIdParam, CarVariantController.updateVisibility);
+adminRouter.patch('/:id/lifecycle/unhide-on-launch', validateUuidIdParam, CarVariantController.unhideOnLaunch);
+adminRouter.get('/:id/lifecycle/completeness', validateUuidIdParam, CarVariantController.getEstimationCompleteness);
+
+// Difference engine & model aggregation routes
+adminRouter.get('/:id/differences', validateUuidIdParam, CarVariantController.getVariantDifference);
+adminRouter.get('/car/:carId/differences', CarVariantController.getCarVariantDifferences);
+adminRouter.get('/car/:carId/aggregates', CarVariantController.getModelAggregates);
 
 router.use('/admin', adminRouter);
 

@@ -8,6 +8,9 @@ import { catchAsync } from '../../../utils/catchAsync';
 import { CreateVariantDto } from '../dto/create-variant.dto';
 import { UpdateVariantDto } from '../dto/update-variant.dto';
 import { CarVariantService } from '../services/car-variant.service';
+import { VariantLifecycleService } from '../../variants/services/variant-lifecycle.service';
+import { DifferenceEngineService } from '../../variants/services/difference-engine.service';
+import { ModelAggregationService } from '../services/model-aggregation.service';
 
 export class CarVariantController {
   // Public routes
@@ -178,5 +181,71 @@ export class CarVariantController {
   static unarchiveVariant = catchAsync(async (req: Request, res: Response) => {
     const variant = await CarVariantService.unarchiveVariant(req.params.id as string, AuditUtil.actorFromRequest(req as AuthRequest));
     return ResponseUtil.success(res, variant, 'Variant unarchived successfully');
+  });
+
+  // Lifecycle & Visibility endpoints
+  static updateVisibility = catchAsync(async (req: Request, res: Response) => {
+    const { section_visibility, estimated_fields } = req.body;
+
+    if (!section_visibility && !estimated_fields) {
+      throw new AppError('section_visibility or estimated_fields is required', 400);
+    }
+
+    let variant: any = await CarVariantService.getVariantById(req.params.id as string);
+    if (!variant) {
+      throw new AppError('Variant not found', 404);
+    }
+
+    // Update section visibility
+    if (section_visibility && Array.isArray(section_visibility)) {
+      for (const sv of section_visibility) {
+        await VariantLifecycleService.setSectionVisibility(
+          req.params.id as string,
+          sv.section_key,
+          sv.visibility,
+          sv.hidden_fields
+        );
+      }
+    }
+
+    // Update estimated fields
+    if (estimated_fields && Array.isArray(estimated_fields)) {
+      await VariantLifecycleService.markFieldsAsEstimated(
+        req.params.id as string,
+        estimated_fields
+      );
+    }
+
+    variant = await CarVariantService.getVariantById(req.params.id as string);
+    return ResponseUtil.success(res, variant, 'Visibility updated successfully');
+  });
+
+  static unhideOnLaunch = catchAsync(async (req: Request, res: Response) => {
+    const variant = await VariantLifecycleService.unhideAllSections(req.params.id as string);
+    return ResponseUtil.success(res, variant, 'Variant sections unhidden for launch');
+  });
+
+  static getEstimationCompleteness = catchAsync(async (req: Request, res: Response) => {
+    const completeness = await VariantLifecycleService.getEstimationCompleteness(
+      req.params.id as string
+    );
+    return ResponseUtil.success(res, completeness, 'Estimation completeness retrieved');
+  });
+
+  // Difference engine endpoints
+  static getVariantDifference = catchAsync(async (req: Request, res: Response) => {
+    const difference = await DifferenceEngineService.calculateVariantDifference(req.params.id as string);
+    return ResponseUtil.success(res, difference, 'Variant differences calculated');
+  });
+
+  static getCarVariantDifferences = catchAsync(async (req: Request, res: Response) => {
+    const differences = await DifferenceEngineService.calculateCarVariantDifferences(req.params.carId as string);
+    return ResponseUtil.success(res, differences, 'Variant differences for car calculated');
+  });
+
+  // Model aggregation endpoints
+  static getModelAggregates = catchAsync(async (req: Request, res: Response) => {
+    const aggregates = await ModelAggregationService.aggregateModelFromVariants(req.params.carId as string);
+    return ResponseUtil.success(res, aggregates, 'Model aggregates retrieved');
   });
 }
