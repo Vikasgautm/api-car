@@ -44,15 +44,11 @@ class ImageCategoryService {
     }
     static async createImageCategory(categoryData) {
         const slug = slug_util_1.SlugUtil.generate(categoryData.name);
-        const existingSlug = await image_category_model_1.ImageCategory.findOne({ slug });
-        if (existingSlug) {
-            const existingSlugs = (await image_category_model_1.ImageCategory.find().select('slug')).map(c => c.slug);
-            const uniqueSlug = slug_util_1.SlugUtil.generateUnique(categoryData.name, existingSlugs);
-            categoryData.slug = uniqueSlug;
-        }
-        else {
-            categoryData.slug = slug;
-        }
+        // Batch fetch all categories instead of two separate queries
+        const allCategories = await image_category_model_1.ImageCategory.find().select('slug').lean();
+        const allSlugs = allCategories.map((c) => c.slug);
+        const finalSlug = allSlugs.includes(slug) ? slug_util_1.SlugUtil.generateUnique(categoryData.name, allSlugs) : slug;
+        categoryData.slug = finalSlug;
         const category = {
             name: categoryData.name,
             slug: categoryData.slug,

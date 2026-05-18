@@ -53,15 +53,11 @@ class ImageSubCategoryService {
             throw new app_error_util_1.AppError('Image category not found', 404);
         }
         const slug = slug_util_1.SlugUtil.generate(subcategoryData.name);
-        const existingSlug = await image_subcategory_model_1.ImageSubCategory.findOne({ slug });
-        if (existingSlug) {
-            const existingSlugs = (await image_subcategory_model_1.ImageSubCategory.find().select('slug')).map(c => c.slug);
-            const uniqueSlug = slug_util_1.SlugUtil.generateUnique(subcategoryData.name, existingSlugs);
-            subcategoryData.slug = uniqueSlug;
-        }
-        else {
-            subcategoryData.slug = slug;
-        }
+        // Batch fetch all subcategories instead of two separate queries
+        const allSubCategories = await image_subcategory_model_1.ImageSubCategory.find().select('slug').lean();
+        const allSlugs = allSubCategories.map((c) => c.slug);
+        const finalSlug = allSlugs.includes(slug) ? slug_util_1.SlugUtil.generateUnique(subcategoryData.name, allSlugs) : slug;
+        subcategoryData.slug = finalSlug;
         const subcategory = {
             category_id: subcategoryData.category_id,
             name: subcategoryData.name,

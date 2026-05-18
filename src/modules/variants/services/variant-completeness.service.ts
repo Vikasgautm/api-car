@@ -34,6 +34,12 @@ export class VariantCompletenessService {
       throw new AppError('Variant not found', 404);
     }
 
+    return this.scoreVariant(variant, variantId);
+  }
+
+  // Internal method that accepts variant object directly (no refetch)
+  private static scoreVariant(variant: any, variantId: string): CompletenessMetric {
+
     const basicInfoScore = this.scoreBasicInfo(variant);
     const specsScore = this.scoreSpecs(variant);
     const seoScore = this.scoreSeo(variant);
@@ -68,12 +74,14 @@ export class VariantCompletenessService {
       throw new AppError('Car not found', 404);
     }
 
-    const variants = await CarVariant.find({ car_id: carId }).select('_id');
+    // Fetch all variants with full data (not just _id) to avoid refetching in loop
+    const variants = await CarVariant.find({ car_id: carId });
     const metrics: CompletenessMetric[] = [];
     let totalScore = 0;
 
+    // Score each variant without refetching
     for (const variant of variants) {
-      const metric = await this.getVariantCompleteness(variant._id.toString());
+      const metric = this.scoreVariant(variant, variant._id.toString());
       metrics.push(metric);
       totalScore += metric.overall_score;
     }
@@ -110,7 +118,7 @@ export class VariantCompletenessService {
 
     return {
       car_id: carId,
-      car_name: car.car_name,
+      car_name: car.name,
       avg_completeness: avgCompleteness,
       total_variants: variants.length,
       variants_by_score: variantsByScore,

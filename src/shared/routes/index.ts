@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import auditRoutes from '../../modules/audit/routes/audit.routes';
 import authRoutes from '../../modules/auth/routes/auth.routes';
+import comparisonRoutes from '../../modules/comparison/routes/comparison.routes';
 import deletionWorkflowRoutes from '../../modules/deletion-workflow/routes/deletion-workflow.routes';
 import discoveryRoutes from '../../modules/discovery/routes/discovery.routes';
 import seoPresetRoutes from '../../modules/discovery/routes/seo-preset.routes';
 import blogRoutes from '../../modules/blogs/routes/blog.routes';
 import bodyTypeRoutes from '../../modules/bodyTypes/routes/bodyType.routes';
 import brandRoutes from '../../modules/brands/routes/brand.routes';
-import carRoutes from '../../modules/cars/routes/car.routes';
+import carRoutes, { adminCarRouter } from '../../modules/cars/routes/car.routes';
 import variantRoutes from '../../modules/cars/routes/variant.routes';
 import cityRoutes from '../../modules/cities/routes/city.routes';
 import faqRoutes from '../../modules/faqs/routes/faq.routes';
@@ -27,6 +28,10 @@ const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/cars', carRoutes);
+
+// Admin namespace - mount admin car routes at /admin/cars for admin endpoints
+// This provides backward compatibility for /admin/cars/{id} path while preserving /cars/admin/{id}
+router.use('/admin/cars', adminCarRouter);
 router.use('/variants', variantRoutes);
 router.use('/brands', brandRoutes);
 router.use('/body-types', bodyTypeRoutes);
@@ -46,7 +51,9 @@ router.use('/intelligence', intelligenceRoutes);
 router.use('/audit', auditRoutes);
 router.use('/deletion-requests', deletionWorkflowRoutes);
 router.use('/redirects', redirectRoutes);
+router.use('/comparisons', comparisonRoutes);
 router.use('/discover', discoveryRoutes);
+router.use('/discovery', discoveryRoutes); // Alias for /discover
 router.use('/seo-presets', seoPresetRoutes);
 
 export default router;

@@ -59,9 +59,9 @@ export class ModelAggregationService {
     if (variants.length === 0) {
       return {
         car_id: carId,
-        car_name: car.car_name,
+        car_name: car.name,
         brand_name: car.brand_id?.toString(),
-        body_type: car.body_type,
+        body_type: car.body_type_name || undefined,
         variant_count: 0,
         published_variant_count: 0,
       };
@@ -69,9 +69,9 @@ export class ModelAggregationService {
 
     const aggregates: ModelAggregates = {
       car_id: carId,
-      car_name: car.car_name,
+      car_name: car.name,
       brand_name: car.brand_id?.toString(),
-      body_type: car.body_type,
+      body_type: car.body_type_name || undefined,
       variant_count: variants.length,
       published_variant_count: variants.length,
       available_fuel_types: [],
@@ -130,8 +130,8 @@ export class ModelAggregationService {
 
       // Engine performance
       const enginePerf = specs.engine_performance;
-      if (enginePerf?.max_power_bhp) powers.push(Number(enginePerf.max_power_bhp));
-      if (enginePerf?.max_torque_nm) torques.push(Number(enginePerf.max_torque_nm));
+      if (enginePerf?.max_power) powers.push(Number(enginePerf.max_power));
+      if (enginePerf?.max_torque) torques.push(Number(enginePerf.max_torque));
 
       // EV range
       const battery = specs.battery_charging;
@@ -145,13 +145,11 @@ export class ModelAggregationService {
 
       // Feature availability (check if truthy)
       const interior = specs.interior;
-      if (interior?.sunroof === true || interior?.sunroof === 'yes')
-        featureFlags.has_sunroof = true;
+      if (interior?.sunroof) featureFlags.has_sunroof = true;
       if (interior?.panoramic_sunroof === true) featureFlags.has_panoramic_sunroof = true;
 
       const comfort = specs.comfort_convenience;
-      if (comfort?.ventilated_seats === true || comfort?.ventilated_seats === 'yes')
-        featureFlags.has_ventilated_seats = true;
+      if (comfort?.ventilated_seats) featureFlags.has_ventilated_seats = true;
 
       const infotain = specs.infotainment_connectivity;
       if (infotain?.wireless_charging === true) featureFlags.has_wireless_charger = true;
@@ -212,18 +210,20 @@ export class ModelAggregationService {
   }
 
   /**
-   * Batch aggregate for multiple cars.
+   * Batch aggregate for multiple cars — runs all aggregations in parallel.
    */
   static async aggregateMultipleCars(carIds: string[]): Promise<ModelAggregates[]> {
-    const results: ModelAggregates[] = [];
-    for (const carId of carIds) {
-      try {
-        const agg = await this.aggregateModelFromVariants(carId);
-        results.push(agg);
-      } catch (err) {
-        console.error(`Failed to aggregate model ${carId}:`, err);
-      }
-    }
-    return results;
+    const results = await Promise.allSettled(
+      carIds.map(carId => this.aggregateModelFromVariants(carId)),
+    );
+    return results
+      .map((result, idx) => {
+        if (result.status === 'rejected') {
+          console.error(`Failed to aggregate model ${carIds[idx]}:`, result.reason);
+          return null;
+        }
+        return result.value;
+      })
+      .filter((r): r is ModelAggregates => r !== null);
   }
 }

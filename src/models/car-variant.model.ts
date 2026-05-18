@@ -331,6 +331,26 @@ export type TransmissionType =
 
 export type VariantMarketStatus = 'available' | 'sold_out' | 'discontinued' | 'upcoming';
 
+export interface ChangeHistoryEntry {
+  field: string;
+  old_value: any;
+  new_value: any;
+  changed_by: string;
+  changed_at: Date;
+  change_source: 'manual_edit' | 'import' | 'bulk_operation' | 'system' | 'api';
+  notes?: string;
+}
+
+export interface FieldMetadata {
+  value: any;
+  source?: string;
+  source_priority?: number;
+  confidence?: number;
+  is_estimated?: boolean;
+  last_updated?: Date;
+  last_updated_by?: string;
+}
+
 export interface ICarVariant extends Document {
   variant_id: string;
   car_id: string;
@@ -363,6 +383,7 @@ export interface ICarVariant extends Document {
   field_confidence_scores?: Record<string, number>;
   specs_normalized?: SpecsNormalized;
   specs_raw?: Record<string, any>;
+  specs_metadata?: Record<string, FieldMetadata>;
   hidden_spec_keys?: string[];
   hidden_sections?: string[];
   is_published: boolean;
@@ -382,6 +403,8 @@ export interface ICarVariant extends Document {
   seo_owner_user_id?: string | null;
   reviewer_user_id?: string | null;
   last_reviewed_at?: Date | null;
+  // Change tracking (Batch 6)
+  change_history?: ChangeHistoryEntry[];
   // SEO fields
   meta_title?: string;
   meta_description?: string;
@@ -389,6 +412,9 @@ export interface ICarVariant extends Document {
   og_image?: string;
   canonical_url?: string;
   noindex?: boolean;
+  // Comparison fields
+  isMostComparedVariant?: boolean;
+  mostComparedPriority?: number;
 }
 
 const variantSchema = new Schema<ICarVariant>(
@@ -726,6 +752,7 @@ const variantSchema = new Schema<ICarVariant>(
       },
     },
     specs_raw: { type: Schema.Types.Mixed },
+    specs_metadata: { type: Schema.Types.Mixed, default: {} },
     hidden_spec_keys: { type: [String], default: [] },
     hidden_sections: { type: [String], default: [] },
     is_published: { type: Boolean, default: false },
@@ -750,6 +777,21 @@ const variantSchema = new Schema<ICarVariant>(
     og_image: { type: String },
     canonical_url: { type: String },
     noindex: { type: Boolean, default: false },
+    isMostComparedVariant: { type: Boolean, default: false, index: true },
+    mostComparedPriority: { type: Number, default: 0, min: 0 },
+    change_history: [{
+      field: { type: String, required: true },
+      old_value: { type: Schema.Types.Mixed },
+      new_value: { type: Schema.Types.Mixed },
+      changed_by: { type: String, required: true },
+      changed_at: { type: Date, required: true },
+      change_source: {
+        type: String,
+        enum: ['manual_edit', 'import', 'bulk_operation', 'system', 'api'],
+        required: true,
+      },
+      notes: { type: String },
+    }],
   },
   {
     timestamps: true,

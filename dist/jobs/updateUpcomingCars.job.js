@@ -7,6 +7,7 @@ exports.UpdateUpcomingCarsJob = void 0;
 const node_cron_1 = __importDefault(require("node-cron"));
 const car_model_1 = require("../models/car.model");
 const logger_1 = require("../utils/logger");
+const car_lifecycle_service_1 = require("../modules/cars/services/car-lifecycle.service");
 /**
  * Auto-launch job for upcoming cars
  * Runs daily at midnight to move upcoming cars to launched status
@@ -49,26 +50,15 @@ class UpdateUpcomingCarsJob {
                 return;
             }
             logger_1.logger.info(`Found ${carsToUpdate.length} cars for auto-launch`);
-            // Update each car
-            let updatedCount = 0;
-            for (const car of carsToUpdate) {
-                try {
-                    car.is_upcoming = false;
-                    car.is_launched = true;
-                    car.status = 'launched';
-                    car.is_latest = true;
-                    // Only set launch_date if it's empty
-                    if (!car.launch_date) {
-                        car.launch_date = today;
-                    }
-                    await car.save();
-                    updatedCount++;
-                    logger_1.logger.info(`Auto-launched car: ${car.name} (car_id: ${car.car_id})`);
-                }
-                catch (error) {
-                    logger_1.logger.error(`Failed to auto-launch car ${car.car_id}:`, error);
-                }
-            }
+            // Parallelize state transitions for all cars to avoid sequential delays
+            const transitionResults = await Promise.allSettled(carsToUpdate.map(car => car_lifecycle_service_1.CarLifecycleService.transitionState(car.car_id, 'launched', { user_id: 'system' }).then(() => {
+                logger_1.logger.info(`Auto-launched car: ${car.name} (car_id: ${car.car_id})`);
+                return { success: true, carId: car.car_id };
+            }).catch(error => {
+                logger_1.logger.error(`Failed to auto-launch car ${car.car_id}:`, error);
+                return { success: false, carId: car.car_id, error };
+            })));
+            const updatedCount = transitionResults.filter(r => r.status === 'fulfilled' && r.value.success).length;
             logger_1.logger.info(`UpdateUpcomingCarsJob completed. Updated ${updatedCount} cars`);
         }
         catch (error) {

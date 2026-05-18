@@ -56,6 +56,15 @@ adminRouter.get('/:id/refine-specs', validateUuidIdParam, CarVariantController.r
 adminRouter.post('/:id/apply-refinement', validateUuidIdParam, CarVariantController.applyRefinementSuggestions);
 adminRouter.post('/bulk/refine-specs', CarVariantController.refineMultipleVariants);
 
+// Change history & integrity routes (Batch 6)
+adminRouter.get('/:id/change-history', validateUuidIdParam, CarVariantController.getVariantChangeHistory);
+adminRouter.get('/:id/audit-trail', validateUuidIdParam, CarVariantController.getVariantAuditTrail);
+adminRouter.get('/:id/integrity-status', validateUuidIdParam, CarVariantController.getVariantIntegrityStatus);
+
+// Enhanced validation routes (Batch 6)
+adminRouter.get('/:id/validate/full', validateUuidIdParam, CarVariantController.validateVariantFull);
+adminRouter.get('/:id/validate/automotive-constraints', validateUuidIdParam, CarVariantController.validateAutomotiveConstraints);
+
 router.use('/admin', adminRouter);
 
 // Legacy routes for backward compatibility

@@ -59,14 +59,11 @@ export class ImageCategoryService {
   static async createImageCategory(categoryData: any) {
     const slug = SlugUtil.generate(categoryData.name);
 
-    const existingSlug = await ImageCategory.findOne({ slug });
-    if (existingSlug) {
-      const existingSlugs = (await ImageCategory.find().select('slug')).map(c => c.slug);
-      const uniqueSlug = SlugUtil.generateUnique(categoryData.name, existingSlugs);
-      categoryData.slug = uniqueSlug;
-    } else {
-      categoryData.slug = slug;
-    }
+    // Batch fetch all categories instead of two separate queries
+    const allCategories = await ImageCategory.find().select('slug').lean();
+    const allSlugs = allCategories.map((c: any) => c.slug);
+    const finalSlug = allSlugs.includes(slug) ? SlugUtil.generateUnique(categoryData.name, allSlugs) : slug;
+    categoryData.slug = finalSlug;
 
     const category: Partial<IImageCategory> = {
       name: categoryData.name,

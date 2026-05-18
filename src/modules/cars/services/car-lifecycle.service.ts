@@ -63,7 +63,7 @@ export class CarLifecycleService {
 
     // Preserve entity creation time
     if (!car.entity_created_at) {
-      car.entity_created_at = car.createdAt || new Date();
+      car.entity_created_at = (car as any).createdAt || new Date();
     }
 
     await car.save();
@@ -76,39 +76,54 @@ export class CarLifecycleService {
   static async unHideCategoryOnLaunch(carId: string) {
     const variants = await CarVariant.find({ car_id: carId, is_deleted: false });
 
+    const bulkOps: any[] = [];
+
     for (const variant of variants) {
       let modified = false;
+      const updateData: any = {};
 
       if (variant.hidden_sections && variant.hidden_sections.length > 0) {
         // Clear hidden sections on launch
-        variant.hidden_sections = [];
+        updateData.hidden_sections = [];
         modified = true;
       }
 
       if (variant.section_visibility && variant.section_visibility.length > 0) {
         // Unhide teaser-only and partial sections
-        variant.section_visibility = variant.section_visibility.map((section) => {
+        const updatedVisibility = variant.section_visibility.map((section) => {
           if (section.visibility === 'teaser_only' || section.visibility === 'partial') {
             return { ...section, visibility: 'visible' as const, hidden_fields: [] };
           }
           return section;
         });
+        updateData.section_visibility = updatedVisibility;
         modified = true;
       }
 
       if (variant.field_visibility) {
         // Unhide teaser_only and partial fields
+        const updatedFieldVisibility = { ...variant.field_visibility };
         for (const [fieldKey, visibility] of Object.entries(variant.field_visibility)) {
           if (visibility === 'teaser_only' || visibility === 'partial') {
-            variant.field_visibility[fieldKey] = 'visible';
+            updatedFieldVisibility[fieldKey] = 'visible';
             modified = true;
           }
         }
+        if (modified) updateData.field_visibility = updatedFieldVisibility;
       }
 
       if (modified) {
-        await variant.save();
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: variant._id },
+            update: { $set: updateData }
+          }
+        });
       }
+    }
+
+    if (bulkOps.length > 0) {
+      await CarVariant.bulkWrite(bulkOps);
     }
   }
 

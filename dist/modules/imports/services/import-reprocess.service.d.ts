@@ -15,6 +15,7 @@ export interface ReprocessResult {
 }
 export declare class ImportReprocessService {
     static reprocessVariant(variantId: string): Promise<ReprocessResult | null>;
+    private static reprocessVariantWithData;
     static reprocessCar(carId: string): Promise<ReprocessResult[]>;
     static reprocessAll(): Promise<{
         total: number;

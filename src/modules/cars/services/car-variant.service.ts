@@ -10,6 +10,7 @@ import { AuditActor, AuditUtil, VARIANT_AUDIT_FIELDS } from "../../../shared/uti
 import { FilterUtil } from "../../../shared/utils/filter.util";
 import { PaginationUtil } from "../../../shared/utils/pagination.util";
 import { SlugUtil } from "../../../shared/utils/slug.util";
+import { VariantIntegrityService } from "../../variants/services/variant-integrity.service";
 
 // ── Fuel-type visibility rules (mirrors variantSpecConfig.ts FuelVisibilityMap) ──
 // Maps section key → field key → which fuel types should hide that field.
@@ -405,8 +406,12 @@ export class CarVariantService {
 
     const existingSlug = await CarVariant.findOne({ slug, is_deleted: false });
     if (existingSlug) {
-      const existingSlugs = (await CarVariant.find({ is_deleted: false }).select('slug')).map(v => v.slug);
-      const uniqueSlug = SlugUtil.generateUnique(variantData.variant_name, existingSlugs);
+      const baseSlug = slug;
+      const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+      const matchingSlugs = (
+        await CarVariant.find({ slug: pattern, is_deleted: false }).select('slug').lean()
+      ).map((v: any) => v.slug);
+      const uniqueSlug = SlugUtil.generateUnique(variantData.variant_name, matchingSlugs);
       variantData.slug = uniqueSlug;
     } else {
       variantData.slug = slug;
@@ -533,6 +538,18 @@ export class CarVariantService {
     if (variantData.variant_highlights !== undefined) updateData.variant_highlights = variantData.variant_highlights;
     if (variantData.market_status !== undefined) updateData.market_status = variantData.market_status;
 
+    // Validate automotive constraints before saving
+    const validationResult = await VariantIntegrityService.validateAutomotiveConstraints({
+      ...before,
+      ...updateData,
+    });
+    if (!validationResult.isValid) {
+      throw new AppError(
+        `Validation failed: ${validationResult.errors.map((e: any) => e.message).join('; ')}`,
+        400
+      );
+    }
+
     const variant = await CarVariant.findOneAndUpdate(
       { variant_id: variantId, is_deleted: false },
       updateData,
@@ -552,6 +569,24 @@ export class CarVariantService {
           },
         }
       );
+    }
+
+    // Record change history for manual edits
+    if (before) {
+      try {
+        await VariantIntegrityService.recordVariantChanges(
+          variantId,
+          before,
+          variant.toObject(),
+          actor?.email || 'system',
+          'manual_edit'
+        );
+      } catch (changeTrackingError: any) {
+        // Log warning but don't fail the update
+        console.warn(
+          `Failed to record change history for variant ${variantId}: ${changeTrackingError?.message || changeTrackingError}`
+        );
+      }
     }
 
     // Reclassify the variant when classification inputs changed; always recompute

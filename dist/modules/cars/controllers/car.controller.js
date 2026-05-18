@@ -9,7 +9,10 @@ const catchAsync_1 = require("../../../utils/catchAsync");
 const create_car_dto_1 = require("../dto/create-car.dto");
 const update_car_dto_1 = require("../dto/update-car.dto");
 const car_service_1 = require("../services/car.service");
+const car_lifecycle_service_1 = require("../services/car-lifecycle.service");
 const redirect_service_1 = require("../../redirects/services/redirect.service");
+const scheduled_launch_service_1 = require("../../../shared/services/scheduled-launch.service");
+const car_integrity_service_1 = require("../services/car-integrity.service");
 function parseTagIds(input) {
     if (input === undefined || input === null || input === '')
         return undefined;
@@ -321,6 +324,73 @@ class CarController {
         const { expected_exshowroom_price, expected_launch_date } = req.body;
         const car = await car_service_1.CarService.markUpcoming(req.params.id, { expected_exshowroom_price, expected_launch_date }, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, car, "Car marked as upcoming successfully");
+    });
+    // Lifecycle management endpoints
+    static transitionLifecycleState = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { new_state, reason } = req.body;
+        if (!new_state) {
+            throw new app_error_util_1.AppError('new_state is required', 400);
+        }
+        const car = await car_lifecycle_service_1.CarLifecycleService.transitionState(req.params.id, new_state, audit_util_1.AuditUtil.actorFromRequest(req), reason);
+        return response_util_1.ResponseUtil.success(res, car, `Car transitioned to ${new_state} successfully`);
+    });
+    static getLifecycleHistory = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const history = await car_lifecycle_service_1.CarLifecycleService.getHistory(req.params.id);
+        return response_util_1.ResponseUtil.success(res, history, 'Lifecycle history retrieved successfully');
+    });
+    static scheduleStateChange = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { new_state, scheduled_date, reason } = req.body;
+        if (!new_state || !scheduled_date) {
+            throw new app_error_util_1.AppError('new_state and scheduled_date are required', 400);
+        }
+        const result = await car_lifecycle_service_1.CarLifecycleService.scheduleStateChange(req.params.id, new_state, new Date(scheduled_date), audit_util_1.AuditUtil.actorFromRequest(req), reason);
+        return response_util_1.ResponseUtil.success(res, result, 'State change scheduled successfully');
+    });
+    static getSEOContinuityReport = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const report = await car_lifecycle_service_1.CarLifecycleService.getSEOContinuityReport(req.params.id);
+        return response_util_1.ResponseUtil.success(res, report, 'SEO continuity report retrieved successfully');
+    });
+    static getUpcomingLaunches = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const days = req.query.days ? Number(req.query.days) : 30;
+        const launches = await car_lifecycle_service_1.CarLifecycleService.getUpcomingLaunches(days);
+        return response_util_1.ResponseUtil.success(res, launches, 'Upcoming launches retrieved successfully');
+    });
+    static processScheduledLaunches = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const results = await scheduled_launch_service_1.ScheduledLaunchService.processScheduledLaunches();
+        return response_util_1.ResponseUtil.success(res, results, 'Scheduled launches processed');
+    });
+    static getScheduledLaunchesWindow = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const days = req.query.days ? Number(req.query.days) : 30;
+        const launches = await scheduled_launch_service_1.ScheduledLaunchService.getUpcomingLaunchesWindow(days);
+        return response_util_1.ResponseUtil.success(res, launches, 'Upcoming launches retrieved');
+    });
+    static cancelScheduledLaunch = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { target_state } = req.body;
+        if (!target_state) {
+            throw new app_error_util_1.AppError('target_state is required', 400);
+        }
+        const result = await scheduled_launch_service_1.ScheduledLaunchService.cancelScheduledLaunch(req.params.id, target_state);
+        return response_util_1.ResponseUtil.success(res, result, 'Scheduled launch cancelled');
+    });
+    // Change history endpoints (Batch 6 Feature 2)
+    static getCarChangeHistory = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { field, source, startDate, endDate, limit } = req.query;
+        const history = await car_integrity_service_1.CarIntegrityService.getChangeHistory(req.params.id, {
+            field: field,
+            source: source,
+            startDate: startDate ? new Date(startDate) : undefined,
+            endDate: endDate ? new Date(endDate) : undefined,
+            limit: limit ? parseInt(limit) : undefined,
+        });
+        return response_util_1.ResponseUtil.success(res, history, 'Change history retrieved');
+    });
+    static getCarAuditTrail = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const auditTrail = await car_integrity_service_1.CarIntegrityService.getAuditTrail(req.params.id);
+        return response_util_1.ResponseUtil.success(res, { audit_trail: auditTrail }, 'Audit trail retrieved');
+    });
+    static getCarChangeSummary = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const summary = await car_integrity_service_1.CarIntegrityService.getChangeSummary(req.params.id);
+        return response_util_1.ResponseUtil.success(res, summary, 'Change summary retrieved');
     });
 }
 exports.CarController = CarController;

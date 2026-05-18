@@ -142,39 +142,50 @@ class ImageService {
     static async createMultipleImagesWithCleanup(uploadedFiles, additionalData, uploadedBy) {
         const savedImages = [];
         const failedFiles = [];
-        for (const file of uploadedFiles) {
-            try {
-                const savedImage = await this.createImage({
-                    ...file,
-                    ...additionalData,
-                }, uploadedBy);
-                savedImages.push(savedImage);
+        // Batch create all images in parallel instead of sequential
+        const createPromises = uploadedFiles.map(file => this.createImage({
+            ...file,
+            ...additionalData,
+        }, uploadedBy).then(savedImage => ({
+            success: true,
+            file,
+            savedImage,
+        })).catch(error => ({
+            success: false,
+            file,
+            error,
+        })));
+        const results = await Promise.all(createPromises);
+        // Process results - separate successful from failed
+        for (const result of results) {
+            if (result.success && 'savedImage' in result) {
+                savedImages.push(result.savedImage);
             }
-            catch (error) {
-                // Cleanup failed file
-                if (file.publicId) {
+            else {
+                // Cleanup failed file from Cloudinary
+                if (result.file.publicId) {
                     try {
-                        await upload_service_1.UploadService.deleteFromCloudinary(file.publicId);
+                        await upload_service_1.UploadService.deleteFromCloudinary(result.file.publicId);
                     }
                     catch (cleanupError) {
                         console.error('Error during cleanup after DB save failure:', cleanupError);
                     }
                 }
-                failedFiles.push({ file, error });
+                failedFiles.push(result);
             }
         }
-        // If any files failed, rollback all successfully saved images
+        // If any files failed, rollback all successfully saved images in parallel
         if (failedFiles.length > 0 && savedImages.length > 0) {
-            for (const image of savedImages) {
-                if (image.public_id) {
-                    try {
-                        await upload_service_1.UploadService.deleteFromCloudinary(image.public_id);
-                    }
-                    catch (cleanupError) {
-                        console.error('Error during rollback cleanup:', cleanupError);
-                    }
-                }
-                await image_model_1.Image.findByIdAndDelete(image._id);
+            // Parallelize Cloudinary deletions
+            await Promise.all(savedImages
+                .filter(image => image.public_id)
+                .map(image => upload_service_1.UploadService.deleteFromCloudinary(image.public_id).catch(cleanupError => {
+                console.error('Error during rollback cleanup:', cleanupError);
+            })));
+            // Batch delete images from DB instead of sequential deletes
+            const imageIds = savedImages.map(image => image._id);
+            if (imageIds.length > 0) {
+                await image_model_1.Image.deleteMany({ _id: { $in: imageIds } });
             }
             throw new app_error_util_1.AppError(`Failed to save ${failedFiles.length} image(s). All uploads have been rolled back.`, 500);
         }

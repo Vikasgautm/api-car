@@ -2,12 +2,14 @@ import mongoose from "mongoose";
 import app from "./app";
 import { config } from "./config";
 import { UpdateUpcomingCarsJob } from "./jobs/updateUpcomingCars.job";
+import { ProcessScheduledLaunchesJob } from "./jobs/processScheduledLaunches.job";
 import { createDefaultSuperAdmin } from "./seeds/admin.seed";
 import { seedCities } from "./seeds/city.seed";
 import { logger } from "./utils/logger";
 import { computeMileageClassesIfNeeded } from "./seeds/compute-mileage-classes.seed";
 import { seedFuelTypes } from "./seeds/fuel-type.seed";
 import { seedIntentTags } from "./seeds/intent-tags.seed";
+import { auditRoutes, logRouteAudit } from "./shared/utils/route-audit.util";
 
 const startServer = async () => {
   try {
@@ -31,12 +33,20 @@ const startServer = async () => {
     // Backfill mileage / EV-range classifications for any variant or car still missing them.
     await computeMileageClassesIfNeeded();
 
-    // Start auto-launch cron job
+    // Start auto-launch cron jobs
     UpdateUpcomingCarsJob.start();
+    ProcessScheduledLaunchesJob.start();
 
     // Start Express Server
     app.listen(config.port, () => {
       logger.info(`Server is running on http://localhost:${config.port}`);
+
+      // Audit routes to catch missing or duplicate endpoints
+      const audit = auditRoutes(app);
+      logRouteAudit(audit);
+      if (audit.warnings.length > 0) {
+        logger.warn(`Route audit detected ${audit.warnings.length} warning(s)`);
+      }
     });
   } catch (error) {
     logger.error("Error starting server:", error);

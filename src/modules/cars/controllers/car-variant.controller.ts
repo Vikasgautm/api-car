@@ -15,6 +15,7 @@ import { VariantValidationService } from '../../variants/services/variant-valida
 import { VariantCompletenessService } from '../../variants/services/variant-completeness.service';
 import { VariantBulkService } from '../../variants/services/variant-bulk.service';
 import { SpecRefinementService } from '../../variants/services/spec-refinement.service';
+import { VariantIntegrityService } from '../../variants/services/variant-integrity.service';
 
 export class CarVariantController {
   // Public routes
@@ -200,16 +201,18 @@ export class CarVariantController {
       throw new AppError('Variant not found', 404);
     }
 
-    // Update section visibility
+    // Update section visibility in parallel instead of sequential
     if (section_visibility && Array.isArray(section_visibility)) {
-      for (const sv of section_visibility) {
-        await VariantLifecycleService.setSectionVisibility(
-          req.params.id as string,
-          sv.section_key,
-          sv.visibility,
-          sv.hidden_fields
-        );
-      }
+      await Promise.all(
+        section_visibility.map(sv =>
+          VariantLifecycleService.setSectionVisibility(
+            req.params.id as string,
+            sv.section_key,
+            sv.visibility,
+            sv.hidden_fields
+          )
+        )
+      );
     }
 
     // Update estimated fields
@@ -290,7 +293,8 @@ export class CarVariantController {
     if (!variant_ids || !Array.isArray(variant_ids) || !status) {
       throw new AppError('variant_ids array and status are required', 400);
     }
-    const result = await VariantBulkService.bulkUpdateStatus(variant_ids, status);
+    const changedBy = (req as AuthRequest).user?.email || 'system';
+    const result = await VariantBulkService.bulkUpdateStatus(variant_ids, status, changedBy);
     return ResponseUtil.success(res, result, 'Bulk status update completed');
   });
 
@@ -299,7 +303,8 @@ export class CarVariantController {
     if (!variant_ids || !Array.isArray(variant_ids) || should_publish === undefined) {
       throw new AppError('variant_ids array and should_publish are required', 400);
     }
-    const result = await VariantBulkService.bulkPublish(variant_ids, should_publish);
+    const changedBy = (req as AuthRequest).user?.email || 'system';
+    const result = await VariantBulkService.bulkPublish(variant_ids, should_publish, changedBy);
     return ResponseUtil.success(res, result, 'Bulk publish update completed');
   });
 
@@ -308,7 +313,8 @@ export class CarVariantController {
     if (!variant_ids || !Array.isArray(variant_ids) || !hidden_sections) {
       throw new AppError('variant_ids array and hidden_sections are required', 400);
     }
-    const result = await VariantBulkService.bulkUpdateVisibility(variant_ids, hidden_sections);
+    const changedBy = (req as AuthRequest).user?.email || 'system';
+    const result = await VariantBulkService.bulkUpdateVisibility(variant_ids, hidden_sections, changedBy);
     return ResponseUtil.success(res, result, 'Bulk visibility update completed');
   });
 
@@ -317,7 +323,8 @@ export class CarVariantController {
     if (!variant_ids || !Array.isArray(variant_ids) || !updates) {
       throw new AppError('variant_ids array and updates are required', 400);
     }
-    const result = await VariantBulkService.bulkUpdate({ variant_ids, updates });
+    const changedBy = (req as AuthRequest).user?.email || 'system';
+    const result = await VariantBulkService.bulkUpdate({ variant_ids, updates }, changedBy);
     return ResponseUtil.success(res, result, 'Bulk update completed');
   });
 
@@ -354,5 +361,44 @@ export class CarVariantController {
     }
     const results = await SpecRefinementService.refineMultipleVariants(variant_ids);
     return ResponseUtil.success(res, results, 'Spec refinement for multiple variants completed');
+  });
+
+  // Change history endpoints (Batch 6 Feature 2)
+  static getVariantChangeHistory = catchAsync(async (req: Request, res: Response) => {
+    const { field, source, startDate, endDate, limit } = req.query;
+    const history = await VariantIntegrityService.getChangeHistory(req.params.id as string, {
+      field: field as string,
+      source: source as string,
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined,
+      limit: limit ? parseInt(limit as string) : undefined,
+    });
+    return ResponseUtil.success(res, history, 'Change history retrieved');
+  });
+
+  static getVariantAuditTrail = catchAsync(async (req: Request, res: Response) => {
+    const auditTrail = await VariantIntegrityService.getAuditTrail(req.params.id as string);
+    return ResponseUtil.success(res, { audit_trail: auditTrail }, 'Audit trail retrieved');
+  });
+
+  // Validation endpoints (enhanced with Batch 6)
+  static validateVariantFull = catchAsync(async (req: Request, res: Response) => {
+    const validation = await VariantValidationService.validateVariantFull(req.params.id as string);
+    return ResponseUtil.success(res, validation, 'Full validation completed');
+  });
+
+  static validateAutomotiveConstraints = catchAsync(async (req: Request, res: Response) => {
+    const variant = await CarVariantService.getVariantById(req.params.id as string);
+    if (!variant) {
+      throw new AppError('Variant not found', 404);
+    }
+    const validation = VariantValidationService.validateAutomotiveConstraints(variant);
+    return ResponseUtil.success(res, validation, 'Automotive constraint validation completed');
+  });
+
+  // Integrity endpoints (Batch 6 Feature 1)
+  static getVariantIntegrityStatus = catchAsync(async (req: Request, res: Response) => {
+    const status = await VariantIntegrityService.comprehensiveValidate(req.params.id as string);
+    return ResponseUtil.success(res, status, 'Variant integrity status retrieved');
   });
 }

@@ -1,1 +1,1 @@
-{"version":3,"file":"updateUpcomingCars.job.d.ts","sourceRoot":"","sources":["../../src/jobs/updateUpcomingCars.job.ts"],"names":[],"mappings":"AAIA;;;;GAIG;AACH,qBAAa,qBAAqB;IAChC,OAAO,CAAC,MAAM,CAAC,IAAI,CAAmC;IAEtD,MAAM,CAAC,KAAK;IAcZ,MAAM,CAAC,IAAI;WAQE,OAAO;CAkDrB"}
+{"version":3,"file":"updateUpcomingCars.job.d.ts","sourceRoot":"","sources":["../../src/jobs/updateUpcomingCars.job.ts"],"names":[],"mappings":"AAKA;;;;GAIG;AACH,qBAAa,qBAAqB;IAChC,OAAO,CAAC,MAAM,CAAC,IAAI,CAAmC;IAEtD,MAAM,CAAC,KAAK;IAcZ,MAAM,CAAC,IAAI;WAQE,OAAO;CA6CrB"}

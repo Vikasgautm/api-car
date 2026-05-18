@@ -162,6 +162,18 @@ export declare class DiscoveryService {
     static buildFacets(resolved: ResolvedFilters, variantMatchedCarIds: string[] | null): Promise<DiscoveryFacets>;
     /** Lightweight count-only call used by SEO preset preview. */
     static count(filters: DiscoveryFilters): Promise<number>;
+    /** Get available filters grouped by dimension. Returns facet counts for all dimensions. */
+    static getAvailableFilters(): Promise<{
+        [key: string]: DiscoveryFacetCount[];
+    }>;
+    /** Get all facet groups (categories for filtering). */
+    static getFacetGroups(): Promise<{
+        name: string;
+        key: string;
+        type: string;
+    }[]>;
+    /** Get filter options for a specific dimension. */
+    static getFilterOptions(dimension: string): Promise<DiscoveryFacetCount[]>;
 }
 export type DiscoveryMileageClass = MileageClass;
 //# sourceMappingURL=discovery.service.d.ts.map

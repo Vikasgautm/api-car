@@ -94,8 +94,12 @@ export class BlogService {
 
     const existingSlug = await Blog.findOne({ slug, is_deleted: false });
     if (existingSlug) {
-      const existingSlugs = (await Blog.find({ is_deleted: false }).select('slug')).map(b => b.slug);
-      const uniqueSlug = SlugUtil.generateUnique(blogData.title, existingSlugs);
+      const baseSlug = slug;
+      const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+      const matchingSlugs = (
+        await Blog.find({ slug: pattern, is_deleted: false }).select('slug').lean()
+      ).map((b: any) => b.slug);
+      const uniqueSlug = SlugUtil.generateUnique(blogData.title, matchingSlugs);
       blogData.slug = uniqueSlug;
     } else {
       blogData.slug = slug;

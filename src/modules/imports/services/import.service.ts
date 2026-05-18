@@ -9,6 +9,8 @@ import { ImportLog } from '../../../models/import-log.model';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { CarAggregationService } from '../../../shared/services/car-aggregation.service';
 import { MileageRecomputeService } from '../../../shared/services/mileage-recompute.service';
+import { VariantIntegrityService } from '../../variants/services/variant-integrity.service';
+import { SourcePriorityMerge, MetadataBuilder } from '../../../shared/utils/field-source-metadata';
 import { CarDekhoExtractor } from '../extractors/cardekho.extractor';
 import { CarWaleExtractor } from '../extractors/carwale.extractor';
 import { KeyMatcher } from '../extractors/key-matcher';
@@ -260,17 +262,25 @@ export class ImportService {
       );
     }
 
+    // Batch fetch all variants for the car to avoid N findOne queries in loop
+    const existingVariants = await CarVariant.find({
+      car_id: carId,
+      is_deleted: false,
+    }).lean();
+
+    // Build a lookup map for O(1) variant lookups in loop
+    const variantsBySlug = new Map(
+      existingVariants.map((v: any) => [v.slug, v])
+    );
+
     for (const url of urls) {
       const source = this.detectSource(url);
       try {
         const extracted = await this.extractVariantData(url);
 
-        // Check for existing variant
-        const existingVariant = await CarVariant.findOne({
-          car_id: carId,
-          slug: extracted.variant_name.toLowerCase().replace(/\s+/g, '-'),
-          is_deleted: false,
-        });
+        // Check for existing variant using in-memory lookup
+        const variantSlug = extracted.variant_name.toLowerCase().replace(/\s+/g, '-');
+        const existingVariant = variantsBySlug.get(variantSlug);
 
         // Match specs
         const { matched, unmatched } = await KeyMatcher.matchSpecs(extracted.specs);
@@ -439,6 +449,21 @@ export class ImportService {
       );
     }
 
+    // Batch fetch all existing variants and fuel types before loop to avoid N+1
+    const [existingVariants, allFuelTypes] = await Promise.all([
+      CarVariant.find({ car_id, is_deleted: false }).lean(),
+      FuelType.find({ is_deleted: false }).lean(),
+    ]);
+
+    // Create maps for O(1) lookups
+    const variantSlugSet = new Set(existingVariants.map((v: any) => v.slug));
+    const fuelTypeMap = new Map(allFuelTypes.map((ft: any) => [ft.fuel_type_id, ft]));
+
+    // Separate processing for create and update modes
+    const createPayloads: any[] = [];
+    const updateOps: any[] = [];
+    const importLogOps: any[] = [];
+
     for (const item of items) {
       try {
         // Clean null values from item data
@@ -449,14 +474,8 @@ export class ImportService {
         let variant;
 
         if (mode === 'create') {
-          // Check for duplicate slug
-          const existingSlug = await CarVariant.findOne({
-            car_id,
-            slug: item.data.slug,
-            is_deleted: false,
-          });
-
-          if (existingSlug) {
+          // Check for duplicate slug using in-memory set
+          if (variantSlugSet.has(item.data.slug)) {
             warnings.push(`Variant with slug '${item.data.slug}' already exists. Skipping.`);
             continue;
           }
@@ -466,7 +485,7 @@ export class ImportService {
           // Hard-fail on impossible fuel-type / spec combinations.
           const fuelTypeIdStr = typeof cleanItemData.fuel_type_id === 'string' ? cleanItemData.fuel_type_id : undefined;
           const fuelTypeForValidation: string | undefined = fuelTypeIdStr
-            ? (await FuelType.findOne({ fuel_type_id: fuelTypeIdStr }))?.name
+            ? fuelTypeMap.get(fuelTypeIdStr)?.name
             : undefined;
           const specValidation = validateVariantSpecs({
             fuel_type_name: fuelTypeForValidation,
@@ -488,8 +507,9 @@ export class ImportService {
             generatedTags
           );
 
+          const variantId = uuidv4();
           let variantPayload: Partial<ICarVariant> = {
-            variant_id: uuidv4(),
+            variant_id: variantId,
             car_id: car_id,
             variant_name: String(cleanItemData.name || cleanItemData.variant_name || ''),
             slug: String(cleanItemData.slug || ''),
@@ -510,38 +530,19 @@ export class ImportService {
             is_deleted: false,
           };
 
-          console.log('\n═══════════════════════════════════════════════════════════════');
-          console.log('🚀 [VARIANT IMPORT] SAVING TO DATABASE - CREATE MODE');
-          console.log('═══════════════════════════════════════════════════════════════');
-          console.log('[Variant Import] Raw extracted data:', item.data);
-          console.log('[Variant Import] Cleaned item data:', cleanItemData);
-          console.log('[Variant Import] Final save payload before type conversion:', variantPayload);
-          console.log('═══════════════════════════════════════════════════════════════\n');
-
           // Auto-convert types to match CarVariant schema requirements
           variantPayload = this.convertSpecsTypes(variantPayload as any);
-          
-          console.log('[Variant Import] Final save payload after type conversion:', variantPayload);
-          console.log('═══════════════════════════════════════════════════════════════\n');
 
-          variant = await CarVariant.create(variantPayload);
+          // Queue bulk insert instead of individual create
+          createPayloads.push({
+            insertOne: { document: variantPayload },
+            url: item.url,
+            data: item.data,
+            unmatched_specs: item.unmatched_specs,
+          });
 
-          console.log('\n✅ [VARIANT IMPORT] SUCCESSFULLY SAVED TO CARVARIANTS COLLECTION');
-          console.log('✅ Variant ID:', (variant as any).variant_id);
-          console.log('✅ Variant Name:', (variant as any).variant_name);
-          console.log('✅ Car ID:', (variant as any).car_id);
-          console.log('═══════════════════════════════════════════════════════════════\n');
-
-          // Update import log
-          await ImportLog.findOneAndUpdate(
-            { source_url: item.url, created_by: userId },
-            {
-              status: 'saved',
-              variant_id: (variant as any).variant_id,
-              matched_data: item.data,
-              unmatched_data: { unmatched_specs: item.unmatched_specs },
-            }
-          );
+          variantIds.push(variantId);
+          variantSlugSet.add(item.data.slug); // Add to in-memory set to prevent duplicates in batch
 
         } else if (mode === 'update' || mode === 'merge') {
           if (!item.variant_id) {
@@ -549,16 +550,21 @@ export class ImportService {
             continue;
           }
 
-          const existingVariant = await CarVariant.findOne({
-            variant_id: item.variant_id,
-            car_id,
-            is_deleted: false,
-          });
+          // Find existing variant from pre-fetched batch
+          const existingVariant = existingVariants.find((v: any) => v.variant_id === item.variant_id);
 
           if (!existingVariant) {
             warnings.push(`Variant not found: ${item.variant_id}. Skipping ${item.url}`);
             continue;
           }
+
+          // For update/merge, we still need the full document for change tracking (not lean)
+          // Fetch it now if needed for change history recording
+          const fullVariant = mode === 'update' || mode === 'merge'
+            ? await CarVariant.findOne({ variant_id: item.variant_id, car_id, is_deleted: false })
+            : null;
+
+          const beforeDoc = fullVariant?.toObject() || existingVariant;
 
           const updateData: any = {};
 
@@ -587,20 +593,29 @@ export class ImportService {
             if (!existingVariant.fuel_type_id && cleanItemData.fuel_type_id) updateData.fuel_type_id = cleanItemData.fuel_type_id;
             if (!existingVariant.transmission_type && cleanItemData.transmission_type) updateData.transmission_type = cleanItemData.transmission_type;
             if (cleanItemData.specs_normalized) {
-              updateData.specs_normalized = {
-                ...(existingVariant.specs_normalized || {}),
-                ...(cleanItemData.specs_normalized as any),
-              };
+              // Use source priority merge for specs in merge mode
+              const existingMetadata = existingVariant.specs_metadata || {};
+              const incomingMetadata: Record<string, any> = {};
+
+              // Build metadata for each incoming spec field
+              for (const [key, value] of Object.entries(cleanItemData.specs_normalized as Record<string, any>)) {
+                incomingMetadata[key] = MetadataBuilder.fromImportSource(
+                  value,
+                  item.url || 'import',
+                  85
+                );
+              }
+
+              const mergeResult = SourcePriorityMerge.mergeVariantSpecs(
+                existingVariant.specs_normalized || {},
+                existingMetadata,
+                cleanItemData.specs_normalized as Record<string, any>,
+                incomingMetadata
+              );
+              updateData.specs_normalized = mergeResult.merged;
+              updateData.specs_metadata = mergeResult.mergedMetadata;
             }
           }
-
-          console.log('\n═══════════════════════════════════════════════════════════════');
-          console.log(`🔄 [VARIANT IMPORT] UPDATING IN DATABASE - ${mode.toUpperCase()} MODE`);
-          console.log('═══════════════════════════════════════════════════════════════');
-          console.log('[Variant Import] Update/Merge - Raw data:', item.data);
-          console.log('[Variant Import] Update/Merge - Clean data:', cleanItemData);
-          console.log('[Variant Import] Update/Merge - Update payload before type conversion:', updateData);
-          console.log('═══════════════════════════════════════════════════════════════\n');
 
           // Auto-convert types to match CarVariant schema requirements
           if (updateData.specs_normalized) {
@@ -618,39 +633,105 @@ export class ImportService {
             updateData.best_for_tags = updatedBestForTags;
           }
 
-          console.log('[Variant Import] Update/Merge - Update payload after type conversion:', updateData);
-          console.log('═══════════════════════════════════════════════════════════════\n');
+          // Queue bulk update instead of individual findOneAndUpdate
+          updateOps.push({
+            updateOne: {
+              filter: { variant_id: item.variant_id, car_id, is_deleted: false },
+              update: { $set: updateData },
+            },
+            variant_id: item.variant_id,
+            beforeDoc,
+            url: item.url,
+            data: updateData,
+            unmatched_specs: item.unmatched_specs,
+          });
 
-          variant = await CarVariant.findOneAndUpdate(
-            { variant_id: item.variant_id, car_id, is_deleted: false },
-            updateData,
-            { returnDocument: 'after' }
-          );
-
-          console.log('\n✅ [VARIANT IMPORT] SUCCESSFULLY UPDATED IN CARVARIANTS COLLECTION');
-          console.log('✅ Variant ID:', (variant as any).variant_id);
-          console.log('✅ Variant Name:', (variant as any).variant_name);
-          console.log('✅ Car ID:', (variant as any).car_id);
-          console.log('═══════════════════════════════════════════════════════════════\n');
-
-          // Update import log
-          await ImportLog.findOneAndUpdate(
-            { source_url: item.url, created_by: userId },
-            {
-              status: 'saved',
-              variant_id: (variant as any).variant_id,
-              matched_data: updateData,
-              unmatched_data: { unmatched_specs: item.unmatched_specs },
-            }
-          );
-        }
-
-        if (variant) {
-          variantIds.push((variant as any).variant_id);
+          variantIds.push(item.variant_id);
         }
 
       } catch (error: any) {
         errors.push(`Failed to save variant from ${item.url}: ${error.message}`);
+      }
+    }
+
+    // Execute all bulk creates at once
+    if (createPayloads.length > 0) {
+      try {
+        const bulkCreateOps = createPayloads.map(p => ({
+          insertOne: { document: p.insertOne.document }
+        }));
+        await CarVariant.bulkWrite(bulkCreateOps);
+
+        // Update import logs for all created variants in parallel
+        await Promise.all(
+          createPayloads.map(p =>
+            ImportLog.findOneAndUpdate(
+              { source_url: p.url, created_by: userId },
+              {
+                status: 'saved',
+                variant_id: p.insertOne.document.variant_id,
+                matched_data: p.data,
+                unmatched_data: { unmatched_specs: p.unmatched_specs },
+              }
+            ).catch(err => {
+              console.warn(`Failed to update import log for ${p.url}: ${err?.message}`);
+            })
+          )
+        );
+      } catch (err: any) {
+        errors.push(`Failed to batch create variants: ${err?.message}`);
+      }
+    }
+
+    // Execute all bulk updates at once
+    if (updateOps.length > 0) {
+      try {
+        const bulkUpdateOps = updateOps.map(op => ({
+          updateOne: op.updateOne
+        }));
+        await CarVariant.bulkWrite(bulkUpdateOps);
+
+        // Fetch updated variants for change history recording (in parallel)
+        const updatePromises = updateOps.map(async op => {
+          try {
+            const updatedVariant = await CarVariant.findOne({
+              variant_id: op.variant_id,
+              car_id,
+              is_deleted: false
+            });
+
+            if (updatedVariant) {
+              await VariantIntegrityService.recordVariantChanges(
+                op.variant_id,
+                op.beforeDoc,
+                updatedVariant.toObject(),
+                op.url || 'import',
+                'import'
+              ).catch(err => {
+                console.warn(`Failed to record change history for variant ${op.variant_id}: ${err?.message}`);
+              });
+            }
+
+            // Update import log
+            return ImportLog.findOneAndUpdate(
+              { source_url: op.url, created_by: userId },
+              {
+                status: 'saved',
+                variant_id: op.variant_id,
+                matched_data: op.data,
+                unmatched_data: { unmatched_specs: op.unmatched_specs },
+              }
+            ).catch(err => {
+              console.warn(`Failed to update import log for ${op.url}: ${err?.message}`);
+            });
+          } catch (err: any) {
+            console.warn(`Failed to process update for variant ${op.variant_id}: ${err?.message}`);
+          }
+        });
+
+        await Promise.all(updatePromises);
+      } catch (err: any) {
+        errors.push(`Failed to batch update variants: ${err?.message}`);
       }
     }
 

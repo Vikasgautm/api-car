@@ -126,33 +126,25 @@ export class CarImageService {
   }
 
   static async createCarImage(imageData: any, uploadedBy?: string) {
-    // Validate foreign keys
-    if (imageData.car_id) {
-      const car = await Car.findById(imageData.car_id);
-      if (!car) {
-        throw new AppError('Car not found', 404);
-      }
-    }
+    // Validate foreign keys in parallel
+    const [car, variant, category, subcategory] = await Promise.all([
+      imageData.car_id ? Car.findById(imageData.car_id) : Promise.resolve(null),
+      imageData.variant_id ? CarVariant.findById(imageData.variant_id) : Promise.resolve(null),
+      imageData.category_id ? ImageCategory.findById(imageData.category_id) : Promise.resolve(null),
+      imageData.sub_category_id ? ImageSubCategory.findById(imageData.sub_category_id) : Promise.resolve(null),
+    ]);
 
-    if (imageData.variant_id) {
-      const variant = await CarVariant.findById(imageData.variant_id);
-      if (!variant) {
-        throw new AppError('Variant not found', 404);
-      }
+    if (imageData.car_id && !car) {
+      throw new AppError('Car not found', 404);
     }
-
-    if (imageData.category_id) {
-      const category = await ImageCategory.findById(imageData.category_id);
-      if (!category) {
-        throw new AppError('Image category not found', 404);
-      }
+    if (imageData.variant_id && !variant) {
+      throw new AppError('Variant not found', 404);
     }
-
-    if (imageData.sub_category_id) {
-      const subcategory = await ImageSubCategory.findById(imageData.sub_category_id);
-      if (!subcategory) {
-        throw new AppError('Image subcategory not found', 404);
-      }
+    if (imageData.category_id && !category) {
+      throw new AppError('Image category not found', 404);
+    }
+    if (imageData.sub_category_id && !subcategory) {
+      throw new AppError('Image subcategory not found', 404);
     }
 
     // If setting as primary, unset other primary images for this car
@@ -194,37 +186,31 @@ export class CarImageService {
   static async updateCarImage(imageId: string, imageData: any) {
     const updateData: Partial<ICarImage> = {};
 
-    if (imageData.car_id !== undefined) {
-      const car = await Car.findById(imageData.car_id);
-      if (!car) {
-        throw new AppError('Car not found', 404);
-      }
-      updateData.car_id = imageData.car_id;
+    // Validate foreign keys in parallel if being updated
+    const [car, variant, category, subcategory] = await Promise.all([
+      imageData.car_id !== undefined ? Car.findById(imageData.car_id) : Promise.resolve(null),
+      imageData.variant_id !== undefined ? CarVariant.findById(imageData.variant_id) : Promise.resolve(null),
+      imageData.category_id !== undefined ? ImageCategory.findById(imageData.category_id) : Promise.resolve(null),
+      imageData.sub_category_id !== undefined ? ImageSubCategory.findById(imageData.sub_category_id) : Promise.resolve(null),
+    ]);
+
+    if (imageData.car_id !== undefined && !car) {
+      throw new AppError('Car not found', 404);
+    }
+    if (imageData.variant_id !== undefined && !variant) {
+      throw new AppError('Variant not found', 404);
+    }
+    if (imageData.category_id !== undefined && !category) {
+      throw new AppError('Image category not found', 404);
+    }
+    if (imageData.sub_category_id !== undefined && !subcategory) {
+      throw new AppError('Image subcategory not found', 404);
     }
 
-    if (imageData.variant_id !== undefined) {
-      const variant = await CarVariant.findById(imageData.variant_id);
-      if (!variant) {
-        throw new AppError('Variant not found', 404);
-      }
-      updateData.variant_id = imageData.variant_id;
-    }
-
-    if (imageData.category_id !== undefined) {
-      const category = await ImageCategory.findById(imageData.category_id);
-      if (!category) {
-        throw new AppError('Image category not found', 404);
-      }
-      updateData.category_id = imageData.category_id;
-    }
-
-    if (imageData.sub_category_id !== undefined) {
-      const subcategory = await ImageSubCategory.findById(imageData.sub_category_id);
-      if (!subcategory) {
-        throw new AppError('Image subcategory not found', 404);
-      }
-      updateData.sub_category_id = imageData.sub_category_id;
-    }
+    if (imageData.car_id !== undefined) updateData.car_id = imageData.car_id;
+    if (imageData.variant_id !== undefined) updateData.variant_id = imageData.variant_id;
+    if (imageData.category_id !== undefined) updateData.category_id = imageData.category_id;
+    if (imageData.sub_category_id !== undefined) updateData.sub_category_id = imageData.sub_category_id;
 
     if (imageData.url !== undefined) updateData.url = imageData.url;
     if (imageData.thumbnail_url !== undefined) updateData.thumbnail_url = imageData.thumbnail_url;

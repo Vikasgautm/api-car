@@ -104,8 +104,8 @@ export class SEOContinuityService {
       redirect_id: `redir_${Date.now()}`,
       old_url: baseUrl,
       new_url: baseUrl,
-      type: 308, // Permanent redirect (preserves method)
-      is_active: true,
+      type: '301', // Permanent redirect
+      is_deleted: false,
       created_by: actor.user_id || 'system',
     });
 

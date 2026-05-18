@@ -11,6 +11,7 @@ import { CarService } from "../services/car.service";
 import { CarLifecycleService } from "../services/car-lifecycle.service";
 import { RedirectService } from "../../redirects/services/redirect.service";
 import { ScheduledLaunchService } from "../../../shared/services/scheduled-launch.service";
+import { CarIntegrityService } from "../services/car-integrity.service";
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
@@ -444,5 +445,28 @@ export class CarController {
       target_state
     );
     return ResponseUtil.success(res, result, 'Scheduled launch cancelled');
+  });
+
+  // Change history endpoints (Batch 6 Feature 2)
+  static getCarChangeHistory = catchAsync(async (req: Request, res: Response) => {
+    const { field, source, startDate, endDate, limit } = req.query;
+    const history = await CarIntegrityService.getChangeHistory(req.params.id as string, {
+      field: field as string,
+      source: source as string,
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined,
+      limit: limit ? parseInt(limit as string) : undefined,
+    });
+    return ResponseUtil.success(res, history, 'Change history retrieved');
+  });
+
+  static getCarAuditTrail = catchAsync(async (req: Request, res: Response) => {
+    const auditTrail = await CarIntegrityService.getAuditTrail(req.params.id as string);
+    return ResponseUtil.success(res, { audit_trail: auditTrail }, 'Audit trail retrieved');
+  });
+
+  static getCarChangeSummary = catchAsync(async (req: Request, res: Response) => {
+    const summary = await CarIntegrityService.getChangeSummary(req.params.id as string);
+    return ResponseUtil.success(res, summary, 'Change summary retrieved');
   });
 }

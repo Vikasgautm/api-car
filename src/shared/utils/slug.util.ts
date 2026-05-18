@@ -1,4 +1,5 @@
 import slugify from 'slugify';
+import { Model } from 'mongoose';
 
 export class SlugUtil {
   static generate(text: string): string {
@@ -41,4 +42,20 @@ export class SlugUtil {
     const base = prefix ? `${prefix}-` : '';
     return `${base}${id}`;
   }
+}
+
+export async function generateSlugWithIncrement(
+  baseSlug: string,
+  Model: Model<any>,
+  fieldName: string = 'slug',
+): Promise<string> {
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (await Model.exists({ [fieldName]: slug })) {
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+
+  return slug;
 }

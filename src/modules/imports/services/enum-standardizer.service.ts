@@ -257,24 +257,31 @@ export class EnumStandardizerService {
       transmission_type: { total: 0, standardized: 0 },
     };
 
+    // Batch fetch all referenced body types and fuel types instead of per-variant lookups
+    const bodyTypeIds = new Set(variants.map((v: any) => v.body_type).filter(Boolean));
+    const fuelTypeIds = new Set(variants.map((v: any) => v.fuel_type_id).filter(Boolean));
+
+    const bodyTypes = await BodyType.find({
+      body_type_id: { $in: Array.from(bodyTypeIds) },
+      is_deleted: false,
+    }).lean();
+    const fuelTypes = await FuelType.find({
+      fuel_type_id: { $in: Array.from(fuelTypeIds) },
+      is_deleted: false,
+    }).lean();
+
+    const bodyTypeMap = new Map(bodyTypes.map((bt: any) => [bt.body_type_id, bt]));
+    const fuelTypeMap = new Map(fuelTypes.map((ft: any) => [ft.fuel_type_id, ft]));
+
     for (const variant of variants) {
       if (variant.body_type) {
         report.body_type.total++;
-        // Check if it matches a known BodyType
-        const bodyType = await BodyType.findOne({
-          body_type_id: variant.body_type,
-          is_deleted: false,
-        });
-        if (bodyType) report.body_type.standardized++;
+        if (bodyTypeMap.has(variant.body_type)) report.body_type.standardized++;
       }
 
       if (variant.fuel_type_id) {
         report.fuel_type.total++;
-        const fuelType = await FuelType.findOne({
-          fuel_type_id: variant.fuel_type_id,
-          is_deleted: false,
-        });
-        if (fuelType) report.fuel_type.standardized++;
+        if (fuelTypeMap.has(variant.fuel_type_id)) report.fuel_type.standardized++;
       }
 
       if (variant.transmission_type) {

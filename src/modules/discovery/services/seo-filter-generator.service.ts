@@ -75,7 +75,8 @@ export class SeoFilterGeneratorService {
           const stat = results.get(field.key)!;
           stat.variants.add(variant.variant_id);
           if (variant.car_id) {
-            stat.cars.add(variant.car_id._id?.toString() || variant.car_id.toString());
+            const carId = (variant.car_id as any)._id?.toString() || variant.car_id.toString();
+            stat.cars.add(carId);
             stat.brands.add((variant.car_id as any).brand_id?.toString() || '');
           }
         }
@@ -128,12 +129,15 @@ export class SeoFilterGeneratorService {
     const features = await this.generateFeatureAvailability();
     const created = [];
 
+    // Batch fetch all existing presets to avoid N findOne queries in loop
+    const existingPresets = await SeoPreset.find({ is_deleted: false }).select('slug').lean();
+    const existingSlugs = new Set(existingPresets.map((p: any) => p.slug));
+
     for (const feature of features) {
       if (feature.variant_count < minVariantCount) continue;
 
-      // Check if preset already exists
-      const existing = await SeoPreset.findOne({ slug: feature.slug, is_deleted: false }).lean();
-      if (existing) continue;
+      // Check if preset already exists using in-memory lookup
+      if (existingSlugs.has(feature.slug)) continue;
 
       // Create preset
       const queryParams: DiscoveryFilters = {

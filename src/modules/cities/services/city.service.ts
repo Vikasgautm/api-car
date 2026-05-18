@@ -96,8 +96,9 @@ export class CityService {
         updateData.slug = cityData.slug;
       }
     } else if (cityData.name !== undefined || cityData.state !== undefined) {
-      const name = cityData.name || (await City.findOne({ city_id: cityId }))?.name;
-      const state = cityData.state || (await City.findOne({ city_id: cityId }))?.state;
+      const currentCity = await City.findOne({ city_id: cityId });
+      const name = cityData.name || currentCity?.name;
+      const state = cityData.state || currentCity?.state;
       if (name && state) {
         const newSlug = SlugUtil.generate(`${name}-${state}`);
         const existingSlug = await City.findOne({ slug: newSlug, city_id: { $ne: cityId } });

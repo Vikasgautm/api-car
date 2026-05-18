@@ -59,8 +59,13 @@ export class BrandService {
 
     const existingSlug = await Brand.findOne({ slug, is_deleted: false });
     if (existingSlug) {
-      const existingSlugs = (await Brand.find({ is_deleted: false }).select('slug')).map(b => b.slug);
-      const uniqueSlug = SlugUtil.generateUnique(brandData.name, existingSlugs);
+      // Only fetch slugs matching the pattern to minimize data transfer
+      const baseSlug = slug;
+      const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+      const matchingSlugs = (
+        await Brand.find({ slug: pattern, is_deleted: false }).select('slug').lean()
+      ).map((b: any) => b.slug);
+      const uniqueSlug = SlugUtil.generateUnique(brandData.name, matchingSlugs);
       brandData.slug = uniqueSlug;
     } else {
       brandData.slug = slug;

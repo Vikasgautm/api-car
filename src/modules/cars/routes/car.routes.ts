@@ -52,10 +52,17 @@ adminRouter.post('/lifecycle/process-scheduled', restrictTo('super_admin'), CarC
 adminRouter.get('/lifecycle/scheduled-window', CarController.getScheduledLaunchesWindow);
 adminRouter.post('/:id/lifecycle/cancel-scheduled', validateUuidIdParam, CarController.cancelScheduledLaunch);
 
+// Change history & integrity routes (Batch 6)
+adminRouter.get('/:id/change-history', validateUuidIdParam, CarController.getCarChangeHistory);
+adminRouter.get('/:id/audit-trail', validateUuidIdParam, CarController.getCarAuditTrail);
+adminRouter.get('/:id/change-summary', validateUuidIdParam, CarController.getCarChangeSummary);
+
 router.use('/admin', adminRouter);
 
 // Legacy routes for backward compatibility
 router.get('/', validatePaginationQuery, CarController.getAllPublicCars);
 router.get('/:slug', validateSlugParam, CarController.getPublicCarBySlug);
 
+// Export admin router separately for alternate /admin/cars mount
+export { adminRouter as adminCarRouter };
 export default router;

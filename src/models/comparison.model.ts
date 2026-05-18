@@ -1,0 +1,144 @@
+import mongoose, { Schema, Document } from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
+
+export interface IComparison extends Document {
+  comparison_id: string;
+  car1_id: mongoose.Types.ObjectId;
+  car2_id: mongoose.Types.ObjectId;
+  variant1_id?: mongoose.Types.ObjectId;
+  variant2_id?: mongoose.Types.ObjectId;
+  slug: string;
+  title: string;
+  category?: string;
+  description?: string;
+  compareIntroContent?: string;
+  isPopular: boolean;
+  isTrending: boolean;
+  showOnHomepage: boolean;
+  relatedComparisons: mongoose.Types.ObjectId[];
+  seoMetaTitle?: string;
+  seoMetaDescription?: string;
+  seoFAQSchema?: Record<string, any>;
+  status: 'draft' | 'published' | 'archived';
+  is_published: boolean;
+  created_by: mongoose.Types.ObjectId;
+  updated_by?: mongoose.Types.ObjectId;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at?: Date;
+  is_deleted: boolean;
+}
+
+const ComparisonSchema: Schema<IComparison> = new Schema(
+  {
+    comparison_id: {
+      type: String,
+      default: () => uuidv4(),
+      unique: true,
+      index: true,
+    },
+    car1_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Car',
+      required: true,
+      index: true,
+    },
+    car2_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Car',
+      required: true,
+      index: true,
+    },
+    variant1_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CarVariant',
+      index: true,
+    },
+    variant2_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CarVariant',
+      index: true,
+    },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      index: true,
+    },
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    category: {
+      type: String,
+      enum: ['suv', 'sedan', 'hatchback', 'coupe', 'mpv', 'ev', 'luxury', 'budget', 'mid_range'],
+      index: true,
+    },
+    description: String,
+    compareIntroContent: String,
+    isPopular: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    isTrending: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    showOnHomepage: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    relatedComparisons: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Comparison',
+    }],
+    seoMetaTitle: String,
+    seoMetaDescription: String,
+    seoFAQSchema: mongoose.Schema.Types.Mixed,
+    status: {
+      type: String,
+      enum: ['draft', 'published', 'archived'],
+      default: 'draft',
+      index: true,
+    },
+    is_published: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    created_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    updated_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    is_deleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    deleted_at: Date,
+  },
+  {
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+  },
+);
+
+// Indexes for performance
+ComparisonSchema.index({ status: 1, is_published: 1 });
+ComparisonSchema.index({ isPopular: 1, status: 1 });
+ComparisonSchema.index({ category: 1, status: 1 });
+ComparisonSchema.index({ slug: 1 });
+ComparisonSchema.index({ car1_id: 1, car2_id: 1 });
+ComparisonSchema.index({ is_deleted: 1 });
+
+export const Comparison = mongoose.model<IComparison>('Comparison', ComparisonSchema);

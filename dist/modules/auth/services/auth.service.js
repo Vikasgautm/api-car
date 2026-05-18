@@ -70,34 +70,50 @@ class AuthService {
     }
     static async refreshToken(refreshTokenDto) {
         const { refreshToken: refresh_token } = refreshTokenDto;
-        // Verify refresh token
-        const decoded = jsonwebtoken_1.default.verify(refresh_token, config_1.config.jwt_refresh_secret);
-        // Check if refresh token exists in database
-        const session = await user_session_model_1.UserSession.findOne({
-            user_id: decoded.user_id,
-            refresh_token: refresh_token,
-            is_revoked: false,
-        });
-        if (!session) {
-            throw new app_error_util_1.AppError('Invalid refresh token', 401);
+        try {
+            // Verify refresh token
+            const decoded = jsonwebtoken_1.default.verify(refresh_token, config_1.config.jwt_refresh_secret);
+            // Check if refresh token exists in database
+            const session = await user_session_model_1.UserSession.findOne({
+                user_id: decoded.user_id,
+                refresh_token: refresh_token,
+                is_revoked: false,
+            });
+            if (!session) {
+                throw new app_error_util_1.AppError('Invalid or revoked refresh token', 401);
+            }
+            // Find user
+            const user = await user_model_1.User.findOne({ user_id: decoded.user_id, is_deleted: false });
+            if (!user) {
+                throw new app_error_util_1.AppError('User not found', 404);
+            }
+            // Generate new tokens
+            const { accessToken, refreshToken } = await this.generateTokens(user);
+            // Revoke old refresh token
+            session.is_revoked = true;
+            await session.save();
+            // Save new refresh token
+            await this.saveRefreshToken(user.user_id, refreshToken);
+            return {
+                user: this.sanitizeUser(user),
+                accessToken,
+                refreshToken,
+            };
         }
-        // Find user
-        const user = await user_model_1.User.findOne({ user_id: decoded.user_id, is_deleted: false });
-        if (!user) {
-            throw new app_error_util_1.AppError('User not found', 404);
+        catch (error) {
+            if (error.name === 'TokenExpiredError') {
+                throw new app_error_util_1.AppError('Refresh token has expired. Please login again.', 401);
+            }
+            else if (error.name === 'JsonWebTokenError') {
+                throw new app_error_util_1.AppError('Invalid refresh token', 401);
+            }
+            else if (error instanceof app_error_util_1.AppError) {
+                throw error;
+            }
+            else {
+                throw new app_error_util_1.AppError('Failed to refresh token', 401);
+            }
         }
-        // Generate new tokens
-        const { accessToken, refreshToken } = await this.generateTokens(user);
-        // Revoke old refresh token
-        session.is_revoked = true;
-        await session.save();
-        // Save new refresh token
-        await this.saveRefreshToken(user.user_id, refreshToken);
-        return {
-            user: this.sanitizeUser(user),
-            accessToken,
-            refreshToken,
-        };
     }
     static async logout(user_id) {
         // Revoke all refresh tokens for this user

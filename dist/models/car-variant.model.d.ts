@@ -1,5 +1,18 @@
 import { Document } from 'mongoose';
 import { MileageClass, MileageSource } from '../constants/mileage-benchmarks';
+export type FieldVisibilityState = 'visible' | 'hidden' | 'partial' | 'teaser_only' | 'estimated';
+export interface FieldValue {
+    value: any;
+    is_estimated?: boolean;
+    visibility?: FieldVisibilityState;
+    source_confidence?: number;
+    label?: string;
+}
+export interface SectionVisibility {
+    section_key: string;
+    visibility: FieldVisibilityState;
+    hidden_fields?: string[];
+}
 export interface EnginePerformance {
     engine_type?: string;
     displacement?: string;
@@ -284,6 +297,24 @@ export interface SpecsNormalized {
 }
 export type TransmissionType = 'manual' | 'automatic' | 'amt' | 'cvt' | 'dct' | 'dsg' | 'imt' | 'torque_converter' | 'single_speed_ev' | 'e_cvt';
 export type VariantMarketStatus = 'available' | 'sold_out' | 'discontinued' | 'upcoming';
+export interface ChangeHistoryEntry {
+    field: string;
+    old_value: any;
+    new_value: any;
+    changed_by: string;
+    changed_at: Date;
+    change_source: 'manual_edit' | 'import' | 'bulk_operation' | 'system' | 'api';
+    notes?: string;
+}
+export interface FieldMetadata {
+    value: any;
+    source?: string;
+    source_priority?: number;
+    confidence?: number;
+    is_estimated?: boolean;
+    last_updated?: Date;
+    last_updated_by?: string;
+}
 export interface ICarVariant extends Document {
     variant_id: string;
     car_id: string;
@@ -308,8 +339,13 @@ export interface ICarVariant extends Document {
     best_for_tags?: string[];
     variant_highlights?: string[];
     market_status?: VariantMarketStatus;
+    field_visibility?: Record<string, FieldVisibilityState>;
+    section_visibility?: SectionVisibility[];
+    estimated_fields?: Record<string, boolean>;
+    field_confidence_scores?: Record<string, number>;
     specs_normalized?: SpecsNormalized;
     specs_raw?: Record<string, any>;
+    specs_metadata?: Record<string, FieldMetadata>;
     hidden_spec_keys?: string[];
     hidden_sections?: string[];
     is_published: boolean;
@@ -327,12 +363,15 @@ export interface ICarVariant extends Document {
     seo_owner_user_id?: string | null;
     reviewer_user_id?: string | null;
     last_reviewed_at?: Date | null;
+    change_history?: ChangeHistoryEntry[];
     meta_title?: string;
     meta_description?: string;
     meta_keywords?: string;
     og_image?: string;
     canonical_url?: string;
     noindex?: boolean;
+    isMostComparedVariant?: boolean;
+    mostComparedPriority?: number;
 }
 export declare const CarVariant: import("mongoose").Model<ICarVariant, {}, {}, {}, Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
     _id: import("mongoose").Types.ObjectId;

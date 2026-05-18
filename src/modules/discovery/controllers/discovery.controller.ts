@@ -52,4 +52,38 @@ export class DiscoveryController {
     const result = await SeoFilterGeneratorService.autoGeneratePresets(minCount);
     return ResponseUtil.success(res, result, `${result.presets_created} SEO presets auto-generated`);
   });
+
+  /** Get available filters grouped by dimension. */
+  static getAvailableFilters = catchAsync(async (req: Request, res: Response) => {
+    const filters = await DiscoveryService.getAvailableFilters();
+    return ResponseUtil.success(res, filters, 'Available filters retrieved');
+  });
+
+  /** Get all facet groups. */
+  static getFacetGroups = catchAsync(async (req: Request, res: Response) => {
+    const facetGroups = await DiscoveryService.getFacetGroups();
+    return ResponseUtil.success(res, facetGroups, 'Facet groups retrieved');
+  });
+
+  /** Get filter options for a specific dimension. */
+  static getFilterOptions = catchAsync(async (req: Request, res: Response) => {
+    const dimension = req.params.dimension as string;
+    const options = await DiscoveryService.getFilterOptions(dimension);
+    return ResponseUtil.success(res, options, 'Filter options retrieved');
+  });
+
+  /** Preview filter page with given filter combination. */
+  static previewFilterPage = catchAsync(async (req: Request, res: Response) => {
+    const filters = req.body;
+    const result = await DiscoveryService.discover(filters as any);
+    return ResponseUtil.success(
+      res,
+      {
+        count: result.cars.length,
+        cars: result.cars,
+        filters: filters,
+      },
+      'Filter preview generated'
+    );
+  });
 }

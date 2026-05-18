@@ -31,6 +31,13 @@ export class SpecRefinementService {
     // Get car details for context
     const car = await Car.findById(variant.car_id);
 
+    return this.performRefinement(variant, car);
+  }
+
+  // Internal method that accepts variant and car objects (no refetch)
+  private static async performRefinement(variant: any, car: any | null): Promise<SpecRefinementResult> {
+    const variantId = variant._id.toString();
+
     // Build context for LLM
     const currentSpecs = variant.specs_normalized || {};
     const missingFields = this.identifyMissingFields(currentSpecs);
@@ -208,17 +215,28 @@ Provide 3-5 most impactful suggestions only.`;
   }
 
   static async refineMultipleVariants(variantIds: string[]): Promise<SpecRefinementResult[]> {
-    const results: SpecRefinementResult[] = [];
+    // Batch load all variants with their car data
+    const variants = await CarVariant.find({ _id: { $in: variantIds } }).lean();
+    const carIds = Array.from(new Set(variants.map((v: any) => v.car_id).filter(Boolean)));
+    const cars = await Car.find({ _id: { $in: carIds } }).lean();
 
-    for (const variantId of variantIds) {
-      try {
-        const result = await this.refineVariantSpecs(variantId);
-        results.push(result);
-      } catch (error) {
-        console.error(`Failed to refine variant ${variantId}:`, error);
-      }
-    }
+    // Create maps for O(1) lookup
+    const carById = new Map(cars.map((c: any) => [c._id.toString(), c]));
 
-    return results;
+    // Parallelize LLM refinement calls instead of sequential
+    const refinementPromises = variants.map(variant =>
+      this.performRefinement(variant, carById.get(variant.car_id?.toString()!) || null)
+        .catch(error => {
+          console.error(`Failed to refine variant ${variant._id}:`, error);
+          return {
+            variant_id: variant._id.toString(),
+            variant_name: variant.variant_name,
+            suggestions: [],
+            generated_at: new Date().toISOString(),
+          };
+        })
+    );
+
+    return Promise.all(refinementPromises);
   }
 }

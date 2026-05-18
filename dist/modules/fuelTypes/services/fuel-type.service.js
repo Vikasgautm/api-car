@@ -49,8 +49,10 @@ class FuelTypeService {
         const slug = slug_util_1.SlugUtil.generate(fuelTypeData.name);
         const existingSlug = await fuel_type_model_1.FuelType.findOne({ slug, is_deleted: false });
         if (existingSlug) {
-            const existingSlugs = (await fuel_type_model_1.FuelType.find({ is_deleted: false }).select('slug')).map(f => f.slug);
-            const uniqueSlug = slug_util_1.SlugUtil.generateUnique(fuelTypeData.name, existingSlugs);
+            const baseSlug = slug;
+            const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+            const matchingSlugs = (await fuel_type_model_1.FuelType.find({ slug: pattern, is_deleted: false }).select('slug').lean()).map((f) => f.slug);
+            const uniqueSlug = slug_util_1.SlugUtil.generateUnique(fuelTypeData.name, matchingSlugs);
             fuelTypeData.slug = uniqueSlug;
         }
         else {

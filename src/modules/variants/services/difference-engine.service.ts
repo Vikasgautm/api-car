@@ -27,6 +27,15 @@ export class DifferenceEngineService {
       .sort({ ex_showroom_price: 1 })
       .lean();
 
+    return this.calculateDifferenceWithVariants(variant, variantId, carVariants);
+  }
+
+  // Internal method that accepts pre-fetched variants (no refetch)
+  private static calculateDifferenceWithVariants(
+    variant: any,
+    variantId: string,
+    carVariants: any[]
+  ): VariantDifference {
     const variantIndex = carVariants.findIndex(v => v.variant_id === variantId);
     const lowerVariant = variantIndex > 0 ? carVariants[variantIndex - 1] : null;
     const higherVariant = variantIndex < carVariants.length - 1 ? carVariants[variantIndex + 1] : null;
@@ -130,12 +139,17 @@ export class DifferenceEngineService {
    * Batch calculate differences for all variants of a car model.
    */
   static async calculateCarVariantDifferences(carId: string): Promise<VariantDifference[]> {
-    const variants = await CarVariant.find({ car_id: carId, is_deleted: false, is_published: true }).lean();
+    // Fetch all variants once, sorted by price
+    const carVariants = await CarVariant.find({ car_id: carId, is_deleted: false, is_published: true })
+      .sort({ ex_showroom_price: 1 })
+      .lean();
+
     const results: VariantDifference[] = [];
 
-    for (const variant of variants) {
+    // Calculate differences for each variant without refetching the set
+    for (const variant of carVariants) {
       try {
-        const diff = await this.calculateVariantDifference(variant.variant_id);
+        const diff = this.calculateDifferenceWithVariants(variant, variant.variant_id, carVariants);
         results.push(diff);
       } catch (err) {
         console.error(`Failed to calculate difference for variant ${variant.variant_id}:`, err);

@@ -140,6 +140,55 @@ const carSchema = new mongoose_1.Schema({
     og_image: { type: String },
     canonical_url: { type: String },
     noindex: { type: Boolean, default: false },
+    // Evolutionary lifecycle system
+    entity_lifecycle_state: {
+        type: String,
+        enum: ['upcoming', 'launched', 'facelift', 'discontinued', 'concept', 'testing'],
+        default: null,
+    },
+    entity_created_at: { type: Date, default: null },
+    entity_launch_date: { type: Date, default: null },
+    entity_status_history: [{
+            state: {
+                type: String,
+                enum: ['upcoming', 'launched', 'facelift', 'discontinued', 'concept', 'testing'],
+                required: true,
+            },
+            changed_at: { type: Date, required: true },
+            changed_by: { type: String, required: true },
+            reason: { type: String, default: null },
+        }],
+    seo_history: [{
+            field: { type: String, required: true },
+            old_value: { type: mongoose_1.Schema.Types.Mixed },
+            new_value: { type: mongoose_1.Schema.Types.Mixed },
+            timestamp: { type: Date, required: true },
+            changed_by: { type: String, required: true },
+        }],
+    variant_history: [{
+            variant_id: { type: String, required: true },
+            action: {
+                type: String,
+                enum: ['added', 'removed', 'visibility_changed', 'specs_updated'],
+                required: true,
+            },
+            timestamp: { type: Date, required: true },
+            changed_by: { type: String, required: true },
+            details: { type: mongoose_1.Schema.Types.Mixed, default: {} },
+        }],
+    change_history: [{
+            field: { type: String, required: true },
+            old_value: { type: mongoose_1.Schema.Types.Mixed },
+            new_value: { type: mongoose_1.Schema.Types.Mixed },
+            changed_by: { type: String, required: true },
+            changed_at: { type: Date, required: true },
+            change_source: {
+                type: String,
+                enum: ['manual_edit', 'import', 'bulk_operation', 'system', 'api'],
+                required: true,
+            },
+            notes: { type: String },
+        }],
 }, {
     timestamps: true,
 });
@@ -222,6 +271,11 @@ carSchema.index({ budget_friendly: 1, is_published: 1, is_deleted: 1 });
 carSchema.index({ performance_focused: 1, is_published: 1, is_deleted: 1 });
 carSchema.index({ seo_tags: 1 });
 carSchema.index({ buyer_intent_tags: 1 });
+// Evolutionary lifecycle system indexes
+carSchema.index({ entity_lifecycle_state: 1 });
+carSchema.index({ entity_lifecycle_state: 1, is_published: 1, is_deleted: 1 });
+carSchema.index({ entity_launch_date: 1 });
+carSchema.index({ 'entity_status_history.state': 1 });
 // One current generation per model_family (DB-level safety net for the
 // promote-to-current workflow). Only enforced for rows that actually have a
 // model_family set and are flagged current, so cars without a family yet

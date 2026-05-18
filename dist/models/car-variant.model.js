@@ -55,6 +55,19 @@ const variantSchema = new mongoose_1.Schema({
         enum: ['available', 'sold_out', 'discontinued', 'upcoming', null],
         default: null,
     },
+    // Field-level visibility and estimation tracking
+    field_visibility: { type: mongoose_1.Schema.Types.Mixed, default: {} },
+    section_visibility: [{
+            section_key: { type: String, required: true },
+            visibility: {
+                type: String,
+                enum: ['visible', 'hidden', 'partial', 'teaser_only', 'estimated'],
+                default: 'visible',
+            },
+            hidden_fields: { type: [String], default: [] },
+        }],
+    estimated_fields: { type: mongoose_1.Schema.Types.Mixed, default: {} },
+    field_confidence_scores: { type: mongoose_1.Schema.Types.Mixed, default: {} },
     specs_normalized: {
         engine_performance: {
             engine_type: String,
@@ -323,6 +336,7 @@ const variantSchema = new mongoose_1.Schema({
         },
     },
     specs_raw: { type: mongoose_1.Schema.Types.Mixed },
+    specs_metadata: { type: mongoose_1.Schema.Types.Mixed, default: {} },
     hidden_spec_keys: { type: [String], default: [] },
     hidden_sections: { type: [String], default: [] },
     is_published: { type: Boolean, default: false },
@@ -347,6 +361,21 @@ const variantSchema = new mongoose_1.Schema({
     og_image: { type: String },
     canonical_url: { type: String },
     noindex: { type: Boolean, default: false },
+    isMostComparedVariant: { type: Boolean, default: false, index: true },
+    mostComparedPriority: { type: Number, default: 0, min: 0 },
+    change_history: [{
+            field: { type: String, required: true },
+            old_value: { type: mongoose_1.Schema.Types.Mixed },
+            new_value: { type: mongoose_1.Schema.Types.Mixed },
+            changed_by: { type: String, required: true },
+            changed_at: { type: Date, required: true },
+            change_source: {
+                type: String,
+                enum: ['manual_edit', 'import', 'bulk_operation', 'system', 'api'],
+                required: true,
+            },
+            notes: { type: String },
+        }],
 }, {
     timestamps: true,
 });

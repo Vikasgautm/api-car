@@ -82,8 +82,9 @@ class CityService {
             }
         }
         else if (cityData.name !== undefined || cityData.state !== undefined) {
-            const name = cityData.name || (await city_model_1.City.findOne({ city_id: cityId }))?.name;
-            const state = cityData.state || (await city_model_1.City.findOne({ city_id: cityId }))?.state;
+            const currentCity = await city_model_1.City.findOne({ city_id: cityId });
+            const name = cityData.name || currentCity?.name;
+            const state = cityData.state || currentCity?.state;
             if (name && state) {
                 const newSlug = slug_util_1.SlugUtil.generate(`${name}-${state}`);
                 const existingSlug = await city_model_1.City.findOne({ slug: newSlug, city_id: { $ne: cityId } });

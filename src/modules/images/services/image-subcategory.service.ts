@@ -69,14 +69,11 @@ export class ImageSubCategoryService {
 
     const slug = SlugUtil.generate(subcategoryData.name);
 
-    const existingSlug = await ImageSubCategory.findOne({ slug });
-    if (existingSlug) {
-      const existingSlugs = (await ImageSubCategory.find().select('slug')).map(c => c.slug);
-      const uniqueSlug = SlugUtil.generateUnique(subcategoryData.name, existingSlugs);
-      subcategoryData.slug = uniqueSlug;
-    } else {
-      subcategoryData.slug = slug;
-    }
+    // Batch fetch all subcategories instead of two separate queries
+    const allSubCategories = await ImageSubCategory.find().select('slug').lean();
+    const allSlugs = allSubCategories.map((c: any) => c.slug);
+    const finalSlug = allSlugs.includes(slug) ? SlugUtil.generateUnique(subcategoryData.name, allSlugs) : slug;
+    subcategoryData.slug = finalSlug;
 
     const subcategory: Partial<IImageSubCategory> = {
       category_id: subcategoryData.category_id,

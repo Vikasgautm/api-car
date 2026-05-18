@@ -59,8 +59,12 @@ export class FuelTypeService {
 
     const existingSlug = await FuelType.findOne({ slug, is_deleted: false });
     if (existingSlug) {
-      const existingSlugs = (await FuelType.find({ is_deleted: false }).select('slug')).map(f => f.slug);
-      const uniqueSlug = SlugUtil.generateUnique(fuelTypeData.name, existingSlugs);
+      const baseSlug = slug;
+      const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+      const matchingSlugs = (
+        await FuelType.find({ slug: pattern, is_deleted: false }).select('slug').lean()
+      ).map((f: any) => f.slug);
+      const uniqueSlug = SlugUtil.generateUnique(fuelTypeData.name, matchingSlugs);
       fuelTypeData.slug = uniqueSlug;
     } else {
       fuelTypeData.slug = slug;

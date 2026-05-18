@@ -27,6 +27,16 @@ export interface VariantHistoryEntry {
   details?: Record<string, any>;
 }
 
+export interface ChangeHistoryEntry {
+  field: string;
+  old_value: any;
+  new_value: any;
+  changed_by: string;
+  changed_at: Date;
+  change_source: 'manual_edit' | 'import' | 'bulk_operation' | 'system' | 'api';
+  notes?: string;
+}
+
 export interface ICar extends Document {
   car_id: string;
   name: string;
@@ -196,6 +206,8 @@ export interface ICar extends Document {
   entity_status_history?: EntityStatusHistoryEntry[];
   seo_history?: SEOHistoryEntry[];
   variant_history?: VariantHistoryEntry[];
+  // Change tracking (Batch 6)
+  change_history?: ChangeHistoryEntry[];
 }
 
 const carSchema = new Schema<ICar>(
@@ -372,6 +384,19 @@ const carSchema = new Schema<ICar>(
       timestamp: { type: Date, required: true },
       changed_by: { type: String, required: true },
       details: { type: Schema.Types.Mixed, default: {} },
+    }],
+    change_history: [{
+      field: { type: String, required: true },
+      old_value: { type: Schema.Types.Mixed },
+      new_value: { type: Schema.Types.Mixed },
+      changed_by: { type: String, required: true },
+      changed_at: { type: Date, required: true },
+      change_source: {
+        type: String,
+        enum: ['manual_edit', 'import', 'bulk_operation', 'system', 'api'],
+        required: true,
+      },
+      notes: { type: String },
     }],
   },
   {

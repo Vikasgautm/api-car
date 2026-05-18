@@ -1,5 +1,6 @@
 import { CarVariant, ICarVariant } from '../../../models/car-variant.model';
 import { AppError } from '../../../shared/utils/app-error.util';
+import { AutomotiveValidationRules } from '../../../shared/utils/automotive-validation-rules';
 
 export interface ValidationError {
   field: string;
@@ -78,6 +79,11 @@ export class VariantValidationService {
       throw new AppError('Variant not found', 404);
     }
 
+    return this.performValidation(variant);
+  }
+
+  // Internal method that accepts variant object directly (no refetch)
+  private static performValidation(variant: any): ValidationResult {
     const errors: ValidationError[] = [];
     const warnings: ValidationError[] = [];
 
@@ -185,11 +191,13 @@ export class VariantValidationService {
   }
 
   static async validateCarVariants(carId: string): Promise<Record<string, ValidationResult>> {
-    const variants = await CarVariant.find({ car_id: carId }).select('_id');
+    // Fetch all variants with full data (not just _id) to avoid refetching in loop
+    const variants = await CarVariant.find({ car_id: carId });
     const results: Record<string, ValidationResult> = {};
 
+    // Validate each variant without refetching
     for (const variant of variants) {
-      results[variant._id.toString()] = await this.validateVariant(variant._id.toString());
+      results[variant._id.toString()] = this.performValidation(variant);
     }
 
     return results;
@@ -227,14 +235,84 @@ export class VariantValidationService {
   static async validateBatch(variantIds: string[]): Promise<Record<string, ValidationResult>> {
     const results: Record<string, ValidationResult> = {};
 
-    for (const id of variantIds) {
-      results[id] = await this.validateVariant(id);
-    }
+    // Fetch all variants in parallel to avoid N findById calls
+    const variants = await CarVariant.find({ _id: { $in: variantIds } }).lean();
+    const variantMap = new Map(variants.map((v: any) => [v._id.toString(), v]));
+
+    // Parallelize validation instead of sequential
+    const validations = await Promise.allSettled(
+      variantIds.map(id => {
+        const variant = variantMap.get(id);
+        if (!variant) {
+          return Promise.reject(new AppError('Variant not found', 404));
+        }
+        return Promise.resolve(this.performValidation(variant));
+      })
+    );
+
+    validations.forEach((result, idx) => {
+      const variantId = variantIds[idx];
+      if (result.status === 'fulfilled') {
+        results[variantId] = result.value;
+      } else {
+        results[variantId] = {
+          isValid: false,
+          errors: [{ field: 'variant', message: result.reason instanceof Error ? result.reason.message : 'Validation failed', severity: 'error' }],
+          warnings: [],
+          completeness_score: 0,
+          missing_critical_fields: [],
+        };
+      }
+    });
 
     return results;
   }
 
   static getValidationRulesByStatus(status: string): string[] {
     return this.REQUIRED_FIELDS_BY_STATUS[status] || [];
+  }
+
+  /**
+   * Validate automotive constraints (Batch 6)
+   * Prevents impossible combinations like EV with fuel tank, invalid transmissions, etc.
+   */
+  static validateAutomotiveConstraints(variant: any): {
+    isValid: boolean;
+    errors: Array<{ rule: string; message: string }>;
+    warnings: Array<{ rule: string; message: string }>;
+  } {
+    return AutomotiveValidationRules.validateStrict(variant);
+  }
+
+  /**
+   * Combined validation: completeness + automotive constraints
+   */
+  static async validateVariantFull(variantId: string): Promise<ValidationResult & {
+    automotiveErrors: Array<{ rule: string; message: string }>;
+    automotiveWarnings: Array<{ rule: string; message: string }>;
+  }> {
+    const baseValidation = await this.validateVariant(variantId);
+    const variant = await CarVariant.findById(variantId);
+
+    if (!variant) {
+      throw new AppError('Variant not found', 404);
+    }
+
+    const automotiveValidation = this.validateAutomotiveConstraints(variant.toObject());
+
+    // Block publication if there are automotive errors
+    if (variant.is_published && automotiveValidation.errors.length > 0) {
+      baseValidation.errors.unshift({
+        field: 'is_published',
+        message: 'Cannot publish variant with automotive constraint violations',
+        severity: 'error',
+      });
+    }
+
+    return {
+      ...baseValidation,
+      automotiveErrors: automotiveValidation.errors,
+      automotiveWarnings: automotiveValidation.warnings,
+    };
   }
 }

@@ -24,8 +24,16 @@ export class PartialImportService {
     variantData: PartialVariantImportData,
     actor: AuditActor
   ) {
-    // Verify car exists and is upcoming
-    const car = await Car.findOne({ car_id: carId, is_deleted: false });
+    // Parallelize car and variant lookups instead of sequential
+    const [car, existingVariant] = await Promise.all([
+      Car.findOne({ car_id: carId, is_deleted: false }),
+      CarVariant.findOne({
+        car_id: carId,
+        variant_name: variantData.variant_name,
+        is_deleted: false,
+      }),
+    ]);
+
     if (!car) {
       throw new AppError('Car not found', 404);
     }
@@ -33,13 +41,6 @@ export class PartialImportService {
     if (!car.is_upcoming && car.status !== 'upcoming') {
       throw new AppError('Car must be in upcoming status to import partial data', 400);
     }
-
-    // Check if variant already exists
-    const existingVariant = await CarVariant.findOne({
-      car_id: carId,
-      variant_name: variantData.variant_name,
-      is_deleted: false,
-    });
 
     if (existingVariant) {
       // Update existing variant with partial data

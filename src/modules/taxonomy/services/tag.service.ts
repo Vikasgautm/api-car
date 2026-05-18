@@ -78,8 +78,15 @@ export class TagService {
 
     const tag_id = uuidv4();
     const baseSlug = SlugUtil.generate(data.name);
-    const existingSlugs = (await Tag.find({ is_deleted: false }).select('slug')).map(t => t.slug);
-    const slug = existingSlugs.includes(baseSlug) ? SlugUtil.generateUnique(data.name, existingSlugs) : baseSlug;
+    const existingSlug = await Tag.findOne({ slug: baseSlug, is_deleted: false });
+    let slug = baseSlug;
+    if (existingSlug) {
+      const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+      const matchingSlugs = (
+        await Tag.find({ slug: pattern, is_deleted: false }).select('slug').lean()
+      ).map((t: any) => t.slug);
+      slug = SlugUtil.generateUnique(data.name, matchingSlugs);
+    }
 
     const doc: Partial<ITag> = {
       tag_id,

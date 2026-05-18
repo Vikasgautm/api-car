@@ -91,10 +91,9 @@ class IntelligenceService {
     static async reclassifyAll() {
         mileage_classifier_service_1.MileageClassifierService.invalidateCache();
         const cars = await car_model_1.Car.find({ is_deleted: false }).select('car_id').lean();
-        let variantsTouched = 0;
-        for (const car of cars) {
-            variantsTouched += await mileage_recompute_service_1.MileageRecomputeService.recomputeCar(car.car_id);
-        }
+        // Parallelize recomputation across all cars instead of sequential processing
+        const variantCounts = await Promise.all(cars.map(car => mileage_recompute_service_1.MileageRecomputeService.recomputeCar(car.car_id)));
+        const variantsTouched = variantCounts.reduce((sum, count) => sum + count, 0);
         return { cars: cars.length, variants: variantsTouched };
     }
 }

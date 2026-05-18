@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SlugUtil = void 0;
+exports.generateSlugWithIncrement = generateSlugWithIncrement;
 const slugify_1 = __importDefault(require("slugify"));
 class SlugUtil {
     static generate(text) {
@@ -44,4 +45,13 @@ class SlugUtil {
     }
 }
 exports.SlugUtil = SlugUtil;
+async function generateSlugWithIncrement(baseSlug, Model, fieldName = 'slug') {
+    let slug = baseSlug;
+    let counter = 1;
+    while (await Model.exists({ [fieldName]: slug })) {
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+    return slug;
+}
 //# sourceMappingURL=slug.util.js.map

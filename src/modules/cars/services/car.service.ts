@@ -401,8 +401,13 @@ export class CarService {
       const slug = SlugUtil.generate(carData.name);
       const existingSlug = await Car.findOne({ slug, is_deleted: false });
       if (existingSlug) {
-        const existingSlugs = (await Car.find({ is_deleted: false }).select('slug')).map((c: ICar) => c.slug);
-        carData.slug = SlugUtil.generateUnique(carData.name, existingSlugs);
+        // Only fetch slugs matching the pattern to minimize data transfer
+        const baseSlug = slug;
+        const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+        const matchingSlugs = (
+          await Car.find({ slug: pattern, is_deleted: false }).select('slug').lean()
+        ).map((c: any) => c.slug);
+        carData.slug = SlugUtil.generateUnique(carData.name, matchingSlugs);
       } else {
         carData.slug = slug;
       }
@@ -762,17 +767,35 @@ export class CarService {
 
     let recomputed = 0;
     let failed = 0;
+    const updateOps: any[] = [];
+
+    // Recompute aggregates sequentially (each call is expensive), but collect updates
     for (const c of cars) {
       try {
         await CarAggregationService.recomputeFullAggregates(c.car_id);
         const nextBodyTypeName = c.body_type_id ? bodyTypeNameMap.get(c.body_type_id) ?? null : null;
-        await Car.updateOne({ car_id: c.car_id }, { $set: { body_type_name: nextBodyTypeName } });
+        updateOps.push({
+          updateOne: {
+            filter: { car_id: c.car_id },
+            update: { $set: { body_type_name: nextBodyTypeName } }
+          }
+        });
         recomputed++;
       } catch (err) {
         failed++;
         console.error(`recomputeAggregatesAll: failed for car_id=${c.car_id}`, err);
       }
     }
+
+    // Batch update all body_type_names instead of sequential updateOne calls
+    if (updateOps.length > 0) {
+      try {
+        await Car.bulkWrite(updateOps);
+      } catch (err) {
+        console.error('Failed to batch update body_type_names:', err);
+      }
+    }
+
     return { scanned: cars.length, recomputed, failed };
   }
 

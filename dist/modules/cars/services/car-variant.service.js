@@ -13,6 +13,7 @@ const audit_util_1 = require("../../../shared/utils/audit.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
+const variant_integrity_service_1 = require("../../variants/services/variant-integrity.service");
 const FUEL_SPEC_RULES = {
     engine_performance: {
         engine_type: { hideFor: ['ev'] },
@@ -337,8 +338,10 @@ class CarVariantService {
         const slug = slug_util_1.SlugUtil.generate(variantData.variant_name);
         const existingSlug = await car_variant_model_1.CarVariant.findOne({ slug, is_deleted: false });
         if (existingSlug) {
-            const existingSlugs = (await car_variant_model_1.CarVariant.find({ is_deleted: false }).select('slug')).map(v => v.slug);
-            const uniqueSlug = slug_util_1.SlugUtil.generateUnique(variantData.variant_name, existingSlugs);
+            const baseSlug = slug;
+            const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+            const matchingSlugs = (await car_variant_model_1.CarVariant.find({ slug: pattern, is_deleted: false }).select('slug').lean()).map((v) => v.slug);
+            const uniqueSlug = slug_util_1.SlugUtil.generateUnique(variantData.variant_name, matchingSlugs);
             variantData.slug = uniqueSlug;
         }
         else {
@@ -476,6 +479,14 @@ class CarVariantService {
             updateData.variant_highlights = variantData.variant_highlights;
         if (variantData.market_status !== undefined)
             updateData.market_status = variantData.market_status;
+        // Validate automotive constraints before saving
+        const validationResult = await variant_integrity_service_1.VariantIntegrityService.validateAutomotiveConstraints({
+            ...before,
+            ...updateData,
+        });
+        if (!validationResult.isValid) {
+            throw new app_error_util_1.AppError(`Validation failed: ${validationResult.errors.map((e) => e.message).join('; ')}`, 400);
+        }
         const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false }, updateData, { returnDocument: 'after' });
         if (!variant) {
             throw new app_error_util_1.AppError(`Variant not found or deleted for variant_id: ${variantId}`, 404, {
@@ -486,6 +497,16 @@ class CarVariantService {
                     reason: 'The variant does not exist or has been deleted.',
                 },
             });
+        }
+        // Record change history for manual edits
+        if (before) {
+            try {
+                await variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantId, before, variant.toObject(), actor?.email || 'system', 'manual_edit');
+            }
+            catch (changeTrackingError) {
+                // Log warning but don't fail the update
+                console.warn(`Failed to record change history for variant ${variantId}: ${changeTrackingError?.message || changeTrackingError}`);
+            }
         }
         // Reclassify the variant when classification inputs changed; always recompute
         // the parent car aggregates because variant-level price/transmission/drive/rank

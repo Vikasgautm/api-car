@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.adminCarRouter = void 0;
 const express_1 = require("express");
 const auth_middleware_1 = require("../../../middlewares/auth.middleware");
 const upload_service_1 = require("../../../shared/services/upload.service");
@@ -12,6 +13,7 @@ router.get('/public', validation_1.validatePaginationQuery, car_controller_1.Car
 router.get('/public/:slug', validation_1.validateSlugParam, car_controller_1.CarController.getPublicCarBySlug);
 // Admin routes
 const adminRouter = (0, express_1.Router)();
+exports.adminCarRouter = adminRouter;
 adminRouter.use(auth_middleware_1.protect);
 adminRouter.use((0, auth_middleware_1.restrictTo)('admin', 'super_admin'));
 adminRouter.get('/', validation_1.validatePaginationQuery, car_controller_1.CarController.getAllAdminCars);
@@ -37,6 +39,20 @@ adminRouter.patch('/:id/publish', validation_1.validateUuidIdParam, car_controll
 adminRouter.patch('/:id/mark-launched', validation_1.validateUuidIdParam, car_controller_1.CarController.markLaunched);
 adminRouter.patch('/:id/mark-upcoming', validation_1.validateUuidIdParam, car_controller_1.CarController.markUpcoming);
 adminRouter.post('/:id/promote-to-current', validation_1.validateUuidIdParam, car_controller_1.CarController.promoteToCurrent);
+// Lifecycle management routes
+adminRouter.post('/:id/lifecycle/transition', validation_1.validateUuidIdParam, car_controller_1.CarController.transitionLifecycleState);
+adminRouter.get('/:id/lifecycle/history', validation_1.validateUuidIdParam, car_controller_1.CarController.getLifecycleHistory);
+adminRouter.post('/:id/lifecycle/schedule', validation_1.validateUuidIdParam, car_controller_1.CarController.scheduleStateChange);
+adminRouter.get('/:id/seo/continuity', validation_1.validateUuidIdParam, car_controller_1.CarController.getSEOContinuityReport);
+adminRouter.get('/lifecycle/upcoming-launches', car_controller_1.CarController.getUpcomingLaunches);
+// Scheduled launch management
+adminRouter.post('/lifecycle/process-scheduled', (0, auth_middleware_1.restrictTo)('super_admin'), car_controller_1.CarController.processScheduledLaunches);
+adminRouter.get('/lifecycle/scheduled-window', car_controller_1.CarController.getScheduledLaunchesWindow);
+adminRouter.post('/:id/lifecycle/cancel-scheduled', validation_1.validateUuidIdParam, car_controller_1.CarController.cancelScheduledLaunch);
+// Change history & integrity routes (Batch 6)
+adminRouter.get('/:id/change-history', validation_1.validateUuidIdParam, car_controller_1.CarController.getCarChangeHistory);
+adminRouter.get('/:id/audit-trail', validation_1.validateUuidIdParam, car_controller_1.CarController.getCarAuditTrail);
+adminRouter.get('/:id/change-summary', validation_1.validateUuidIdParam, car_controller_1.CarController.getCarChangeSummary);
 router.use('/admin', adminRouter);
 // Legacy routes for backward compatibility
 router.get('/', validation_1.validatePaginationQuery, car_controller_1.CarController.getAllPublicCars);

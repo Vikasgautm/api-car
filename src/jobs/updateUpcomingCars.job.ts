@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { Car } from '../models/car.model';
 import { logger } from '../utils/logger';
+import { CarLifecycleService } from '../modules/cars/services/car-lifecycle.service';
 
 /**
  * Auto-launch job for upcoming cars
@@ -54,29 +55,24 @@ export class UpdateUpcomingCarsJob {
 
       logger.info(`Found ${carsToUpdate.length} cars for auto-launch`);
 
-      // Update each car
-      let updatedCount = 0;
-      for (const car of carsToUpdate) {
-        try {
-          car.is_upcoming = false;
-          car.is_launched = true;
-          car.status = 'launched';
-          car.is_latest = true;
-          
-          // Only set launch_date if it's empty
-          if (!car.launch_date) {
-            car.launch_date = today;
-          }
-          
-          await car.save();
-          updatedCount++;
-          
-          logger.info(`Auto-launched car: ${car.name} (car_id: ${car.car_id})`);
-        } catch (error) {
-          logger.error(`Failed to auto-launch car ${car.car_id}:`, error);
-        }
-      }
+      // Parallelize state transitions for all cars to avoid sequential delays
+      const transitionResults = await Promise.allSettled(
+        carsToUpdate.map(car =>
+          CarLifecycleService.transitionState(
+            car.car_id,
+            'launched',
+            { user_id: 'system' }
+          ).then(() => {
+            logger.info(`Auto-launched car: ${car.name} (car_id: ${car.car_id})`);
+            return { success: true, carId: car.car_id };
+          }).catch(error => {
+            logger.error(`Failed to auto-launch car ${car.car_id}:`, error);
+            return { success: false, carId: car.car_id, error };
+          })
+        )
+      );
 
+      const updatedCount = transitionResults.filter(r => r.status === 'fulfilled' && r.value.success).length;
       logger.info(`UpdateUpcomingCarsJob completed. Updated ${updatedCount} cars`);
     } catch (error) {
       logger.error('Error in UpdateUpcomingCarsJob:', error);

@@ -372,8 +372,11 @@ class CarService {
             const slug = slug_util_1.SlugUtil.generate(carData.name);
             const existingSlug = await car_model_1.Car.findOne({ slug, is_deleted: false });
             if (existingSlug) {
-                const existingSlugs = (await car_model_1.Car.find({ is_deleted: false }).select('slug')).map((c) => c.slug);
-                carData.slug = slug_util_1.SlugUtil.generateUnique(carData.name, existingSlugs);
+                // Only fetch slugs matching the pattern to minimize data transfer
+                const baseSlug = slug;
+                const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+                const matchingSlugs = (await car_model_1.Car.find({ slug: pattern, is_deleted: false }).select('slug').lean()).map((c) => c.slug);
+                carData.slug = slug_util_1.SlugUtil.generateUnique(carData.name, matchingSlugs);
             }
             else {
                 carData.slug = slug;
@@ -704,16 +707,32 @@ class CarService {
         const bodyTypeNameMap = new Map(bodyTypeDocs.map(bt => [bt.body_type_id, bt.name]));
         let recomputed = 0;
         let failed = 0;
+        const updateOps = [];
+        // Recompute aggregates sequentially (each call is expensive), but collect updates
         for (const c of cars) {
             try {
                 await car_aggregation_service_1.CarAggregationService.recomputeFullAggregates(c.car_id);
                 const nextBodyTypeName = c.body_type_id ? bodyTypeNameMap.get(c.body_type_id) ?? null : null;
-                await car_model_1.Car.updateOne({ car_id: c.car_id }, { $set: { body_type_name: nextBodyTypeName } });
+                updateOps.push({
+                    updateOne: {
+                        filter: { car_id: c.car_id },
+                        update: { $set: { body_type_name: nextBodyTypeName } }
+                    }
+                });
                 recomputed++;
             }
             catch (err) {
                 failed++;
                 console.error(`recomputeAggregatesAll: failed for car_id=${c.car_id}`, err);
+            }
+        }
+        // Batch update all body_type_names instead of sequential updateOne calls
+        if (updateOps.length > 0) {
+            try {
+                await car_model_1.Car.bulkWrite(updateOps);
+            }
+            catch (err) {
+                console.error('Failed to batch update body_type_names:', err);
             }
         }
         return { scanned: cars.length, recomputed, failed };

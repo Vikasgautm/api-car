@@ -57,15 +57,31 @@ export class MileageRecomputeService {
 
     const variants = await CarVariant.find({ car_id: carId, is_deleted: false });
 
+    // Build bulk operations for all variants
+    const bulkOps: any[] = [];
+
     for (const variant of variants) {
       const result = await MileageClassifierService.classifyVariant(variant, parentCar);
-      variant.mileage_class = result.mileage_class;
-      variant.mileage_class_value = result.mileage_class_value;
-      variant.mileage_class_source = result.mileage_class_source;
-      variant.range_class = result.range_class;
-      variant.range_class_value = result.range_class_value;
-      variant.range_class_source = result.range_class_source;
-      await variant.save();
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: variant._id },
+          update: {
+            $set: {
+              mileage_class: result.mileage_class,
+              mileage_class_value: result.mileage_class_value,
+              mileage_class_source: result.mileage_class_source,
+              range_class: result.range_class,
+              range_class_value: result.range_class_value,
+              range_class_source: result.range_class_source,
+            }
+          }
+        }
+      });
+    }
+
+    // Execute all updates in one batch
+    if (bulkOps.length > 0) {
+      await CarVariant.bulkWrite(bulkOps);
     }
 
     await this.recomputeCarAggregatesOnly(carId);

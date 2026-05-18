@@ -36,7 +36,8 @@ export class ScheduledLaunchService {
       errors: [] as string[],
     };
 
-    for (const car of cars) {
+    // Parallelize state transitions instead of sequential processing
+    const transitionPromises = cars.map(async car => {
       try {
         // Find the scheduled entry
         const scheduledEntry = car.entity_status_history?.find(
@@ -44,7 +45,7 @@ export class ScheduledLaunchService {
             h.reason?.startsWith('[SCHEDULED]') && h.changed_at <= now
         );
 
-        if (!scheduledEntry) continue;
+        if (!scheduledEntry) return { success: false, error: 'No scheduled entry found' };
 
         // Execute the transition
         await CarLifecycleService.transitionState(
@@ -54,15 +55,20 @@ export class ScheduledLaunchService {
           `Auto-executed scheduled transition: ${scheduledEntry.reason}`
         );
 
-        results.succeeded++;
+        return { success: true };
       } catch (error) {
-        results.failed++;
-        results.errors.push(
-          `Failed to process car ${car.car_id}: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
+        return {
+          success: false,
+          error: `Failed to process car ${car.car_id}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        };
       }
-      results.processed++;
-    }
+    });
+
+    const transitionResults = await Promise.all(transitionPromises);
+    results.processed = transitionResults.length;
+    results.succeeded = transitionResults.filter(r => r.success).length;
+    results.failed = transitionResults.filter(r => !r.success).length;
+    results.errors = transitionResults.filter(r => r.error).map(r => r.error!);
 
     return results;
   }
@@ -86,20 +92,42 @@ export class ScheduledLaunchService {
       errors: [] as string[],
     };
 
-    for (const variant of variants) {
+    // Parallelize unhiding operations
+    const unhidePromises = variants.map(variant =>
+      VariantLifecycleService.unhideAllSections(variant.variant_id)
+        .then(() => ({ success: true, variant_id: variant.variant_id }))
+        .catch(error => ({
+          success: false,
+          variant_id: variant.variant_id,
+          error: error instanceof Error ? error.message : 'Unknown'
+        }))
+    );
+
+    const unhideResults = await Promise.all(unhidePromises);
+    results.unhidden = unhideResults.filter(r => r.success).length;
+    results.errors.push(...unhideResults.filter(r => !r.success && 'error' in r).map((r: any) =>
+      `Failed to unhide variant ${r.variant_id}: ${r.error}`
+    ));
+
+    // Bulk update market status for all variants instead of sequential saves
+    const bulkOps: any[] = variants.map(variant => ({
+      updateOne: {
+        filter: { _id: variant._id },
+        update: {
+          $set: {
+            market_status: 'available' as any,
+            is_upcoming: false,
+          }
+        }
+      }
+    }));
+
+    if (bulkOps.length > 0) {
       try {
-        // Unhide all sections
-        await VariantLifecycleService.unhideAllSections(variant.variant_id);
-
-        // Update market status
-        variant.market_status = 'available';
-        variant.is_upcoming = false;
-        await variant.save();
-
-        results.unhidden++;
+        await CarVariant.bulkWrite(bulkOps as any);
       } catch (error) {
         results.errors.push(
-          `Failed to evolve variant ${variant.variant_id}: ${error instanceof Error ? error.message : 'Unknown'}`
+          `Failed to update variant market status: ${error instanceof Error ? error.message : 'Unknown'}`
         );
       }
     }

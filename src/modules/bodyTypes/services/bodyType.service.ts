@@ -59,8 +59,12 @@ export class BodyTypeService {
 
     const existingSlug = await BodyType.findOne({ slug, is_deleted: false });
     if (existingSlug) {
-      const existingSlugs = (await BodyType.find({ is_deleted: false }).select('slug')).map(b => b.slug);
-      const uniqueSlug = SlugUtil.generateUnique(bodyTypeData.name, existingSlugs);
+      const baseSlug = slug;
+      const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+      const matchingSlugs = (
+        await BodyType.find({ slug: pattern, is_deleted: false }).select('slug').lean()
+      ).map((b: any) => b.slug);
+      const uniqueSlug = SlugUtil.generateUnique(bodyTypeData.name, matchingSlugs);
       bodyTypeData.slug = uniqueSlug;
     } else {
       bodyTypeData.slug = slug;

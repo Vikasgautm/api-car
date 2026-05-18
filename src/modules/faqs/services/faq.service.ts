@@ -136,8 +136,12 @@ export class FAQService {
 
     const existingSlug = await FAQ.findOne({ slug, is_deleted: false });
     if (existingSlug) {
-      const existingSlugs = (await FAQ.find({ is_deleted: false }).select('slug')).map(f => f.slug);
-      const uniqueSlug = SlugUtil.generateUnique(faqData.question, existingSlugs);
+      const baseSlug = slug;
+      const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+      const matchingSlugs = (
+        await FAQ.find({ slug: pattern, is_deleted: false }).select('slug').lean()
+      ).map((f: any) => f.slug);
+      const uniqueSlug = SlugUtil.generateUnique(faqData.question, matchingSlugs);
       faqData.slug = uniqueSlug;
     } else {
       faqData.slug = slug;

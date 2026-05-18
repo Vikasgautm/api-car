@@ -59,8 +59,15 @@ export class TagCategoryService {
   static async create(data: any) {
     const tag_category_id = uuidv4();
     const baseSlug = SlugUtil.generate(data.name);
-    const existingSlugs = (await TagCategory.find({ is_deleted: false }).select('slug')).map(c => c.slug);
-    const slug = existingSlugs.includes(baseSlug) ? SlugUtil.generateUnique(data.name, existingSlugs) : baseSlug;
+    const existingSlug = await TagCategory.findOne({ slug: baseSlug, is_deleted: false });
+    let slug = baseSlug;
+    if (existingSlug) {
+      const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+      const matchingSlugs = (
+        await TagCategory.find({ slug: pattern, is_deleted: false }).select('slug').lean()
+      ).map((c: any) => c.slug);
+      slug = SlugUtil.generateUnique(data.name, matchingSlugs);
+    }
 
     const doc: Partial<ITagCategory> = {
       tag_category_id,

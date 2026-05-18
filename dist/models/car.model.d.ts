@@ -1,6 +1,36 @@
 import { Document } from "mongoose";
 import { MileageClass } from "../constants/mileage-benchmarks";
 export type CarStatus = 'upcoming' | 'launched' | 'discontinued' | 'archived' | 'disabled';
+export type EntityLifecycleState = 'upcoming' | 'launched' | 'facelift' | 'discontinued' | 'concept' | 'testing';
+export interface EntityStatusHistoryEntry {
+    state: EntityLifecycleState;
+    changed_at: Date;
+    changed_by: string;
+    reason?: string;
+}
+export interface SEOHistoryEntry {
+    field: string;
+    old_value: any;
+    new_value: any;
+    timestamp: Date;
+    changed_by: string;
+}
+export interface VariantHistoryEntry {
+    variant_id: string;
+    action: 'added' | 'removed' | 'visibility_changed' | 'specs_updated';
+    timestamp: Date;
+    changed_by: string;
+    details?: Record<string, any>;
+}
+export interface ChangeHistoryEntry {
+    field: string;
+    old_value: any;
+    new_value: any;
+    changed_by: string;
+    changed_at: Date;
+    change_source: 'manual_edit' | 'import' | 'bulk_operation' | 'system' | 'api';
+    notes?: string;
+}
 export interface ICar extends Document {
     car_id: string;
     name: string;
@@ -130,6 +160,13 @@ export interface ICar extends Document {
     og_image?: string;
     canonical_url?: string;
     noindex?: boolean;
+    entity_lifecycle_state?: EntityLifecycleState | null;
+    entity_created_at?: Date | null;
+    entity_launch_date?: Date | null;
+    entity_status_history?: EntityStatusHistoryEntry[];
+    seo_history?: SEOHistoryEntry[];
+    variant_history?: VariantHistoryEntry[];
+    change_history?: ChangeHistoryEntry[];
 }
 export declare const Car: import("mongoose").Model<ICar, {}, {}, {}, Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
     _id: import("mongoose").Types.ObjectId;

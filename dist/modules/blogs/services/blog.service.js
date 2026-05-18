@@ -68,8 +68,10 @@ class BlogService {
         const slug = slug_util_1.SlugUtil.generate(blogData.title);
         const existingSlug = await blog_model_1.Blog.findOne({ slug, is_deleted: false });
         if (existingSlug) {
-            const existingSlugs = (await blog_model_1.Blog.find({ is_deleted: false }).select('slug')).map(b => b.slug);
-            const uniqueSlug = slug_util_1.SlugUtil.generateUnique(blogData.title, existingSlugs);
+            const baseSlug = slug;
+            const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+            const matchingSlugs = (await blog_model_1.Blog.find({ slug: pattern, is_deleted: false }).select('slug').lean()).map((b) => b.slug);
+            const uniqueSlug = slug_util_1.SlugUtil.generateUnique(blogData.title, matchingSlugs);
             blogData.slug = uniqueSlug;
         }
         else {

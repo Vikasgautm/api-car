@@ -40,6 +40,18 @@ export class ImportReprocessService {
       return null; // No raw data to reprocess from.
     }
 
+    return this.reprocessVariantWithData(variant, importLog);
+  }
+
+  // Internal method that accepts pre-fetched variant and import log (no refetch)
+  private static async reprocessVariantWithData(
+    variant: any,
+    importLog: any | undefined
+  ): Promise<ReprocessResult | null> {
+    if (!importLog || !importLog.extracted_data?.specs) {
+      return null;
+    }
+
     const extractedSpecs = importLog.extracted_data.specs as ExtractedSpec[];
 
     // Re-run through the current pipeline.
@@ -70,7 +82,7 @@ export class ImportReprocessService {
 
     // Update the variant with reprocessed specs and regenerated tags.
     await CarVariant.updateOne(
-      { variant_id: variantId },
+      { variant_id: variant.variant_id },
       {
         specs_normalized: specs_normalized || {},
         specs_raw: specs_raw || {},
@@ -79,7 +91,7 @@ export class ImportReprocessService {
     );
 
     return {
-      variant_id: variantId,
+      variant_id: variant.variant_id,
       variant_name: variant.variant_name,
       before: {
         normalized_keys: beforeNormalized,
@@ -102,14 +114,27 @@ export class ImportReprocessService {
       is_deleted: false,
     });
 
-    const results: ReprocessResult[] = [];
+    // Batch fetch import logs for all variants to avoid N findOne queries
+    const importLogs = await ImportLog.find({
+      variant_id: { $in: variants.map(v => v.variant_id) },
+      import_type: 'variant',
+      is_deleted: false,
+    }).lean();
 
-    for (const variant of variants) {
-      const result = await this.reprocessVariant(variant.variant_id);
-      if (result) {
-        results.push(result);
-      }
-    }
+    const logsMap = new Map(importLogs.map((log: any) => [log.variant_id, log]));
+
+    // Parallelize reprocessing instead of sequential
+    const reprocessPromises = variants.map(variant =>
+      this.reprocessVariantWithData(variant, logsMap.get(variant.variant_id))
+        .catch(err => {
+          console.error(`Failed to reprocess variant ${variant.variant_id}:`, err);
+          return null;
+        })
+    );
+
+    const results = (await Promise.all(reprocessPromises)).filter(
+      (r): r is ReprocessResult => r !== null
+    );
 
     return results;
   }
@@ -125,27 +150,32 @@ export class ImportReprocessService {
       is_deleted: false,
     });
 
-    const results: ReprocessResult[] = [];
-    let failed = 0;
+    // Batch fetch import logs for all variants to avoid N findOne queries
+    const importLogs = await ImportLog.find({
+      variant_id: { $in: variants.map(v => v.variant_id) },
+      import_type: 'variant',
+      is_deleted: false,
+    }).lean();
 
-    for (const variant of variants) {
-      try {
-        const result = await this.reprocessVariant(variant.variant_id);
-        if (result) {
-          results.push(result);
-        } else {
-          failed++;
-        }
-      } catch (err) {
-        failed++;
-        console.error(`Failed to reprocess variant ${variant.variant_id}:`, err);
-      }
-    }
+    const logsMap = new Map(importLogs.map((log: any) => [log.variant_id, log]));
+
+    // Parallelize reprocessing instead of sequential
+    const reprocessPromises = variants.map(variant =>
+      this.reprocessVariantWithData(variant, logsMap.get(variant.variant_id))
+        .catch(err => {
+          console.error(`Failed to reprocess variant ${variant.variant_id}:`, err);
+          return null;
+        })
+    );
+
+    const results = (await Promise.all(reprocessPromises)).filter(
+      (r): r is ReprocessResult => r !== null
+    );
 
     return {
       total: variants.length,
       succeeded: results.length,
-      failed,
+      failed: variants.length - results.length,
       results: results.filter(r => r.changed), // Return only changed ones
     };
   }
