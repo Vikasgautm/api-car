@@ -339,9 +339,7 @@ export class CarVariantService {
     const sortFilter = FilterUtil.buildSortFilter(sortBy, sortOrder);
 
     const variants = await CarVariant.find(filter)
-      .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived')
-      .populate("car_id", "name slug")
-      .populate("fuel_type_id", "name slug")
+      .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived created_at updated_at')
       .sort(sortFilter)
       .skip(skip)
       .limit(validatedLimit)
@@ -354,15 +352,11 @@ export class CarVariantService {
   }
 
   static async getVariantById(variantId: string) {
-    return await CarVariant.findOne({ variant_id: variantId, is_deleted: false })
-      .populate("car_id", "name slug")
-      .populate("fuel_type_id", "name slug");
+    return await CarVariant.findOne({ variant_id: variantId, is_deleted: false });
   }
 
   static async getVariantBySlug(slug: string) {
-    return await CarVariant.findOne({ slug, is_deleted: false })
-      .populate("car_id", "name slug")
-      .populate("fuel_type_id", "name slug");
+    return await CarVariant.findOne({ slug, is_deleted: false });
   }
 
   static async createVariant(variantData: any, actor: AuditActor | null = null) {

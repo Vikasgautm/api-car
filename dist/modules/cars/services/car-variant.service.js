@@ -287,9 +287,7 @@ class CarVariantService {
         const { skip, limit: validatedLimit } = pagination_util_1.PaginationUtil.getPaginationParams(page, limit);
         const sortFilter = filter_util_1.FilterUtil.buildSortFilter(sortBy, sortOrder);
         const variants = await car_variant_model_1.CarVariant.find(filter)
-            .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived')
-            .populate("car_id", "name slug")
-            .populate("fuel_type_id", "name slug")
+            .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived created_at updated_at')
             .sort(sortFilter)
             .skip(skip)
             .limit(validatedLimit)
@@ -299,14 +297,10 @@ class CarVariantService {
         return { variants, pagination: paginationMeta };
     }
     static async getVariantById(variantId) {
-        return await car_variant_model_1.CarVariant.findOne({ variant_id: variantId, is_deleted: false })
-            .populate("car_id", "name slug")
-            .populate("fuel_type_id", "name slug");
+        return await car_variant_model_1.CarVariant.findOne({ variant_id: variantId, is_deleted: false });
     }
     static async getVariantBySlug(slug) {
-        return await car_variant_model_1.CarVariant.findOne({ slug, is_deleted: false })
-            .populate("car_id", "name slug")
-            .populate("fuel_type_id", "name slug");
+        return await car_variant_model_1.CarVariant.findOne({ slug, is_deleted: false });
     }
     static async createVariant(variantData, actor = null) {
         const car = await car_model_1.Car.findOne({ car_id: variantData.car_id, is_deleted: false }).lean();
