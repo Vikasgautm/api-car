@@ -16,6 +16,7 @@ import { VariantCompletenessService } from '../../variants/services/variant-comp
 import { VariantBulkService } from '../../variants/services/variant-bulk.service';
 import { SpecRefinementService } from '../../variants/services/spec-refinement.service';
 import { VariantIntegrityService } from '../../variants/services/variant-integrity.service';
+import { VariantResponseTransformer } from '../../../shared/transformers/variant-response.transformer';
 
 export class CarVariantController {
   // Public routes
@@ -71,7 +72,10 @@ export class CarVariantController {
   static getAllAdminVariants = catchAsync(async (req: Request, res: Response) => {
     const includeDeleted = req.query.include_deleted === 'true';
     const result = await CarVariantService.getAllVariants(req.query, includeDeleted);
-    return ResponseUtil.paginated(res, result.variants, result.pagination, 'Variants retrieved successfully');
+    // Transform variants to display-ready format with flattened car metadata
+    const transformedVariants = await VariantResponseTransformer.transformBatch(result.variants);
+    VariantResponseTransformer.clearCache();
+    return ResponseUtil.paginated(res, transformedVariants, result.pagination, 'Variants retrieved successfully');
   });
 
   static getAdminVariantById = catchAsync(async (req: Request, res: Response) => {

@@ -137,8 +137,8 @@ const ComparisonSchema: Schema<IComparison> = new Schema(
 ComparisonSchema.index({ status: 1, is_published: 1 });
 ComparisonSchema.index({ isPopular: 1, status: 1 });
 ComparisonSchema.index({ category: 1, status: 1 });
-ComparisonSchema.index({ slug: 1 });
+// Note: slug index already defined via 'index: true' in schema property above
 ComparisonSchema.index({ car1_id: 1, car2_id: 1 });
-ComparisonSchema.index({ is_deleted: 1 });
+// Note: is_deleted index already defined via 'index: true' in schema property above
 
 export const Comparison = mongoose.model<IComparison>('Comparison', ComparisonSchema);

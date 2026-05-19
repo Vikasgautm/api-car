@@ -140,8 +140,8 @@ const ComparisonSchema = new mongoose_1.Schema({
 ComparisonSchema.index({ status: 1, is_published: 1 });
 ComparisonSchema.index({ isPopular: 1, status: 1 });
 ComparisonSchema.index({ category: 1, status: 1 });
-ComparisonSchema.index({ slug: 1 });
+// Note: slug index already defined via 'index: true' in schema property above
 ComparisonSchema.index({ car1_id: 1, car2_id: 1 });
-ComparisonSchema.index({ is_deleted: 1 });
+// Note: is_deleted index already defined via 'index: true' in schema property above
 exports.Comparison = mongoose_1.default.model('Comparison', ComparisonSchema);
 //# sourceMappingURL=comparison.model.js.map

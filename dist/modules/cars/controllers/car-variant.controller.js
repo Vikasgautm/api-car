@@ -17,6 +17,7 @@ const variant_completeness_service_1 = require("../../variants/services/variant-
 const variant_bulk_service_1 = require("../../variants/services/variant-bulk.service");
 const spec_refinement_service_1 = require("../../variants/services/spec-refinement.service");
 const variant_integrity_service_1 = require("../../variants/services/variant-integrity.service");
+const variant_response_transformer_1 = require("../../../shared/transformers/variant-response.transformer");
 class CarVariantController {
     // Public routes
     static getAllPublicVariants = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -65,7 +66,10 @@ class CarVariantController {
     static getAllAdminVariants = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const includeDeleted = req.query.include_deleted === 'true';
         const result = await car_variant_service_1.CarVariantService.getAllVariants(req.query, includeDeleted);
-        return response_util_1.ResponseUtil.paginated(res, result.variants, result.pagination, 'Variants retrieved successfully');
+        // Transform variants to display-ready format with flattened car metadata
+        const transformedVariants = await variant_response_transformer_1.VariantResponseTransformer.transformBatch(result.variants);
+        variant_response_transformer_1.VariantResponseTransformer.clearCache();
+        return response_util_1.ResponseUtil.paginated(res, transformedVariants, result.pagination, 'Variants retrieved successfully');
     });
     static getAdminVariantById = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const variant = await car_variant_service_1.CarVariantService.getVariantById(req.params.id);
