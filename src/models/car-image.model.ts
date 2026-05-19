@@ -4,10 +4,10 @@ import { v4 as uuidv4 } from 'uuid';
 export interface ICarImage extends Document {
   car_image_id: string;
   image_uuid?: string;
-  car_id: Schema.Types.ObjectId;
-  variant_id?: Schema.Types.ObjectId;
-  category_id?: Schema.Types.ObjectId;
-  sub_category_id?: Schema.Types.ObjectId;
+  car_id: string;
+  variant_id?: string;
+  category_id?: string;
+  sub_category_id?: string;
   url: string;
   thumbnail_url?: string;
   alt_text?: string;
@@ -37,10 +37,10 @@ const carImageSchema = new Schema<ICarImage>(
       required: true
     },
     image_uuid: { type: String, sparse: true },
-    car_id: { type: Schema.Types.ObjectId, ref: 'Car', required: true },
-    variant_id: { type: Schema.Types.ObjectId, ref: 'CarVariant' },
-    category_id: { type: Schema.Types.ObjectId, ref: 'ImageCategory' },
-    sub_category_id: { type: Schema.Types.ObjectId, ref: 'ImageSubCategory' },
+    car_id: { type: String, required: true },
+    variant_id: { type: String },
+    category_id: { type: String },
+    sub_category_id: { type: String },
     url: { type: String, required: true },
     thumbnail_url: { type: String },
     alt_text: { type: String },
