@@ -3,8 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface IComparisonRival extends Document {
   rival_id: string;
-  primary_car_id: mongoose.Types.ObjectId;
-  rival_car_id: mongoose.Types.ObjectId;
+  primary_car_id: string;
+  rival_car_id: string;
   relationship_strength: number;
   primary_segment?: string;
   rival_segment?: string;
@@ -23,14 +23,12 @@ const ComparisonRivalSchema: Schema<IComparisonRival> = new Schema(
       index: true,
     },
     primary_car_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Car',
+      type: String,
       required: true,
       index: true,
     },
     rival_car_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Car',
+      type: String,
       required: true,
       index: true,
     },

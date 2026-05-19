@@ -3,10 +3,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface IComparison extends Document {
   comparison_id: string;
-  car1_id: mongoose.Types.ObjectId;
-  car2_id: mongoose.Types.ObjectId;
-  variant1_id?: mongoose.Types.ObjectId;
-  variant2_id?: mongoose.Types.ObjectId;
+  car1_id: string;
+  car2_id: string;
+  variant1_id?: string;
+  variant2_id?: string;
   slug: string;
   title: string;
   category?: string;
@@ -15,14 +15,14 @@ export interface IComparison extends Document {
   isPopular: boolean;
   isTrending: boolean;
   showOnHomepage: boolean;
-  relatedComparisons: mongoose.Types.ObjectId[];
+  relatedComparisons: string[];
   seoMetaTitle?: string;
   seoMetaDescription?: string;
   seoFAQSchema?: Record<string, any>;
   status: 'draft' | 'published' | 'archived';
   is_published: boolean;
-  created_by: mongoose.Types.ObjectId;
-  updated_by?: mongoose.Types.ObjectId;
+  created_by: string;
+  updated_by?: string;
   created_at: Date;
   updated_at: Date;
   deleted_at?: Date;
@@ -38,25 +38,21 @@ const ComparisonSchema: Schema<IComparison> = new Schema(
       index: true,
     },
     car1_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Car',
+      type: String,
       required: true,
       index: true,
     },
     car2_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Car',
+      type: String,
       required: true,
       index: true,
     },
     variant1_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'CarVariant',
+      type: String,
       index: true,
     },
     variant2_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'CarVariant',
+      type: String,
       index: true,
     },
     slug: {
@@ -95,8 +91,7 @@ const ComparisonSchema: Schema<IComparison> = new Schema(
       index: true,
     },
     relatedComparisons: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Comparison',
+      type: String,
     }],
     seoMetaTitle: String,
     seoMetaDescription: String,
@@ -113,13 +108,11 @@ const ComparisonSchema: Schema<IComparison> = new Schema(
       index: true,
     },
     created_by: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
       required: true,
     },
     updated_by: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      type: String,
     },
     is_deleted: {
       type: Boolean,

@@ -7,7 +7,7 @@ export interface IBlog extends Document {
   excerpt: string;
   content: string;
   author_name?: string;
-  author_id?: Schema.Types.ObjectId;
+  author_id?: string;
   category: string;
   tags?: string[];
   thumbnail?: {
@@ -39,7 +39,7 @@ const blogSchema = new Schema<IBlog>(
     excerpt: { type: String, required: true, maxlength: 500 },
     content: { type: String, required: true },
     author_name: { type: String },
-    author_id: { type: Schema.Types.ObjectId, ref: 'User' },
+    author_id: { type: String },
     category: { type: String, required: true },
     tags: [{ type: String }],
     thumbnail: {
