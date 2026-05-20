@@ -823,11 +823,11 @@ exports.INVALID_LABELS = [
 // Value normalization — vocabularies for boolean-type fields.
 const POSITIVE_BOOLEAN_VALUES = new Set([
     'yes', 'true', 'available', 'standard', 'with', 'powered',
-    'included', 'comes with', 'fitted', 'equipped', 'has',
+    'included', 'comes with', 'fitted', 'equipped', 'has', '1', 'present',
 ]);
 const NEGATIVE_BOOLEAN_VALUES = new Set([
     'no', 'false', 'not available', 'none', 'na', 'n/a', '0',
-    'not equipped', 'not fitted', 'absent', '-',
+    'not equipped', 'not fitted', 'absent', '-', 'n',
 ]);
 function normalizeLabel(label) {
     return label

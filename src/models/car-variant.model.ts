@@ -361,6 +361,12 @@ export interface ICarVariant extends Document {
   transmission_type: TransmissionType;
   drivetrain?: string;
   body_type?: string;
+  // Powertrain capability flags (enables dynamic category visibility)
+  has_engine?: boolean;
+  has_battery?: boolean;
+  has_motor?: boolean;
+  has_external_charging?: boolean;
+  powertrain_detection_confidence?: number; // 0-1
   seating_capacity?: number;
   ex_showroom_price?: number;
   expected_price?: number;
@@ -386,6 +392,8 @@ export interface ICarVariant extends Document {
   specs_metadata?: Record<string, FieldMetadata>;
   hidden_spec_keys?: string[];
   hidden_sections?: string[];
+  // Unified visibility override system (maps category/field names to 'auto' | 'manual-show' | 'manual-hide')
+  visibility_overrides?: Record<string, 'auto' | 'manual-show' | 'manual-hide'>;
   is_published: boolean;
   is_deleted: boolean;
   is_archived: boolean;
@@ -447,6 +455,12 @@ const variantSchema = new Schema<ICarVariant>(
     },
     drivetrain: { type:String },
     body_type: { type: String },
+    // Powertrain capability flags (enables dynamic category visibility)
+    has_engine: { type: Boolean, default: false },
+    has_battery: { type: Boolean, default: false },
+    has_motor: { type: Boolean, default: false },
+    has_external_charging: { type: Boolean, default: false },
+    powertrain_detection_confidence: { type: Number, default: 0, min: 0, max: 1 },
     seating_capacity: { type: Number, min: 2, max: 10 },
     ex_showroom_price: { 
       type: Number,
@@ -755,6 +769,7 @@ const variantSchema = new Schema<ICarVariant>(
     specs_metadata: { type: Schema.Types.Mixed, default: {} },
     hidden_spec_keys: { type: [String], default: [] },
     hidden_sections: { type: [String], default: [] },
+    visibility_overrides: { type: Schema.Types.Mixed, default: {} },
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
     is_archived: { type: Boolean, default: false },

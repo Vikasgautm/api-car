@@ -93,19 +93,30 @@ Format each suggestion as JSON: {"field": "...", "current": "...", "suggested": 
 Provide 3-5 most impactful suggestions only.`;
     }
     static identifyMissingFields(specs) {
-        const importantFields = [
-            'engine_displacement',
-            'power_bhp',
-            'torque_nm',
-            'fuel_tank_capacity',
-            'boot_space',
-            'ground_clearance',
-            'dimensions',
-            'acceleration_0_100kmph',
-            'top_speed',
-            'fuel_efficiency',
-        ];
-        return importantFields.filter((field) => !specs[field] || specs[field] === null || specs[field] === undefined || specs[field] === '');
+        // Map flat field names to nested paths in specs_normalized
+        const importantFields = {
+            'engine_displacement': 'engine_performance.displacement',
+            'power_bhp': 'engine_performance.max_power',
+            'torque_nm': 'engine_performance.max_torque',
+            'fuel_tank_capacity': 'mileage_range.fuel_tank_capacity',
+            'boot_space': 'dimensions_practicality.boot_space',
+            'ground_clearance': 'dimensions_practicality.ground_clearance',
+            'acceleration_0_100': 'engine_performance.acceleration_0_100',
+            'top_speed': 'engine_performance.top_speed',
+            'arai_mileage': 'mileage_range.arai_mileage',
+        };
+        const missing = [];
+        Object.entries(importantFields).forEach(([fieldName, nestedPath]) => {
+            const keys = nestedPath.split('.');
+            let current = specs;
+            for (const key of keys) {
+                current = current?.[key];
+            }
+            if (!current || current === null || current === undefined || current === '') {
+                missing.push(fieldName);
+            }
+        });
+        return missing;
     }
     static identifyLowQualityFields(specs) {
         const lowQuality = [];
@@ -124,18 +135,23 @@ Provide 3-5 most impactful suggestions only.`;
     }
     static parseRefinementResponse(response) {
         const suggestions = [];
-        // Extract JSON objects from response
-        const jsonMatches = response.match(/\{[^}]*"field"[^}]*\}/g) || [];
+        // Try to extract JSON objects using more robust approach
+        // Look for patterns: {...} and try to parse them
+        const jsonPattern = /\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g;
+        const jsonMatches = response.match(jsonPattern) || [];
         jsonMatches.forEach((jsonStr) => {
             try {
                 const parsed = JSON.parse(jsonStr);
-                suggestions.push({
-                    field: parsed.field || '',
-                    current_value: parsed.current || 'missing',
-                    suggested_value: parsed.suggested || '',
-                    reason: parsed.reason || '',
-                    confidence: parsed.confidence || 0.7,
-                });
+                // Validate it looks like a refinement suggestion
+                if (parsed.field) {
+                    suggestions.push({
+                        field: parsed.field || '',
+                        current_value: parsed.current || parsed.current_value || 'missing',
+                        suggested_value: parsed.suggested || parsed.suggested_value || '',
+                        reason: parsed.reason || '',
+                        confidence: Math.min(1, Math.max(0.6, parsed.confidence || 0.7)),
+                    });
+                }
             }
             catch (e) {
                 // Skip malformed JSON

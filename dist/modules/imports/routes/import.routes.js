@@ -5,6 +5,7 @@ const jwt_auth_guard_1 = require("../../../modules/auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../../modules/auth/guards/roles.guard");
 const import_controller_1 = require("../controllers/import.controller");
 const analytics_controller_1 = require("../controllers/analytics.controller");
+const import_normalizer_controller_1 = require("../controllers/import-normalizer.controller");
 const import_validation_1 = require("../validation/import.validation");
 const validate_middleware_1 = require("../../../middlewares/validate.middleware");
 const router = (0, express_1.Router)();
@@ -43,5 +44,8 @@ router.get('/analytics/confidence/car/:car_id', analytics_controller_1.Analytics
 router.get('/analytics/quality-report', analytics_controller_1.AnalyticsController.getBatchQualityReport);
 // Enum standardization routes
 router.get('/analytics/standardization-report', analytics_controller_1.AnalyticsController.getStandardizationReport);
+// Import Normalization & Powertrain Detection (new engine)
+router.post('/normalize', import_normalizer_controller_1.ImportNormalizerController.normalizeSpecs);
+router.post('/detect-powertrain', import_normalizer_controller_1.ImportNormalizerController.detectPowertrain);
 exports.default = router;
 //# sourceMappingURL=import.routes.js.map

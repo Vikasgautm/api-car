@@ -15,6 +15,7 @@ export declare class CreateVariantDto {
     specs_normalized?: SpecsNormalized;
     hidden_spec_keys?: string[];
     hidden_sections?: string[];
+    visibility_overrides?: Record<string, 'auto' | 'manual-show' | 'manual-hide'>;
     is_published?: boolean;
     meta_title?: string;
     meta_description?: string;

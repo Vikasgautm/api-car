@@ -48,6 +48,7 @@ adminRouter.get('/:id/lifecycle/completeness', validateUuidIdParam, CarVariantCo
 adminRouter.get('/:id/differences', validateUuidIdParam, CarVariantController.getVariantDifference);
 adminRouter.get('/:id/validate', validateUuidIdParam, CarVariantController.validateVariant);
 adminRouter.get('/:id/completeness', validateUuidIdParam, CarVariantController.getVariantCompleteness);
+adminRouter.get('/:id/import-health', validateUuidIdParam, CarVariantController.getVariantImportHealth);
 adminRouter.get('/:id/refine-specs', validateUuidIdParam, CarVariantController.refineVariantSpecs);
 adminRouter.post('/:id/apply-refinement', validateUuidIdParam, CarVariantController.applyRefinementSuggestions);
 adminRouter.get('/:id/change-history', validateUuidIdParam, CarVariantController.getVariantChangeHistory);

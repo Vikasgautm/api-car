@@ -18,6 +18,7 @@ class UpdateVariantDto {
     specs_normalized;
     hidden_spec_keys;
     hidden_sections;
+    visibility_overrides;
     is_published;
     is_archived;
     archived_at;

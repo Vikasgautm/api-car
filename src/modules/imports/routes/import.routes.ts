@@ -3,6 +3,7 @@ import { jwtAuthGuard } from '../../../modules/auth/guards/jwt-auth.guard';
 import { adminGuard } from '../../../modules/auth/guards/roles.guard';
 import { ImportController } from '../controllers/import.controller';
 import { AnalyticsController } from '../controllers/analytics.controller';
+import { ImportNormalizerController } from '../controllers/import-normalizer.controller';
 import { carPreviewSchema, carSaveSchema, variantPreviewSchema, variantSaveSchema } from '../validation/import.validation';
 import { validateBody } from '../../../middlewares/validate.middleware';
 
@@ -101,6 +102,15 @@ router.get('/analytics/quality-report',
 // Enum standardization routes
 router.get('/analytics/standardization-report',
   AnalyticsController.getStandardizationReport
+);
+
+// Import Normalization & Powertrain Detection (new engine)
+router.post('/normalize',
+  ImportNormalizerController.normalizeSpecs
+);
+
+router.post('/detect-powertrain',
+  ImportNormalizerController.detectPowertrain
 );
 
 export default router;

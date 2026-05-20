@@ -14,6 +14,9 @@ const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
 const variant_integrity_service_1 = require("../../variants/services/variant-integrity.service");
+const import_normalizer_service_1 = require("../../imports/services/import-normalizer.service");
+const powertrain_detector_service_1 = require("../../variants/services/powertrain-detector.service");
+const seo_auto_wiring_service_1 = require("../../imports/services/seo-auto-wiring.service");
 const FUEL_SPEC_RULES = {
     engine_performance: {
         engine_type: { hideFor: ['ev'] },
@@ -340,6 +343,8 @@ class CarVariantService {
                 });
             }
         }
+        // Phase 2: Enhance with normalization before creating
+        variantData = await this.enhanceVariantWithNormalization(variantData, variantData.fuel_type_id);
         const variant_id = (0, uuid_1.v4)();
         const slug = slug_util_1.SlugUtil.generate(variantData.variant_name);
         const existingSlug = await car_variant_model_1.CarVariant.findOne({ slug, is_deleted: false });
@@ -382,10 +387,23 @@ class CarVariantService {
             is_published: variantData.is_published || false,
             is_deleted: false,
             is_archived: false,
+            // Powertrain detection flags (from normalization engine)
+            has_engine: variantData.has_engine !== undefined ? Boolean(variantData.has_engine) : false,
+            has_battery: variantData.has_battery !== undefined ? Boolean(variantData.has_battery) : false,
+            has_motor: variantData.has_motor !== undefined ? Boolean(variantData.has_motor) : false,
+            has_external_charging: variantData.has_external_charging !== undefined ? Boolean(variantData.has_external_charging) : false,
+            powertrain_detection_confidence: variantData.powertrain_detection_confidence !== undefined ? Number(variantData.powertrain_detection_confidence) : 0,
         };
         const created = await car_variant_model_1.CarVariant.create(variant);
         await mileage_recompute_service_1.MileageRecomputeService.recomputeVariant(created.variant_id);
         await car_aggregation_service_1.CarAggregationService.recomputeFullAggregates(created.car_id);
+        // Phase 5: Auto-wire SEO connections for enabled features
+        try {
+            await seo_auto_wiring_service_1.SEOAutoWiringService.autoWireVariant(created.variant_id, created.car_id, created.specs_normalized);
+        }
+        catch (err) {
+            console.warn(`Failed to auto-wire SEO for variant ${created.variant_id}: ${err instanceof Error ? err.message : String(err)}`);
+        }
         await audit_util_1.AuditUtil.recordEvent({
             entity_type: 'variant',
             entity_id: created.variant_id,
@@ -398,6 +416,8 @@ class CarVariantService {
     static async updateVariant(variantId, variantData, actor = null) {
         const updateData = {};
         const before = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId, is_deleted: false }).lean();
+        // Phase 2: Enhance with normalization before processing
+        variantData = await this.enhanceVariantWithNormalization(variantData, variantData.fuel_type_id);
         if (variantData.variant_name !== undefined) {
             updateData.variant_name = variantData.variant_name;
             const newSlug = slug_util_1.SlugUtil.generate(variantData.variant_name);
@@ -485,6 +505,17 @@ class CarVariantService {
             updateData.variant_highlights = variantData.variant_highlights;
         if (variantData.market_status !== undefined)
             updateData.market_status = variantData.market_status;
+        // Powertrain flags from normalization
+        if (variantData.has_engine !== undefined)
+            updateData.has_engine = Boolean(variantData.has_engine);
+        if (variantData.has_battery !== undefined)
+            updateData.has_battery = Boolean(variantData.has_battery);
+        if (variantData.has_motor !== undefined)
+            updateData.has_motor = Boolean(variantData.has_motor);
+        if (variantData.has_external_charging !== undefined)
+            updateData.has_external_charging = Boolean(variantData.has_external_charging);
+        if (variantData.powertrain_detection_confidence !== undefined)
+            updateData.powertrain_detection_confidence = Number(variantData.powertrain_detection_confidence);
         // Validate automotive constraints before saving
         const validationResult = await variant_integrity_service_1.VariantIntegrityService.validateAutomotiveConstraints({
             ...before,
@@ -545,6 +576,13 @@ class CarVariantService {
                 new_value: { changed: true },
                 actor,
             });
+            // Phase 5: Update SEO wiring when specs change
+            try {
+                await seo_auto_wiring_service_1.SEOAutoWiringService.updateWiringForVariant(variant.variant_id, variant.car_id, variant.specs_normalized);
+            }
+            catch (err) {
+                console.warn(`Failed to update SEO wiring for variant ${variant.variant_id}: ${err instanceof Error ? err.message : String(err)}`);
+            }
         }
         return variant;
     }
@@ -713,6 +751,49 @@ class CarVariantService {
             actor,
         });
         return variant;
+    }
+    /**
+     * Phase 2: Enhance variant data with normalization and powertrain detection.
+     * Auto-normalize specs if specs_raw is provided, update powertrain flags.
+     */
+    static async enhanceVariantWithNormalization(variantData, fuel_type_id) {
+        try {
+            const specs_raw = variantData.specs_raw;
+            if (!specs_raw || Object.keys(specs_raw).length === 0) {
+                return variantData; // Nothing to normalize
+            }
+            // Get fuel_type slug for powertrain detection
+            let fuel_type_slug = 'petrol'; // default
+            if (fuel_type_id) {
+                const fuelType = await fuel_type_model_1.FuelType.findOne({ fuel_type_id, is_deleted: false });
+                if (fuelType?.slug) {
+                    fuel_type_slug = fuelType.slug;
+                }
+            }
+            // Run normalization engine on specs_raw
+            const normalizationReport = import_normalizer_service_1.ImportNormalizerService.normalize(specs_raw);
+            // Detect powertrain capabilities from normalized specs
+            const powertrainFlags = powertrain_detector_service_1.PowertrainDetectorService.detect(normalizationReport.specs_normalized, fuel_type_slug);
+            // Merge normalized specs with existing specs_normalized (use normalized as base)
+            const mergedSpecs = {
+                ...variantData.specs_normalized,
+                ...normalizationReport.specs_normalized,
+            };
+            return {
+                ...variantData,
+                specs_normalized: mergedSpecs,
+                has_engine: powertrainFlags.has_engine,
+                has_battery: powertrainFlags.has_battery,
+                has_motor: powertrainFlags.has_motor,
+                has_external_charging: powertrainFlags.has_external_charging,
+                powertrain_detection_confidence: powertrainFlags.confidence,
+            };
+        }
+        catch (error) {
+            // Log but don't fail — normalization is an enhancement, not a requirement
+            console.warn(`Failed to enhance variant with normalization: ${error instanceof Error ? error.message : String(error)}`);
+            return variantData;
+        }
     }
 }
 exports.CarVariantService = CarVariantService;

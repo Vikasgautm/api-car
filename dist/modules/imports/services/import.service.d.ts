@@ -15,6 +15,11 @@ export declare class ImportService {
     private static convertObjectTypes;
     private static convertToBoolean;
     private static convertToNumber;
+    /**
+     * Enhance variant data with normalization and powertrain detection.
+     * Phase 1: Normalize specs_raw → improved specs_normalized + set powertrain flags.
+     */
+    private static enhanceVariantWithNormalization;
     static getImportLogs(userId: string, filter?: any): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/import-log.model").IImportLog, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/import-log.model").IImportLog & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {

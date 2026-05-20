@@ -325,6 +325,11 @@ export interface ICarVariant extends Document {
     transmission_type: TransmissionType;
     drivetrain?: string;
     body_type?: string;
+    has_engine?: boolean;
+    has_battery?: boolean;
+    has_motor?: boolean;
+    has_external_charging?: boolean;
+    powertrain_detection_confidence?: number;
     seating_capacity?: number;
     ex_showroom_price?: number;
     expected_price?: number;
@@ -348,6 +353,7 @@ export interface ICarVariant extends Document {
     specs_metadata?: Record<string, FieldMetadata>;
     hidden_spec_keys?: string[];
     hidden_sections?: string[];
+    visibility_overrides?: Record<string, 'auto' | 'manual-show' | 'manual-hide'>;
     is_published: boolean;
     is_deleted: boolean;
     is_archived: boolean;

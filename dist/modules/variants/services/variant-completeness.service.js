@@ -32,8 +32,8 @@ class VariantCompletenessService {
             seo_score: seoScore,
             pricing_score: pricingScore,
             status_score: statusScore,
-            missing_sections: emptySections,
-            empty_sections: missingFields,
+            missing_sections: missingFields,
+            empty_sections: emptySections,
             recommendation,
         };
     }
@@ -128,35 +128,50 @@ class VariantCompletenessService {
     }
     static scoreSeo(variant) {
         let score = 0;
-        const checks = 0;
-        let passed = 0;
+        const specs = variant.specs_normalized || {};
+        // Check for SEO-critical features that drive landing pages
+        // sunroof (sunroof.sunroof exists and is not false)
+        if (specs.interior?.sunroof) {
+            score += 15;
+        }
+        // ventilated seats
+        if (specs.comfort_convenience?.ventilated_seats) {
+            score += 15;
+        }
+        // 360 camera
+        if (specs.safety?.camera_360) {
+            score += 10;
+        }
+        // ADAS features
+        if (specs.safety?.adas_level && specs.safety.adas_level > 0) {
+            score += 15;
+        }
+        // Wireless charger
+        if (specs.comfort_convenience?.wireless_charger) {
+            score += 10;
+        }
+        // Ambient lighting
+        if (specs.interior?.ambient_lighting) {
+            score += 10;
+        }
+        // Panoramic sunroof
+        if (specs.interior?.panoramic_sunroof) {
+            score += 10;
+        }
+        // Adaptive cruise control
+        if (specs.adas?.adaptive_cruise_control) {
+            score += 15;
+        }
+        // Base points for publishability
         // Check if has slug
         if (variant.slug) {
-            passed++;
-            score += 20;
+            score += 10;
         }
         // Check if published
         if (variant.is_published) {
-            passed++;
-            score += 20;
+            score += 10;
         }
-        // Check model year
-        if (variant.model_year) {
-            passed++;
-            score += 20;
-        }
-        // Check if has meaningful specs
-        if (variant.specs_normalized &&
-            Object.keys(variant.specs_normalized).length > 5) {
-            passed++;
-            score += 20;
-        }
-        // Check variant status
-        if (variant.variant_status && variant.variant_status !== 'draft') {
-            passed++;
-            score += 20;
-        }
-        return score;
+        return Math.min(100, score);
     }
     static scorePricing(variant) {
         let score = 0;

@@ -16,6 +16,7 @@ export declare class UpdateVariantDto {
     specs_normalized?: SpecsNormalized;
     hidden_spec_keys?: string[];
     hidden_sections?: string[];
+    visibility_overrides?: Record<string, 'auto' | 'manual-show' | 'manual-hide'>;
     is_published?: boolean;
     is_archived?: boolean;
     archived_at?: Date;

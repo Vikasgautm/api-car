@@ -301,6 +301,16 @@ export class CarVariantController {
     return ResponseUtil.success(res, report, 'Car completeness report retrieved');
   });
 
+  // Import health endpoints (Batch 8)
+  static getVariantImportHealth = catchAsync(async (req: Request, res: Response) => {
+    const { ImportConfidenceService } = await import('../../imports/services/import-confidence.service');
+    const scores = await ImportConfidenceService.scoreVariantImports(req.params.id as string);
+    if (scores.length === 0) {
+      return ResponseUtil.success(res, null, 'No import history found for this variant');
+    }
+    return ResponseUtil.success(res, scores[0], 'Variant import health retrieved');
+  });
+
   // Bulk operations endpoints
   static bulkUpdateStatus = catchAsync(async (req: Request, res: Response) => {
     const { variant_ids, status } = req.body;

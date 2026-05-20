@@ -31,6 +31,12 @@ const variantSchema = new mongoose_1.Schema({
     },
     drivetrain: { type: String },
     body_type: { type: String },
+    // Powertrain capability flags (enables dynamic category visibility)
+    has_engine: { type: Boolean, default: false },
+    has_battery: { type: Boolean, default: false },
+    has_motor: { type: Boolean, default: false },
+    has_external_charging: { type: Boolean, default: false },
+    powertrain_detection_confidence: { type: Number, default: 0, min: 0, max: 1 },
     seating_capacity: { type: Number, min: 2, max: 10 },
     ex_showroom_price: {
         type: Number,
@@ -339,6 +345,7 @@ const variantSchema = new mongoose_1.Schema({
     specs_metadata: { type: mongoose_1.Schema.Types.Mixed, default: {} },
     hidden_spec_keys: { type: [String], default: [] },
     hidden_sections: { type: [String], default: [] },
+    visibility_overrides: { type: mongoose_1.Schema.Types.Mixed, default: {} },
     is_published: { type: Boolean, default: false },
     is_deleted: { type: Boolean, default: false },
     is_archived: { type: Boolean, default: false },

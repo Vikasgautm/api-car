@@ -42,6 +42,7 @@ adminRouter.get('/:id/lifecycle/completeness', validation_1.validateUuidIdParam,
 adminRouter.get('/:id/differences', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getVariantDifference);
 adminRouter.get('/:id/validate', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.validateVariant);
 adminRouter.get('/:id/completeness', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getVariantCompleteness);
+adminRouter.get('/:id/import-health', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getVariantImportHealth);
 adminRouter.get('/:id/refine-specs', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.refineVariantSpecs);
 adminRouter.post('/:id/apply-refinement', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.applyRefinementSuggestions);
 adminRouter.get('/:id/change-history', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getVariantChangeHistory);

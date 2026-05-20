@@ -18,6 +18,7 @@ class CreateVariantDto {
     specs_normalized;
     hidden_spec_keys;
     hidden_sections;
+    visibility_overrides;
     is_published;
     meta_title;
     meta_description;

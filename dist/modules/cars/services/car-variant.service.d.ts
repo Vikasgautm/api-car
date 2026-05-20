@@ -95,5 +95,10 @@ export declare class CarVariantService {
     } & {
         id: string;
     }>;
+    /**
+     * Phase 2: Enhance variant data with normalization and powertrain detection.
+     * Auto-normalize specs if specs_raw is provided, update powertrain flags.
+     */
+    private static enhanceVariantWithNormalization;
 }
 //# sourceMappingURL=car-variant.service.d.ts.map
