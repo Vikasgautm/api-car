@@ -59,7 +59,7 @@ class VariantValidationService {
         'dimensions',
     ];
     static async validateVariant(variantId) {
-        const variant = await car_variant_model_1.CarVariant.findById(variantId);
+        const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId });
         if (!variant) {
             throw new app_error_util_1.AppError('Variant not found', 404);
         }
@@ -166,7 +166,7 @@ class VariantValidationService {
         const results = {};
         // Validate each variant without refetching
         for (const variant of variants) {
-            results[variant._id.toString()] = this.performValidation(variant);
+            results[variant.variant_id] = this.performValidation(variant);
         }
         return results;
     }
@@ -205,8 +205,8 @@ class VariantValidationService {
     static async validateBatch(variantIds) {
         const results = {};
         // Fetch all variants in parallel to avoid N findById calls
-        const variants = await car_variant_model_1.CarVariant.find({ _id: { $in: variantIds } }).lean();
-        const variantMap = new Map(variants.map((v) => [v._id.toString(), v]));
+        const variants = await car_variant_model_1.CarVariant.find({ variant_id: { $in: variantIds } }).lean();
+        const variantMap = new Map(variants.map((v) => [v.variant_id, v]));
         // Parallelize validation instead of sequential
         const validations = await Promise.allSettled(variantIds.map(id => {
             const variant = variantMap.get(id);
@@ -247,7 +247,7 @@ class VariantValidationService {
      */
     static async validateVariantFull(variantId) {
         const baseValidation = await this.validateVariant(variantId);
-        const variant = await car_variant_model_1.CarVariant.findById(variantId);
+        const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId });
         if (!variant) {
             throw new app_error_util_1.AppError('Variant not found', 404);
         }

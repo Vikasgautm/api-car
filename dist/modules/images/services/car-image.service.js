@@ -101,8 +101,8 @@ class CarImageService {
     static async createCarImage(imageData, uploadedBy) {
         // Validate foreign keys in parallel
         const [car, variant, category, subcategory] = await Promise.all([
-            imageData.car_id ? car_model_1.Car.findById(imageData.car_id) : Promise.resolve(null),
-            imageData.variant_id ? car_variant_model_1.CarVariant.findById(imageData.variant_id) : Promise.resolve(null),
+            imageData.car_id ? car_model_1.Car.findOne({ car_id: imageData.car_id }) : Promise.resolve(null),
+            imageData.variant_id ? car_variant_model_1.CarVariant.findOne({ variant_id: imageData.variant_id }) : Promise.resolve(null),
             imageData.category_id ? image_category_model_1.ImageCategory.findById(imageData.category_id) : Promise.resolve(null),
             imageData.sub_category_id ? image_subcategory_model_1.ImageSubCategory.findById(imageData.sub_category_id) : Promise.resolve(null),
         ]);
@@ -152,8 +152,8 @@ class CarImageService {
         const updateData = {};
         // Validate foreign keys in parallel if being updated
         const [car, variant, category, subcategory] = await Promise.all([
-            imageData.car_id !== undefined ? car_model_1.Car.findById(imageData.car_id) : Promise.resolve(null),
-            imageData.variant_id !== undefined ? car_variant_model_1.CarVariant.findById(imageData.variant_id) : Promise.resolve(null),
+            imageData.car_id !== undefined ? car_model_1.Car.findOne({ car_id: imageData.car_id }) : Promise.resolve(null),
+            imageData.variant_id !== undefined ? car_variant_model_1.CarVariant.findOne({ variant_id: imageData.variant_id }) : Promise.resolve(null),
             imageData.category_id !== undefined ? image_category_model_1.ImageCategory.findById(imageData.category_id) : Promise.resolve(null),
             imageData.sub_category_id !== undefined ? image_subcategory_model_1.ImageSubCategory.findById(imageData.sub_category_id) : Promise.resolve(null),
         ]);

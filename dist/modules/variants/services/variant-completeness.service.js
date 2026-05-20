@@ -6,7 +6,7 @@ const car_model_1 = require("../../../models/car.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 class VariantCompletenessService {
     static async getVariantCompleteness(variantId) {
-        const variant = await car_variant_model_1.CarVariant.findById(variantId);
+        const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId });
         if (!variant) {
             throw new app_error_util_1.AppError('Variant not found', 404);
         }
@@ -38,7 +38,7 @@ class VariantCompletenessService {
         };
     }
     static async getCarCompleteness(carId) {
-        const car = await car_model_1.Car.findById(carId);
+        const car = await car_model_1.Car.findOne({ car_id: carId });
         if (!car) {
             throw new app_error_util_1.AppError('Car not found', 404);
         }
@@ -48,7 +48,7 @@ class VariantCompletenessService {
         let totalScore = 0;
         // Score each variant without refetching
         for (const variant of variants) {
-            const metric = this.scoreVariant(variant, variant._id.toString());
+            const metric = this.scoreVariant(variant, variant.variant_id);
             metrics.push(metric);
             totalScore += metric.overall_score;
         }

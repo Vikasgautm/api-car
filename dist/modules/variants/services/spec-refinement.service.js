@@ -11,17 +11,17 @@ const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 class SpecRefinementService {
     static client = new sdk_1.default();
     static async refineVariantSpecs(variantId) {
-        const variant = await car_variant_model_1.CarVariant.findById(variantId);
+        const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId });
         if (!variant) {
             throw new app_error_util_1.AppError('Variant not found', 404);
         }
         // Get car details for context
-        const car = await car_model_1.Car.findById(variant.car_id);
+        const car = await car_model_1.Car.findOne({ car_id: variant.car_id });
         return this.performRefinement(variant, car);
     }
     // Internal method that accepts variant and car objects (no refetch)
     static async performRefinement(variant, car) {
-        const variantId = variant._id.toString();
+        const variantId = variant.variant_id;
         // Build context for LLM
         const currentSpecs = variant.specs_normalized || {};
         const missingFields = this.identifyMissingFields(currentSpecs);
@@ -160,7 +160,7 @@ Provide 3-5 most impactful suggestions only.`;
         return suggestions;
     }
     static async applyRefinementSuggestions(variantId, suggestions) {
-        const variant = await car_variant_model_1.CarVariant.findById(variantId);
+        const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId });
         if (!variant) {
             throw new app_error_util_1.AppError('Variant not found', 404);
         }
@@ -171,7 +171,7 @@ Provide 3-5 most impactful suggestions only.`;
                 updatedSpecs[suggestion.field] = suggestion.suggested_value;
             }
         });
-        const updated = await car_variant_model_1.CarVariant.findByIdAndUpdate(variantId, {
+        const updated = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId }, {
             specs_normalized: updatedSpecs,
             updated_at: new Date(),
         }, { new: true });
@@ -179,17 +179,17 @@ Provide 3-5 most impactful suggestions only.`;
     }
     static async refineMultipleVariants(variantIds) {
         // Batch load all variants with their car data
-        const variants = await car_variant_model_1.CarVariant.find({ _id: { $in: variantIds } }).lean();
+        const variants = await car_variant_model_1.CarVariant.find({ variant_id: { $in: variantIds } }).lean();
         const carIds = Array.from(new Set(variants.map((v) => v.car_id).filter(Boolean)));
-        const cars = await car_model_1.Car.find({ _id: { $in: carIds } }).lean();
+        const cars = await car_model_1.Car.find({ car_id: { $in: carIds } }).lean();
         // Create maps for O(1) lookup
-        const carById = new Map(cars.map((c) => [c._id.toString(), c]));
+        const carById = new Map(cars.map((c) => [c.car_id, c]));
         // Parallelize LLM refinement calls instead of sequential
-        const refinementPromises = variants.map(variant => this.performRefinement(variant, carById.get(variant.car_id?.toString()) || null)
+        const refinementPromises = variants.map(variant => this.performRefinement(variant, carById.get(variant.car_id) || null)
             .catch(error => {
-            console.error(`Failed to refine variant ${variant._id}:`, error);
+            console.error(`Failed to refine variant ${variant.variant_id}:`, error);
             return {
-                variant_id: variant._id.toString(),
+                variant_id: variant.variant_id,
                 variant_name: variant.variant_name,
                 suggestions: [],
                 generated_at: new Date().toISOString(),

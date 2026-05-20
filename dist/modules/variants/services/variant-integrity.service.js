@@ -79,7 +79,7 @@ class VariantIntegrityService {
      * Records what changed, who changed it, when, and why
      */
     static async recordVariantChanges(variantId, oldData, newData, changedBy, changeSource = 'manual_edit') {
-        const variant = await car_variant_model_1.CarVariant.findById(variantId);
+        const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId });
         if (!variant) {
             throw new app_error_util_1.AppError('Variant not found', 404);
         }
@@ -95,7 +95,7 @@ class VariantIntegrityService {
      * Track spec changes separately with section info (Batch 6 Feature 2)
      */
     static async recordSpecChanges(variantId, oldSpecs, newSpecs, changedBy, changeSource = 'manual_edit') {
-        const variant = await car_variant_model_1.CarVariant.findById(variantId);
+        const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId });
         if (!variant) {
             throw new app_error_util_1.AppError('Variant not found', 404);
         }
@@ -111,7 +111,7 @@ class VariantIntegrityService {
      * Get variant change history with optional filtering (Batch 6 Feature 2)
      */
     static async getChangeHistory(variantId, options) {
-        const variant = await car_variant_model_1.CarVariant.findById(variantId).select('change_history');
+        const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId }).select('change_history');
         if (!variant) {
             throw new app_error_util_1.AppError('Variant not found', 404);
         }
@@ -134,7 +134,7 @@ class VariantIntegrityService {
      * Get audit trail for variant as formatted string
      */
     static async getAuditTrail(variantId) {
-        const variant = await car_variant_model_1.CarVariant.findById(variantId).select('change_history');
+        const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId }).select('change_history');
         if (!variant) {
             throw new app_error_util_1.AppError('Variant not found', 404);
         }
@@ -145,7 +145,7 @@ class VariantIntegrityService {
      * Validate variant and return comprehensive validation result (combines integrity + constraints)
      */
     static async comprehensiveValidate(variantId) {
-        const variant = await car_variant_model_1.CarVariant.findById(variantId);
+        const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId });
         if (!variant) {
             throw new app_error_util_1.AppError('Variant not found', 404);
         }

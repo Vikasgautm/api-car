@@ -128,7 +128,7 @@ export class VariantIntegrityService {
     changedBy: string,
     changeSource: 'manual_edit' | 'import' | 'bulk_operation' | 'system' | 'api' = 'manual_edit',
   ): Promise<void> {
-    const variant = await CarVariant.findById(variantId);
+    const variant = await CarVariant.findOne({ variant_id: variantId });
     if (!variant) {
       throw new AppError('Variant not found', 404);
     }
@@ -157,7 +157,7 @@ export class VariantIntegrityService {
     changedBy: string,
     changeSource: 'manual_edit' | 'import' | 'bulk_operation' | 'system' | 'api' = 'manual_edit',
   ): Promise<void> {
-    const variant = await CarVariant.findById(variantId);
+    const variant = await CarVariant.findOne({ variant_id: variantId });
     if (!variant) {
       throw new AppError('Variant not found', 404);
     }
@@ -196,7 +196,7 @@ export class VariantIntegrityService {
       limit?: number;
     },
   ): Promise<any[]> {
-    const variant = await CarVariant.findById(variantId).select('change_history');
+    const variant = await CarVariant.findOne({ variant_id: variantId }).select('change_history');
     if (!variant) {
       throw new AppError('Variant not found', 404);
     }
@@ -230,7 +230,7 @@ export class VariantIntegrityService {
    * Get audit trail for variant as formatted string
    */
   static async getAuditTrail(variantId: string): Promise<string> {
-    const variant = await CarVariant.findById(variantId).select('change_history');
+    const variant = await CarVariant.findOne({ variant_id: variantId }).select('change_history');
     if (!variant) {
       throw new AppError('Variant not found', 404);
     }
@@ -250,7 +250,7 @@ export class VariantIntegrityService {
     lastChangedAt?: Date;
     lastChangedBy?: string;
   }> {
-    const variant = await CarVariant.findById(variantId);
+    const variant = await CarVariant.findOne({ variant_id: variantId });
     if (!variant) {
       throw new AppError('Variant not found', 404);
     }

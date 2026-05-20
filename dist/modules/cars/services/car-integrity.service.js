@@ -10,7 +10,7 @@ class CarIntegrityService {
      * Records what changed, who changed it, when, and why
      */
     static async recordCarChanges(carId, oldData, newData, changedBy, changeSource = 'manual_edit') {
-        const car = await car_model_1.Car.findById(carId);
+        const car = await car_model_1.Car.findOne({ car_id: carId });
         if (!car) {
             throw new app_error_util_1.AppError('Car not found', 404);
         }
@@ -26,7 +26,7 @@ class CarIntegrityService {
      * Get car change history with optional filtering
      */
     static async getChangeHistory(carId, options) {
-        const car = await car_model_1.Car.findById(carId).select('change_history');
+        const car = await car_model_1.Car.findOne({ car_id: carId }).select('change_history');
         if (!car) {
             throw new app_error_util_1.AppError('Car not found', 404);
         }
@@ -49,7 +49,7 @@ class CarIntegrityService {
      * Get audit trail for car as formatted string
      */
     static async getAuditTrail(carId) {
-        const car = await car_model_1.Car.findById(carId).select('change_history');
+        const car = await car_model_1.Car.findOne({ car_id: carId }).select('change_history');
         if (!car) {
             throw new app_error_util_1.AppError('Car not found', 404);
         }
@@ -60,7 +60,7 @@ class CarIntegrityService {
      * Get comprehensive change summary
      */
     static async getChangeSummary(carId) {
-        const car = await car_model_1.Car.findById(carId).select('change_history');
+        const car = await car_model_1.Car.findOne({ car_id: carId }).select('change_history');
         if (!car) {
             throw new app_error_util_1.AppError('Car not found', 404);
         }

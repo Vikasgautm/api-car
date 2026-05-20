@@ -21,8 +21,8 @@ export class UserFilterDto {
 
     if (dto.limit !== undefined) {
       const limit = typeof dto.limit === 'string' ? parseInt(dto.limit, 10) : dto.limit;
-      if (isNaN(limit) || limit < 1 || limit > 100) {
-        errors.push('Limit must be between 1 and 100');
+      if (isNaN(limit) || limit < 1 || limit > 1000) {
+        errors.push('Limit must be between 1 and 1000');
       }
     }
 

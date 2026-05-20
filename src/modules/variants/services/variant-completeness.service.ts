@@ -28,7 +28,7 @@ export interface CarCompletenessReport {
 
 export class VariantCompletenessService {
   static async getVariantCompleteness(variantId: string): Promise<CompletenessMetric> {
-    const variant = await CarVariant.findById(variantId);
+    const variant = await CarVariant.findOne({ variant_id: variantId });
 
     if (!variant) {
       throw new AppError('Variant not found', 404);
@@ -68,7 +68,7 @@ export class VariantCompletenessService {
   }
 
   static async getCarCompleteness(carId: string): Promise<CarCompletenessReport> {
-    const car = await Car.findById(carId);
+    const car = await Car.findOne({ car_id: carId });
 
     if (!car) {
       throw new AppError('Car not found', 404);
@@ -81,7 +81,7 @@ export class VariantCompletenessService {
 
     // Score each variant without refetching
     for (const variant of variants) {
-      const metric = this.scoreVariant(variant, variant._id.toString());
+      const metric = this.scoreVariant(variant, variant.variant_id);
       metrics.push(metric);
       totalScore += metric.overall_score;
     }

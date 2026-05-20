@@ -14,7 +14,7 @@ export class CarIntegrityService {
     changedBy: string,
     changeSource: 'manual_edit' | 'import' | 'bulk_operation' | 'system' | 'api' = 'manual_edit',
   ): Promise<void> {
-    const car = await Car.findById(carId);
+    const car = await Car.findOne({ car_id: carId });
     if (!car) {
       throw new AppError('Car not found', 404);
     }
@@ -46,7 +46,7 @@ export class CarIntegrityService {
       limit?: number;
     },
   ): Promise<any[]> {
-    const car = await Car.findById(carId).select('change_history');
+    const car = await Car.findOne({ car_id: carId }).select('change_history');
     if (!car) {
       throw new AppError('Car not found', 404);
     }
@@ -80,7 +80,7 @@ export class CarIntegrityService {
    * Get audit trail for car as formatted string
    */
   static async getAuditTrail(carId: string): Promise<string> {
-    const car = await Car.findById(carId).select('change_history');
+    const car = await Car.findOne({ car_id: carId }).select('change_history');
     if (!car) {
       throw new AppError('Car not found', 404);
     }
@@ -103,7 +103,7 @@ export class CarIntegrityService {
       changedBy: string;
     };
   }> {
-    const car = await Car.findById(carId).select('change_history');
+    const car = await Car.findOne({ car_id: carId }).select('change_history');
     if (!car) {
       throw new AppError('Car not found', 404);
     }

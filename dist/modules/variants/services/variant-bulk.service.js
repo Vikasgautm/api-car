@@ -15,11 +15,11 @@ class VariantBulkService {
             updated_variants: [],
         };
         // Fetch all before states in parallel
-        const beforeVariants = await Promise.allSettled(variantIds.map(id => car_variant_model_1.CarVariant.findById(id).lean()));
+        const beforeVariants = await Promise.allSettled(variantIds.map(id => car_variant_model_1.CarVariant.findOne({ variant_id: id }).lean()));
         // Bulk update all variants
         const bulkOps = variantIds.map(variantId => ({
             updateOne: {
-                filter: { _id: variantId },
+                filter: { variant_id: variantId },
                 update: {
                     $set: {
                         hidden_sections: hiddenSections,
@@ -30,7 +30,7 @@ class VariantBulkService {
         }));
         await car_variant_model_1.CarVariant.bulkWrite(bulkOps);
         // Fetch all after states in parallel
-        const afterVariants = await Promise.allSettled(variantIds.map(id => car_variant_model_1.CarVariant.findById(id)));
+        const afterVariants = await Promise.allSettled(variantIds.map(id => car_variant_model_1.CarVariant.findOne({ variant_id: id })));
         // Record change history in parallel
         const changeRecordingPromises = [];
         for (let i = 0; i < variantIds.length; i++) {
@@ -71,11 +71,11 @@ class VariantBulkService {
             updated_variants: [],
         };
         // Fetch all before states in parallel
-        const beforeVariants = await Promise.allSettled(variantIds.map(id => car_variant_model_1.CarVariant.findById(id).lean()));
+        const beforeVariants = await Promise.allSettled(variantIds.map(id => car_variant_model_1.CarVariant.findOne({ variant_id: id }).lean()));
         // Bulk update all variants
         const bulkOps = variantIds.map(variantId => ({
             updateOne: {
-                filter: { _id: variantId },
+                filter: { variant_id: variantId },
                 update: {
                     $set: {
                         variant_status: status,
@@ -86,7 +86,7 @@ class VariantBulkService {
         }));
         await car_variant_model_1.CarVariant.bulkWrite(bulkOps);
         // Fetch all after states in parallel
-        const afterVariants = await Promise.allSettled(variantIds.map(id => car_variant_model_1.CarVariant.findById(id)));
+        const afterVariants = await Promise.allSettled(variantIds.map(id => car_variant_model_1.CarVariant.findOne({ variant_id: id })));
         // Record change history in parallel
         const changeRecordingPromises = [];
         for (let i = 0; i < variantIds.length; i++) {
@@ -133,7 +133,7 @@ class VariantBulkService {
             });
         }
         // Fetch all before states in parallel
-        const beforeVariants = await Promise.allSettled(variantIds.map(id => car_variant_model_1.CarVariant.findById(id).lean()));
+        const beforeVariants = await Promise.allSettled(variantIds.map(id => car_variant_model_1.CarVariant.findOne({ variant_id: id }).lean()));
         // Bulk update all variants
         const bulkOps = variantIds
             .filter(variantId => {
@@ -153,7 +153,7 @@ class VariantBulkService {
         })
             .map(variantId => ({
             updateOne: {
-                filter: { _id: variantId },
+                filter: { variant_id: variantId },
                 update: {
                     $set: {
                         is_published: shouldPublish,
@@ -167,7 +167,7 @@ class VariantBulkService {
             await car_variant_model_1.CarVariant.bulkWrite(bulkOps);
         }
         // Fetch all after states in parallel
-        const afterVariants = await Promise.allSettled(variantIds.map(id => car_variant_model_1.CarVariant.findById(id)));
+        const afterVariants = await Promise.allSettled(variantIds.map(id => car_variant_model_1.CarVariant.findOne({ variant_id: id })));
         // Record change history in parallel
         const changeRecordingPromises = [];
         for (let i = 0; i < variantIds.length; i++) {
@@ -204,7 +204,7 @@ class VariantBulkService {
             updated_variants: [],
         };
         // Fetch all before states in parallel
-        const beforeVariants = await Promise.allSettled(request.variant_ids.map(id => car_variant_model_1.CarVariant.findById(id).lean()));
+        const beforeVariants = await Promise.allSettled(request.variant_ids.map(id => car_variant_model_1.CarVariant.findOne({ variant_id: id }).lean()));
         // Build bulk operations
         const bulkOps = request.variant_ids.map(variantId => {
             const updateData = { updated_at: new Date() };
@@ -225,7 +225,7 @@ class VariantBulkService {
             }
             return {
                 updateOne: {
-                    filter: { _id: variantId },
+                    filter: { variant_id: variantId },
                     update: { $set: updateData }
                 }
             };
@@ -235,7 +235,7 @@ class VariantBulkService {
             await car_variant_model_1.CarVariant.bulkWrite(bulkOps);
         }
         // Fetch all after states in parallel
-        const afterVariants = await Promise.allSettled(request.variant_ids.map(id => car_variant_model_1.CarVariant.findById(id)));
+        const afterVariants = await Promise.allSettled(request.variant_ids.map(id => car_variant_model_1.CarVariant.findOne({ variant_id: id })));
         // Record change history in parallel
         const changeRecordingPromises = [];
         for (let i = 0; i < request.variant_ids.length; i++) {
@@ -282,13 +282,13 @@ class VariantBulkService {
     }
     static async bulkExportCsv(variantIds) {
         const variants = await car_variant_model_1.CarVariant.find({
-            _id: { $in: variantIds.map((id) => id) },
-        }).select('variant_name car_id fuel_type_id transmission_type seating_capacity ex_showroom_price variant_status is_published model_year');
+            variant_id: { $in: variantIds },
+        }).select('variant_id variant_name car_id fuel_type_id transmission_type seating_capacity ex_showroom_price variant_status is_published model_year');
         if (variants.length === 0) {
             throw new app_error_util_1.AppError('No variants found', 404);
         }
         const headers = [
-            '_id',
+            'variant_id',
             'variant_name',
             'car_id',
             'fuel_type_id',
@@ -303,7 +303,7 @@ class VariantBulkService {
         variants.forEach((v) => {
             const obj = v.toObject();
             const row = headers.map((h) => {
-                const val = h === '_id' ? obj._id.toString() : obj[h];
+                const val = obj[h];
                 if (val === null || val === undefined)
                     return '';
                 if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {

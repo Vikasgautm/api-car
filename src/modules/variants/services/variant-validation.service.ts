@@ -73,7 +73,7 @@ export class VariantValidationService {
   ];
 
   static async validateVariant(variantId: string): Promise<ValidationResult> {
-    const variant = await CarVariant.findById(variantId);
+    const variant = await CarVariant.findOne({ variant_id: variantId });
 
     if (!variant) {
       throw new AppError('Variant not found', 404);
@@ -197,7 +197,7 @@ export class VariantValidationService {
 
     // Validate each variant without refetching
     for (const variant of variants) {
-      results[variant._id.toString()] = this.performValidation(variant);
+      results[variant.variant_id] = this.performValidation(variant);
     }
 
     return results;
@@ -236,8 +236,8 @@ export class VariantValidationService {
     const results: Record<string, ValidationResult> = {};
 
     // Fetch all variants in parallel to avoid N findById calls
-    const variants = await CarVariant.find({ _id: { $in: variantIds } }).lean();
-    const variantMap = new Map(variants.map((v: any) => [v._id.toString(), v]));
+    const variants = await CarVariant.find({ variant_id: { $in: variantIds } }).lean();
+    const variantMap = new Map(variants.map((v: any) => [v.variant_id, v]));
 
     // Parallelize validation instead of sequential
     const validations = await Promise.allSettled(
@@ -292,7 +292,7 @@ export class VariantValidationService {
     automotiveWarnings: Array<{ rule: string; message: string }>;
   }> {
     const baseValidation = await this.validateVariant(variantId);
-    const variant = await CarVariant.findById(variantId);
+    const variant = await CarVariant.findOne({ variant_id: variantId });
 
     if (!variant) {
       throw new AppError('Variant not found', 404);
