@@ -1,8 +1,8 @@
 import mongoose, { Document } from 'mongoose';
 export interface IComparisonRival extends Document {
     rival_id: string;
-    primary_car_id: mongoose.Types.ObjectId;
-    rival_car_id: mongoose.Types.ObjectId;
+    primary_car_id: string;
+    rival_car_id: string;
     relationship_strength: number;
     primary_segment?: string;
     rival_segment?: string;

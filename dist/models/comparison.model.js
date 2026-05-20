@@ -44,25 +44,21 @@ const ComparisonSchema = new mongoose_1.Schema({
         index: true,
     },
     car1_id: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'Car',
+        type: String,
         required: true,
         index: true,
     },
     car2_id: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'Car',
+        type: String,
         required: true,
         index: true,
     },
     variant1_id: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'CarVariant',
+        type: String,
         index: true,
     },
     variant2_id: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'CarVariant',
+        type: String,
         index: true,
     },
     slug: {
@@ -101,8 +97,7 @@ const ComparisonSchema = new mongoose_1.Schema({
         index: true,
     },
     relatedComparisons: [{
-            type: mongoose_1.default.Schema.Types.ObjectId,
-            ref: 'Comparison',
+            type: String,
         }],
     seoMetaTitle: String,
     seoMetaDescription: String,
@@ -119,13 +114,11 @@ const ComparisonSchema = new mongoose_1.Schema({
         index: true,
     },
     created_by: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String,
         required: true,
     },
     updated_by: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'User',
+        type: String,
     },
     is_deleted: {
         type: Boolean,

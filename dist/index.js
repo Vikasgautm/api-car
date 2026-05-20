@@ -39,7 +39,8 @@ const startServer = async () => {
             logger_1.logger.info(`Server is running on http://localhost:${config_1.config.port}`);
             // Audit routes to catch missing or duplicate endpoints
             const audit = (0, route_audit_util_1.auditRoutes)(app_1.default);
-            (0, route_audit_util_1.logRouteAudit)(audit);
+            // Debug logging disabled - see api-car/src/ROUTES_CONSOLIDATED.md for full route documentation
+            // logRouteAudit(audit);
             if (audit.warnings.length > 0) {
                 logger_1.logger.warn(`Route audit detected ${audit.warnings.length} warning(s)`);
             }

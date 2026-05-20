@@ -17,11 +17,11 @@ interface RouteInfo {
 /**
  * Extract all routes from an Express app/router recursively.
  */
-export declare function extractAllRoutes(app: Application | Router, basePath?: string, source?: string): RouteInfo[];
+export declare function extractAllRoutes(app: Application | Router, basePath?: string, source?: string, silent?: boolean): RouteInfo[];
 /**
  * Audit the app for route registration issues.
  */
-export declare function auditRoutes(app: Application): {
+export declare function auditRoutes(app: Application, silent?: boolean): {
     totalRoutes: number;
     routes: RouteInfo[];
     duplicates: string[];

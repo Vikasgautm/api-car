@@ -1,10 +1,10 @@
 import mongoose, { Document } from 'mongoose';
 export interface IComparison extends Document {
     comparison_id: string;
-    car1_id: mongoose.Types.ObjectId;
-    car2_id: mongoose.Types.ObjectId;
-    variant1_id?: mongoose.Types.ObjectId;
-    variant2_id?: mongoose.Types.ObjectId;
+    car1_id: string;
+    car2_id: string;
+    variant1_id?: string;
+    variant2_id?: string;
     slug: string;
     title: string;
     category?: string;
@@ -13,14 +13,14 @@ export interface IComparison extends Document {
     isPopular: boolean;
     isTrending: boolean;
     showOnHomepage: boolean;
-    relatedComparisons: mongoose.Types.ObjectId[];
+    relatedComparisons: string[];
     seoMetaTitle?: string;
     seoMetaDescription?: string;
     seoFAQSchema?: Record<string, any>;
     status: 'draft' | 'published' | 'archived';
     is_published: boolean;
-    created_by: mongoose.Types.ObjectId;
-    updated_by?: mongoose.Types.ObjectId;
+    created_by: string;
+    updated_by?: string;
     created_at: Date;
     updated_at: Date;
     deleted_at?: Date;

@@ -56,14 +56,16 @@ function extractMountPath(middleware) {
 /**
  * Recursively extract all routes from an Express router.
  */
-function extractRoutesFromStack(stack, basePath = '', depth = 0) {
+function extractRoutesFromStack(stack, basePath = '', depth = 0, silent = true) {
     const routes = [];
     const indent = '  '.repeat(depth);
     if (!stack) {
-        console.log(`${indent}[EXTRACT] No stack found`);
+        if (!silent)
+            console.log(`${indent}[EXTRACT] No stack found`);
         return routes;
     }
-    console.log(`${indent}[EXTRACT] Processing stack with ${stack.length} items at basePath='${basePath}'`);
+    if (!silent)
+        console.log(`${indent}[EXTRACT] Processing stack with ${stack.length} items at basePath='${basePath}'`);
     stack.forEach((middleware, i) => {
         if (middleware.route) {
             // Direct route - has a route object with methods
@@ -71,7 +73,8 @@ function extractRoutesFromStack(stack, basePath = '', depth = 0) {
             const methods = Object.keys(middleware.route.methods)
                 .map(m => m.toUpperCase())
                 .sort();
-            console.log(`${indent}  [${i}] ROUTE: ${path} [${methods.join(',')}]`);
+            if (!silent)
+                console.log(`${indent}  [${i}] ROUTE: ${path} [${methods.join(',')}]`);
             routes.push({ path, methods, source: 'app' });
         }
         else if (middleware.name === 'router' && middleware.handle?.stack) {
@@ -79,13 +82,15 @@ function extractRoutesFromStack(stack, basePath = '', depth = 0) {
             // Try different ways to get the mount path (different Express versions store it differently)
             let mountPath = extractMountPath(middleware);
             const nestedBasePath = basePath + mountPath;
-            console.log(`${indent}  [${i}] ROUTER: name='${middleware.name}' mountPath='${mountPath}' -> nestedBasePath='${nestedBasePath}'`);
+            if (!silent)
+                console.log(`${indent}  [${i}] ROUTER: name='${middleware.name}' mountPath='${mountPath}' -> nestedBasePath='${nestedBasePath}'`);
             // Recursively extract routes from the nested router's stack
-            const nestedRoutes = extractRoutesFromStack(middleware.handle.stack, nestedBasePath, depth + 1);
+            const nestedRoutes = extractRoutesFromStack(middleware.handle.stack, nestedBasePath, depth + 1, silent);
             routes.push(...nestedRoutes);
         }
         else {
-            console.log(`${indent}  [${i}] OTHER: name='${middleware.name}' route=${!!middleware.route} hasStack=${!!(middleware.handle?.stack)}`);
+            if (!silent)
+                console.log(`${indent}  [${i}] OTHER: name='${middleware.name}' route=${!!middleware.route} hasStack=${!!(middleware.handle?.stack)}`);
         }
     });
     return routes;
@@ -93,41 +98,48 @@ function extractRoutesFromStack(stack, basePath = '', depth = 0) {
 /**
  * Extract all routes from an Express app/router recursively.
  */
-function extractAllRoutes(app, basePath = '', source = 'app') {
+function extractAllRoutes(app, basePath = '', source = 'app', silent = true) {
     const appAny = app;
-    console.log('[EXTRACT] Getting router from app...');
+    if (!silent)
+        console.log('[EXTRACT] Getting router from app...');
     // Express 5.x uses app.router, Express 4.x uses app._router
     let router = appAny._router || appAny.router;
     if (!router) {
-        console.log('[EXTRACT] WARNING: No router found on app');
+        if (!silent)
+            console.log('[EXTRACT] WARNING: No router found on app');
         return [];
     }
     if (!router.stack) {
-        console.log('[EXTRACT] WARNING: Router has no stack');
+        if (!silent)
+            console.log('[EXTRACT] WARNING: Router has no stack');
         return [];
     }
-    console.log('[EXTRACT] Router found with stack length:', router.stack.length);
+    if (!silent)
+        console.log('[EXTRACT] Router found with stack length:', router.stack.length);
     // Start recursive extraction from the app's router stack
-    return extractRoutesFromStack(router.stack, basePath, 0);
+    return extractRoutesFromStack(router.stack, basePath, 0, silent);
 }
 /**
  * Audit the app for route registration issues.
  */
-function auditRoutes(app) {
-    console.log('[ROUTE AUDIT DEBUG] Starting route extraction...');
+function auditRoutes(app, silent = true) {
+    if (!silent)
+        console.log('[ROUTE AUDIT DEBUG] Starting route extraction...');
     const appAny = app;
     // Express 5.x uses app.router, Express 4.x uses app._router
     const router = appAny._router || appAny.router;
-    console.log('[ROUTE AUDIT DEBUG] Router found:', !!router);
-    if (router && router.stack) {
+    if (!silent)
+        console.log('[ROUTE AUDIT DEBUG] Router found:', !!router);
+    if (router && router.stack && !silent) {
         console.log('[ROUTE AUDIT DEBUG] app.router.stack length:', router.stack.length);
         router.stack.forEach((middleware, i) => {
             const regexp = middleware.regexp?.source?.substring(0, 50) || (middleware.regexp ? String(middleware.regexp).substring(0, 50) : 'undefined');
             console.log(`  [${i}] name='${middleware.name}' route=${!!middleware.route} regexp='${regexp}'`);
         });
     }
-    const routes = extractAllRoutes(app);
-    console.log('[ROUTE AUDIT DEBUG] Routes extracted:', routes.length);
+    const routes = extractAllRoutes(app, '', 'app', silent);
+    if (!silent)
+        console.log('[ROUTE AUDIT DEBUG] Routes extracted:', routes.length);
     // Normalize paths for duplicate detection (remove trailing slashes, normalize params)
     const pathMap = new Map();
     routes.forEach(route => {

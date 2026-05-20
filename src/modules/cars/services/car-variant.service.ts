@@ -243,112 +243,127 @@ export class CarVariantService {
   }
 
   static async getAllVariants(filterDto: any, includeDeleted: boolean = false) {
-    const {
-      page = 1,
-      limit = 10,
-      q,
-      car_id,
-      fuel_type_id,
-      transmission_type,
-      model_year,
-      is_published,
-      is_archived,
-      is_deleted,
-      min_price,
-      max_price,
-      min_model_year,
-      max_model_year,
-      sortBy = 'variant_name',
-      sortOrder = 'asc',
-    } = filterDto;
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        q,
+        car_id,
+        fuel_type_id,
+        transmission_type,
+        model_year,
+        is_published,
+        is_archived,
+        is_deleted,
+        min_price,
+        max_price,
+        min_model_year,
+        max_model_year,
+        sortBy = 'variant_name',
+        sortOrder = 'asc',
+      } = filterDto;
 
-    const filter: Record<string, unknown> = {};
+      const filter: Record<string, unknown> = {};
 
-    if (is_deleted === 'true' || is_deleted === true) {
-      filter.is_deleted = true;
-    } else if (!includeDeleted) {
-      filter.is_deleted = false;
-    }
-
-    // By default, exclude archived variants unless explicitly requested.
-    // Accept boolean (from JSON callers) AND string ("true"/"false"/"all" from
-    // query-string callers). Previously the boolean `false` fell through both
-    // branches and silently disabled the filter — admins saw archived rows mixed
-    // into the active list.
-    if (is_archived === undefined || is_archived === false || is_archived === 'false') {
-      filter.is_archived = false;
-    } else if (is_archived === true || is_archived === 'true') {
-      filter.is_archived = true;
-    }
-    // is_archived === 'all' → no filter applied (show both).
-
-    if (is_published !== undefined) {
-      filter.is_published = is_published;
-    }
-
-    if (car_id !== undefined) {
-      filter.car_id = car_id;
-    }
-
-    if (fuel_type_id !== undefined) {
-      filter.fuel_type_id = fuel_type_id;
-    }
-
-    if (transmission_type !== undefined) {
-      filter.transmission_type = transmission_type;
-    }
-
-    // Model year range filter
-    if (model_year !== undefined) {
-      filter.model_year = model_year;
-    } else {
-      if (min_model_year !== undefined || max_model_year !== undefined) {
-        const yearFilter: Record<string, unknown> = {};
-        if (min_model_year !== undefined) {
-          yearFilter.$gte = Number(min_model_year);
-        }
-        if (max_model_year !== undefined) {
-          yearFilter.$lte = Number(max_model_year);
-        }
-        filter.model_year = yearFilter;
+      if (is_deleted === 'true' || is_deleted === true) {
+        filter.is_deleted = true;
+      } else if (!includeDeleted) {
+        filter.is_deleted = false;
       }
+
+      // By default, exclude archived variants unless explicitly requested.
+      // Accept boolean (from JSON callers) AND string ("true"/"false"/"all" from
+      // query-string callers). Previously the boolean `false` fell through both
+      // branches and silently disabled the filter — admins saw archived rows mixed
+      // into the active list.
+      if (is_archived === undefined || is_archived === false || is_archived === 'false') {
+        filter.is_archived = false;
+      } else if (is_archived === true || is_archived === 'true') {
+        filter.is_archived = true;
+      }
+      // is_archived === 'all' → no filter applied (show both).
+
+      if (is_published !== undefined) {
+        filter.is_published = is_published;
+      }
+
+      if (car_id !== undefined) {
+        filter.car_id = car_id;
+      }
+
+      if (fuel_type_id !== undefined) {
+        filter.fuel_type_id = fuel_type_id;
+      }
+
+      if (transmission_type !== undefined) {
+        filter.transmission_type = transmission_type;
+      }
+
+      // Model year range filter
+      if (model_year !== undefined) {
+        filter.model_year = model_year;
+      } else {
+        if (min_model_year !== undefined || max_model_year !== undefined) {
+          const yearFilter: Record<string, unknown> = {};
+          if (min_model_year !== undefined) {
+            yearFilter.$gte = Number(min_model_year);
+          }
+          if (max_model_year !== undefined) {
+            yearFilter.$lte = Number(max_model_year);
+          }
+          filter.model_year = yearFilter;
+        }
+      }
+
+      // Price range filter
+      const priceFilter: Record<string, unknown> = {};
+      if (min_price !== undefined) {
+        priceFilter.$gte = Number(min_price);
+      }
+      if (max_price !== undefined) {
+        priceFilter.$lte = Number(max_price);
+      }
+
+      if (Object.keys(priceFilter).length > 0) {
+        filter.$or = [
+          { ex_showroom_price: priceFilter },
+          { expected_price: priceFilter },
+        ];
+      }
+
+      if (q) {
+        const searchFilter = FilterUtil.buildSearchFilter(['variant_name'], q);
+        Object.assign(filter, searchFilter);
+      }
+
+      const { skip, limit: validatedLimit } = PaginationUtil.getPaginationParams(page, limit);
+      const sortFilter = FilterUtil.buildSortFilter(sortBy, sortOrder);
+
+      const variants = await CarVariant.find(filter)
+        .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived created_at updated_at')
+        .sort(sortFilter)
+        .skip(skip)
+        .limit(validatedLimit)
+        .lean();
+
+      const total = await CarVariant.countDocuments(filter);
+      const paginationMeta = PaginationUtil.createPaginationMeta(page, validatedLimit, total);
+
+      return { variants, pagination: paginationMeta };
+    } catch (error) {
+      console.error('Error in getAllVariants:', error);
+      throw new AppError(
+        'Failed to fetch variants',
+        500,
+        {
+          userMessage: USER_MESSAGES.INTERNAL_SERVER_ERROR,
+          errorCode: ERROR_CODES.INTERNAL_SERVER_ERROR,
+          details: {
+            reason: error instanceof Error ? error.message : 'Unknown error',
+          },
+        }
+      );
     }
-
-    // Price range filter
-    const priceFilter: Record<string, unknown> = {};
-    if (min_price !== undefined) {
-      priceFilter.$gte = Number(min_price);
-    }
-    if (max_price !== undefined) {
-      priceFilter.$lte = Number(max_price);
-    }
-
-    if (Object.keys(priceFilter).length > 0) {
-      filter.$or = [
-        { ex_showroom_price: priceFilter },
-        { expected_price: priceFilter },
-      ];
-    }
-
-    if (q) {
-      const searchFilter = FilterUtil.buildSearchFilter(['variant_name'], q);
-      Object.assign(filter, searchFilter);
-    }
-
-    const { skip, limit: validatedLimit } = PaginationUtil.getPaginationParams(page, limit);
-    const sortFilter = FilterUtil.buildSortFilter(sortBy, sortOrder);
-
-    const variants = await CarVariant.find(filter)
-      .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived created_at updated_at')
-      .sort(sortFilter)
-      .skip(skip)
-      .limit(validatedLimit)
-      .lean();
-
-    const total = await CarVariant.countDocuments(filter);
-    const paginationMeta = PaginationUtil.createPaginationMeta(page, validatedLimit, total);
-
-    return { variants, pagination: paginationMeta };
   }
 
   static async getVariantById(variantId: string) {

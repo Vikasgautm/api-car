@@ -43,7 +43,8 @@ const startServer = async () => {
 
       // Audit routes to catch missing or duplicate endpoints
       const audit = auditRoutes(app);
-      logRouteAudit(audit);
+      // Debug logging disabled - see api-car/src/ROUTES_CONSOLIDATED.md for full route documentation
+      // logRouteAudit(audit);
       if (audit.warnings.length > 0) {
         logger.warn(`Route audit detected ${audit.warnings.length} warning(s)`);
       }

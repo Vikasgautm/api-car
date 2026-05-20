@@ -70,12 +70,22 @@ export class CarVariantController {
 
   // Admin routes
   static getAllAdminVariants = catchAsync(async (req: Request, res: Response) => {
+   try {
+     console.log('🔵 getAllAdminVariants - Request query:', req.query);
+    const startTime = Date.now();
     const includeDeleted = req.query.include_deleted === 'true';
+    console.log('📋 Including deleted:', includeDeleted);
     const result = await CarVariantService.getAllVariants(req.query, includeDeleted);
+    console.log('✅ Variants fetched:', result.variants.length, '| Pagination:', result.pagination);
     // Transform variants to display-ready format with flattened car metadata
     const transformedVariants = await VariantResponseTransformer.transformBatch(result.variants);
     VariantResponseTransformer.clearCache();
+    const duration = Date.now() - startTime;
+    console.log(`⏱️  getAllAdminVariants completed in ${duration}ms`);
     return ResponseUtil.paginated(res, transformedVariants, result.pagination, 'Variants retrieved successfully');
+   } catch (error) {
+    console.log(error);
+   }
   });
 
   static getAdminVariantById = catchAsync(async (req: Request, res: Response) => {

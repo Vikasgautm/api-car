@@ -1,4 +1,4 @@
-import { Document, Schema } from 'mongoose';
+import { Document } from 'mongoose';
 export interface IBlog extends Document {
     blog_id: string;
     title: string;
@@ -6,7 +6,7 @@ export interface IBlog extends Document {
     excerpt: string;
     content: string;
     author_name?: string;
-    author_id?: Schema.Types.ObjectId;
+    author_id?: string;
     category: string;
     tags?: string[];
     thumbnail?: {

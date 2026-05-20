@@ -44,14 +44,12 @@ const ComparisonRivalSchema = new mongoose_1.Schema({
         index: true,
     },
     primary_car_id: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'Car',
+        type: String,
         required: true,
         index: true,
     },
     rival_car_id: {
-        type: mongoose_1.default.Schema.Types.ObjectId,
-        ref: 'Car',
+        type: String,
         required: true,
         index: true,
     },

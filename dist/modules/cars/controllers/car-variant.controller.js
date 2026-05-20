@@ -64,12 +64,23 @@ class CarVariantController {
     });
     // Admin routes
     static getAllAdminVariants = (0, catchAsync_1.catchAsync)(async (req, res) => {
-        const includeDeleted = req.query.include_deleted === 'true';
-        const result = await car_variant_service_1.CarVariantService.getAllVariants(req.query, includeDeleted);
-        // Transform variants to display-ready format with flattened car metadata
-        const transformedVariants = await variant_response_transformer_1.VariantResponseTransformer.transformBatch(result.variants);
-        variant_response_transformer_1.VariantResponseTransformer.clearCache();
-        return response_util_1.ResponseUtil.paginated(res, transformedVariants, result.pagination, 'Variants retrieved successfully');
+        try {
+            console.log('🔵 getAllAdminVariants - Request query:', req.query);
+            const startTime = Date.now();
+            const includeDeleted = req.query.include_deleted === 'true';
+            console.log('📋 Including deleted:', includeDeleted);
+            const result = await car_variant_service_1.CarVariantService.getAllVariants(req.query, includeDeleted);
+            console.log('✅ Variants fetched:', result.variants.length, '| Pagination:', result.pagination);
+            // Transform variants to display-ready format with flattened car metadata
+            const transformedVariants = await variant_response_transformer_1.VariantResponseTransformer.transformBatch(result.variants);
+            variant_response_transformer_1.VariantResponseTransformer.clearCache();
+            const duration = Date.now() - startTime;
+            console.log(`⏱️  getAllAdminVariants completed in ${duration}ms`);
+            return response_util_1.ResponseUtil.paginated(res, transformedVariants, result.pagination, 'Variants retrieved successfully');
+        }
+        catch (error) {
+            console.log(error);
+        }
     });
     static getAdminVariantById = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const variant = await car_variant_service_1.CarVariantService.getVariantById(req.params.id);

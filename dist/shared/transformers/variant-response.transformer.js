@@ -79,16 +79,12 @@ class VariantResponseTransformer {
         // Load all cars in one query
         if (carIds.size > 0) {
             const cars = await car_model_1.Car.find({
-                $or: [
-                    { car_id: { $in: Array.from(carIds) } },
-                    { _id: { $in: Array.from(carIds) } },
-                ],
+                car_id: { $in: Array.from(carIds) },
             })
                 .lean()
                 .select('car_id name slug brand_id body_type_id body_type_name');
             cars.forEach((car) => {
                 this.carCache.set(car.car_id, car);
-                this.carCache.set(car._id.toString(), car);
                 if (car.brand_id)
                     brandIds.add(car.brand_id);
                 if (car.body_type_id)
@@ -136,12 +132,11 @@ class VariantResponseTransformer {
         if (this.carCache.has(carId)) {
             return this.carCache.get(carId);
         }
-        const car = await car_model_1.Car.findOne({ $or: [{ car_id: carId }, { _id: carId }] })
+        const car = await car_model_1.Car.findOne({ car_id: carId })
             .lean()
             .select('car_id name slug brand_id body_type_id body_type_name');
         if (car) {
             this.carCache.set(carId, car);
-            this.carCache.set(car.car_id, car);
         }
         return car;
     }

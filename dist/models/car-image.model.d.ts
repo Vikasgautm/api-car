@@ -1,11 +1,11 @@
-import { Document, Schema } from 'mongoose';
+import { Document } from 'mongoose';
 export interface ICarImage extends Document {
     car_image_id: string;
     image_uuid?: string;
-    car_id: Schema.Types.ObjectId;
-    variant_id?: Schema.Types.ObjectId;
-    category_id?: Schema.Types.ObjectId;
-    sub_category_id?: Schema.Types.ObjectId;
+    car_id: string;
+    variant_id?: string;
+    category_id?: string;
+    sub_category_id?: string;
     url: string;
     thumbnail_url?: string;
     alt_text?: string;

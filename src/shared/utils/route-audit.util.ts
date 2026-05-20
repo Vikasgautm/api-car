@@ -69,17 +69,18 @@ function extractMountPath(middleware: any): string {
 function extractRoutesFromStack(
   stack: any[],
   basePath = '',
-  depth = 0
+  depth = 0,
+  silent = true
 ): RouteInfo[] {
   const routes: RouteInfo[] = [];
   const indent = '  '.repeat(depth);
 
   if (!stack) {
-    console.log(`${indent}[EXTRACT] No stack found`);
+    if (!silent) console.log(`${indent}[EXTRACT] No stack found`);
     return routes;
   }
 
-  console.log(`${indent}[EXTRACT] Processing stack with ${stack.length} items at basePath='${basePath}'`);
+  if (!silent) console.log(`${indent}[EXTRACT] Processing stack with ${stack.length} items at basePath='${basePath}'`);
 
   stack.forEach((middleware: any, i: number) => {
     if (middleware.route) {
@@ -88,7 +89,7 @@ function extractRoutesFromStack(
       const methods = Object.keys(middleware.route.methods)
         .map(m => m.toUpperCase())
         .sort();
-      console.log(`${indent}  [${i}] ROUTE: ${path} [${methods.join(',')}]`);
+      if (!silent) console.log(`${indent}  [${i}] ROUTE: ${path} [${methods.join(',')}]`);
       routes.push({ path, methods, source: 'app' });
     } else if (middleware.name === 'router' && middleware.handle?.stack) {
       // Nested router - recursively extract routes from it
@@ -96,13 +97,13 @@ function extractRoutesFromStack(
       let mountPath = extractMountPath(middleware);
 
       const nestedBasePath = basePath + mountPath;
-      console.log(`${indent}  [${i}] ROUTER: name='${middleware.name}' mountPath='${mountPath}' -> nestedBasePath='${nestedBasePath}'`);
+      if (!silent) console.log(`${indent}  [${i}] ROUTER: name='${middleware.name}' mountPath='${mountPath}' -> nestedBasePath='${nestedBasePath}'`);
 
       // Recursively extract routes from the nested router's stack
-      const nestedRoutes = extractRoutesFromStack(middleware.handle.stack, nestedBasePath, depth + 1);
+      const nestedRoutes = extractRoutesFromStack(middleware.handle.stack, nestedBasePath, depth + 1, silent);
       routes.push(...nestedRoutes);
     } else {
-      console.log(`${indent}  [${i}] OTHER: name='${middleware.name}' route=${!!middleware.route} hasStack=${!!(middleware.handle?.stack)}`);
+      if (!silent) console.log(`${indent}  [${i}] OTHER: name='${middleware.name}' route=${!!middleware.route} hasStack=${!!(middleware.handle?.stack)}`);
     }
   });
 
@@ -115,45 +116,46 @@ function extractRoutesFromStack(
 export function extractAllRoutes(
   app: Application | Router,
   basePath = '',
-  source = 'app'
+  source = 'app',
+  silent = true
 ): RouteInfo[] {
   const appAny = app as any;
-  console.log('[EXTRACT] Getting router from app...');
+  if (!silent) console.log('[EXTRACT] Getting router from app...');
 
   // Express 5.x uses app.router, Express 4.x uses app._router
   let router = appAny._router || appAny.router;
 
   if (!router) {
-    console.log('[EXTRACT] WARNING: No router found on app');
+    if (!silent) console.log('[EXTRACT] WARNING: No router found on app');
     return [];
   }
 
   if (!router.stack) {
-    console.log('[EXTRACT] WARNING: Router has no stack');
+    if (!silent) console.log('[EXTRACT] WARNING: Router has no stack');
     return [];
   }
 
-  console.log('[EXTRACT] Router found with stack length:', router.stack.length);
+  if (!silent) console.log('[EXTRACT] Router found with stack length:', router.stack.length);
   // Start recursive extraction from the app's router stack
-  return extractRoutesFromStack(router.stack, basePath, 0);
+  return extractRoutesFromStack(router.stack, basePath, 0, silent);
 }
 
 /**
  * Audit the app for route registration issues.
  */
-export function auditRoutes(app: Application): {
+export function auditRoutes(app: Application, silent = true): {
   totalRoutes: number;
   routes: RouteInfo[];
   duplicates: string[];
   warnings: string[];
 } {
-  console.log('[ROUTE AUDIT DEBUG] Starting route extraction...');
+  if (!silent) console.log('[ROUTE AUDIT DEBUG] Starting route extraction...');
   const appAny = app as any;
 
   // Express 5.x uses app.router, Express 4.x uses app._router
   const router = appAny._router || appAny.router;
-  console.log('[ROUTE AUDIT DEBUG] Router found:', !!router);
-  if (router && router.stack) {
+  if (!silent) console.log('[ROUTE AUDIT DEBUG] Router found:', !!router);
+  if (router && router.stack && !silent) {
     console.log('[ROUTE AUDIT DEBUG] app.router.stack length:', router.stack.length);
     router.stack.forEach((middleware: any, i: number) => {
       const regexp = middleware.regexp?.source?.substring(0, 50) || (middleware.regexp ? String(middleware.regexp).substring(0, 50) : 'undefined');
@@ -161,8 +163,8 @@ export function auditRoutes(app: Application): {
     });
   }
 
-  const routes = extractAllRoutes(app);
-  console.log('[ROUTE AUDIT DEBUG] Routes extracted:', routes.length);
+  const routes = extractAllRoutes(app, '', 'app', silent);
+  if (!silent) console.log('[ROUTE AUDIT DEBUG] Routes extracted:', routes.length);
 
   // Normalize paths for duplicate detection (remove trailing slashes, normalize params)
   const pathMap = new Map<string, RouteInfo[]>();

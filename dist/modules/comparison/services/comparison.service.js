@@ -17,18 +17,16 @@ class ComparisonService {
         const session = await mongoose_1.default.startSession();
         session.startTransaction();
         try {
-            const car1Id = new mongoose_1.default.Types.ObjectId(data.car1_id);
-            const car2Id = new mongoose_1.default.Types.ObjectId(data.car2_id);
             // Validate cars exist
             const [car1, car2] = await Promise.all([
-                car_model_1.Car.findById(car1Id),
-                car_model_1.Car.findById(car2Id),
+                car_model_1.Car.findOne({ car_id: data.car1_id }),
+                car_model_1.Car.findOne({ car_id: data.car2_id }),
             ]);
             if (!car1)
                 throw new app_error_util_1.AppError('Car 1 not found', 404);
             if (!car2)
                 throw new app_error_util_1.AppError('Car 2 not found', 404);
-            if (car1Id.equals(car2Id))
+            if (data.car1_id === data.car2_id)
                 throw new app_error_util_1.AppError('Cannot compare the same car', 400);
             // Generate unique slug
             let slug = data.slug;
@@ -38,21 +36,21 @@ class ComparisonService {
             }
             // Validate variants if provided
             if (data.variant1_id) {
-                const variant1 = await car_variant_model_1.CarVariant.findById(data.variant1_id);
+                const variant1 = await car_variant_model_1.CarVariant.findOne({ variant_id: data.variant1_id });
                 if (!variant1)
                     throw new app_error_util_1.AppError('Variant 1 not found', 404);
             }
             if (data.variant2_id) {
-                const variant2 = await car_variant_model_1.CarVariant.findById(data.variant2_id);
+                const variant2 = await car_variant_model_1.CarVariant.findOne({ variant_id: data.variant2_id });
                 if (!variant2)
                     throw new app_error_util_1.AppError('Variant 2 not found', 404);
             }
             // Create comparison
             const comparison = new comparison_model_1.Comparison({
-                car1_id: car1Id,
-                car2_id: car2Id,
-                variant1_id: data.variant1_id ? new mongoose_1.default.Types.ObjectId(data.variant1_id) : undefined,
-                variant2_id: data.variant2_id ? new mongoose_1.default.Types.ObjectId(data.variant2_id) : undefined,
+                car1_id: data.car1_id,
+                car2_id: data.car2_id,
+                variant1_id: data.variant1_id,
+                variant2_id: data.variant2_id,
                 slug,
                 title: data.title,
                 category: data.category,
@@ -61,13 +59,13 @@ class ComparisonService {
                 isPopular: data.isPopular || false,
                 isTrending: data.isTrending || false,
                 showOnHomepage: data.showOnHomepage || false,
-                relatedComparisons: data.relatedComparisons?.map(id => new mongoose_1.default.Types.ObjectId(id)) || [],
+                relatedComparisons: data.relatedComparisons || [],
                 seoMetaTitle: data.seoMetaTitle,
                 seoMetaDescription: data.seoMetaDescription,
                 seoFAQSchema: data.seoFAQSchema,
                 status: data.status || 'draft',
                 is_published: data.is_published || false,
-                created_by: new mongoose_1.default.Types.ObjectId(userId),
+                created_by: userId,
             });
             await comparison.save({ session });
             // Log audit
@@ -80,7 +78,7 @@ class ComparisonService {
                     new_value: { slug, title: data.title },
                 }], { session });
             await session.commitTransaction();
-            return comparison.populate(['car1_id', 'car2_id', 'variant1_id', 'variant2_id']);
+            return comparison;
         }
         catch (error) {
             await session.abortTransaction();
@@ -106,7 +104,7 @@ class ComparisonService {
             }
             Object.assign(comparison, {
                 ...data,
-                updated_by: new mongoose_1.default.Types.ObjectId(userId),
+                updated_by: userId,
             });
             await comparison.save({ session });
             await audit_log_model_1.AuditLog.create([{
@@ -118,7 +116,7 @@ class ComparisonService {
                     new_value: data,
                 }], { session });
             await session.commitTransaction();
-            return comparison.populate(['car1_id', 'car2_id', 'variant1_id', 'variant2_id']);
+            return comparison;
         }
         catch (error) {
             await session.abortTransaction();
@@ -205,10 +203,6 @@ class ComparisonService {
             query.isTrending = filter.isTrending;
         const total = await comparison_model_1.Comparison.countDocuments(query);
         const comparisons = await comparison_model_1.Comparison.find(query)
-            .populate('car1_id', 'brand slug')
-            .populate('car2_id', 'brand slug')
-            .populate('variant1_id')
-            .populate('variant2_id')
             .sort({ created_at: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
@@ -222,23 +216,13 @@ class ComparisonService {
         };
     }
     static async getComparisonBySlug(slug) {
-        const comparison = await comparison_model_1.Comparison.findOne({ slug, is_deleted: false })
-            .populate('car1_id')
-            .populate('car2_id')
-            .populate('variant1_id')
-            .populate('variant2_id')
-            .populate('relatedComparisons');
+        const comparison = await comparison_model_1.Comparison.findOne({ slug, is_deleted: false });
         if (!comparison)
             throw new app_error_util_1.AppError('Comparison not found', 404);
         return comparison;
     }
     static async getComparisonById(id) {
-        const comparison = await comparison_model_1.Comparison.findById(id)
-            .populate('car1_id')
-            .populate('car2_id')
-            .populate('variant1_id')
-            .populate('variant2_id')
-            .populate('relatedComparisons');
+        const comparison = await comparison_model_1.Comparison.findById(id);
         if (!comparison)
             throw new app_error_util_1.AppError('Comparison not found', 404);
         return comparison;
@@ -248,27 +232,25 @@ class ComparisonService {
         const session = await mongoose_1.default.startSession();
         session.startTransaction();
         try {
-            const pId = new mongoose_1.default.Types.ObjectId(primaryCarId);
-            const rId = new mongoose_1.default.Types.ObjectId(rivalCarId);
-            if (pId.equals(rId))
+            if (primaryCarId === rivalCarId)
                 throw new app_error_util_1.AppError('Cannot set car as its own rival', 400);
             // Create both directions
             const [car1, car2] = await Promise.all([
-                car_model_1.Car.findById(pId).session(session),
-                car_model_1.Car.findById(rId).session(session),
+                car_model_1.Car.findOne({ car_id: primaryCarId }).session(session),
+                car_model_1.Car.findOne({ car_id: rivalCarId }).session(session),
             ]);
             if (!car1 || !car2)
                 throw new app_error_util_1.AppError('One or both cars not found', 404);
             await Promise.all([
-                comparison_rival_model_1.ComparisonRival.findOneAndUpdate({ primary_car_id: pId, rival_car_id: rId }, {
-                    primary_car_id: pId,
-                    rival_car_id: rId,
+                comparison_rival_model_1.ComparisonRival.findOneAndUpdate({ primary_car_id: primaryCarId, rival_car_id: rivalCarId }, {
+                    primary_car_id: primaryCarId,
+                    rival_car_id: rivalCarId,
                     relationship_strength: strength,
                     manual_mapping: true,
                 }, { upsert: true, session }),
-                comparison_rival_model_1.ComparisonRival.findOneAndUpdate({ primary_car_id: rId, rival_car_id: pId }, {
-                    primary_car_id: rId,
-                    rival_car_id: pId,
+                comparison_rival_model_1.ComparisonRival.findOneAndUpdate({ primary_car_id: rivalCarId, rival_car_id: primaryCarId }, {
+                    primary_car_id: rivalCarId,
+                    rival_car_id: primaryCarId,
                     relationship_strength: strength,
                     manual_mapping: true,
                 }, { upsert: true, session }),
@@ -276,10 +258,10 @@ class ComparisonService {
             await audit_log_model_1.AuditLog.create([{
                     audit_id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     entity_type: 'car',
-                    entity_id: pId.toString(),
+                    entity_id: primaryCarId,
                     action: 'update',
                     actor_user_id: userId,
-                    new_value: { rival_id: rId.toString() },
+                    new_value: { rival_id: rivalCarId },
                 }], { session });
             await session.commitTransaction();
         }
@@ -295,19 +277,17 @@ class ComparisonService {
         const session = await mongoose_1.default.startSession();
         session.startTransaction();
         try {
-            const pId = new mongoose_1.default.Types.ObjectId(primaryCarId);
-            const rId = new mongoose_1.default.Types.ObjectId(rivalCarId);
             await Promise.all([
-                comparison_rival_model_1.ComparisonRival.deleteOne({ primary_car_id: pId, rival_car_id: rId }, { session }),
-                comparison_rival_model_1.ComparisonRival.deleteOne({ primary_car_id: rId, rival_car_id: pId }, { session }),
+                comparison_rival_model_1.ComparisonRival.deleteOne({ primary_car_id: primaryCarId, rival_car_id: rivalCarId }, { session }),
+                comparison_rival_model_1.ComparisonRival.deleteOne({ primary_car_id: rivalCarId, rival_car_id: primaryCarId }, { session }),
             ]);
             await audit_log_model_1.AuditLog.create([{
                     audit_id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     entity_type: 'car',
-                    entity_id: pId.toString(),
+                    entity_id: primaryCarId,
                     action: 'update',
                     actor_user_id: userId,
-                    old_value: { rival_id: rId.toString() },
+                    old_value: { rival_id: rivalCarId },
                 }], { session });
             await session.commitTransaction();
         }
@@ -320,9 +300,7 @@ class ComparisonService {
         }
     }
     static async getRivals(carId, limit = 10) {
-        const cId = new mongoose_1.default.Types.ObjectId(carId);
-        return comparison_rival_model_1.ComparisonRival.find({ primary_car_id: cId })
-            .populate('rival_car_id', 'brand slug')
+        return comparison_rival_model_1.ComparisonRival.find({ primary_car_id: carId })
             .sort({ relationship_strength: -1 })
             .limit(limit)
             .lean();
@@ -332,16 +310,12 @@ class ComparisonService {
         if (category)
             query.category = category;
         return comparison_model_1.Comparison.find(query)
-            .populate('car1_id', 'brand slug')
-            .populate('car2_id', 'brand slug')
             .sort({ created_at: -1 })
             .limit(limit)
             .lean();
     }
     static async getTrendingComparisons(limit = 10) {
         return comparison_model_1.Comparison.find({ is_published: true, is_deleted: false, isTrending: true })
-            .populate('car1_id', 'brand slug')
-            .populate('car2_id', 'brand slug')
             .sort({ updated_at: -1 })
             .limit(limit)
             .lean();
@@ -357,8 +331,6 @@ class ComparisonService {
             is_published: true,
             is_deleted: false,
         })
-            .populate('car1_id', 'brand slug image')
-            .populate('car2_id', 'brand slug image')
             .sort({ created_at: -1 })
             .skip((page - 1) * limit)
             .limit(limit)

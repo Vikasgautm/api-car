@@ -9,7 +9,7 @@ const blogSchema = new mongoose_1.Schema({
     excerpt: { type: String, required: true, maxlength: 500 },
     content: { type: String, required: true },
     author_name: { type: String },
-    author_id: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' },
+    author_id: { type: String },
     category: { type: String, required: true },
     tags: [{ type: String }],
     thumbnail: {
