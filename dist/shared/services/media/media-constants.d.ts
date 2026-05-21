@@ -1,0 +1,28 @@
+export declare const MAIN_CATEGORIES: readonly ["exterior", "interior", "colours", "features"];
+export type MainCategory = typeof MAIN_CATEGORIES[number];
+export declare const EXTERIOR_SUBCATEGORIES: readonly ["front", "front_left", "front_right", "side_left", "side_right", "rear", "rear_left", "rear_right", "top", "grille", "headlight", "tail_light", "alloy_wheel", "fog_lamp", "ground_clearance", "charging_port"];
+export type ExteriorSubCategory = typeof EXTERIOR_SUBCATEGORIES[number];
+export declare const INTERIOR_SUBCATEGORIES: readonly ["dashboard", "steering", "infotainment", "instrument_cluster", "front_seats", "rear_seats", "sunroof", "ac_controls", "wireless_charger", "gear_lever", "door_pad", "ambient_lighting", "speaker", "boot_space"];
+export type InteriorSubCategory = typeof INTERIOR_SUBCATEGORIES[number];
+export declare const COLOURS_SUBCATEGORIES: readonly ["white", "black", "red", "blue", "silver", "grey", "green", "brown", "orange", "dual_tone"];
+export type ColourSubCategory = typeof COLOURS_SUBCATEGORIES[number];
+export declare const FEATURES_SUBCATEGORIES: readonly ["adas", "360_camera", "connected_car", "wireless_android_auto", "wireless_apple_carplay", "ventilated_seats", "powered_tailgate", "panoramic_sunroof", "boss_mode", "air_purifier", "heads_up_display", "drive_modes", "electronic_parking_brake"];
+export type FeatureSubCategory = typeof FEATURES_SUBCATEGORIES[number];
+export declare const ALL_SUBCATEGORIES: readonly ["front", "front_left", "front_right", "side_left", "side_right", "rear", "rear_left", "rear_right", "top", "grille", "headlight", "tail_light", "alloy_wheel", "fog_lamp", "ground_clearance", "charging_port", "dashboard", "steering", "infotainment", "instrument_cluster", "front_seats", "rear_seats", "sunroof", "ac_controls", "wireless_charger", "gear_lever", "door_pad", "ambient_lighting", "speaker", "boot_space", "white", "black", "red", "blue", "silver", "grey", "green", "brown", "orange", "dual_tone", "adas", "360_camera", "connected_car", "wireless_android_auto", "wireless_apple_carplay", "ventilated_seats", "powered_tailgate", "panoramic_sunroof", "boss_mode", "air_purifier", "heads_up_display", "drive_modes", "electronic_parking_brake"];
+export type SubCategory = typeof ALL_SUBCATEGORIES[number];
+export declare const SUBCATEGORIES_BY_CATEGORY: Record<MainCategory, readonly string[]>;
+export declare const MEDIA_SCOPES: readonly ["standard", "top_variant_showcase"];
+export type MediaScope = typeof MEDIA_SCOPES[number];
+export declare const IMAGE_STATUSES: readonly ["draft", "published", "archived", "rejected"];
+export type ImageStatus = typeof IMAGE_STATUSES[number];
+export declare const ALLOWED_AUTOMOTIVE_MIME_TYPES: readonly ["image/avif", "image/webp", "image/png", "image/jpeg"];
+export declare const SVG_ALLOWED_MIME_TYPES: readonly ["image/svg+xml"];
+export declare const REJECTED_MIME_TYPES: readonly ["image/gif", "image/bmp", "image/tiff", "image/heic", "image/heif"];
+export declare const ALLOWED_EXTENSIONS: string[];
+export declare const SVG_EXTENSIONS: string[];
+export declare const REJECTED_EXTENSIONS: string[];
+export declare const EXTERIOR_PRIORITY: string[];
+export declare const INTERIOR_PRIORITY: string[];
+export declare const SUBCATEGORY_DISPLAY_NAMES: Record<string, string>;
+export declare const COLOUR_HEX_MAP: Record<string, string>;
+//# sourceMappingURL=media-constants.d.ts.map

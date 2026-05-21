@@ -1,0 +1,57 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MediaValidationService = void 0;
+const path_1 = __importDefault(require("path"));
+const media_constants_1 = require("./media-constants");
+class MediaValidationService {
+    static validateAutomotiveFile(file) {
+        const mime = file.mimetype.toLowerCase();
+        const ext = path_1.default.extname(file.originalname).toLowerCase();
+        if (media_constants_1.REJECTED_MIME_TYPES.includes(mime) || media_constants_1.REJECTED_EXTENSIONS.includes(ext)) {
+            return { valid: false, error: `File type "${mime}" is not allowed. Rejected format.` };
+        }
+        if (media_constants_1.SVG_ALLOWED_MIME_TYPES.includes(mime) || media_constants_1.SVG_EXTENSIONS.includes(ext)) {
+            return { valid: false, error: 'SVG is only allowed for brand logos and icons, not automotive images.' };
+        }
+        const mimeOk = media_constants_1.ALLOWED_AUTOMOTIVE_MIME_TYPES.includes(mime);
+        const extOk = media_constants_1.ALLOWED_EXTENSIONS.includes(ext);
+        if (!mimeOk || !extOk) {
+            return {
+                valid: false,
+                error: `Invalid file type "${mime}" (${ext}). Allowed: avif, webp, png, jpeg, jpg.`,
+            };
+        }
+        return { valid: true };
+    }
+    static validateBrandLogoFile(file) {
+        const mime = file.mimetype.toLowerCase();
+        const ext = path_1.default.extname(file.originalname).toLowerCase();
+        const allowed = [
+            ...media_constants_1.ALLOWED_AUTOMOTIVE_MIME_TYPES,
+            ...media_constants_1.SVG_ALLOWED_MIME_TYPES,
+        ];
+        const allowedExts = [...media_constants_1.ALLOWED_EXTENSIONS, ...media_constants_1.SVG_EXTENSIONS];
+        if (!allowed.includes(mime) || !allowedExts.includes(ext)) {
+            return { valid: false, error: `Invalid file type for logo. Allowed: svg, avif, webp, png, jpeg, jpg.` };
+        }
+        return { valid: true };
+    }
+    static validateSubCategory(mainCategory, subCategory) {
+        const allowed = media_constants_1.SUBCATEGORIES_BY_CATEGORY[mainCategory];
+        if (!allowed) {
+            return { valid: false, error: `Invalid main_category: ${mainCategory}` };
+        }
+        if (!allowed.includes(subCategory)) {
+            return {
+                valid: false,
+                error: `"${subCategory}" is not a valid sub_category for "${mainCategory}". Allowed: ${allowed.join(', ')}.`,
+            };
+        }
+        return { valid: true };
+    }
+}
+exports.MediaValidationService = MediaValidationService;
+//# sourceMappingURL=media-validation.service.js.map
