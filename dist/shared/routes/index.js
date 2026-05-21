@@ -39,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const audit_routes_1 = __importDefault(require("../../modules/audit/routes/audit.routes"));
 const content_health_routes_1 = __importDefault(require("../../modules/content-health/routes/content-health.routes"));
+const seo_collections_routes_1 = __importDefault(require("../../modules/seo-collections/routes/seo-collections.routes"));
 const auth_routes_1 = __importDefault(require("../../modules/auth/routes/auth.routes"));
 const comparison_routes_1 = __importDefault(require("../../modules/comparison/routes/comparison.routes"));
 const deletion_workflow_routes_1 = __importDefault(require("../../modules/deletion-workflow/routes/deletion-workflow.routes"));
@@ -92,5 +93,6 @@ router.use('/discover', discovery_routes_1.default);
 router.use('/discovery', discovery_routes_1.default); // Alias for /discover
 router.use('/seo-presets', seo_preset_routes_1.default);
 router.use('/content-health', content_health_routes_1.default);
+router.use('/seo-collections', seo_collections_routes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map

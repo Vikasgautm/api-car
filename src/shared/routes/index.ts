@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import auditRoutes from '../../modules/audit/routes/audit.routes';
 import contentHealthRoutes from '../../modules/content-health/routes/content-health.routes';
+import seoCollectionRoutes from '../../modules/seo-collections/routes/seo-collections.routes';
 import authRoutes from '../../modules/auth/routes/auth.routes';
 import comparisonRoutes from '../../modules/comparison/routes/comparison.routes';
 import deletionWorkflowRoutes from '../../modules/deletion-workflow/routes/deletion-workflow.routes';
@@ -57,5 +58,6 @@ router.use('/discover', discoveryRoutes);
 router.use('/discovery', discoveryRoutes); // Alias for /discover
 router.use('/seo-presets', seoPresetRoutes);
 router.use('/content-health', contentHealthRoutes);
+router.use('/seo-collections', seoCollectionRoutes);
 
 export default router;
