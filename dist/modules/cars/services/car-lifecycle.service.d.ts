@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { EntityLifecycleState, EntityStatusHistoryEntry } from '../../../models/car.model';
 import { AuditActor } from '../../../shared/utils/audit.util';
 export declare class CarLifecycleService {
@@ -6,17 +7,11 @@ export declare class CarLifecycleService {
      * Preserves car_id, slug, and URL permanence
      * Automatically updates visibility and specs based on state
      */
-    static transitionState(carId: string, newState: EntityLifecycleState, actor: AuditActor, reason?: string): Promise<import("mongoose").Document<unknown, {}, import("../../../models/car.model").ICar, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/car.model").ICar & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static transitionState(carId: string, newState: EntityLifecycleState, actor: AuditActor, reason?: string): Promise<any>;
     /**
      * Auto-unhide categories and sections when car launches
      */
-    static unHideCategoryOnLaunch(carId: string): Promise<void>;
+    static unHideCategoryOnLaunch(carId: string, session?: mongoose.ClientSession): Promise<void>;
     /**
      * Get lifecycle history for a car
      */
@@ -40,8 +35,8 @@ export declare class CarLifecycleService {
     /**
      * Get all upcoming cars scheduled to launch
      */
-    static getUpcomingLaunches(days?: number): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/car.model").ICar, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/car.model").ICar & Required<{
-        _id: import("mongoose").Types.ObjectId;
+    static getUpcomingLaunches(days?: number): Promise<(mongoose.Document<unknown, {}, import("../../../models/car.model").ICar, {}, mongoose.DefaultSchemaOptions> & import("../../../models/car.model").ICar & Required<{
+        _id: mongoose.Types.ObjectId;
     }> & {
         __v: number;
     } & {

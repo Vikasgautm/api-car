@@ -9,7 +9,16 @@ const car_model_1 = require("../../../models/car.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 class SpecRefinementService {
-    static client = new sdk_1.default();
+    static client = null;
+    static getClient() {
+        if (!this.client) {
+            if (!process.env.ANTHROPIC_API_KEY) {
+                throw new app_error_util_1.AppError('ANTHROPIC_API_KEY is not set — spec refinement is disabled', 503);
+            }
+            this.client = new sdk_1.default();
+        }
+        return this.client;
+    }
     static async refineVariantSpecs(variantId) {
         const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId });
         if (!variant) {
@@ -36,7 +45,7 @@ class SpecRefinementService {
         }
         const prompt = this.buildRefinementPrompt(variant, car, currentSpecs, missingFields, emptyOrLowQualityFields);
         try {
-            const message = await this.client.messages.create({
+            const message = await this.getClient().messages.create({
                 model: 'claude-3-5-sonnet-20241022',
                 max_tokens: 1024,
                 messages: [

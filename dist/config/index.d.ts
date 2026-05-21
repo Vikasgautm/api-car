@@ -25,13 +25,6 @@ export declare const config: {
         sameSite: "strict";
         maxAge: number;
     };
-    whatsapp: {
-        phone_number_id: string;
-        access_token: string;
-        otp_template_name: string;
-        otp_template_language: string;
-        api_version: string;
-    };
     email: {
         smtp_host: string;
         smtp_port: number;

@@ -3,7 +3,7 @@ import { Document, Schema, model } from 'mongoose';
 export type DeletionEntityType = 'car';
 export type DeletionAction = 'archive' | 'disable' | 'discontinue' | 'hard_delete';
 export type DeletionStatus = 'pending' | 'approved' | 'rejected' | 'expired' | 'cancelled';
-export type OtpDeliveryChannel = 'email' | 'whatsapp' | 'console';
+export type OtpDeliveryChannel = 'email' | 'console';
 
 export interface IDeletionRequest extends Document {
   request_id: string;
@@ -50,7 +50,7 @@ const deletionRequestSchema = new Schema<IDeletionRequest>(
     otp_expires_at: { type: Date, required: true },
     otp_attempts: { type: Number, default: 0 },
     otp_max_attempts: { type: Number, default: 5 },
-    otp_channel: { type: String, required: true, enum: ['email', 'whatsapp', 'console'] },
+    otp_channel: { type: String, required: true, enum: ['email', 'console'] },
     otp_sent_to: { type: String, default: null },
 
     status: { type: String, required: true, enum: ['pending', 'approved', 'rejected', 'expired', 'cancelled'], default: 'pending' },

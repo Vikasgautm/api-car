@@ -10,6 +10,8 @@ export interface ParsedQuery {
   filters: Record<string, unknown>;
 }
 
+export const parseBool = (v: unknown): boolean => v === 'true' || v === true;
+
 export class QueryParserUtil {
   static parsePagination(query: Record<string, unknown>): PaginationParams {
     const page = Math.max(1, parseInt((query.page as string) || '1', 10));

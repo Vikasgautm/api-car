@@ -20,5 +20,7 @@ const auditLogSchema = new mongoose_1.Schema({
 auditLogSchema.index({ entity_type: 1, entity_id: 1, timestamp: -1 });
 auditLogSchema.index({ actor_user_id: 1, timestamp: -1 });
 auditLogSchema.index({ timestamp: -1 });
+// TTL: automatically delete audit logs older than 90 days
+auditLogSchema.index({ timestamp: 1 }, { expireAfterSeconds: 90 * 24 * 3600 });
 exports.AuditLog = (0, mongoose_1.model)('AuditLog', auditLogSchema);
 //# sourceMappingURL=audit-log.model.js.map

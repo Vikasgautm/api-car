@@ -13,6 +13,7 @@ export interface SpecRefinementResult {
 }
 export declare class SpecRefinementService {
     private static client;
+    private static getClient;
     static refineVariantSpecs(variantId: string): Promise<SpecRefinementResult>;
     private static performRefinement;
     private static buildRefinementPrompt;

@@ -8,6 +8,7 @@ export interface ParsedQuery {
     search?: string;
     filters: Record<string, unknown>;
 }
+export declare const parseBool: (v: unknown) => boolean;
 export declare class QueryParserUtil {
     static parsePagination(query: Record<string, unknown>): PaginationParams;
     static parseQuery(query: Record<string, unknown>): ParsedQuery;

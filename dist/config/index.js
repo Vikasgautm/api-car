@@ -33,15 +33,6 @@ exports.config = {
         sameSite: 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     },
-    whatsapp: {
-        // Kept around for one release in case we need to fall back. Deletion OTP
-        // now ships over SMTP — see `email` below.
-        phone_number_id: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
-        access_token: process.env.WHATSAPP_ACCESS_TOKEN || '',
-        otp_template_name: process.env.WHATSAPP_OTP_TEMPLATE_NAME || 'delete_otp_v1',
-        otp_template_language: process.env.WHATSAPP_OTP_TEMPLATE_LANGUAGE || 'en_US',
-        api_version: process.env.WHATSAPP_API_VERSION || 'v18.0',
-    },
     email: {
         // SMTP config for transactional email (delete-approval OTP).
         // When any of host/user/pass are missing the EmailService falls back to a

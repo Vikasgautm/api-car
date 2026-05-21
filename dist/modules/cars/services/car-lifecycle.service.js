@@ -1,9 +1,20 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarLifecycleService = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const car_model_1 = require("../../../models/car.model");
 const car_variant_model_1 = require("../../../models/car-variant.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
+const VALID_TRANSITIONS = {
+    upcoming: ['launched'],
+    launched: ['discontinued', 'facelift'],
+    discontinued: ['archived'],
+    facelift: ['discontinued'],
+    archived: [],
+};
 class CarLifecycleService {
     /**
      * Transition a car to a new lifecycle state
@@ -11,62 +22,71 @@ class CarLifecycleService {
      * Automatically updates visibility and specs based on state
      */
     static async transitionState(carId, newState, actor, reason) {
-        const car = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false });
-        if (!car) {
-            throw new app_error_util_1.AppError('Car not found', 404);
+        const session = await mongoose_1.default.startSession();
+        let savedCar;
+        try {
+            await session.withTransaction(async () => {
+                const car = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false }).session(session);
+                if (!car)
+                    throw new app_error_util_1.AppError('Car not found', 404);
+                const currentState = car.entity_lifecycle_state || 'launched';
+                if (currentState === newState) {
+                    throw new app_error_util_1.AppError(`Car is already in ${newState} state`, 400);
+                }
+                const allowed = VALID_TRANSITIONS[currentState] ?? [];
+                if (!allowed.includes(newState)) {
+                    throw new app_error_util_1.AppError(`Invalid transition: ${currentState} → ${newState}. Allowed: ${allowed.join(', ') || 'none'}`, 400);
+                }
+                const historyEntry = {
+                    state: newState,
+                    changed_at: new Date(),
+                    changed_by: actor.user_id || 'system',
+                    reason: reason || `Transitioned from ${currentState} to ${newState}`,
+                };
+                if (!car.entity_status_history)
+                    car.entity_status_history = [];
+                car.entity_status_history.push(historyEntry);
+                car.entity_lifecycle_state = newState;
+                if (newState === 'launched') {
+                    car.entity_launch_date = new Date();
+                    car.is_upcoming = false;
+                    car.is_launched = true;
+                    car.status = 'launched';
+                }
+                else if (newState === 'upcoming') {
+                    car.is_upcoming = true;
+                    car.is_launched = false;
+                    car.status = 'upcoming';
+                }
+                else if (newState === 'discontinued') {
+                    car.status = 'discontinued';
+                    car.discontinued_at = new Date();
+                    car.discontinued_by = actor.user_id || 'system';
+                }
+                else if (newState === 'facelift') {
+                    car.is_facelift = true;
+                    car.status = 'launched';
+                }
+                if (!car.entity_created_at) {
+                    car.entity_created_at = car.createdAt || new Date();
+                }
+                await car.save({ session });
+                if (newState === 'launched') {
+                    await this.unHideCategoryOnLaunch(carId, session);
+                }
+                savedCar = car;
+            });
         }
-        const currentState = car.entity_lifecycle_state || 'launched';
-        if (currentState === newState) {
-            throw new app_error_util_1.AppError(`Car is already in ${newState} state`, 400);
+        finally {
+            session.endSession();
         }
-        // Create history entry
-        const historyEntry = {
-            state: newState,
-            changed_at: new Date(),
-            changed_by: actor.user_id || 'system',
-            reason: reason || `Transitioned from ${currentState} to ${newState}`,
-        };
-        // Initialize history if doesn't exist
-        if (!car.entity_status_history) {
-            car.entity_status_history = [];
-        }
-        car.entity_status_history.push(historyEntry);
-        // Update car state
-        car.entity_lifecycle_state = newState;
-        if (newState === 'launched') {
-            car.entity_launch_date = new Date();
-            car.is_upcoming = false;
-            car.is_launched = true;
-            car.status = 'launched';
-            // Auto-unhide categories on launch
-            await this.unHideCategoryOnLaunch(carId);
-        }
-        else if (newState === 'upcoming') {
-            car.is_upcoming = true;
-            car.is_launched = false;
-            car.status = 'upcoming';
-        }
-        else if (newState === 'discontinued') {
-            car.status = 'discontinued';
-            car.discontinued_at = new Date();
-            car.discontinued_by = actor.user_id || 'system';
-        }
-        else if (newState === 'facelift') {
-            car.is_facelift = true;
-            car.status = 'launched';
-        }
-        // Preserve entity creation time
-        if (!car.entity_created_at) {
-            car.entity_created_at = car.createdAt || new Date();
-        }
-        await car.save();
-        return car;
+        return savedCar;
     }
     /**
      * Auto-unhide categories and sections when car launches
      */
-    static async unHideCategoryOnLaunch(carId) {
-        const variants = await car_variant_model_1.CarVariant.find({ car_id: carId, is_deleted: false });
+    static async unHideCategoryOnLaunch(carId, session) {
+        const variants = await car_variant_model_1.CarVariant.find({ car_id: carId, is_deleted: false }).session(session ?? null);
         const bulkOps = [];
         for (const variant of variants) {
             let modified = false;
@@ -109,7 +129,7 @@ class CarLifecycleService {
             }
         }
         if (bulkOps.length > 0) {
-            await car_variant_model_1.CarVariant.bulkWrite(bulkOps);
+            await car_variant_model_1.CarVariant.bulkWrite(bulkOps, { session });
         }
     }
     /**

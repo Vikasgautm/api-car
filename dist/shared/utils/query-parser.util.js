@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.QueryParserUtil = void 0;
+exports.QueryParserUtil = exports.parseBool = void 0;
+const parseBool = (v) => v === 'true' || v === true;
+exports.parseBool = parseBool;
 class QueryParserUtil {
     static parsePagination(query) {
         const page = Math.max(1, parseInt(query.page || '1', 10));

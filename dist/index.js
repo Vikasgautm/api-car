@@ -16,6 +16,9 @@ const fuel_type_seed_1 = require("./seeds/fuel-type.seed");
 const intent_tags_seed_1 = require("./seeds/intent-tags.seed");
 const route_audit_util_1 = require("./shared/utils/route-audit.util");
 const startServer = async () => {
+    if (!process.env.ANTHROPIC_API_KEY) {
+        logger_1.logger.warn('ANTHROPIC_API_KEY is not set — LLM intelligence flags and spec refinement will be disabled until the env var is configured');
+    }
     try {
         // MongoDB Connection
         await mongoose_1.default.connect(config_1.config.mongodb_uri);

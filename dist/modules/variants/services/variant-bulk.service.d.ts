@@ -16,6 +16,7 @@ export interface BulkOperationResult {
         error: string;
     }>;
     updated_variants: any[];
+    change_record_failures?: number;
 }
 export declare class VariantBulkService {
     static bulkUpdateVisibility(variantIds: string[], hiddenSections: string[], changedBy?: string): Promise<BulkOperationResult>;

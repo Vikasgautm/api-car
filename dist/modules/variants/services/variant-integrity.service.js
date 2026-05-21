@@ -89,6 +89,9 @@ class VariantIntegrityService {
         const historyEntries = changes.map((c) => change_history_1.ChangeHistoryTracker.createEntry(c.field, c.oldValue, c.newValue, changedBy, changeSource));
         variant.change_history = variant.change_history || [];
         variant.change_history.push(...historyEntries);
+        if (variant.change_history.length > 100) {
+            variant.change_history = variant.change_history.slice(-100);
+        }
         await variant.save();
     }
     /**
@@ -105,6 +108,9 @@ class VariantIntegrityService {
         const historyEntries = changes.map((c) => change_history_1.ChangeHistoryTracker.createSpecEntry(c.field, c.oldValue, c.newValue, changedBy, c.section, changeSource));
         variant.change_history = variant.change_history || [];
         variant.change_history.push(...historyEntries);
+        if (variant.change_history.length > 100) {
+            variant.change_history = variant.change_history.slice(-100);
+        }
         await variant.save();
     }
     /**

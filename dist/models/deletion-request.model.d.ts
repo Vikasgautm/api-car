@@ -2,7 +2,7 @@ import { Document } from 'mongoose';
 export type DeletionEntityType = 'car';
 export type DeletionAction = 'archive' | 'disable' | 'discontinue' | 'hard_delete';
 export type DeletionStatus = 'pending' | 'approved' | 'rejected' | 'expired' | 'cancelled';
-export type OtpDeliveryChannel = 'email' | 'whatsapp' | 'console';
+export type OtpDeliveryChannel = 'email' | 'console';
 export interface IDeletionRequest extends Document {
     request_id: string;
     entity_type: DeletionEntityType;

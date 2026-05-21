@@ -16,7 +16,7 @@ const deletionRequestSchema = new mongoose_1.Schema({
     otp_expires_at: { type: Date, required: true },
     otp_attempts: { type: Number, default: 0 },
     otp_max_attempts: { type: Number, default: 5 },
-    otp_channel: { type: String, required: true, enum: ['email', 'whatsapp', 'console'] },
+    otp_channel: { type: String, required: true, enum: ['email', 'console'] },
     otp_sent_to: { type: String, default: null },
     status: { type: String, required: true, enum: ['pending', 'approved', 'rejected', 'expired', 'cancelled'], default: 'pending' },
     approved_by_user_id: { type: String, default: null },

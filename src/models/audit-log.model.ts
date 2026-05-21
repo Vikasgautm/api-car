@@ -58,5 +58,7 @@ const auditLogSchema = new Schema<IAuditLog>(
 auditLogSchema.index({ entity_type: 1, entity_id: 1, timestamp: -1 });
 auditLogSchema.index({ actor_user_id: 1, timestamp: -1 });
 auditLogSchema.index({ timestamp: -1 });
+// TTL: automatically delete audit logs older than 90 days
+auditLogSchema.index({ timestamp: 1 }, { expireAfterSeconds: 90 * 24 * 3600 });
 
 export const AuditLog = model<IAuditLog>('AuditLog', auditLogSchema);

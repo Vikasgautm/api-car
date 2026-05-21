@@ -9,8 +9,7 @@ export declare class EmailService {
     static isConfigured(): boolean;
     private static getTransporter;
     /**
-     * Send a delete-approval OTP via email. Mirrors WhatsAppService.sendOtp's
-     * contract so DeletionWorkflowService can swap channels without churn.
+     * Send a delete-approval OTP via email.
      *
      * - When SMTP credentials are present, sends a plain-text + HTML email
      *   containing the 6-digit OTP and a short summary of what's being approved.

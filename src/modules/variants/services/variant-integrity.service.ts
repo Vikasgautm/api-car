@@ -143,6 +143,9 @@ export class VariantIntegrityService {
 
     variant.change_history = variant.change_history || [];
     variant.change_history.push(...historyEntries);
+    if (variant.change_history.length > 100) {
+      variant.change_history = variant.change_history.slice(-100);
+    }
 
     await variant.save();
   }
@@ -179,6 +182,9 @@ export class VariantIntegrityService {
 
     variant.change_history = variant.change_history || [];
     variant.change_history.push(...historyEntries);
+    if (variant.change_history.length > 100) {
+      variant.change_history = variant.change_history.slice(-100);
+    }
 
     await variant.save();
   }

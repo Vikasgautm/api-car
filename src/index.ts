@@ -12,6 +12,10 @@ import { seedIntentTags } from "./seeds/intent-tags.seed";
 import { auditRoutes, logRouteAudit } from "./shared/utils/route-audit.util";
 
 const startServer = async () => {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    logger.warn('ANTHROPIC_API_KEY is not set — LLM intelligence flags and spec refinement will be disabled until the env var is configured');
+  }
+
   try {
     // MongoDB Connection
     await mongoose.connect(config.mongodb_uri);

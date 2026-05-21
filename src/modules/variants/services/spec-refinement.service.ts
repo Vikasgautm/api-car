@@ -19,7 +19,17 @@ export interface SpecRefinementResult {
 }
 
 export class SpecRefinementService {
-  private static client = new Anthropic();
+  private static client: Anthropic | null = null;
+
+  private static getClient(): Anthropic {
+    if (!this.client) {
+      if (!process.env.ANTHROPIC_API_KEY) {
+        throw new AppError('ANTHROPIC_API_KEY is not set — spec refinement is disabled', 503);
+      }
+      this.client = new Anthropic();
+    }
+    return this.client;
+  }
 
   static async refineVariantSpecs(variantId: string): Promise<SpecRefinementResult> {
     const variant = await CarVariant.findOne({ variant_id: variantId });
@@ -55,7 +65,7 @@ export class SpecRefinementService {
     const prompt = this.buildRefinementPrompt(variant, car, currentSpecs, missingFields, emptyOrLowQualityFields);
 
     try {
-      const message = await this.client.messages.create({
+      const message = await this.getClient().messages.create({
         model: 'claude-3-5-sonnet-20241022',
         max_tokens: 1024,
         messages: [

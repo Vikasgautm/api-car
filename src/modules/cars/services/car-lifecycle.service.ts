@@ -1,7 +1,16 @@
+import mongoose from 'mongoose';
 import { Car, EntityLifecycleState, EntityStatusHistoryEntry } from '../../../models/car.model';
 import { CarVariant } from '../../../models/car-variant.model';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { AuditActor } from '../../../shared/utils/audit.util';
+
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  upcoming: ['launched'],
+  launched: ['discontinued', 'facelift'],
+  discontinued: ['archived'],
+  facelift: ['discontinued'],
+  archived: [],
+};
 
 export class CarLifecycleService {
   /**
@@ -15,66 +24,78 @@ export class CarLifecycleService {
     actor: AuditActor,
     reason?: string
   ) {
-    const car = await Car.findOne({ car_id: carId, is_deleted: false });
-    if (!car) {
-      throw new AppError('Car not found', 404);
+    const session = await mongoose.startSession();
+    let savedCar: any;
+    try {
+      await session.withTransaction(async () => {
+        const car = await Car.findOne({ car_id: carId, is_deleted: false }).session(session);
+        if (!car) throw new AppError('Car not found', 404);
+
+        const currentState = car.entity_lifecycle_state || 'launched';
+        if (currentState === newState) {
+          throw new AppError(`Car is already in ${newState} state`, 400);
+        }
+
+        const allowed = VALID_TRANSITIONS[currentState] ?? [];
+        if (!allowed.includes(newState)) {
+          throw new AppError(
+            `Invalid transition: ${currentState} → ${newState}. Allowed: ${allowed.join(', ') || 'none'}`,
+            400
+          );
+        }
+
+        const historyEntry: EntityStatusHistoryEntry = {
+          state: newState,
+          changed_at: new Date(),
+          changed_by: actor.user_id || 'system',
+          reason: reason || `Transitioned from ${currentState} to ${newState}`,
+        };
+
+        if (!car.entity_status_history) car.entity_status_history = [];
+        car.entity_status_history.push(historyEntry);
+
+        car.entity_lifecycle_state = newState;
+        if (newState === 'launched') {
+          car.entity_launch_date = new Date();
+          car.is_upcoming = false;
+          car.is_launched = true;
+          car.status = 'launched';
+        } else if (newState === 'upcoming') {
+          car.is_upcoming = true;
+          car.is_launched = false;
+          car.status = 'upcoming';
+        } else if (newState === 'discontinued') {
+          car.status = 'discontinued';
+          car.discontinued_at = new Date();
+          car.discontinued_by = actor.user_id || 'system';
+        } else if (newState === 'facelift') {
+          car.is_facelift = true;
+          car.status = 'launched';
+        }
+
+        if (!car.entity_created_at) {
+          car.entity_created_at = (car as any).createdAt || new Date();
+        }
+
+        await car.save({ session });
+
+        if (newState === 'launched') {
+          await this.unHideCategoryOnLaunch(carId, session);
+        }
+
+        savedCar = car;
+      });
+    } finally {
+      session.endSession();
     }
-
-    const currentState = car.entity_lifecycle_state || 'launched';
-    if (currentState === newState) {
-      throw new AppError(`Car is already in ${newState} state`, 400);
-    }
-
-    // Create history entry
-    const historyEntry: EntityStatusHistoryEntry = {
-      state: newState,
-      changed_at: new Date(),
-      changed_by: actor.user_id || 'system',
-      reason: reason || `Transitioned from ${currentState} to ${newState}`,
-    };
-
-    // Initialize history if doesn't exist
-    if (!car.entity_status_history) {
-      car.entity_status_history = [];
-    }
-    car.entity_status_history.push(historyEntry);
-
-    // Update car state
-    car.entity_lifecycle_state = newState;
-    if (newState === 'launched') {
-      car.entity_launch_date = new Date();
-      car.is_upcoming = false;
-      car.is_launched = true;
-      car.status = 'launched';
-      // Auto-unhide categories on launch
-      await this.unHideCategoryOnLaunch(carId);
-    } else if (newState === 'upcoming') {
-      car.is_upcoming = true;
-      car.is_launched = false;
-      car.status = 'upcoming';
-    } else if (newState === 'discontinued') {
-      car.status = 'discontinued';
-      car.discontinued_at = new Date();
-      car.discontinued_by = actor.user_id || 'system';
-    } else if (newState === 'facelift') {
-      car.is_facelift = true;
-      car.status = 'launched';
-    }
-
-    // Preserve entity creation time
-    if (!car.entity_created_at) {
-      car.entity_created_at = (car as any).createdAt || new Date();
-    }
-
-    await car.save();
-    return car;
+    return savedCar;
   }
 
   /**
    * Auto-unhide categories and sections when car launches
    */
-  static async unHideCategoryOnLaunch(carId: string) {
-    const variants = await CarVariant.find({ car_id: carId, is_deleted: false });
+  static async unHideCategoryOnLaunch(carId: string, session?: mongoose.ClientSession) {
+    const variants = await CarVariant.find({ car_id: carId, is_deleted: false }).session(session ?? null);
 
     const bulkOps: any[] = [];
 
@@ -123,7 +144,7 @@ export class CarLifecycleService {
     }
 
     if (bulkOps.length > 0) {
-      await CarVariant.bulkWrite(bulkOps);
+      await CarVariant.bulkWrite(bulkOps, { session });
     }
   }
 

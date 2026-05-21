@@ -3,12 +3,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadRateLimiter = exports.authRateLimiter = exports.globalRateLimiter = void 0;
+exports.publicCarsRateLimiter = exports.discoverRateLimiter = exports.uploadRateLimiter = exports.authRateLimiter = exports.adminRateLimiter = exports.globalRateLimiter = void 0;
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
+// Admin routes are JWT-protected — skip IP rate limiting for them.
+const isAdminRequest = (req) => req.path.includes('/admin') || !!req.headers.authorization;
 exports.globalRateLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // Limit each IP to 100 requests per windowMs
     message: 'Too many requests from this IP, please try again after 15 minutes',
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: isAdminRequest,
+});
+// Generous limiter for authenticated admin API routes
+exports.adminRateLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 15 * 60 * 1000,
+    max: 500,
+    message: 'Too many admin requests, please try again after 15 minutes',
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -23,6 +34,20 @@ exports.uploadRateLimiter = (0, express_rate_limit_1.default)({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: 50, // Limit each IP to 50 upload requests per hour
     message: 'Too many upload attempts, please try again after an hour',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+exports.discoverRateLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 60_000,
+    max: 60,
+    message: 'Too many discovery requests, please try again after a minute',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+exports.publicCarsRateLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 60_000,
+    max: 120,
+    message: 'Too many requests, please try again after a minute',
     standardHeaders: true,
     legacyHeaders: false,
 });

@@ -1,5 +1,6 @@
 import { CarVariant } from '../../../models/car-variant.model';
 import { AppError } from '../../../shared/utils/app-error.util';
+import { logger } from '../../../utils/logger';
 import { VariantValidationService } from './variant-validation.service';
 import { VariantIntegrityService } from './variant-integrity.service';
 
@@ -19,6 +20,19 @@ export interface BulkOperationResult {
   failed: number;
   errors: Array<{ variant_id: string; error: string }>;
   updated_variants: any[];
+  change_record_failures?: number;
+}
+
+async function runChangeRecording(
+  promises: Promise<void>[],
+  label: string,
+): Promise<void> {
+  if (promises.length === 0) return;
+  const results = await Promise.allSettled(promises);
+  const failedCount = results.filter(r => r.status === 'rejected').length;
+  if (failedCount > 0) {
+    logger.warn(`${failedCount} of ${promises.length} change record(s) failed in ${label}`);
+  }
 }
 
 export class VariantBulkService {
@@ -31,12 +45,10 @@ export class VariantBulkService {
       updated_variants: [],
     };
 
-    // Fetch all before states in parallel
     const beforeVariants = await Promise.allSettled(
       variantIds.map(id => CarVariant.findOne({ variant_id: id }).lean())
     );
 
-    // Bulk update all variants
     const bulkOps = variantIds.map(variantId => ({
       updateOne: {
         filter: { variant_id: variantId },
@@ -51,50 +63,33 @@ export class VariantBulkService {
 
     await CarVariant.bulkWrite(bulkOps);
 
-    // Fetch all after states in parallel
-    const afterVariants = await Promise.allSettled(
-      variantIds.map(id => CarVariant.findOne({ variant_id: id }))
-    );
-
-    // Record change history in parallel
     const changeRecordingPromises: Promise<void>[] = [];
 
     for (let i = 0; i < variantIds.length; i++) {
       const variantId = variantIds[i];
       const beforeResult = beforeVariants[i];
-      const afterResult = afterVariants[i];
 
-      if (beforeResult.status === 'fulfilled' && afterResult.status === 'fulfilled' && afterResult.value) {
+      if (beforeResult.status === 'fulfilled' && beforeResult.value) {
+        const afterObj = { ...beforeResult.value, hidden_sections: hiddenSections, updated_at: new Date() };
         result.successful++;
-        result.updated_variants.push(afterResult.value.toObject());
+        result.updated_variants.push(afterObj);
 
-        if (beforeResult.value) {
-          changeRecordingPromises.push(
-            VariantIntegrityService.recordVariantChanges(
-              variantId,
-              beforeResult.value,
-              afterResult.value.toObject(),
-              changedBy,
-              'bulk_operation'
-            ).catch((err: any) => {
-              console.warn(
-                `Failed to record change history for variant ${variantId}: ${err?.message || err}`
-              );
-            })
-          );
-        }
+        changeRecordingPromises.push(
+          VariantIntegrityService.recordVariantChanges(
+            variantId,
+            beforeResult.value,
+            afterObj,
+            changedBy,
+            'bulk_operation'
+          )
+        );
       } else {
         result.failed++;
-        result.errors.push({
-          variant_id: variantId,
-          error: 'Failed to update variant',
-        });
+        result.errors.push({ variant_id: variantId, error: 'Failed to update variant' });
       }
     }
 
-    // Wait for all change recordings in parallel
-    await Promise.all(changeRecordingPromises);
-
+    await runChangeRecording(changeRecordingPromises, 'bulkUpdateVisibility');
     return result;
   }
 
@@ -112,12 +107,10 @@ export class VariantBulkService {
       updated_variants: [],
     };
 
-    // Fetch all before states in parallel
     const beforeVariants = await Promise.allSettled(
       variantIds.map(id => CarVariant.findOne({ variant_id: id }).lean())
     );
 
-    // Bulk update all variants
     const bulkOps = variantIds.map(variantId => ({
       updateOne: {
         filter: { variant_id: variantId },
@@ -132,50 +125,33 @@ export class VariantBulkService {
 
     await CarVariant.bulkWrite(bulkOps);
 
-    // Fetch all after states in parallel
-    const afterVariants = await Promise.allSettled(
-      variantIds.map(id => CarVariant.findOne({ variant_id: id }))
-    );
-
-    // Record change history in parallel
     const changeRecordingPromises: Promise<void>[] = [];
 
     for (let i = 0; i < variantIds.length; i++) {
       const variantId = variantIds[i];
       const beforeResult = beforeVariants[i];
-      const afterResult = afterVariants[i];
 
-      if (beforeResult.status === 'fulfilled' && afterResult.status === 'fulfilled' && afterResult.value) {
+      if (beforeResult.status === 'fulfilled' && beforeResult.value) {
+        const afterObj = { ...beforeResult.value, variant_status: status, updated_at: new Date() };
         result.successful++;
-        result.updated_variants.push(afterResult.value.toObject());
+        result.updated_variants.push(afterObj);
 
-        if (beforeResult.value) {
-          changeRecordingPromises.push(
-            VariantIntegrityService.recordVariantChanges(
-              variantId,
-              beforeResult.value,
-              afterResult.value.toObject(),
-              changedBy,
-              'bulk_operation'
-            ).catch((err: any) => {
-              console.warn(
-                `Failed to record change history for variant ${variantId}: ${err?.message || err}`
-              );
-            })
-          );
-        }
+        changeRecordingPromises.push(
+          VariantIntegrityService.recordVariantChanges(
+            variantId,
+            beforeResult.value,
+            afterObj,
+            changedBy,
+            'bulk_operation'
+          )
+        );
       } else {
         result.failed++;
-        result.errors.push({
-          variant_id: variantId,
-          error: 'Failed to update variant',
-        });
+        result.errors.push({ variant_id: variantId, error: 'Failed to update variant' });
       }
     }
 
-    // Wait for all change recordings in parallel
-    await Promise.all(changeRecordingPromises);
-
+    await runChangeRecording(changeRecordingPromises, 'bulkUpdateStatus');
     return result;
   }
 
@@ -188,7 +164,6 @@ export class VariantBulkService {
       updated_variants: [],
     };
 
-    // Validation in parallel if needed
     const validationResults: Map<string, any> = new Map();
     if (shouldPublish) {
       const validations = await Promise.allSettled(
@@ -201,15 +176,14 @@ export class VariantBulkService {
       });
     }
 
-    // Fetch all before states in parallel
     const beforeVariants = await Promise.allSettled(
       variantIds.map(id => CarVariant.findOne({ variant_id: id }).lean())
     );
 
-    // Bulk update all variants
+    const publishedAt = shouldPublish ? new Date() : null;
+
     const bulkOps = variantIds
       .filter(variantId => {
-        // Skip if validation failed
         if (shouldPublish && validationResults.has(variantId)) {
           const validation = validationResults.get(variantId);
           if (!validation.isValid) {
@@ -229,7 +203,7 @@ export class VariantBulkService {
           update: {
             $set: {
               is_published: shouldPublish,
-              published_at: shouldPublish ? new Date() : null,
+              published_at: publishedAt,
               updated_at: new Date(),
             }
           }
@@ -240,50 +214,36 @@ export class VariantBulkService {
       await CarVariant.bulkWrite(bulkOps);
     }
 
-    // Fetch all after states in parallel
-    const afterVariants = await Promise.allSettled(
-      variantIds.map(id => CarVariant.findOne({ variant_id: id }))
-    );
-
-    // Record change history in parallel
     const changeRecordingPromises: Promise<void>[] = [];
+    const filteredSet = new Set(bulkOps.map((op: any) => op.updateOne.filter.variant_id));
 
     for (let i = 0; i < variantIds.length; i++) {
       const variantId = variantIds[i];
+      if (!filteredSet.has(variantId)) continue;
+
       const beforeResult = beforeVariants[i];
-      const afterResult = afterVariants[i];
 
-      if (beforeResult.status === 'fulfilled' && afterResult.status === 'fulfilled' && afterResult.value) {
+      if (beforeResult.status === 'fulfilled' && beforeResult.value) {
+        const afterObj = { ...beforeResult.value, is_published: shouldPublish, published_at: publishedAt, updated_at: new Date() };
         result.successful++;
-        result.updated_variants.push(afterResult.value.toObject());
+        result.updated_variants.push(afterObj);
 
-        if (beforeResult.value) {
-          changeRecordingPromises.push(
-            VariantIntegrityService.recordVariantChanges(
-              variantId,
-              beforeResult.value,
-              afterResult.value.toObject(),
-              changedBy,
-              'bulk_operation'
-            ).catch((err: any) => {
-              console.warn(
-                `Failed to record change history for variant ${variantId}: ${err?.message || err}`
-              );
-            })
-          );
-        }
-      } else if (beforeResult.status === 'rejected' || afterResult.status === 'rejected') {
+        changeRecordingPromises.push(
+          VariantIntegrityService.recordVariantChanges(
+            variantId,
+            beforeResult.value,
+            afterObj,
+            changedBy,
+            'bulk_operation'
+          )
+        );
+      } else {
         result.failed++;
-        result.errors.push({
-          variant_id: variantId,
-          error: 'Failed to update variant',
-        });
+        result.errors.push({ variant_id: variantId, error: 'Failed to update variant' });
       }
     }
 
-    // Wait for all change recordings in parallel
-    await Promise.all(changeRecordingPromises);
-
+    await runChangeRecording(changeRecordingPromises, 'bulkPublish');
     return result;
   }
 
@@ -296,95 +256,63 @@ export class VariantBulkService {
       updated_variants: [],
     };
 
-    // Fetch all before states in parallel
     const beforeVariants = await Promise.allSettled(
       request.variant_ids.map(id => CarVariant.findOne({ variant_id: id }).lean())
     );
 
-    // Build bulk operations
-    const bulkOps = request.variant_ids.map(variantId => {
-      const updateData: any = { updated_at: new Date() };
+    const sharedUpdate: any = { updated_at: new Date() };
+    if (request.updates.variant_status) sharedUpdate.variant_status = request.updates.variant_status;
+    if (request.updates.is_published !== undefined) {
+      sharedUpdate.is_published = request.updates.is_published;
+      if (request.updates.is_published) sharedUpdate.published_at = new Date();
+    }
+    if (request.updates.hidden_sections) sharedUpdate.hidden_sections = request.updates.hidden_sections;
+    if (request.updates.hidden_spec_keys) sharedUpdate.hidden_spec_keys = request.updates.hidden_spec_keys;
 
-      if (request.updates.variant_status) {
-        updateData.variant_status = request.updates.variant_status;
+    const bulkOps = request.variant_ids.map(variantId => ({
+      updateOne: {
+        filter: { variant_id: variantId },
+        update: { $set: sharedUpdate }
       }
-      if (request.updates.is_published !== undefined) {
-        updateData.is_published = request.updates.is_published;
-        if (request.updates.is_published) {
-          updateData.published_at = new Date();
-        }
-      }
-      if (request.updates.hidden_sections) {
-        updateData.hidden_sections = request.updates.hidden_sections;
-      }
-      if (request.updates.hidden_spec_keys) {
-        updateData.hidden_spec_keys = request.updates.hidden_spec_keys;
-      }
+    }));
 
-      return {
-        updateOne: {
-          filter: { variant_id: variantId },
-          update: { $set: updateData }
-        }
-      };
-    });
-
-    // Execute bulk update
     if (bulkOps.length > 0) {
       await CarVariant.bulkWrite(bulkOps);
     }
 
-    // Fetch all after states in parallel
-    const afterVariants = await Promise.allSettled(
-      request.variant_ids.map(id => CarVariant.findOne({ variant_id: id }))
-    );
-
-    // Record change history in parallel
     const changeRecordingPromises: Promise<void>[] = [];
 
     for (let i = 0; i < request.variant_ids.length; i++) {
       const variantId = request.variant_ids[i];
       const beforeResult = beforeVariants[i];
-      const afterResult = afterVariants[i];
 
-      if (beforeResult.status === 'fulfilled' && afterResult.status === 'fulfilled' && afterResult.value) {
+      if (beforeResult.status === 'fulfilled' && beforeResult.value) {
+        const afterObj = { ...beforeResult.value, ...sharedUpdate };
         result.successful++;
-        result.updated_variants.push(afterResult.value.toObject());
+        result.updated_variants.push(afterObj);
 
-        if (beforeResult.value) {
-          changeRecordingPromises.push(
-            VariantIntegrityService.recordVariantChanges(
-              variantId,
-              beforeResult.value,
-              afterResult.value.toObject(),
-              changedBy,
-              'bulk_operation'
-            ).catch((err: any) => {
-              console.warn(
-                `Failed to record change history for variant ${variantId}: ${err?.message || err}`
-              );
-            })
-          );
-        }
+        changeRecordingPromises.push(
+          VariantIntegrityService.recordVariantChanges(
+            variantId,
+            beforeResult.value,
+            afterObj,
+            changedBy,
+            'bulk_operation'
+          )
+        );
       } else {
         result.failed++;
-        result.errors.push({
-          variant_id: variantId,
-          error: 'Failed to update variant',
-        });
+        result.errors.push({ variant_id: variantId, error: 'Failed to update variant' });
       }
     }
 
-    // Wait for all change recordings in parallel
-    await Promise.all(changeRecordingPromises);
-
+    await runChangeRecording(changeRecordingPromises, 'bulkUpdate');
     return result;
   }
 
   static async bulkValidate(variantIds: string[]) {
     const validationResults: Record<string, any> = {};
 
-    // Parallelize validation instead of sequential
     const validations = await Promise.allSettled(
       variantIds.map(id => VariantValidationService.validateVariant(id))
     );

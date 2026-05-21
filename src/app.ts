@@ -5,7 +5,7 @@ import express, { Application, NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import { config } from "./config";
 import { requestLogger } from "./middlewares/logging.middleware";
-import { globalRateLimiter } from "./middlewares/rate-limit.middleware";
+import { adminRateLimiter, discoverRateLimiter, globalRateLimiter, publicCarsRateLimiter } from "./middlewares/rate-limit.middleware";
 
 const app: Application = express();
 
@@ -22,13 +22,14 @@ app.use((req, res, next) => {
   next();
 });
 app.use(requestLogger);
-// app.use(globalRateLimiter);
+// CORS must run before rate limiters so blocked responses still carry CORS headers
 app.use(
   cors({
     origin: config.cors_origin,
     credentials: true,
   }),
 );
+app.use(globalRateLimiter);
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -48,6 +49,9 @@ import { errorMiddleware } from "./middlewares/error.middleware";
 import routes from "./shared/routes";
 import { AppError } from "./shared/utils/app-error.util";
 app.use("/uploads", express.static("uploads"));
+app.use('/api/v1/discover', discoverRateLimiter);
+app.use('/api/v1/cars/public', publicCarsRateLimiter);
+app.use('/api/v1/content-health/admin', adminRateLimiter);
 app.use("/api/v1", routes);
 
 // Handle 404 - Route not found
