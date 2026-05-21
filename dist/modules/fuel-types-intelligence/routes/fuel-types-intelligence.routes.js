@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../../middlewares/auth.middleware");
+const fuel_types_intelligence_controller_1 = require("../controllers/fuel-types-intelligence.controller");
+const router = (0, express_1.Router)();
+const adminRouter = (0, express_1.Router)();
+adminRouter.use(auth_middleware_1.protect);
+adminRouter.use((0, auth_middleware_1.restrictTo)('admin', 'super_admin'));
+adminRouter.get('/summary', fuel_types_intelligence_controller_1.FuelTypesIntelligenceController.getSummary);
+adminRouter.get('/brands', fuel_types_intelligence_controller_1.FuelTypesIntelligenceController.getBrands);
+adminRouter.get('/body-types', fuel_types_intelligence_controller_1.FuelTypesIntelligenceController.getBodyTypes);
+adminRouter.get('/budget', fuel_types_intelligence_controller_1.FuelTypesIntelligenceController.getBudget);
+adminRouter.get('/brand-body-budget', fuel_types_intelligence_controller_1.FuelTypesIntelligenceController.getBrandBodyBudget);
+adminRouter.get('/seating', fuel_types_intelligence_controller_1.FuelTypesIntelligenceController.getSeating);
+adminRouter.get('/lifecycle', fuel_types_intelligence_controller_1.FuelTypesIntelligenceController.getLifecycle);
+adminRouter.get('/health', fuel_types_intelligence_controller_1.FuelTypesIntelligenceController.getHealth);
+adminRouter.get('/multi-fuel', fuel_types_intelligence_controller_1.FuelTypesIntelligenceController.getMultiFuel);
+router.use('/admin', adminRouter);
+exports.default = router;
+//# sourceMappingURL=fuel-types-intelligence.routes.js.map
