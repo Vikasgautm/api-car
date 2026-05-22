@@ -1,4 +1,4 @@
-import { IBrand } from "../../../models/brand.model";
+import { IBrand } from '../../../models/brand.model';
 export declare class BrandService {
     static getAllBrands(filterDto: any, includeDeleted?: boolean): Promise<{
         brands: (import("mongoose").Document<unknown, {}, IBrand, {}, import("mongoose").DefaultSchemaOptions> & IBrand & Required<{
@@ -56,6 +56,11 @@ export declare class BrandService {
         __v: number;
     } & {
         id: string;
+    }>;
+    static refreshAggregates(brandId: string): Promise<import("../../../models/brand.model").IBrandAggregatesCache>;
+    static refreshAllAggregates(): Promise<{
+        processed: number;
+        errors: number;
     }>;
 }
 //# sourceMappingURL=brand.service.d.ts.map

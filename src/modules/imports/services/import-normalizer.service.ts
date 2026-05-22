@@ -171,29 +171,46 @@ export class ImportNormalizerService {
 
     // Direct mappings from common raw field names
     const mappings: Record<string, { category: string; key: string; type: string }> = {
-      // Engine & Performance
+      // Engine & Performance (underscore keys)
       engine_displacement_cc: { category: 'engine_performance', key: 'displacement', type: 'string' },
       displacement_cc: { category: 'engine_performance', key: 'displacement', type: 'string' },
+      engine_displacement: { category: 'engine_performance', key: 'displacement', type: 'string' },
+      displacement: { category: 'engine_performance', key: 'displacement', type: 'string' },
       max_power_bhp: { category: 'engine_performance', key: 'max_power', type: 'string' },
       power_bhp: { category: 'engine_performance', key: 'max_power', type: 'string' },
+      max_power: { category: 'engine_performance', key: 'max_power', type: 'string' },
       max_torque_nm: { category: 'engine_performance', key: 'max_torque', type: 'string' },
       torque_nm: { category: 'engine_performance', key: 'max_torque', type: 'string' },
+      max_torque: { category: 'engine_performance', key: 'max_torque', type: 'string' },
       cylinders: { category: 'engine_performance', key: 'cylinders', type: 'number' },
       valves_per_cylinder: { category: 'engine_performance', key: 'valves_per_cylinder', type: 'number' },
       turbocharger: { category: 'engine_performance', key: 'turbocharger', type: 'boolean' },
       supercharger: { category: 'engine_performance', key: 'supercharger', type: 'boolean' },
+      // Engine & Performance (space-based keys from CarDekho/human-readable sources)
+      'engine displacement': { category: 'engine_performance', key: 'displacement', type: 'string' },
+      'engine displacement cc': { category: 'engine_performance', key: 'displacement', type: 'string' },
+      'max power': { category: 'engine_performance', key: 'max_power', type: 'string' },
+      'max torque': { category: 'engine_performance', key: 'max_torque', type: 'string' },
+      'no of cylinders': { category: 'engine_performance', key: 'cylinders', type: 'number' },
+      'number of cylinders': { category: 'engine_performance', key: 'cylinders', type: 'number' },
+      'valves per cylinder': { category: 'engine_performance', key: 'valves_per_cylinder', type: 'number' },
 
       // Mileage & Range
       arai_mileage_kmpl: { category: 'mileage_range', key: 'arai_mileage', type: 'string' },
       city_mileage_kmpl: { category: 'mileage_range', key: 'city_mileage', type: 'string' },
       highway_mileage_kmpl: { category: 'mileage_range', key: 'highway_mileage', type: 'string' },
       fuel_tank_capacity_l: { category: 'mileage_range', key: 'fuel_tank_capacity', type: 'string' },
+      'arai mileage': { category: 'mileage_range', key: 'arai_mileage', type: 'string' },
+      'city mileage': { category: 'mileage_range', key: 'city_mileage', type: 'string' },
+      'fuel tank capacity': { category: 'mileage_range', key: 'fuel_tank_capacity', type: 'string' },
 
       // Battery & Charging
       battery_capacity_kwh: { category: 'battery_charging', key: 'battery_capacity_kwh', type: 'number' },
       battery_capacity: { category: 'battery_charging', key: 'battery_capacity', type: 'string' },
       motor_power_kw: { category: 'battery_charging', key: 'motor_power_kw', type: 'string' },
       motor_torque_nm: { category: 'battery_charging', key: 'motor_torque_nm', type: 'string' },
+      'battery capacity': { category: 'battery_charging', key: 'battery_capacity', type: 'string' },
+      'motor power': { category: 'battery_charging', key: 'motor_power_kw', type: 'string' },
 
       // Dimensions
       length_mm: { category: 'dimensions_practicality', key: 'length', type: 'string' },
@@ -203,14 +220,33 @@ export class ImportNormalizerService {
       ground_clearance_mm: { category: 'dimensions_practicality', key: 'ground_clearance', type: 'string' },
       boot_space_l: { category: 'dimensions_practicality', key: 'boot_space', type: 'string' },
       seating_capacity: { category: 'dimensions_practicality', key: 'seating_capacity', type: 'number' },
+      'ground clearance': { category: 'dimensions_practicality', key: 'ground_clearance', type: 'string' },
+      'boot space': { category: 'dimensions_practicality', key: 'boot_space', type: 'string' },
+      'seating capacity': { category: 'dimensions_practicality', key: 'seating_capacity', type: 'number' },
 
       // Safety
       airbags: { category: 'safety', key: 'airbags', type: 'number' },
       ncap_rating: { category: 'safety', key: 'ncap_rating', type: 'number' },
+      'number of airbags': { category: 'safety', key: 'airbags', type: 'number' },
+      'ncap rating': { category: 'safety', key: 'ncap_rating', type: 'number' },
+      'global ncap rating': { category: 'safety', key: 'ncap_rating', type: 'number' },
+
+      // Comfort & Convenience
+      wireless_charger: { category: 'comfort_convenience', key: 'wireless_charger', type: 'boolean' },
+      'wireless charger': { category: 'comfort_convenience', key: 'wireless_charger', type: 'boolean' },
+      wireless_charging: { category: 'comfort_convenience', key: 'wireless_charger', type: 'boolean' },
+      'wireless charging': { category: 'comfort_convenience', key: 'wireless_charger', type: 'boolean' },
+      sunroof: { category: 'comfort_convenience', key: 'sunroof', type: 'boolean' },
+      panoramic_sunroof: { category: 'comfort_convenience', key: 'panoramic_sunroof', type: 'boolean' },
+      'panoramic sunroof': { category: 'comfort_convenience', key: 'panoramic_sunroof', type: 'boolean' },
+      ventilated_seats: { category: 'comfort_convenience', key: 'ventilated_seats', type: 'boolean' },
+      'ventilated seats': { category: 'comfort_convenience', key: 'ventilated_seats', type: 'boolean' },
 
       // Tyres & Wheels
       tyre_size: { category: 'tyres_wheels', key: 'tyre_size', type: 'string' },
       wheel_size: { category: 'tyres_wheels', key: 'wheel_size', type: 'string' },
+      'tyre size': { category: 'tyres_wheels', key: 'tyre_size', type: 'string' },
+      'wheel size': { category: 'tyres_wheels', key: 'wheel_size', type: 'string' },
     };
 
     return mappings[normalized] || null;
