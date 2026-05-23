@@ -5,10 +5,20 @@ const validation_util_1 = require("../../../shared/utils/validation.util");
 class CreateBodyTypeDto {
     name;
     description;
+    seo_title;
+    meta_description;
+    intro_content;
+    short_description;
     is_published;
     is_featured;
     logo_url;
     logo_title;
+    hero_image_url;
+    hero_image_alt;
+    sort_order;
+    parent_id;
+    related_body_types;
+    created_by;
     static validate(dto) {
         const errors = [];
         const nameResult = validation_util_1.ValidationUtil.required(dto.name, 'name');
@@ -21,6 +31,16 @@ class CreateBodyTypeDto {
             const descResult = validation_util_1.ValidationUtil.maxLength(dto.description, 8000, 'description');
             if (!descResult.valid)
                 errors.push(...descResult.errors);
+        }
+        if (dto.seo_title !== undefined) {
+            const result = validation_util_1.ValidationUtil.maxLength(dto.seo_title, 160, 'seo_title');
+            if (!result.valid)
+                errors.push(...result.errors);
+        }
+        if (dto.meta_description !== undefined) {
+            const result = validation_util_1.ValidationUtil.maxLength(dto.meta_description, 320, 'meta_description');
+            if (!result.valid)
+                errors.push(...result.errors);
         }
         return { valid: errors.length === 0, errors };
     }

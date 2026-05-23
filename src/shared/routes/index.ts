@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import dashboardRoutes from '../../modules/dashboard/routes/dashboard.routes';
 import auditRoutes from '../../modules/audit/routes/audit.routes';
 import contentHealthRoutes from '../../modules/content-health/routes/content-health.routes';
 import seoCollectionRoutes from '../../modules/seo-collections/routes/seo-collections.routes';
@@ -29,6 +30,7 @@ import userRoutes from '../../modules/users/routes/user.routes';
 
 const router = Router();
 
+router.use('/dashboard', dashboardRoutes);
 router.use('/auth', authRoutes);
 router.use('/cars', carRoutes);
 

@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../../../middlewares/auth.middleware");
+const dashboard_controller_1 = require("../controllers/dashboard.controller");
+const router = (0, express_1.Router)();
+const adminRouter = (0, express_1.Router)();
+adminRouter.use(auth_middleware_1.protect);
+adminRouter.use((0, auth_middleware_1.restrictToEditorOrAbove)());
+adminRouter.get('/overview', dashboard_controller_1.DashboardController.getOverview);
+adminRouter.get('/priorities', dashboard_controller_1.DashboardController.getPriorities);
+adminRouter.get('/content-health', dashboard_controller_1.DashboardController.getContentHealth);
+adminRouter.get('/recent-activity', dashboard_controller_1.DashboardController.getRecentActivity);
+adminRouter.get('/seo-summary', dashboard_controller_1.DashboardController.getSeoSummary);
+adminRouter.get('/import-health', dashboard_controller_1.DashboardController.getImportHealth);
+adminRouter.get('/fuel-summary', dashboard_controller_1.DashboardController.getFuelSummary);
+adminRouter.get('/comparison-summary', dashboard_controller_1.DashboardController.getComparisonSummary);
+adminRouter.get('/global-search', dashboard_controller_1.DashboardController.globalSearch);
+router.use('/admin', adminRouter);
+exports.default = router;
+//# sourceMappingURL=dashboard.routes.js.map

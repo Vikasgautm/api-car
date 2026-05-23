@@ -40,10 +40,10 @@ export declare const paginationSchema: z.ZodObject<{
     }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
 }, z.core.$strip>;
 export declare const publishStatusSchema: z.ZodOptional<z.ZodEnum<{
-    upcoming: "upcoming";
-    launched: "launched";
-    discontinued: "discontinued";
     archived: "archived";
+    launched: "launched";
+    upcoming: "upcoming";
+    discontinued: "discontinued";
     disabled: "disabled";
 }>>;
 export declare const transmissionTypeSchema: z.ZodEnum<{

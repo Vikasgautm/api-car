@@ -14,6 +14,13 @@ const adminRouter = Router();
 adminRouter.use(protect);
 adminRouter.use(restrictTo('admin', 'super_admin'));
 
+// Stats + utility endpoints (must come before /:id to avoid param conflicts)
+adminRouter.get('/stats', BodyTypeController.getStats);
+adminRouter.get('/check-duplicate', BodyTypeController.checkDuplicate);
+adminRouter.post('/bulk', BodyTypeController.bulkOperation);
+adminRouter.post('/reorder', BodyTypeController.reorderBodyTypes);
+
+// Resource endpoints
 adminRouter.get('/', validatePaginationQuery, BodyTypeController.getAllAdminBodyTypes);
 adminRouter.get('/:id', validateUuidIdParam, BodyTypeController.getAdminBodyTypeById);
 adminRouter.post('/', BodyTypeController.createBodyType);
@@ -21,6 +28,7 @@ adminRouter.put('/:id', validateUuidIdParam, BodyTypeController.updateBodyType);
 adminRouter.delete('/:id', validateUuidIdParam, BodyTypeController.deleteBodyType);
 adminRouter.patch('/restore/:id', validateUuidIdParam, BodyTypeController.restoreBodyType);
 adminRouter.patch('/:id/publish', validateUuidIdParam, BodyTypeController.togglePublish);
+adminRouter.get('/:id/impact', validateUuidIdParam, BodyTypeController.getArchiveImpact);
 
 router.use('/admin', adminRouter);
 

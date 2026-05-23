@@ -37,6 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const dashboard_routes_1 = __importDefault(require("../../modules/dashboard/routes/dashboard.routes"));
 const audit_routes_1 = __importDefault(require("../../modules/audit/routes/audit.routes"));
 const content_health_routes_1 = __importDefault(require("../../modules/content-health/routes/content-health.routes"));
 const seo_collections_routes_1 = __importDefault(require("../../modules/seo-collections/routes/seo-collections.routes"));
@@ -65,6 +66,7 @@ const settings_routes_1 = __importDefault(require("../../modules/settings/routes
 const taxonomy_routes_1 = __importDefault(require("../../modules/taxonomy/routes/taxonomy.routes"));
 const user_routes_1 = __importDefault(require("../../modules/users/routes/user.routes"));
 const router = (0, express_1.Router)();
+router.use('/dashboard', dashboard_routes_1.default);
 router.use('/auth', auth_routes_1.default);
 router.use('/cars', car_routes_1.default);
 // Admin namespace - mount admin car routes at /admin/cars for admin endpoints

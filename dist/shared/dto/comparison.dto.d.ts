@@ -28,8 +28,8 @@ export declare const CreateComparisonDTO: z.ZodObject<{
     seoFAQSchema: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
     status: z.ZodDefault<z.ZodEnum<{
         archived: "archived";
-        draft: "draft";
         published: "published";
+        draft: "draft";
     }>>;
     is_published: z.ZodDefault<z.ZodBoolean>;
 }, z.core.$strip>;
@@ -62,8 +62,8 @@ export declare const UpdateComparisonDTO: z.ZodObject<{
     seoFAQSchema: z.ZodOptional<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>>;
     status: z.ZodOptional<z.ZodDefault<z.ZodEnum<{
         archived: "archived";
-        draft: "draft";
         published: "published";
+        draft: "draft";
     }>>>;
     is_published: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
 }, z.core.$strip>;
@@ -74,8 +74,8 @@ export declare const ComparisonQueryDTO: z.ZodObject<{
     category: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodEnum<{
         archived: "archived";
-        draft: "draft";
         published: "published";
+        draft: "draft";
     }>>;
     isPopular: z.ZodOptional<z.ZodBoolean>;
     isTrending: z.ZodOptional<z.ZodBoolean>;

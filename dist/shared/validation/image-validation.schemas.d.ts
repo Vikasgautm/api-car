@@ -40,8 +40,8 @@ export declare const createCarImageSchema: z.ZodObject<{
     source: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodEnum<{
         archived: "archived";
-        draft: "draft";
         published: "published";
+        draft: "draft";
         rejected: "rejected";
     }>>;
     is_primary: z.ZodOptional<z.ZodBoolean>;
@@ -76,8 +76,8 @@ export declare const updateCarImageSchema: z.ZodObject<{
     source: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     status: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
         archived: "archived";
-        draft: "draft";
         published: "published";
+        draft: "draft";
         rejected: "rejected";
     }>>>;
     is_primary: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
@@ -118,8 +118,8 @@ export declare const carImageFilterSchema: z.ZodObject<{
     }>>;
     status: z.ZodOptional<z.ZodEnum<{
         archived: "archived";
-        draft: "draft";
         published: "published";
+        draft: "draft";
         rejected: "rejected";
     }>>;
     is_primary: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
@@ -139,8 +139,8 @@ export declare const bulkStatusSchema: z.ZodObject<{
     image_ids: z.ZodArray<z.ZodString>;
     status: z.ZodEnum<{
         archived: "archived";
-        draft: "draft";
         published: "published";
+        draft: "draft";
         rejected: "rejected";
     }>;
 }, z.core.$strip>;

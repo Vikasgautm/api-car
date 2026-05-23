@@ -15,10 +15,10 @@ export declare const createCarSchema: z.ZodObject<{
     }, z.core.$strip>>>;
     gallery_summary: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
-        upcoming: "upcoming";
-        launched: "launched";
-        discontinued: "discontinued";
         archived: "archived";
+        launched: "launched";
+        upcoming: "upcoming";
+        discontinued: "discontinued";
         disabled: "disabled";
     }>>>;
     is_electric: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
@@ -98,10 +98,10 @@ export declare const updateCarSchema: z.ZodObject<{
     }, z.core.$strip>>>>;
     gallery_summary: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     status: z.ZodOptional<z.ZodOptional<z.ZodOptional<z.ZodEnum<{
-        upcoming: "upcoming";
-        launched: "launched";
-        discontinued: "discontinued";
         archived: "archived";
+        launched: "launched";
+        upcoming: "upcoming";
+        discontinued: "discontinued";
         disabled: "disabled";
     }>>>>;
     is_electric: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
@@ -225,10 +225,10 @@ export declare const carFilterSchema: z.ZodObject<{
     brand_id: z.ZodOptional<z.ZodString>;
     body_type_id: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
-        upcoming: "upcoming";
-        launched: "launched";
-        discontinued: "discontinued";
         archived: "archived";
+        launched: "launched";
+        upcoming: "upcoming";
+        discontinued: "discontinued";
         disabled: "disabled";
     }>>>;
     is_electric: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
