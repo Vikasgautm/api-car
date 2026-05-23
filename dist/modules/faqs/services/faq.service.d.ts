@@ -1,4 +1,4 @@
-import { IFAQ } from "../../../models/faq.model";
+import { IFAQ } from '../../../models/faq.model';
 export declare class FAQService {
     static getAllFAQs(filterDto: any, includeDeleted?: boolean): Promise<{
         faqs: (import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
@@ -45,6 +45,13 @@ export declare class FAQService {
     } & {
         id: string;
     }>;
+    static incrementClickCount(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
     static togglePublish(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
@@ -79,6 +86,33 @@ export declare class FAQService {
         __v: number;
     } & {
         id: string;
+    }>;
+    static bulkPublish(faqIds: string[]): Promise<{
+        modified: number;
+    }>;
+    static bulkArchive(faqIds: string[]): Promise<{
+        modified: number;
+    }>;
+    static bulkEntityAttach(faqIds: string[], entityType: string, entityId: string): Promise<{
+        modified: number;
+    }>;
+    static bulkVisibilityUpdate(faqIds: string[], visibility_status: string): Promise<{
+        modified: number;
+    }>;
+    static bulkSchemaEnable(faqIds: string[], schema_enabled: boolean): Promise<{
+        modified: number;
+    }>;
+    static bulkIntentUpdate(faqIds: string[], intent_type: string): Promise<{
+        modified: number;
+    }>;
+    static bulkRetag(faqIds: string[], tags: string[]): Promise<{
+        modified: number;
+    }>;
+    static checkDuplicate(question: string, excludeId?: string): Promise<{
+        isDuplicate: boolean;
+        similarFaqId?: string;
+        similarQuestion?: string;
+        similarity?: number;
     }>;
 }
 //# sourceMappingURL=faq.service.d.ts.map

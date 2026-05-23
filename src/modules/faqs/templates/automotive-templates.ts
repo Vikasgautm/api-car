@@ -1,0 +1,347 @@
+export interface FAQTemplate {
+  key: string;
+  faq_type: string;
+  entity_types: string[];
+  page_types: string[];
+  question_template: string;
+  answer_template: string;
+  intent_type: string;
+  priority: number;
+}
+
+export const AUTOMOTIVE_FAQ_TEMPLATES: FAQTemplate[] = [
+  // ---- Specification FAQs ----
+  {
+    key: 'variant_specs_overview',
+    faq_type: 'specification',
+    entity_types: ['variant'],
+    page_types: ['variant_page', 'specs_page', 'variant_overview_page'],
+    question_template: 'What are the key specifications of {variant_name}?',
+    answer_template:
+      'The {variant_name} is powered by a {engine_cc} cc {fuel_type} engine producing {max_power} of maximum power and {max_torque} of torque. It delivers a mileage of {mileage} and is available with {transmission} transmission.',
+    intent_type: 'specs_overview',
+    priority: 90,
+  },
+  {
+    key: 'variant_engine_specs',
+    faq_type: 'specification',
+    entity_types: ['variant'],
+    page_types: ['variant_page', 'specs_page'],
+    question_template: 'What is the engine capacity of {variant_name}?',
+    answer_template:
+      'The {variant_name} features a {engine_cc} cc {fuel_type} engine with {cylinders} cylinders, generating {max_power} of power and {max_torque} of torque.',
+    intent_type: 'engine_specs',
+    priority: 85,
+  },
+  {
+    key: 'variant_dimensions',
+    faq_type: 'dimensions',
+    entity_types: ['variant'],
+    page_types: ['variant_page', 'specs_page'],
+    question_template: 'What are the dimensions of {variant_name}?',
+    answer_template:
+      'The {variant_name} measures {length} mm in length, {width} mm in width, and {height} mm in height, with a wheelbase of {wheelbase} mm and a boot space of {boot_space} litres.',
+    intent_type: 'dimensions',
+    priority: 75,
+  },
+  {
+    key: 'variant_seating',
+    faq_type: 'specification',
+    entity_types: ['variant'],
+    page_types: ['variant_page', 'car_page', 'family_page'],
+    question_template: 'How many seats does {variant_name} have?',
+    answer_template:
+      'The {variant_name} offers seating for {seating_capacity} passengers, making it {seating_desc}.',
+    intent_type: 'seating_capacity',
+    priority: 70,
+  },
+
+  // ---- Mileage / Performance FAQs ----
+  {
+    key: 'variant_mileage',
+    faq_type: 'performance',
+    entity_types: ['variant'],
+    page_types: ['variant_page', 'car_page', 'fuel_type_page'],
+    question_template: 'What is the mileage of {variant_name}?',
+    answer_template:
+      'The {variant_name} delivers an ARAI-certified mileage of {mileage}. Real-world city mileage is typically {city_mileage} and highway mileage around {highway_mileage}.',
+    intent_type: 'mileage',
+    priority: 95,
+  },
+  {
+    key: 'ev_range',
+    faq_type: 'performance',
+    entity_types: ['variant'],
+    page_types: ['variant_page', 'car_page', 'fuel_type_page'],
+    question_template: 'What is the range of {variant_name} on a full charge?',
+    answer_template:
+      'The {variant_name} offers a certified range of {electric_range} on a full charge with its {battery_capacity} kWh battery pack. Actual range may vary based on driving conditions and usage patterns.',
+    intent_type: 'ev_range',
+    priority: 95,
+  },
+  {
+    key: 'variant_top_speed',
+    faq_type: 'performance',
+    entity_types: ['variant'],
+    page_types: ['variant_page', 'specs_page'],
+    question_template: 'What is the top speed of {variant_name}?',
+    answer_template:
+      'The {variant_name} has a top speed of {top_speed} km/h. It accelerates from 0 to 100 km/h in {acceleration} seconds.',
+    intent_type: 'top_speed',
+    priority: 65,
+  },
+
+  // ---- Safety FAQs ----
+  {
+    key: 'variant_airbags',
+    faq_type: 'safety',
+    entity_types: ['variant'],
+    page_types: ['variant_page', 'safety_page', 'car_page'],
+    question_template: 'How many airbags does {variant_name} have?',
+    answer_template:
+      'The {variant_name} comes with {airbag_count} airbags as standard. {ncap_info}',
+    intent_type: 'airbags',
+    priority: 88,
+  },
+  {
+    key: 'variant_ncap',
+    faq_type: 'safety',
+    entity_types: ['variant', 'car'],
+    page_types: ['variant_page', 'safety_page', 'car_page'],
+    question_template: 'What is the safety rating of {car_name}?',
+    answer_template:
+      '{car_name} has received a {ncap_stars}-star safety rating from {ncap_body}. The safety suite includes {safety_features}.',
+    intent_type: 'safety_rating',
+    priority: 90,
+  },
+  {
+    key: 'variant_adas',
+    faq_type: 'safety',
+    entity_types: ['variant'],
+    page_types: ['variant_page', 'feature_page'],
+    question_template: 'Does {variant_name} have ADAS features?',
+    answer_template:
+      '{variant_name} {adas_availability}. {adas_features_desc}',
+    intent_type: 'adas',
+    priority: 80,
+  },
+
+  // ---- Feature FAQs ----
+  {
+    key: 'variant_feature_availability',
+    faq_type: 'feature',
+    entity_types: ['variant'],
+    page_types: ['variant_page', 'feature_page'],
+    question_template: 'Does {variant_name} have {feature_name}?',
+    answer_template:
+      '{variant_name} {feature_availability} {feature_name}. {feature_detail}',
+    intent_type: 'feature_check',
+    priority: 70,
+  },
+  {
+    key: 'variant_sunroof',
+    faq_type: 'feature',
+    entity_types: ['variant'],
+    page_types: ['variant_page', 'feature_page', 'car_page'],
+    question_template: 'Does {variant_name} have a sunroof?',
+    answer_template:
+      '{variant_name} {sunroof_availability}. {sunroof_detail}',
+    intent_type: 'sunroof',
+    priority: 75,
+  },
+  {
+    key: 'variant_charging',
+    faq_type: 'feature',
+    entity_types: ['variant'],
+    page_types: ['variant_page', 'feature_page'],
+    question_template: 'How long does it take to charge {variant_name}?',
+    answer_template:
+      '{variant_name} supports {charging_options}. AC home charging takes {ac_charging_time}, while DC fast charging charges from 10% to 80% in {fast_charge_80}.',
+    intent_type: 'charging_time',
+    priority: 88,
+  },
+
+  // ---- Comparison FAQs ----
+  {
+    key: 'comparison_overview',
+    faq_type: 'comparison',
+    entity_types: ['comparison'],
+    page_types: ['comparison_page'],
+    question_template: 'Which is better: {car1_name} or {car2_name}?',
+    answer_template:
+      'The {car1_name} and {car2_name} cater to different needs. {car1_name} stands out for {car1_advantage} while {car2_name} excels in {car2_advantage}. Choose {car1_name} if {car1_recommendation}, and {car2_name} if {car2_recommendation}.',
+    intent_type: 'comparison_better',
+    priority: 95,
+  },
+  {
+    key: 'comparison_price',
+    faq_type: 'comparison',
+    entity_types: ['comparison'],
+    page_types: ['comparison_page'],
+    question_template: 'What is the price difference between {car1_name} and {car2_name}?',
+    answer_template:
+      'The {car1_name} is priced from {car1_price}, while the {car2_name} starts at {car2_price}. The price difference between the two is approximately {price_diff}.',
+    intent_type: 'comparison_price',
+    priority: 85,
+  },
+  {
+    key: 'comparison_mileage',
+    faq_type: 'comparison',
+    entity_types: ['comparison'],
+    page_types: ['comparison_page'],
+    question_template: 'Which gives better mileage: {car1_name} or {car2_name}?',
+    answer_template:
+      '{car1_name} delivers {car1_mileage} and {car2_name} delivers {car2_mileage}. {mileage_winner} offers better fuel efficiency.',
+    intent_type: 'comparison_mileage',
+    priority: 80,
+  },
+
+  // ---- Upcoming Car FAQs ----
+  {
+    key: 'upcoming_launch_date',
+    faq_type: 'upcoming',
+    entity_types: ['car'],
+    page_types: ['upcoming_cars_page', 'car_page'],
+    question_template: 'When will {car_name} be launched in India?',
+    answer_template:
+      'The {car_name} is expected to launch in India {expected_launch_period}. {launch_detail}',
+    intent_type: 'launch_date',
+    priority: 95,
+  },
+  {
+    key: 'upcoming_expected_price',
+    faq_type: 'upcoming',
+    entity_types: ['car'],
+    page_types: ['upcoming_cars_page', 'car_page'],
+    question_template: 'What will be the expected price of {car_name}?',
+    answer_template:
+      'The {car_name} is expected to be priced at approximately {expected_price} in India. {price_detail}',
+    intent_type: 'expected_price',
+    priority: 90,
+  },
+  {
+    key: 'upcoming_expected_specs',
+    faq_type: 'upcoming',
+    entity_types: ['car'],
+    page_types: ['upcoming_cars_page', 'car_page'],
+    question_template: 'What are the expected specifications of {car_name}?',
+    answer_template:
+      'Based on official teasers and announcements, the {car_name} is expected to feature {expected_specs}. Final specifications will be confirmed at launch.',
+    intent_type: 'expected_specs',
+    priority: 80,
+  },
+
+  // ---- Brand FAQs ----
+  {
+    key: 'brand_popular_cars',
+    faq_type: 'aggregation',
+    entity_types: ['brand'],
+    page_types: ['brand_page'],
+    question_template: 'What are the most popular {brand_name} cars in India?',
+    answer_template:
+      'The most popular {brand_name} cars in India include {popular_cars}. These models are well-regarded for their {brand_strength}.',
+    intent_type: 'brand_popular',
+    priority: 90,
+  },
+  {
+    key: 'brand_price_range',
+    faq_type: 'aggregation',
+    entity_types: ['brand'],
+    page_types: ['brand_page'],
+    question_template: 'What is the price range of {brand_name} cars in India?',
+    answer_template:
+      '{brand_name} cars in India are priced from {min_price} to {max_price}, covering {segment_range}.',
+    intent_type: 'brand_price_range',
+    priority: 85,
+  },
+  {
+    key: 'brand_ev_lineup',
+    faq_type: 'aggregation',
+    entity_types: ['brand'],
+    page_types: ['brand_page', 'fuel_type_page'],
+    question_template: 'Which electric cars does {brand_name} sell in India?',
+    answer_template:
+      '{brand_name} currently offers {ev_models} electric vehicles in India. These EVs are priced from {ev_min_price} and offer ranges of {ev_range_summary}.',
+    intent_type: 'brand_ev_lineup',
+    priority: 80,
+  },
+
+  // ---- Collection / Discovery FAQs ----
+  {
+    key: 'collection_best_cars',
+    faq_type: 'collection',
+    entity_types: ['seo_collection'],
+    page_types: ['seo_collection_page', 'budget_page', 'body_type_page', 'fuel_type_page'],
+    question_template: 'What are the best {collection_label} in India?',
+    answer_template:
+      'The best {collection_label} in India in {year} include {top_cars}. These cars are highly rated for their {collection_strength} and are available across various budget segments.',
+    intent_type: 'collection_best',
+    priority: 92,
+  },
+  {
+    key: 'collection_budget_options',
+    faq_type: 'collection',
+    entity_types: ['seo_collection'],
+    page_types: ['budget_page', 'seo_collection_page'],
+    question_template: 'Which cars are available under {budget_label} in India?',
+    answer_template:
+      'Several {body_type} cars are available under {budget_label} in India. Popular options include {budget_cars}. These offer good value for money with features like {common_features}.',
+    intent_type: 'budget_options',
+    priority: 88,
+  },
+  {
+    key: 'fuel_type_best_cars',
+    faq_type: 'collection',
+    entity_types: ['fuel_type'],
+    page_types: ['fuel_type_page'],
+    question_template: 'What are the best {fuel_type} cars in India?',
+    answer_template:
+      'The top {fuel_type} cars in India in {year} are {top_cars}. {fuel_type_advantage}',
+    intent_type: 'fuel_best',
+    priority: 90,
+  },
+
+  // ---- Ownership FAQs ----
+  {
+    key: 'variant_maintenance_cost',
+    faq_type: 'ownership',
+    entity_types: ['variant', 'car'],
+    page_types: ['car_page', 'car_overview_page'],
+    question_template: 'What is the maintenance cost of {car_name}?',
+    answer_template:
+      'The {car_name} has a relatively {maintenance_desc} maintenance cost. Service intervals are typically every {service_interval} km or {service_months} months, whichever comes first.',
+    intent_type: 'maintenance',
+    priority: 75,
+  },
+  {
+    key: 'variant_resale_value',
+    faq_type: 'ownership',
+    entity_types: ['car'],
+    page_types: ['car_page', 'car_overview_page'],
+    question_template: 'What is the resale value of {car_name}?',
+    answer_template:
+      '{car_name} is known for its {resale_desc} resale value. Factors like brand reputation, fuel efficiency, and reliability contribute to its {resale_summary}.',
+    intent_type: 'resale_value',
+    priority: 70,
+  },
+];
+
+export const TEMPLATE_MAP = new Map<string, FAQTemplate>(
+  AUTOMOTIVE_FAQ_TEMPLATES.map((t) => [t.key, t])
+);
+
+export function getTemplatesForEntityType(entityType: string): FAQTemplate[] {
+  return AUTOMOTIVE_FAQ_TEMPLATES.filter((t) => t.entity_types.includes(entityType));
+}
+
+export function getTemplatesForPageType(pageType: string): FAQTemplate[] {
+  return AUTOMOTIVE_FAQ_TEMPLATES.filter((t) => t.page_types.includes(pageType));
+}
+
+export function getTemplatesForFaqType(faqType: string): FAQTemplate[] {
+  return AUTOMOTIVE_FAQ_TEMPLATES.filter((t) => t.faq_type === faqType);
+}
+
+export function interpolate(template: string, variables: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key) => variables[key] ?? `{${key}}`);
+}

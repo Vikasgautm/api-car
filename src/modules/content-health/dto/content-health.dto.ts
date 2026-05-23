@@ -9,7 +9,8 @@ export type IssueCategory =
   | 'taxonomy_health'
   | 'schema_readiness'
   | 'publishing_health'
-  | 'content_quality';
+  | 'content_quality'
+  | 'faq_health';
 
 export interface HealthIssue {
   id: string;

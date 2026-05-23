@@ -1,5 +1,5 @@
 export type IssueSeverity = 'critical' | 'high' | 'medium' | 'low';
-export type IssueCategory = 'seo_health' | 'variant_health' | 'image_health' | 'url_health' | 'import_health' | 'taxonomy_health' | 'schema_readiness' | 'publishing_health' | 'content_quality';
+export type IssueCategory = 'seo_health' | 'variant_health' | 'image_health' | 'url_health' | 'import_health' | 'taxonomy_health' | 'schema_readiness' | 'publishing_health' | 'content_quality' | 'faq_health';
 export interface HealthIssue {
     id: string;
     category: IssueCategory;

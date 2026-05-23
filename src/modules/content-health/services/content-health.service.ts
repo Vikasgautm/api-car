@@ -16,6 +16,7 @@ import { runSeoHealthChecker } from './checkers/seo-health.checker';
 import { runTaxonomyHealthChecker } from './checkers/taxonomy-health.checker';
 import { runUrlHealthChecker } from './checkers/url-health.checker';
 import { runVariantHealthChecker } from './checkers/variant-health.checker';
+import { runFaqHealthChecker } from './checkers/faq-health.checker';
 
 type CheckerFn = (params: IssuesQueryParams) => Promise<CheckerResult>;
 
@@ -27,6 +28,7 @@ const CHECKERS: Record<string, CheckerFn> = {
   import_health: runImportHealthChecker,
   taxonomy_health: runTaxonomyHealthChecker,
   publishing_health: runPublishingHealthChecker,
+  faq_health: runFaqHealthChecker,
 };
 
 const CATEGORY_TO_CHECKER: Record<IssueCategory, string> = {
@@ -39,6 +41,7 @@ const CATEGORY_TO_CHECKER: Record<IssueCategory, string> = {
   schema_readiness: 'seo_health',
   publishing_health: 'publishing_health',
   content_quality: 'seo_health',
+  faq_health: 'faq_health',
 };
 
 const MAX_PAGE_SIZE = 100;

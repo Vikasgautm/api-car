@@ -9,6 +9,7 @@ const seo_health_checker_1 = require("./checkers/seo-health.checker");
 const taxonomy_health_checker_1 = require("./checkers/taxonomy-health.checker");
 const url_health_checker_1 = require("./checkers/url-health.checker");
 const variant_health_checker_1 = require("./checkers/variant-health.checker");
+const faq_health_checker_1 = require("./checkers/faq-health.checker");
 const CHECKERS = {
     seo_health: seo_health_checker_1.runSeoHealthChecker,
     variant_health: variant_health_checker_1.runVariantHealthChecker,
@@ -17,6 +18,7 @@ const CHECKERS = {
     import_health: import_health_checker_1.runImportHealthChecker,
     taxonomy_health: taxonomy_health_checker_1.runTaxonomyHealthChecker,
     publishing_health: publishing_health_checker_1.runPublishingHealthChecker,
+    faq_health: faq_health_checker_1.runFaqHealthChecker,
 };
 const CATEGORY_TO_CHECKER = {
     seo_health: 'seo_health',
@@ -28,6 +30,7 @@ const CATEGORY_TO_CHECKER = {
     schema_readiness: 'seo_health',
     publishing_health: 'publishing_health',
     content_quality: 'seo_health',
+    faq_health: 'faq_health',
 };
 const MAX_PAGE_SIZE = 100;
 const SUMMARY_CACHE_KEY = 'health:summary';
