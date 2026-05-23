@@ -7,6 +7,13 @@ import { catchAsync } from "../../../utils/catchAsync";
 import { CreateBlogDto } from "../dto/create-blog.dto";
 import { UpdateBlogDto } from "../dto/update-blog.dto";
 import { BlogService } from "../services/blog.service";
+import { BlogRelationshipService } from "../services/blog-relationship.service";
+import { BlogQueryService } from "../services/blog-query.service";
+import { BlogHealthService } from "../services/blog-health.service";
+import { BlogFreshnessService } from "../services/blog-freshness.service";
+import { BlogActivityService } from "../services/blog-activity.service";
+import { BlogRelatedService } from "../services/blog-related.service";
+import { BlogLinkingService } from "../services/blog-linking.service";
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
@@ -233,5 +240,109 @@ export class BlogController {
       url: uploadedFile.url,
       publicId: uploadedFile.publicId,
     }, "Image uploaded successfully");
+  });
+
+  // Entity connectivity
+  static updateConnections = catchAsync(async (req: Request, res: Response) => {
+    const blog = await BlogRelationshipService.updateConnections(req.params['id'] as string, req.body);
+    return ResponseUtil.success(res, blog, "Blog connections updated");
+  });
+
+  static getConnections = catchAsync(async (req: Request, res: Response) => {
+    const data = await BlogRelationshipService.getRelatedEntityNames(req.params['id'] as string);
+    return ResponseUtil.success(res, data, "Blog connections retrieved");
+  });
+
+  // Related blogs by entity
+  static getRelatedByCar = catchAsync(async (req: Request, res: Response) => {
+    const limit = parseInt(req.query.limit as string) || 5;
+    const blogs = await BlogQueryService.getRelatedByCar(req.params['carId'] as string, limit);
+    return ResponseUtil.success(res, blogs, "Related blogs retrieved");
+  });
+
+  static getRelatedByBrand = catchAsync(async (req: Request, res: Response) => {
+    const limit = parseInt(req.query.limit as string) || 5;
+    const blogs = await BlogQueryService.getRelatedByBrand(req.params['brandId'] as string, limit);
+    return ResponseUtil.success(res, blogs, "Related blogs retrieved");
+  });
+
+  static getRelatedByFuel = catchAsync(async (req: Request, res: Response) => {
+    const limit = parseInt(req.query.limit as string) || 5;
+    const blogs = await BlogQueryService.getRelatedByFuelType(req.params['fuelId'] as string, limit);
+    return ResponseUtil.success(res, blogs, "Related blogs retrieved");
+  });
+
+  static getRelatedByBodyType = catchAsync(async (req: Request, res: Response) => {
+    const limit = parseInt(req.query.limit as string) || 5;
+    const blogs = await BlogQueryService.getRelatedByBodyType(req.params['bodyTypeId'] as string, limit);
+    return ResponseUtil.success(res, blogs, "Related blogs retrieved");
+  });
+
+  static getRelatedByComparison = catchAsync(async (req: Request, res: Response) => {
+    const limit = parseInt(req.query.limit as string) || 5;
+    const blogs = await BlogQueryService.getRelatedByComparison(req.params['comparisonId'] as string, limit);
+    return ResponseUtil.success(res, blogs, "Related blogs retrieved");
+  });
+
+  static getRelatedArticles = catchAsync(async (req: Request, res: Response) => {
+    const limit = parseInt(req.query.limit as string) || 5;
+    const blogs = await BlogRelatedService.getRelatedArticles(req.params['id'] as string, limit);
+    return ResponseUtil.success(res, blogs, "Related articles retrieved");
+  });
+
+  // SEO health
+  static getSeoHealth = catchAsync(async (req: Request, res: Response) => {
+    const result = await BlogHealthService.computeForBlog(req.params['id'] as string);
+    return ResponseUtil.success(res, result, "SEO health computed");
+  });
+
+  static runBulkHealthCheck = catchAsync(async (_req: Request, res: Response) => {
+    const result = await BlogHealthService.computeBulk();
+    return ResponseUtil.success(res, result, "Bulk health check complete");
+  });
+
+  // Freshness
+  static checkFreshness = catchAsync(async (req: Request, res: Response) => {
+    const result = await BlogFreshnessService.checkBlog(req.params['id'] as string);
+    return ResponseUtil.success(res, result, "Freshness check complete");
+  });
+
+  static runBulkFreshnessCheck = catchAsync(async (_req: Request, res: Response) => {
+    const result = await BlogFreshnessService.runBulkFreshnessCheck();
+    return ResponseUtil.success(res, result, "Bulk freshness check complete");
+  });
+
+  // Activity & dashboard
+  static getActivity = catchAsync(async (_req: Request, res: Response) => {
+    const activity = await BlogActivityService.getRecentActivity();
+    return ResponseUtil.success(res, activity, "Blog activity retrieved");
+  });
+
+  static getStaleAlerts = catchAsync(async (_req: Request, res: Response) => {
+    const alerts = await BlogActivityService.getStaleAlerts();
+    return ResponseUtil.success(res, alerts, "Stale alerts retrieved");
+  });
+
+  static getContentHealthSummary = catchAsync(async (_req: Request, res: Response) => {
+    const summary = await BlogActivityService.getContentHealthSummary();
+    return ResponseUtil.success(res, summary, "Content health summary retrieved");
+  });
+
+  static getEntityImpactAlerts = catchAsync(async (_req: Request, res: Response) => {
+    const alerts = await BlogActivityService.getEntityImpactAlerts();
+    return ResponseUtil.success(res, alerts, "Entity impact alerts retrieved");
+  });
+
+  // Internal link suggestions
+  static suggestLinks = catchAsync(async (req: Request, res: Response) => {
+    const { content } = req.body;
+    const suggestions = await BlogLinkingService.suggestLinks(content ?? '');
+    return ResponseUtil.success(res, suggestions, "Link suggestions generated");
+  });
+
+  static searchEntities = catchAsync(async (req: Request, res: Response) => {
+    const { q, type } = req.query as { q: string; type: string };
+    const results = await BlogLinkingService.searchEntities(q ?? '', type ?? 'car');
+    return ResponseUtil.success(res, results, "Entity search results");
   });
 }

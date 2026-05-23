@@ -108,6 +108,18 @@ class BlogService {
             og_image: blogData.og_image,
             canonical_url: blogData.canonical_url,
             noindex: blogData.noindex,
+            article_type: blogData.article_type,
+            article_status: blogData.article_status ?? 'draft',
+            article_intent: blogData.article_intent,
+            target_keyword: blogData.target_keyword,
+            connected_cars: blogData.connected_cars ?? [],
+            connected_variants: blogData.connected_variants ?? [],
+            connected_brands: blogData.connected_brands ?? [],
+            connected_body_types: blogData.connected_body_types ?? [],
+            connected_fuel_types: blogData.connected_fuel_types ?? [],
+            connected_comparisons: blogData.connected_comparisons ?? [],
+            connected_collections: blogData.connected_collections ?? [],
+            freshness_score: 100,
         };
         return await blog_model_1.Blog.create(blog);
     }
@@ -163,6 +175,28 @@ class BlogService {
             updateData.noindex = blogData.noindex;
         if (blogData.excerpt !== undefined)
             updateData.excerpt = blogData.excerpt;
+        if (blogData.article_type !== undefined)
+            updateData.article_type = blogData.article_type;
+        if (blogData.article_status !== undefined)
+            updateData.article_status = blogData.article_status;
+        if (blogData.article_intent !== undefined)
+            updateData.article_intent = blogData.article_intent;
+        if (blogData.target_keyword !== undefined)
+            updateData.target_keyword = blogData.target_keyword;
+        if (blogData.connected_cars !== undefined)
+            updateData.connected_cars = blogData.connected_cars;
+        if (blogData.connected_variants !== undefined)
+            updateData.connected_variants = blogData.connected_variants;
+        if (blogData.connected_brands !== undefined)
+            updateData.connected_brands = blogData.connected_brands;
+        if (blogData.connected_body_types !== undefined)
+            updateData.connected_body_types = blogData.connected_body_types;
+        if (blogData.connected_fuel_types !== undefined)
+            updateData.connected_fuel_types = blogData.connected_fuel_types;
+        if (blogData.connected_comparisons !== undefined)
+            updateData.connected_comparisons = blogData.connected_comparisons;
+        if (blogData.connected_collections !== undefined)
+            updateData.connected_collections = blogData.connected_collections;
         const blog = await blog_model_1.Blog.findOneAndUpdate({ blog_id: blogId, is_deleted: false }, updateData, { returnDocument: 'after' });
         if (!blog) {
             throw new app_error_util_1.AppError(`Blog not found or deleted for blog_id: ${blogId}`, 404, {

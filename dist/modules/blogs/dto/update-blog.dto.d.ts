@@ -21,6 +21,17 @@ export declare class UpdateBlogDto {
     og_image?: string;
     canonical_url?: string;
     noindex?: boolean;
+    article_type?: string;
+    article_status?: string;
+    article_intent?: string;
+    target_keyword?: string;
+    connected_cars?: string[];
+    connected_variants?: string[];
+    connected_brands?: string[];
+    connected_body_types?: string[];
+    connected_fuel_types?: string[];
+    connected_comparisons?: string[];
+    connected_collections?: string[];
     static validate(dto: UpdateBlogDto): {
         valid: boolean;
         errors: string[];

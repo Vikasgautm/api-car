@@ -5,7 +5,8 @@ export type AuditEntityType =
   | 'variant'
   | 'tag'
   | 'tag_category'
-  | 'benchmark_override';
+  | 'benchmark_override'
+  | 'blog';
 
 export type AuditAction =
   | 'create'

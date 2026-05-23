@@ -1,5 +1,9 @@
 import { Document, Schema, model } from 'mongoose';
 
+export type ArticleType = 'review' | 'comparison' | 'news' | 'guide' | 'listicle' | 'opinion' | 'launch' | 'first_drive';
+export type ArticleStatus = 'draft' | 'review' | 'published' | 'archived' | 'stale';
+export type ArticleIntent = 'informational' | 'commercial' | 'transactional' | 'navigational';
+
 export interface IBlog extends Document {
   blog_id: string;
   title: string;
@@ -29,6 +33,25 @@ export interface IBlog extends Document {
   og_image?: string;
   canonical_url?: string;
   noindex?: boolean;
+  // Content classification
+  article_type?: ArticleType;
+  article_status?: ArticleStatus;
+  article_intent?: ArticleIntent;
+  target_keyword?: string;
+  freshness_score?: number;
+  seo_health_score?: number;
+  stale_flags?: string[];
+  last_verified_at?: Date;
+  internal_link_count?: number;
+  related_articles_count?: number;
+  // Ecosystem relationships
+  connected_cars?: string[];
+  connected_variants?: string[];
+  connected_brands?: string[];
+  connected_body_types?: string[];
+  connected_fuel_types?: string[];
+  connected_comparisons?: string[];
+  connected_collections?: string[];
 }
 
 const blogSchema = new Schema<IBlog>(
@@ -61,6 +84,25 @@ const blogSchema = new Schema<IBlog>(
     og_image: { type: String },
     canonical_url: { type: String },
     noindex: { type: Boolean, default: false },
+    // Content classification
+    article_type: { type: String, enum: ['review', 'comparison', 'news', 'guide', 'listicle', 'opinion', 'launch', 'first_drive'] },
+    article_status: { type: String, enum: ['draft', 'review', 'published', 'archived', 'stale'], default: 'draft' },
+    article_intent: { type: String, enum: ['informational', 'commercial', 'transactional', 'navigational'] },
+    target_keyword: { type: String },
+    freshness_score: { type: Number, min: 0, max: 100, default: 100 },
+    seo_health_score: { type: Number, min: 0, max: 100 },
+    stale_flags: [{ type: String }],
+    last_verified_at: { type: Date },
+    internal_link_count: { type: Number, default: 0 },
+    related_articles_count: { type: Number, default: 0 },
+    // Ecosystem relationships (store entity IDs)
+    connected_cars: [{ type: String }],
+    connected_variants: [{ type: String }],
+    connected_brands: [{ type: String }],
+    connected_body_types: [{ type: String }],
+    connected_fuel_types: [{ type: String }],
+    connected_comparisons: [{ type: String }],
+    connected_collections: [{ type: String }],
   },
   {
     timestamps: true,
@@ -74,5 +116,16 @@ blogSchema.index({ tags: 1 });
 blogSchema.index({ is_published: 1, is_deleted: 1 });
 blogSchema.index({ is_featured: 1 });
 blogSchema.index({ title: 'text', content: 'text', excerpt: 'text' });
+// Automotive intelligence indexes
+blogSchema.index({ connected_cars: 1 });
+blogSchema.index({ connected_brands: 1 });
+blogSchema.index({ connected_fuel_types: 1 });
+blogSchema.index({ connected_body_types: 1 });
+blogSchema.index({ connected_comparisons: 1 });
+blogSchema.index({ connected_collections: 1 });
+blogSchema.index({ article_type: 1 });
+blogSchema.index({ article_status: 1 });
+blogSchema.index({ freshness_score: -1 });
+blogSchema.index({ target_keyword: 1 });
 
 export const Blog = model<IBlog>('Blog', blogSchema);

@@ -9,6 +9,13 @@ const catchAsync_1 = require("../../../utils/catchAsync");
 const create_blog_dto_1 = require("../dto/create-blog.dto");
 const update_blog_dto_1 = require("../dto/update-blog.dto");
 const blog_service_1 = require("../services/blog.service");
+const blog_relationship_service_1 = require("../services/blog-relationship.service");
+const blog_query_service_1 = require("../services/blog-query.service");
+const blog_health_service_1 = require("../services/blog-health.service");
+const blog_freshness_service_1 = require("../services/blog-freshness.service");
+const blog_activity_service_1 = require("../services/blog-activity.service");
+const blog_related_service_1 = require("../services/blog-related.service");
+const blog_linking_service_1 = require("../services/blog-linking.service");
 // Type guard to check if files is an object with field names
 function isFilesObject(files) {
     return files && typeof files === 'object' && !Array.isArray(files);
@@ -191,6 +198,92 @@ class BlogController {
             url: uploadedFile.url,
             publicId: uploadedFile.publicId,
         }, "Image uploaded successfully");
+    });
+    // Entity connectivity
+    static updateConnections = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const blog = await blog_relationship_service_1.BlogRelationshipService.updateConnections(req.params['id'], req.body);
+        return response_util_1.ResponseUtil.success(res, blog, "Blog connections updated");
+    });
+    static getConnections = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const data = await blog_relationship_service_1.BlogRelationshipService.getRelatedEntityNames(req.params['id']);
+        return response_util_1.ResponseUtil.success(res, data, "Blog connections retrieved");
+    });
+    // Related blogs by entity
+    static getRelatedByCar = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const limit = parseInt(req.query.limit) || 5;
+        const blogs = await blog_query_service_1.BlogQueryService.getRelatedByCar(req.params['carId'], limit);
+        return response_util_1.ResponseUtil.success(res, blogs, "Related blogs retrieved");
+    });
+    static getRelatedByBrand = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const limit = parseInt(req.query.limit) || 5;
+        const blogs = await blog_query_service_1.BlogQueryService.getRelatedByBrand(req.params['brandId'], limit);
+        return response_util_1.ResponseUtil.success(res, blogs, "Related blogs retrieved");
+    });
+    static getRelatedByFuel = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const limit = parseInt(req.query.limit) || 5;
+        const blogs = await blog_query_service_1.BlogQueryService.getRelatedByFuelType(req.params['fuelId'], limit);
+        return response_util_1.ResponseUtil.success(res, blogs, "Related blogs retrieved");
+    });
+    static getRelatedByBodyType = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const limit = parseInt(req.query.limit) || 5;
+        const blogs = await blog_query_service_1.BlogQueryService.getRelatedByBodyType(req.params['bodyTypeId'], limit);
+        return response_util_1.ResponseUtil.success(res, blogs, "Related blogs retrieved");
+    });
+    static getRelatedByComparison = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const limit = parseInt(req.query.limit) || 5;
+        const blogs = await blog_query_service_1.BlogQueryService.getRelatedByComparison(req.params['comparisonId'], limit);
+        return response_util_1.ResponseUtil.success(res, blogs, "Related blogs retrieved");
+    });
+    static getRelatedArticles = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const limit = parseInt(req.query.limit) || 5;
+        const blogs = await blog_related_service_1.BlogRelatedService.getRelatedArticles(req.params['id'], limit);
+        return response_util_1.ResponseUtil.success(res, blogs, "Related articles retrieved");
+    });
+    // SEO health
+    static getSeoHealth = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const result = await blog_health_service_1.BlogHealthService.computeForBlog(req.params['id']);
+        return response_util_1.ResponseUtil.success(res, result, "SEO health computed");
+    });
+    static runBulkHealthCheck = (0, catchAsync_1.catchAsync)(async (_req, res) => {
+        const result = await blog_health_service_1.BlogHealthService.computeBulk();
+        return response_util_1.ResponseUtil.success(res, result, "Bulk health check complete");
+    });
+    // Freshness
+    static checkFreshness = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const result = await blog_freshness_service_1.BlogFreshnessService.checkBlog(req.params['id']);
+        return response_util_1.ResponseUtil.success(res, result, "Freshness check complete");
+    });
+    static runBulkFreshnessCheck = (0, catchAsync_1.catchAsync)(async (_req, res) => {
+        const result = await blog_freshness_service_1.BlogFreshnessService.runBulkFreshnessCheck();
+        return response_util_1.ResponseUtil.success(res, result, "Bulk freshness check complete");
+    });
+    // Activity & dashboard
+    static getActivity = (0, catchAsync_1.catchAsync)(async (_req, res) => {
+        const activity = await blog_activity_service_1.BlogActivityService.getRecentActivity();
+        return response_util_1.ResponseUtil.success(res, activity, "Blog activity retrieved");
+    });
+    static getStaleAlerts = (0, catchAsync_1.catchAsync)(async (_req, res) => {
+        const alerts = await blog_activity_service_1.BlogActivityService.getStaleAlerts();
+        return response_util_1.ResponseUtil.success(res, alerts, "Stale alerts retrieved");
+    });
+    static getContentHealthSummary = (0, catchAsync_1.catchAsync)(async (_req, res) => {
+        const summary = await blog_activity_service_1.BlogActivityService.getContentHealthSummary();
+        return response_util_1.ResponseUtil.success(res, summary, "Content health summary retrieved");
+    });
+    static getEntityImpactAlerts = (0, catchAsync_1.catchAsync)(async (_req, res) => {
+        const alerts = await blog_activity_service_1.BlogActivityService.getEntityImpactAlerts();
+        return response_util_1.ResponseUtil.success(res, alerts, "Entity impact alerts retrieved");
+    });
+    // Internal link suggestions
+    static suggestLinks = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { content } = req.body;
+        const suggestions = await blog_linking_service_1.BlogLinkingService.suggestLinks(content ?? '');
+        return response_util_1.ResponseUtil.success(res, suggestions, "Link suggestions generated");
+    });
+    static searchEntities = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { q, type } = req.query;
+        const results = await blog_linking_service_1.BlogLinkingService.searchEntities(q ?? '', type ?? 'car');
+        return response_util_1.ResponseUtil.success(res, results, "Entity search results");
     });
 }
 exports.BlogController = BlogController;

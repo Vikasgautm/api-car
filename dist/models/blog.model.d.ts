@@ -1,4 +1,7 @@
 import { Document } from 'mongoose';
+export type ArticleType = 'review' | 'comparison' | 'news' | 'guide' | 'listicle' | 'opinion' | 'launch' | 'first_drive';
+export type ArticleStatus = 'draft' | 'review' | 'published' | 'archived' | 'stale';
+export type ArticleIntent = 'informational' | 'commercial' | 'transactional' | 'navigational';
 export interface IBlog extends Document {
     blog_id: string;
     title: string;
@@ -27,6 +30,23 @@ export interface IBlog extends Document {
     og_image?: string;
     canonical_url?: string;
     noindex?: boolean;
+    article_type?: ArticleType;
+    article_status?: ArticleStatus;
+    article_intent?: ArticleIntent;
+    target_keyword?: string;
+    freshness_score?: number;
+    seo_health_score?: number;
+    stale_flags?: string[];
+    last_verified_at?: Date;
+    internal_link_count?: number;
+    related_articles_count?: number;
+    connected_cars?: string[];
+    connected_variants?: string[];
+    connected_brands?: string[];
+    connected_body_types?: string[];
+    connected_fuel_types?: string[];
+    connected_comparisons?: string[];
+    connected_collections?: string[];
 }
 export declare const Blog: import("mongoose").Model<IBlog, {}, {}, {}, Document<unknown, {}, IBlog, {}, import("mongoose").DefaultSchemaOptions> & IBlog & Required<{
     _id: import("mongoose").Types.ObjectId;

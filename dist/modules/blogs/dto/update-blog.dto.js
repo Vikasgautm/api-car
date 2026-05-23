@@ -22,6 +22,19 @@ class UpdateBlogDto {
     og_image;
     canonical_url;
     noindex;
+    // Automotive intelligence fields
+    article_type;
+    article_status;
+    article_intent;
+    target_keyword;
+    // Ecosystem relationships
+    connected_cars;
+    connected_variants;
+    connected_brands;
+    connected_body_types;
+    connected_fuel_types;
+    connected_comparisons;
+    connected_collections;
     static validate(dto) {
         const errors = [];
         if (dto.title !== undefined) {
