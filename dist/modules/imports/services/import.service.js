@@ -21,6 +21,7 @@ const seo_tag_generator_service_1 = require("./seo-tag-generator.service");
 const import_normalizer_service_1 = require("./import-normalizer.service");
 const powertrain_detector_service_1 = require("../../variants/services/powertrain-detector.service");
 const seo_auto_wiring_service_1 = require("./seo-auto-wiring.service");
+const platform_settings_service_1 = require("../../../modules/settings/services/platform-settings.service");
 class ImportService {
     static detectSource(url) {
         if (url.includes('carwale.com'))
@@ -379,6 +380,10 @@ class ImportService {
         // Create maps for O(1) lookups
         const variantSlugSet = new Set(existingVariants.map((v) => v.slug));
         const fuelTypeMap = new Map(allFuelTypes.map((ft) => [ft.fuel_type_id, ft]));
+        // Read import confidence thresholds from live settings (falls back to 0 / 100 if unavailable).
+        const importSettings = await platform_settings_service_1.PlatformSettingsService.getSettingsByGroup('imports').catch(() => ({}));
+        const minToSave = importSettings.min_confidence_to_save ?? 0;
+        const minToPublish = importSettings.min_confidence_to_publish ?? 100;
         // Separate processing for create and update modes
         const createPayloads = [];
         const updateOps = [];
@@ -386,6 +391,16 @@ class ImportService {
         for (const item of items) {
             // Enhance variant data with normalization before processing
             item.data = await this.enhanceVariantWithNormalization(item.data, item.data.fuel_type_id);
+            // Confidence gate: skip variants below min_confidence_to_save threshold.
+            const powConf = Number(item.data.powertrain_detection_confidence ?? 0);
+            if (minToSave > 0 && powConf < minToSave) {
+                warnings.push(`Skipped ${item.url ?? 'variant'}: powertrain confidence ${powConf.toFixed(1)}% < min_confidence_to_save (${minToSave}%)`);
+                continue;
+            }
+            // Auto-publish variants that clearly exceed the publish confidence threshold.
+            if (minToPublish < 100 && powConf >= minToPublish) {
+                item.data.is_published = true;
+            }
             try {
                 // Clean null values from item data
                 const cleanItemData = Object.fromEntries(Object.entries(item.data).filter(([_, value]) => value !== null));

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DiscoveryService = void 0;
+exports.clearDiscoveryFacetCache = clearDiscoveryFacetCache;
 const body_type_model_1 = require("../../../models/body-type.model");
 const brand_model_1 = require("../../../models/brand.model");
 const car_variant_model_1 = require("../../../models/car-variant.model");
@@ -9,6 +10,12 @@ const fuel_type_model_1 = require("../../../models/fuel-type.model");
 const tag_model_1 = require("../../../models/tag.model");
 const tag_category_model_1 = require("../../../models/tag-category.model");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
+const platform_settings_service_1 = require("../../settings/services/platform-settings.service");
+// Module-level facet cache. Key = stable JSON of resolved filters + variant IDs.
+// Evicted when cache grows past 300 entries or when TTL expires per entry.
+const _facetCache = new Map();
+const FACET_CACHE_MAX = 300;
+const FACET_CACHE_DEFAULT_TTL_MS = 300_000; // 5 min — overridden by settings at runtime
 function csvToArray(input) {
     if (Array.isArray(input))
         return input.map(String).map(s => s.trim()).filter(Boolean);
@@ -396,6 +403,12 @@ class DiscoveryService {
      * filter as the main query, minus that dimension — standard faceted search.
      */
     static async buildFacets(resolved, variantMatchedCarIds) {
+        // Check facet cache first (keyed on stable JSON of inputs).
+        const cacheKey = JSON.stringify({ resolved, vmIds: variantMatchedCarIds ? [...variantMatchedCarIds].sort() : null });
+        const now = Date.now();
+        const cached = _facetCache.get(cacheKey);
+        if (cached && cached.expiresAt > now)
+            return cached.result;
         const dims = [
             { key: 'brand', groupBy: '$brand_id' },
             { key: 'body_type', groupBy: '$body_type_id' },
@@ -524,6 +537,17 @@ class DiscoveryService {
         out.body_type = out.body_type.map(f => ({ ...f, label: bodyTypeById.get(f.value)?.name, value: bodyTypeById.get(f.value)?.slug ?? f.value }));
         out.fuel_type = out.fuel_type.map(f => ({ ...f, label: fuelTypeById.get(f.value)?.name, value: fuelTypeById.get(f.value)?.slug ?? f.value }));
         out.tags = out.tags.map(f => ({ ...f, label: tagById.get(f.value)?.name, value: tagById.get(f.value)?.slug ?? f.value }));
+        // Store in cache with TTL from settings (falls back to module-level default).
+        let ttlMs = FACET_CACHE_DEFAULT_TTL_MS;
+        try {
+            const perf = await platform_settings_service_1.PlatformSettingsService.getSettingsByGroup('performance');
+            if (typeof perf.discovery_cache_ttl_ms === 'number')
+                ttlMs = perf.discovery_cache_ttl_ms;
+        }
+        catch { /* use default TTL */ }
+        if (_facetCache.size >= FACET_CACHE_MAX)
+            _facetCache.clear();
+        _facetCache.set(cacheKey, { result: out, expiresAt: Date.now() + ttlMs });
         return out;
     }
     /** Lightweight count-only call used by SEO preset preview. */
@@ -584,4 +608,8 @@ class DiscoveryService {
     }
 }
 exports.DiscoveryService = DiscoveryService;
+/** Clears the in-memory facet cache. Called by the performance settings clear action. */
+function clearDiscoveryFacetCache() {
+    _facetCache.clear();
+}
 //# sourceMappingURL=discovery.service.js.map

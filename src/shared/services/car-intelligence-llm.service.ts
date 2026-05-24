@@ -7,6 +7,7 @@ import {
   CarAggregationService,
   type CarAggregates,
 } from './car-aggregation.service';
+import { PlatformSettingsService } from '../../modules/settings/services/platform-settings.service';
 
 const HAIKU_MODEL = 'claude-haiku-4-5';
 
@@ -213,6 +214,23 @@ export class CarIntelligenceLLMService {
    * @returns null if no ambiguous flags found (no LLM call made), or the result.
    */
   static async refineAmbiguousFlags(carId: string): Promise<LLMRefinementResult | null> {
+    // Read live AI settings — emergency kill, model selection, and confidence threshold.
+    let dynamicModel = HAIKU_MODEL;
+    let dynamicThreshold = AMBIGUOUS_CONFIDENCE_THRESHOLD;
+    try {
+      const aiSettings = await PlatformSettingsService.getSettingsByGroup('ai_intelligence') as Record<string, any>;
+      if (aiSettings.emergency_ai_off === true) {
+        throw new Error('AI refinement is disabled via emergency kill switch (Settings → AI Intelligence → Emergency AI Off).');
+      }
+      if (aiSettings.model) dynamicModel = aiSettings.model;
+      if (typeof aiSettings.llm_confidence_threshold === 'number') {
+        dynamicThreshold = aiSettings.llm_confidence_threshold / 100;
+      }
+    } catch (err: any) {
+      if (err.message?.includes('emergency kill switch')) throw err;
+      // Settings unavailable — fall back to compiled-in defaults.
+    }
+
     const car = await Car.findOne({ car_id: carId, is_deleted: false })
       .select('car_id name slug')
       .lean();
@@ -228,7 +246,7 @@ export class CarIntelligenceLLMService {
     }
 
     const ambiguous: AiFlagKey[] = AI_FLAG_KEYS.filter(
-      flag => (agg.ai_intelligence_meta.confidence_scores[flag] ?? 0) < AMBIGUOUS_CONFIDENCE_THRESHOLD,
+      flag => (agg.ai_intelligence_meta.confidence_scores[flag] ?? 0) < dynamicThreshold,
     );
 
     if (ambiguous.length === 0) {
@@ -244,7 +262,7 @@ export class CarIntelligenceLLMService {
       .join('\n');
 
     const response = await client.messages.create({
-      model: HAIKU_MODEL,
+      model: dynamicModel,
       max_tokens: 2048,
       system: [
         {

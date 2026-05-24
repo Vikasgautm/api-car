@@ -176,4 +176,6 @@ export declare class DiscoveryService {
     static getFilterOptions(dimension: string): Promise<DiscoveryFacetCount[]>;
 }
 export type DiscoveryMileageClass = MileageClass;
+/** Clears the in-memory facet cache. Called by the performance settings clear action. */
+export declare function clearDiscoveryFacetCache(): void;
 //# sourceMappingURL=discovery.service.d.ts.map

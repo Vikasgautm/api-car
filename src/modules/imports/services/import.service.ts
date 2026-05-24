@@ -19,6 +19,7 @@ import { SEOTagGeneratorService } from './seo-tag-generator.service';
 import { ImportNormalizerService } from './import-normalizer.service';
 import { PowertrainDetectorService } from '../../variants/services/powertrain-detector.service';
 import { SEOAutoWiringService } from './seo-auto-wiring.service';
+import { PlatformSettingsService } from '../../../modules/settings/services/platform-settings.service';
 import {
     CarPreviewResponse,
     ImportResult,
@@ -462,6 +463,11 @@ export class ImportService {
     const variantSlugSet = new Set(existingVariants.map((v: any) => v.slug));
     const fuelTypeMap = new Map(allFuelTypes.map((ft: any) => [ft.fuel_type_id, ft]));
 
+    // Read import confidence thresholds from live settings (falls back to 0 / 100 if unavailable).
+    const importSettings = await PlatformSettingsService.getSettingsByGroup('imports').catch(() => ({})) as Record<string, any>;
+    const minToSave: number = importSettings.min_confidence_to_save ?? 0;
+    const minToPublish: number = importSettings.min_confidence_to_publish ?? 100;
+
     // Separate processing for create and update modes
     const createPayloads: any[] = [];
     const updateOps: any[] = [];
@@ -470,6 +476,17 @@ export class ImportService {
     for (const item of items) {
       // Enhance variant data with normalization before processing
       item.data = await this.enhanceVariantWithNormalization(item.data, (item.data as any).fuel_type_id);
+
+      // Confidence gate: skip variants below min_confidence_to_save threshold.
+      const powConf: number = Number((item.data as any).powertrain_detection_confidence ?? 0);
+      if (minToSave > 0 && powConf < minToSave) {
+        warnings.push(`Skipped ${(item as any).url ?? 'variant'}: powertrain confidence ${powConf.toFixed(1)}% < min_confidence_to_save (${minToSave}%)`);
+        continue;
+      }
+      // Auto-publish variants that clearly exceed the publish confidence threshold.
+      if (minToPublish < 100 && powConf >= minToPublish) {
+        (item.data as any).is_published = true;
+      }
       try {
         // Clean null values from item data
         const cleanItemData = Object.fromEntries(

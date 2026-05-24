@@ -8,10 +8,12 @@ const analytics_controller_1 = require("../controllers/analytics.controller");
 const import_normalizer_controller_1 = require("../controllers/import-normalizer.controller");
 const import_validation_1 = require("../validation/import.validation");
 const validate_middleware_1 = require("../../../middlewares/validate.middleware");
+const feature_flag_middleware_1 = require("../../../middlewares/feature-flag.middleware");
 const router = (0, express_1.Router)();
 // All routes require authentication and admin role
 router.use(jwt_auth_guard_1.jwtAuthGuard);
 router.use(roles_guard_1.adminGuard);
+router.use((0, feature_flag_middleware_1.requireFeatureEnabled)('enable_imports'));
 // Car import routes (source auto-detected from URL domain)
 router.post('/car/preview', (0, validate_middleware_1.validateBody)(import_validation_1.carPreviewSchema), import_controller_1.ImportController.previewCarImport);
 router.post('/car/save', (0, validate_middleware_1.validateBody)(import_validation_1.carSaveSchema), import_controller_1.ImportController.saveCarImport);

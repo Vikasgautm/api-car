@@ -7,6 +7,13 @@ import { Tag } from '../../../models/tag.model';
 import { TagCategory } from '../../../models/tag-category.model';
 import { MileageClass } from '../../../constants/mileage-benchmarks';
 import { PaginationUtil } from '../../../shared/utils/pagination.util';
+import { PlatformSettingsService } from '../../settings/services/platform-settings.service';
+
+// Module-level facet cache. Key = stable JSON of resolved filters + variant IDs.
+// Evicted when cache grows past 300 entries or when TTL expires per entry.
+const _facetCache = new Map<string, { result: unknown; expiresAt: number }>();
+const FACET_CACHE_MAX = 300;
+const FACET_CACHE_DEFAULT_TTL_MS = 300_000; // 5 min — overridden by settings at runtime
 
 /**
  * Discovery filter input. All keys are optional. Plural slug keys accept either
@@ -584,6 +591,12 @@ export class DiscoveryService {
     resolved: ResolvedFilters,
     variantMatchedCarIds: string[] | null
   ): Promise<DiscoveryFacets> {
+    // Check facet cache first (keyed on stable JSON of inputs).
+    const cacheKey = JSON.stringify({ resolved, vmIds: variantMatchedCarIds ? [...variantMatchedCarIds].sort() : null });
+    const now = Date.now();
+    const cached = _facetCache.get(cacheKey);
+    if (cached && cached.expiresAt > now) return cached.result as DiscoveryFacets;
+
     const dims: Array<{
       key: keyof DiscoveryFacets;
       groupBy: string;
@@ -731,6 +744,16 @@ export class DiscoveryService {
     out.fuel_type = out.fuel_type.map(f => ({ ...f, label: fuelTypeById.get(f.value)?.name, value: fuelTypeById.get(f.value)?.slug ?? f.value }));
     out.tags = out.tags.map(f => ({ ...f, label: tagById.get(f.value)?.name, value: tagById.get(f.value)?.slug ?? f.value }));
 
+    // Store in cache with TTL from settings (falls back to module-level default).
+    let ttlMs = FACET_CACHE_DEFAULT_TTL_MS;
+    try {
+      const perf = await PlatformSettingsService.getSettingsByGroup('performance') as Record<string, any>;
+      if (typeof perf.discovery_cache_ttl_ms === 'number') ttlMs = perf.discovery_cache_ttl_ms;
+    } catch { /* use default TTL */ }
+
+    if (_facetCache.size >= FACET_CACHE_MAX) _facetCache.clear();
+    _facetCache.set(cacheKey, { result: out, expiresAt: Date.now() + ttlMs });
+
     return out;
   }
 
@@ -796,3 +819,8 @@ export class DiscoveryService {
 
 // Re-export the class type alias for backend convenience.
 export type DiscoveryMileageClass = MileageClass;
+
+/** Clears the in-memory facet cache. Called by the performance settings clear action. */
+export function clearDiscoveryFacetCache(): void {
+  _facetCache.clear();
+}

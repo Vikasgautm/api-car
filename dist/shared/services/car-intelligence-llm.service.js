@@ -7,6 +7,7 @@ exports.CarIntelligenceLLMService = void 0;
 const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 const car_model_1 = require("../../models/car.model");
 const car_aggregation_service_1 = require("./car-aggregation.service");
+const platform_settings_service_1 = require("../../modules/settings/services/platform-settings.service");
 const HAIKU_MODEL = 'claude-haiku-4-5';
 // One persistent client. The SDK reads ANTHROPIC_API_KEY from env. If the key is
 // missing, the call still throws on first request — we surface that as a
@@ -190,6 +191,25 @@ class CarIntelligenceLLMService {
      * @returns null if no ambiguous flags found (no LLM call made), or the result.
      */
     static async refineAmbiguousFlags(carId) {
+        // Read live AI settings — emergency kill, model selection, and confidence threshold.
+        let dynamicModel = HAIKU_MODEL;
+        let dynamicThreshold = car_aggregation_service_1.AMBIGUOUS_CONFIDENCE_THRESHOLD;
+        try {
+            const aiSettings = await platform_settings_service_1.PlatformSettingsService.getSettingsByGroup('ai_intelligence');
+            if (aiSettings.emergency_ai_off === true) {
+                throw new Error('AI refinement is disabled via emergency kill switch (Settings → AI Intelligence → Emergency AI Off).');
+            }
+            if (aiSettings.model)
+                dynamicModel = aiSettings.model;
+            if (typeof aiSettings.llm_confidence_threshold === 'number') {
+                dynamicThreshold = aiSettings.llm_confidence_threshold / 100;
+            }
+        }
+        catch (err) {
+            if (err.message?.includes('emergency kill switch'))
+                throw err;
+            // Settings unavailable — fall back to compiled-in defaults.
+        }
         const car = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false })
             .select('car_id name slug')
             .lean();
@@ -202,7 +222,7 @@ class CarIntelligenceLLMService {
         if (!agg) {
             throw new Error(`No variants to aggregate for car ${carId}`);
         }
-        const ambiguous = car_aggregation_service_1.AI_FLAG_KEYS.filter(flag => (agg.ai_intelligence_meta.confidence_scores[flag] ?? 0) < car_aggregation_service_1.AMBIGUOUS_CONFIDENCE_THRESHOLD);
+        const ambiguous = car_aggregation_service_1.AI_FLAG_KEYS.filter(flag => (agg.ai_intelligence_meta.confidence_scores[flag] ?? 0) < dynamicThreshold);
         if (ambiguous.length === 0) {
             return null;
         }
@@ -213,7 +233,7 @@ class CarIntelligenceLLMService {
             .map(f => `  - ${f}: rules say ${agg[f] ? 'YES' : 'NO'} (confidence ${(agg.ai_intelligence_meta.confidence_scores[f] ?? 0).toFixed(2)}; rationale: "${agg.ai_intelligence_meta.flag_rationale[f] ?? ''}")`)
             .join('\n');
         const response = await client.messages.create({
-            model: HAIKU_MODEL,
+            model: dynamicModel,
             max_tokens: 2048,
             system: [
                 {

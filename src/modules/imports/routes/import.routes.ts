@@ -6,12 +6,14 @@ import { AnalyticsController } from '../controllers/analytics.controller';
 import { ImportNormalizerController } from '../controllers/import-normalizer.controller';
 import { carPreviewSchema, carSaveSchema, variantPreviewSchema, variantSaveSchema } from '../validation/import.validation';
 import { validateBody } from '../../../middlewares/validate.middleware';
+import { requireFeatureEnabled } from '../../../middlewares/feature-flag.middleware';
 
 const router = Router();
 
 // All routes require authentication and admin role
 router.use(jwtAuthGuard);
 router.use(adminGuard);
+router.use(requireFeatureEnabled('enable_imports'));
 
 // Car import routes (source auto-detected from URL domain)
 router.post('/car/preview',

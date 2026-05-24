@@ -1,1 +1,1 @@
-{"version":3,"file":"car.routes.d.ts","sourceRoot":"","sources":["../../../../src/modules/cars/routes/car.routes.ts"],"names":[],"mappings":"AAOA,QAAA,MAAM,MAAM,4CAAW,CAAC;AAOxB,QAAA,MAAM,WAAW,4CAAW,CAAC;AAoD7B,OAAO,EAAE,WAAW,IAAI,cAAc,EAAE,CAAC;AACzC,eAAe,MAAM,CAAC"}
+{"version":3,"file":"car.routes.d.ts","sourceRoot":"","sources":["../../../../src/modules/cars/routes/car.routes.ts"],"names":[],"mappings":"AAQA,QAAA,MAAM,MAAM,4CAAW,CAAC;AAOxB,QAAA,MAAM,WAAW,4CAAW,CAAC;AAoD7B,OAAO,EAAE,WAAW,IAAI,cAAc,EAAE,CAAC;AACzC,eAAe,MAAM,CAAC"}

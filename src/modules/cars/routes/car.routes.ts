@@ -4,6 +4,7 @@ import { UploadService } from '../../../shared/services/upload.service';
 import { createCarSchema, updateCarSchema, validatePaginationQuery, validateSlugParam, validateUuidIdParam } from '../../../shared/validation';
 import { CarController } from '../controllers/car.controller';
 import { validateBody } from '../../../middlewares/validate.middleware';
+import { requireFeatureEnabled } from '../../../middlewares/feature-flag.middleware';
 
 const router = Router();
 
@@ -19,7 +20,7 @@ adminRouter.use(restrictTo('admin', 'super_admin'));
 adminRouter.get('/', validatePaginationQuery, CarController.getAllAdminCars);
 adminRouter.post('/recompute-aggregates', restrictTo('super_admin'), CarController.recomputeAggregatesAll);
 adminRouter.post('/:id/recompute-aggregates', validateUuidIdParam, CarController.recomputeAggregatesForCar);
-adminRouter.post('/:id/refine-ai-flags', validateUuidIdParam, CarController.refineAiFlagsForCar);
+adminRouter.post('/:id/refine-ai-flags', validateUuidIdParam, requireFeatureEnabled('enable_ai_refinement'), CarController.refineAiFlagsForCar);
 adminRouter.get('/:id/dependencies', validateUuidIdParam, CarController.getCarDependencies);
 adminRouter.get('/:id', validateUuidIdParam, CarController.getAdminCarById);
 
