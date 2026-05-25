@@ -42,6 +42,7 @@ const audit_routes_1 = __importDefault(require("../../modules/audit/routes/audit
 const content_health_routes_1 = __importDefault(require("../../modules/content-health/routes/content-health.routes"));
 const seo_collections_routes_1 = __importDefault(require("../../modules/seo-collections/routes/seo-collections.routes"));
 const fuel_types_intelligence_routes_1 = __importDefault(require("../../modules/fuel-types-intelligence/routes/fuel-types-intelligence.routes"));
+const rankings_routes_1 = __importDefault(require("../../modules/rankings/routes/rankings.routes"));
 const auth_routes_1 = __importDefault(require("../../modules/auth/routes/auth.routes"));
 const comparison_routes_1 = __importDefault(require("../../modules/comparison/routes/comparison.routes"));
 const deletion_workflow_routes_1 = __importDefault(require("../../modules/deletion-workflow/routes/deletion-workflow.routes"));
@@ -65,6 +66,7 @@ const redirect_routes_1 = __importDefault(require("../../modules/redirects/route
 const settings_routes_1 = __importDefault(require("../../modules/settings/routes/settings.routes"));
 const taxonomy_routes_1 = __importDefault(require("../../modules/taxonomy/routes/taxonomy.routes"));
 const user_routes_1 = __importDefault(require("../../modules/users/routes/user.routes"));
+const governance_routes_1 = __importDefault(require("../../modules/governance/routes/governance.routes"));
 const router = (0, express_1.Router)();
 router.use('/dashboard', dashboard_routes_1.default);
 router.use('/auth', auth_routes_1.default);
@@ -98,5 +100,7 @@ router.use('/seo-presets', seo_preset_routes_1.default);
 router.use('/content-health', content_health_routes_1.default);
 router.use('/seo-collections', seo_collections_routes_1.default);
 router.use('/fuel-types-intelligence', fuel_types_intelligence_routes_1.default);
+router.use('/rankings', rankings_routes_1.default);
+router.use('/governance', governance_routes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map

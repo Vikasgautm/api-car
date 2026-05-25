@@ -8,6 +8,31 @@ export enum UserRole {
   SUPER_ADMIN = 'super_admin',
 }
 
+export enum GovernanceRole {
+  SUPER_ADMIN = 'super_admin',
+  OPERATIONS_ADMIN = 'operations_admin',
+  CONTENT_EDITOR = 'content_editor',
+  REVIEWER = 'reviewer',
+  PUBLISHER = 'publisher',
+  SEO_MANAGER = 'seo_manager',
+  IMPORT_OPERATOR = 'import_operator',
+  MEDIA_MANAGER = 'media_manager',
+}
+
+export type GovernanceDomain = 'variants' | 'seo' | 'imports' | 'comparisons' | 'media' | 'blogs' | 'faqs' | 'taxonomy' | 'lifecycle';
+
+export interface IWorkflowRights {
+  can_review: boolean;
+  can_publish: boolean;
+  can_bulk_publish: boolean;
+}
+
+export interface ISecuritySettings {
+  max_sessions: number;
+  force_password_reset: boolean;
+  temp_access_expiry?: Date | null;
+}
+
 export interface IUser extends Document {
   user_id: string;
   user_name: string;
@@ -18,6 +43,14 @@ export interface IUser extends Document {
   whatsapp_opt_in?: boolean;
   profile_pic?: string;
   role: UserRole;
+  // Governance fields
+  governance_role?: GovernanceRole;
+  permissions: string[];
+  assigned_brands: string[];
+  assigned_domains: GovernanceDomain[];
+  workflow_rights: IWorkflowRights;
+  security: ISecuritySettings;
+  // Existing fields
   is_email_verified: boolean;
   google_id?: string;
   is_deleted: boolean;
@@ -67,6 +100,29 @@ const userSchema = new Schema<IUser>(
       enum: Object.values(UserRole),
       default: UserRole.USER,
       required: true,
+    },
+    governance_role: {
+      type: String,
+      enum: Object.values(GovernanceRole),
+    },
+    permissions: { type: [String], default: [] },
+    assigned_brands: { type: [String], default: [] },
+    assigned_domains: { type: [String], default: [] },
+    workflow_rights: {
+      type: {
+        can_review: { type: Boolean, default: false },
+        can_publish: { type: Boolean, default: false },
+        can_bulk_publish: { type: Boolean, default: false },
+      },
+      default: () => ({ can_review: false, can_publish: false, can_bulk_publish: false }),
+    },
+    security: {
+      type: {
+        max_sessions: { type: Number, default: 3 },
+        force_password_reset: { type: Boolean, default: false },
+        temp_access_expiry: { type: Date, default: null },
+      },
+      default: () => ({ max_sessions: 3, force_password_reset: false, temp_access_expiry: null }),
     },
     is_email_verified: { type: Boolean, default: false },
     google_id: { type: String },

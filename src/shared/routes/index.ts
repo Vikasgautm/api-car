@@ -4,6 +4,7 @@ import auditRoutes from '../../modules/audit/routes/audit.routes';
 import contentHealthRoutes from '../../modules/content-health/routes/content-health.routes';
 import seoCollectionRoutes from '../../modules/seo-collections/routes/seo-collections.routes';
 import fuelTypesIntelligenceRoutes from '../../modules/fuel-types-intelligence/routes/fuel-types-intelligence.routes';
+import rankingsRoutes from '../../modules/rankings/routes/rankings.routes';
 import authRoutes from '../../modules/auth/routes/auth.routes';
 import comparisonRoutes from '../../modules/comparison/routes/comparison.routes';
 import deletionWorkflowRoutes from '../../modules/deletion-workflow/routes/deletion-workflow.routes';
@@ -27,6 +28,7 @@ import redirectRoutes from '../../modules/redirects/routes/redirect.routes';
 import settingsRoutes from '../../modules/settings/routes/settings.routes';
 import taxonomyRoutes from '../../modules/taxonomy/routes/taxonomy.routes';
 import userRoutes from '../../modules/users/routes/user.routes';
+import governanceRoutes from '../../modules/governance/routes/governance.routes';
 
 const router = Router();
 
@@ -63,5 +65,7 @@ router.use('/seo-presets', seoPresetRoutes);
 router.use('/content-health', contentHealthRoutes);
 router.use('/seo-collections', seoCollectionRoutes);
 router.use('/fuel-types-intelligence', fuelTypesIntelligenceRoutes);
+router.use('/rankings', rankingsRoutes);
+router.use('/governance', governanceRoutes);
 
 export default router;
