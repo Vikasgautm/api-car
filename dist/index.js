@@ -14,6 +14,7 @@ const logger_1 = require("./utils/logger");
 const compute_mileage_classes_seed_1 = require("./seeds/compute-mileage-classes.seed");
 const fuel_type_seed_1 = require("./seeds/fuel-type.seed");
 const intent_tags_seed_1 = require("./seeds/intent-tags.seed");
+const popular_collections_seed_1 = require("./seeds/popular-collections.seed");
 const route_audit_util_1 = require("./shared/utils/route-audit.util");
 const startServer = async () => {
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -34,6 +35,8 @@ const startServer = async () => {
         await (0, intent_tags_seed_1.seedIntentTags)();
         // Backfill mileage / EV-range classifications for any variant or car still missing them.
         await (0, compute_mileage_classes_seed_1.computeMileageClassesIfNeeded)();
+        // Seed popular collections (runs once — skips if any collections already exist)
+        await (0, popular_collections_seed_1.seedPopularCollections)();
         // Start auto-launch cron jobs
         updateUpcomingCars_job_1.UpdateUpcomingCarsJob.start();
         processScheduledLaunches_job_1.ProcessScheduledLaunchesJob.start();

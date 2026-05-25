@@ -57,7 +57,6 @@ const schema = new Schema<IRankingCollectionConfig>(
   { timestamps: true }
 );
 
-schema.index({ collection_key: 1 });
 schema.index({ rendering_mode: 1 });
 schema.index({ is_active: 1 });
 

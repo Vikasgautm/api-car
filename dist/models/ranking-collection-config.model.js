@@ -26,7 +26,6 @@ const schema = new mongoose_1.Schema({
     is_active: { type: Boolean, default: true },
     notes: { type: String, default: null },
 }, { timestamps: true });
-schema.index({ collection_key: 1 });
 schema.index({ rendering_mode: 1 });
 schema.index({ is_active: 1 });
 exports.RankingCollectionConfig = (0, mongoose_1.model)('RankingCollectionConfig', schema);

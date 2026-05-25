@@ -9,6 +9,7 @@ import { logger } from "./utils/logger";
 import { computeMileageClassesIfNeeded } from "./seeds/compute-mileage-classes.seed";
 import { seedFuelTypes } from "./seeds/fuel-type.seed";
 import { seedIntentTags } from "./seeds/intent-tags.seed";
+import { seedPopularCollections } from "./seeds/popular-collections.seed";
 import { auditRoutes, logRouteAudit } from "./shared/utils/route-audit.util";
 
 const startServer = async () => {
@@ -36,6 +37,9 @@ const startServer = async () => {
 
     // Backfill mileage / EV-range classifications for any variant or car still missing them.
     await computeMileageClassesIfNeeded();
+
+    // Seed popular collections (runs once — skips if any collections already exist)
+    await seedPopularCollections();
 
     // Start auto-launch cron jobs
     UpdateUpcomingCarsJob.start();

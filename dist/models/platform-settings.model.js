@@ -25,6 +25,5 @@ const platformSettingsSchema = new mongoose_1.Schema({
     updated_by: { type: String },
     updated_at: { type: Date, default: Date.now },
 }, { timestamps: true });
-platformSettingsSchema.index({ group: 1 });
 exports.PlatformSettings = (0, mongoose_1.model)('PlatformSettings', platformSettingsSchema);
 //# sourceMappingURL=platform-settings.model.js.map

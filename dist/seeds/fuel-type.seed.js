@@ -55,13 +55,8 @@ const seedFuelTypes = async () => {
         const existing = await fuel_type_model_1.FuelType.findOne({ slug: fuelType.slug });
         if (!existing) {
             await fuel_type_model_1.FuelType.create(fuelType);
-            console.log(`Created fuel type: ${fuelType.name}`);
-        }
-        else {
-            console.log(`Fuel type already exists: ${fuelType.name}`);
         }
     }
-    console.log('Fuel types seeded successfully');
 };
 exports.seedFuelTypes = seedFuelTypes;
 //# sourceMappingURL=fuel-type.seed.js.map

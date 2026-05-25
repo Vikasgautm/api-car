@@ -46,11 +46,9 @@ export const seedIntentTags = async () => {
       is_deleted: false,
       sort_order: 0,
     });
-    console.log(`Created tag category: ${category.name}`);
   } else if (category.is_deleted) {
     category.is_deleted = false;
     await category.save();
-    console.log(`Restored tag category: ${category.name}`);
   }
 
   // 2. Seed each intent tag, keyed by slug. Existing tags are left untouched.
@@ -74,5 +72,4 @@ export const seedIntentTags = async () => {
     created++;
   }
 
-  console.log(`Intent tags seeded successfully (${created} new tag(s) created)`);
 };

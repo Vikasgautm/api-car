@@ -22,14 +22,12 @@ const computeMileageClassesIfNeeded = async () => {
     if (unclassifiedVariantCount === 0) {
         return;
     }
-    console.log(`Backfilling mileage/range classes for ${unclassifiedVariantCount} variant(s)...`);
     const cars = await car_model_1.Car.find({ is_deleted: false }).select('car_id').lean();
     let processed = 0;
     for (const car of cars) {
         await mileage_recompute_service_1.MileageRecomputeService.recomputeCar(car.car_id);
         processed++;
     }
-    console.log(`Mileage class backfill complete (${processed} car(s) processed).`);
 };
 exports.computeMileageClassesIfNeeded = computeMileageClassesIfNeeded;
 //# sourceMappingURL=compute-mileage-classes.seed.js.map

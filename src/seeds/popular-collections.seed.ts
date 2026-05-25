@@ -1,0 +1,204 @@
+import { v4 as uuidv4 } from 'uuid';
+import { PopularCollection } from '../models/popular-collection.model';
+
+const SEED_COLLECTIONS = [
+  {
+    slug: 'trending-cars',
+    title: 'Trending Cars in India',
+    subtitle: 'What car buyers are looking at right now',
+    description:
+      'Discover the most trending cars in India based on buyer interest and engagement. Updated weekly.',
+    collection_type: 'trending',
+    primary_score_type: 'trending',
+    default_sort: 'newest',
+    discovery_filters: {},
+    hub_section_order: 0,
+    hub_section_label: 'Trending This Week',
+    view_all_path: '/trending-cars',
+    ranking_collection_key: 'trending_cars_india',
+    seo_h1: 'Trending Cars in India 2025',
+    seo_meta_title: 'Trending Cars in India 2025 — Most Popular This Week',
+    seo_meta_description:
+      'See what car buyers are searching and comparing right now. Updated weekly trending list of the most popular cars in India.',
+    related_collection_slugs: ['popular-suv-cars', 'top-launches', 'most-compared-cars'],
+  },
+  {
+    slug: 'popular-suv-cars',
+    title: 'Popular SUVs in India',
+    subtitle: 'Best-selling SUVs loved by Indian buyers',
+    description:
+      'The most popular SUVs in India right now. From compact SUVs to full-size 7-seaters, find the best SUV for your family.',
+    collection_type: 'popular',
+    primary_score_type: 'popularity',
+    default_sort: 'popularity',
+    discovery_filters: {
+      body_type_slugs: ['suv'],
+    },
+    hub_section_order: 1,
+    hub_section_label: 'Popular SUVs',
+    view_all_path: '/popular-suv-cars',
+    ranking_collection_key: 'popular_suv_india',
+    seo_h1: 'Popular SUVs in India 2025',
+    seo_meta_title: 'Popular SUVs in India 2025 — Best-Selling SUV Cars',
+    seo_meta_description:
+      'Explore the most popular SUVs in India. Compare prices, features, and specs of top-selling SUVs from Creta, Seltos, Scorpio N, and more.',
+    related_collection_slugs: ['popular-electric-cars', 'popular-family-cars', 'popular-tata-cars'],
+  },
+  {
+    slug: 'popular-electric-cars',
+    title: 'Popular Electric Cars in India',
+    subtitle: 'Top EVs for Indian roads',
+    description:
+      'The best electric cars available in India. Compare range, charging, and total ownership costs.',
+    collection_type: 'ev',
+    primary_score_type: 'popularity',
+    default_sort: 'popularity',
+    discovery_filters: {
+      is_electric: true,
+    },
+    hub_section_order: 2,
+    hub_section_label: 'Popular EVs',
+    view_all_path: '/popular-electric-cars',
+    ranking_collection_key: 'popular_ev_india',
+    seo_h1: 'Popular Electric Cars in India 2025',
+    seo_meta_title: 'Popular Electric Cars in India 2025 — Top EV Rankings',
+    seo_meta_description:
+      'Explore the most popular electric cars (EVs) in India. Compare range, price, and charging speeds of Tata Nexon EV, MG Windsor, Hyundai Creta EV, and more.',
+    related_collection_slugs: ['trending-cars', 'popular-suv-cars', 'best-mileage-cars'],
+  },
+  {
+    slug: 'best-mileage-cars',
+    title: 'Best Mileage Cars in India',
+    subtitle: 'Most fuel-efficient cars for smart buyers',
+    description:
+      'Find the most fuel-efficient cars in India. Sorted by real-world mileage so you spend less on fuel every month.',
+    collection_type: 'mileage',
+    primary_score_type: 'manual',
+    default_sort: 'mileage',
+    discovery_filters: {
+      mileage_class: ['excellent', 'good'],
+    },
+    hub_section_order: 3,
+    hub_section_label: 'Best Mileage Cars',
+    view_all_path: '/best-mileage-cars',
+    ranking_collection_key: 'best_mileage_india',
+    seo_h1: 'Best Mileage Cars in India 2025',
+    seo_meta_title: 'Best Mileage Cars in India 2025 — Most Fuel Efficient',
+    seo_meta_description:
+      'Compare the most fuel-efficient cars in India. Find cars with excellent mileage for city and highway driving. Updated for 2025.',
+    related_collection_slugs: ['popular-electric-cars', 'popular-family-cars', 'trending-cars'],
+  },
+  {
+    slug: 'most-compared-cars',
+    title: 'Most Compared Cars in India',
+    subtitle: 'Cars buyers compare most before buying',
+    description:
+      'These are the cars Indian buyers compare most before making a purchase decision. High comparison volume signals strong buying intent.',
+    collection_type: 'comparison',
+    primary_score_type: 'comparison_pressure',
+    default_sort: 'popularity',
+    discovery_filters: {},
+    hub_section_order: 4,
+    hub_section_label: 'Most Compared Cars',
+    view_all_path: '/most-compared-cars',
+    ranking_collection_key: 'most_compared_india',
+    seo_h1: 'Most Compared Cars in India 2025',
+    seo_meta_title: 'Most Compared Cars in India 2025 — Compare Before You Buy',
+    seo_meta_description:
+      'Discover which cars Indian buyers compare most before purchasing. High comparison activity signals the most competitive and popular cars.',
+    related_collection_slugs: ['trending-cars', 'popular-suv-cars', 'popular-electric-cars'],
+  },
+  {
+    slug: 'popular-family-cars',
+    title: 'Best Family Cars in India',
+    subtitle: 'Spacious, safe, and comfortable for families',
+    description:
+      'The best family cars in India — spacious, safe, feature-rich, and loved by families with kids.',
+    collection_type: 'family',
+    primary_score_type: 'popularity',
+    default_sort: 'popularity',
+    discovery_filters: {
+      family_friendly: true,
+    },
+    hub_section_order: 5,
+    hub_section_label: 'Popular Family Cars',
+    view_all_path: '/popular-family-cars',
+    ranking_collection_key: 'popular_family_india',
+    seo_h1: 'Best Family Cars in India 2025',
+    seo_meta_title: 'Best Family Cars in India 2025 — Top Picks for Families',
+    seo_meta_description:
+      'Find the best family cars in India. Spacious, safe, and well-equipped vehicles perfect for families. Compare seating, safety, and comfort features.',
+    related_collection_slugs: ['popular-suv-cars', 'best-mileage-cars', 'popular-tata-cars'],
+  },
+  {
+    slug: 'top-launches',
+    title: 'Top Car Launches in India',
+    subtitle: 'Newly launched cars worth your attention',
+    description:
+      'The latest car launches in India. New models, refreshed variants, and debut entries from major brands.',
+    collection_type: 'launch',
+    primary_score_type: 'trending',
+    default_sort: 'newest',
+    discovery_filters: {
+      lifecycle_stages: ['launched'],
+    },
+    hub_section_order: 6,
+    hub_section_label: 'Top Launches',
+    view_all_path: '/top-launches',
+    ranking_collection_key: 'top_launches_india',
+    seo_h1: 'Latest Car Launches in India 2025',
+    seo_meta_title: 'Latest Car Launches in India 2025 — New Cars This Month',
+    seo_meta_description:
+      'Stay updated with the latest car launches in India. Explore new car releases, specifications, prices, and first looks of recently launched vehicles.',
+    related_collection_slugs: ['trending-cars', 'popular-electric-cars', 'popular-suv-cars'],
+  },
+  {
+    slug: 'popular-tata-cars',
+    title: 'Popular Tata Cars in India',
+    subtitle: "India's favourite homegrown brand",
+    description:
+      "Explore Tata Motors' most popular cars in India — from the Nexon to the Harrier, Tiago to the Punch.",
+    collection_type: 'brand',
+    primary_score_type: 'popularity',
+    default_sort: 'popularity',
+    discovery_filters: {
+      brand_slugs: ['tata'],
+    },
+    hub_section_order: 7,
+    hub_section_label: 'Popular Tata Cars',
+    view_all_path: '/popular-tata-cars',
+    ranking_collection_key: 'popular_tata_india',
+    seo_h1: 'Popular Tata Cars in India 2025',
+    seo_meta_title: 'Popular Tata Cars in India 2025 — Best Tata Models',
+    seo_meta_description:
+      'Find the most popular Tata cars in India. Compare Tata Nexon, Harrier, Punch, Safari, Tiago, and more. Prices, specs, and expert reviews.',
+    related_collection_slugs: ['popular-suv-cars', 'popular-electric-cars', 'popular-family-cars'],
+  },
+];
+
+export async function seedPopularCollections() {
+  const existing = await PopularCollection.countDocuments();
+  if (existing > 0) return;
+
+  const docs = SEED_COLLECTIONS.map((c, idx) => ({
+    ...c,
+    collection_id: uuidv4(),
+    status: 'published' as const,
+    rendering_mode: 'manual' as const,
+    manual_weight: 70,
+    behavioral_weight: 30,
+    min_behavioral_confidence: 70,
+    hub_preview_limit: 5,
+    collection_page_limit: 24,
+    display_on_hub: true,
+    hub_section_order: idx,
+    seo_noindex: false,
+    pinned_car_ids: [],
+    manual_car_ids: [],
+    suppressed_car_ids: [],
+    related_collection_slugs: c.related_collection_slugs ?? [],
+  }));
+
+  await PopularCollection.insertMany(docs);
+}
+

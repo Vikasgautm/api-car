@@ -29,6 +29,7 @@ import settingsRoutes from '../../modules/settings/routes/settings.routes';
 import taxonomyRoutes from '../../modules/taxonomy/routes/taxonomy.routes';
 import userRoutes from '../../modules/users/routes/user.routes';
 import governanceRoutes from '../../modules/governance/routes/governance.routes';
+import popularCollectionsRoutes from '../../modules/popular-collections/routes/popular-collections.routes';
 
 const router = Router();
 
@@ -67,5 +68,6 @@ router.use('/seo-collections', seoCollectionRoutes);
 router.use('/fuel-types-intelligence', fuelTypesIntelligenceRoutes);
 router.use('/rankings', rankingsRoutes);
 router.use('/governance', governanceRoutes);
+router.use('/popular-collections', popularCollectionsRoutes);
 
 export default router;

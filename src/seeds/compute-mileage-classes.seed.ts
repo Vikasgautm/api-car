@@ -22,7 +22,6 @@ export const computeMileageClassesIfNeeded = async () => {
     return;
   }
 
-  console.log(`Backfilling mileage/range classes for ${unclassifiedVariantCount} variant(s)...`);
 
   const cars = await Car.find({ is_deleted: false }).select('car_id').lean();
 
@@ -32,5 +31,4 @@ export const computeMileageClassesIfNeeded = async () => {
     processed++;
   }
 
-  console.log(`Mileage class backfill complete (${processed} car(s) processed).`);
 };

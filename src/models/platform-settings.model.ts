@@ -47,6 +47,4 @@ const platformSettingsSchema = new Schema<IPlatformSettings>(
   { timestamps: true }
 );
 
-platformSettingsSchema.index({ group: 1 });
-
 export const PlatformSettings = model<IPlatformSettings>('PlatformSettings', platformSettingsSchema);
