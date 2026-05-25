@@ -54,7 +54,7 @@ export const variantSaveSchema = z.object({
       expected_price: z.number().min(0).nullable().optional(),
       model_year: z.number().min(1900).max(2100),
       fuel_type_id: z.string().nullable().optional(),
-      transmission_type: z.enum(['manual', 'automatic', 'cvt', 'dct', 'amt']).nullable().optional(),
+      transmission_type: z.enum(['manual', 'automatic', 'cvt', 'dct', 'amt', 'dsg', 'imt', 'torque_converter', 'single_speed_ev', 'e_cvt']).nullable().optional(),
       specs_normalized: z.record(z.string(), z.any()).optional(),
       is_published: z.boolean(),
     }),

@@ -50,6 +50,11 @@ export declare const variantSaveSchema: z.ZodObject<{
                 amt: "amt";
                 cvt: "cvt";
                 dct: "dct";
+                dsg: "dsg";
+                imt: "imt";
+                torque_converter: "torque_converter";
+                single_speed_ev: "single_speed_ev";
+                e_cvt: "e_cvt";
             }>>>;
             specs_normalized: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
             is_published: z.ZodBoolean;

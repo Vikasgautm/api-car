@@ -50,7 +50,7 @@ exports.variantSaveSchema = zod_1.z.object({
             expected_price: zod_1.z.number().min(0).nullable().optional(),
             model_year: zod_1.z.number().min(1900).max(2100),
             fuel_type_id: zod_1.z.string().nullable().optional(),
-            transmission_type: zod_1.z.enum(['manual', 'automatic', 'cvt', 'dct', 'amt']).nullable().optional(),
+            transmission_type: zod_1.z.enum(['manual', 'automatic', 'cvt', 'dct', 'amt', 'dsg', 'imt', 'torque_converter', 'single_speed_ev', 'e_cvt']).nullable().optional(),
             specs_normalized: zod_1.z.record(zod_1.z.string(), zod_1.z.any()).optional(),
             is_published: zod_1.z.boolean(),
         }),

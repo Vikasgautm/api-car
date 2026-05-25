@@ -30,6 +30,7 @@ import taxonomyRoutes from '../../modules/taxonomy/routes/taxonomy.routes';
 import userRoutes from '../../modules/users/routes/user.routes';
 import governanceRoutes from '../../modules/governance/routes/governance.routes';
 import popularCollectionsRoutes from '../../modules/popular-collections/routes/popular-collections.routes';
+import variantIngestionRoutes from '../../modules/variant-ingestion/routes/import-staging.routes';
 
 const router = Router();
 
@@ -69,5 +70,6 @@ router.use('/fuel-types-intelligence', fuelTypesIntelligenceRoutes);
 router.use('/rankings', rankingsRoutes);
 router.use('/governance', governanceRoutes);
 router.use('/popular-collections', popularCollectionsRoutes);
+router.use('/admin/imports', variantIngestionRoutes);
 
 export default router;
