@@ -32,6 +32,23 @@ export declare class CarVariantService {
     } & {
         id: string;
     }) | null>;
+    static getGroupedVariants(filterDto: any): Promise<{
+        groups: {
+            car_id: any;
+            car_name: any;
+            car_slug: any;
+            brand_id: any;
+            brand_name: any;
+            body_type_id: any;
+            body_type_name: any;
+            variant_count_total: number;
+            variant_count_live: number;
+            variant_count_hidden: number;
+            variant_count_draft: number;
+            variants: any[];
+        }[];
+        pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
+    }>;
     static createVariant(variantData: any, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {

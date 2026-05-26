@@ -97,6 +97,10 @@ class CarVariantController {
         return response_util_1.ResponseUtil.success(res, filteredVariant, 'Variant retrieved successfully');
     });
     // Admin routes
+    static getGroupedAdminVariants = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const result = await car_variant_service_1.CarVariantService.getGroupedVariants(req.query);
+        return response_util_1.ResponseUtil.paginated(res, result.groups, result.pagination, 'Grouped variants retrieved successfully');
+    });
     static getAllAdminVariants = (0, catchAsync_1.catchAsync)(async (req, res) => {
         try {
             console.log('🔵 getAllAdminVariants - Request query:', req.query);

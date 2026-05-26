@@ -13,13 +13,14 @@ const adminRouter = (0, express_1.Router)();
 adminRouter.use(auth_middleware_1.protect);
 adminRouter.use((0, auth_middleware_1.restrictTo)('admin', 'super_admin'));
 // GET / and POST / - List all and create (most general, placed first)
+adminRouter.get('/grouped', validation_1.validatePaginationQuery, car_variant_controller_1.CarVariantController.getGroupedAdminVariants);
 adminRouter.get('/', validation_1.validatePaginationQuery, car_variant_controller_1.CarVariantController.getAllAdminVariants);
 adminRouter.post('/', car_variant_controller_1.CarVariantController.createVariant);
 // Bulk operations - MUST come before /:id routes to avoid matching ':id' as parameter
 adminRouter.post('/bulk/validate', car_variant_controller_1.CarVariantController.bulkValidate);
-adminRouter.post('/bulk/update-status', car_variant_controller_1.CarVariantController.bulkUpdateStatus);
-adminRouter.post('/bulk/publish', car_variant_controller_1.CarVariantController.bulkPublish);
-adminRouter.post('/bulk/update-visibility', car_variant_controller_1.CarVariantController.bulkUpdateVisibility);
+adminRouter.post('/bulk/update-status', (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.bulkUpdateStatus);
+adminRouter.post('/bulk/publish', (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.bulkPublish);
+adminRouter.post('/bulk/update-visibility', (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.bulkUpdateVisibility);
 adminRouter.post('/bulk/update', car_variant_controller_1.CarVariantController.bulkUpdate);
 adminRouter.post('/bulk/export-csv', car_variant_controller_1.CarVariantController.bulkExportCsv);
 adminRouter.post('/bulk/refine-specs', car_variant_controller_1.CarVariantController.refineMultipleVariants);
@@ -31,11 +32,12 @@ adminRouter.get('/car/:carId/completeness', car_variant_controller_1.CarVariantC
 // Restore route with specific path - MUST come before /:id routes
 adminRouter.patch('/restore/:id', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.restoreVariant);
 // Nested ID routes with specific sub-paths - MUST come before generic /:id routes
-adminRouter.patch('/:id/publish', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.togglePublish);
-adminRouter.patch('/:id/publish/enable', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.publishVariant);
-adminRouter.patch('/:id/publish/disable', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.unpublishVariant);
-adminRouter.patch('/:id/archive', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.archiveVariant);
-adminRouter.patch('/:id/unarchive', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.unarchiveVariant);
+// Publish/archive/delete restricted to super_admin; regular admins/editors can only read+edit content
+adminRouter.patch('/:id/publish', validation_1.validateUuidIdParam, (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.togglePublish);
+adminRouter.patch('/:id/publish/enable', validation_1.validateUuidIdParam, (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.publishVariant);
+adminRouter.patch('/:id/publish/disable', validation_1.validateUuidIdParam, (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.unpublishVariant);
+adminRouter.patch('/:id/archive', validation_1.validateUuidIdParam, (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.archiveVariant);
+adminRouter.patch('/:id/unarchive', validation_1.validateUuidIdParam, (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.unarchiveVariant);
 adminRouter.patch('/:id/visibility', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.updateVisibility);
 adminRouter.patch('/:id/lifecycle/unhide-on-launch', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.unhideOnLaunch);
 adminRouter.get('/:id/lifecycle/completeness', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getEstimationCompleteness);
@@ -53,7 +55,7 @@ adminRouter.get('/:id/validate/automotive-constraints', validation_1.validateUui
 // Generic /:id routes - MUST come last after all specific routes
 adminRouter.get('/:id', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getAdminVariantById);
 adminRouter.put('/:id', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.updateVariant);
-adminRouter.delete('/:id', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.deleteVariant);
+adminRouter.delete('/:id', validation_1.validateUuidIdParam, (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.deleteVariant);
 router.use('/admin', adminRouter);
 // Legacy routes for backward compatibility
 router.get('/', validation_1.validatePaginationQuery, car_variant_controller_1.CarVariantController.getAllPublicVariants);

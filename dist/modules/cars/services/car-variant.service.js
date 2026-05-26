@@ -14,6 +14,7 @@ const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
 const variant_integrity_service_1 = require("../../variants/services/variant-integrity.service");
+const variant_response_transformer_1 = require("../../../shared/transformers/variant-response.transformer");
 const import_normalizer_service_1 = require("../../imports/services/import-normalizer.service");
 const powertrain_detector_service_1 = require("../../variants/services/powertrain-detector.service");
 const seo_auto_wiring_service_1 = require("../../imports/services/seo-auto-wiring.service");
@@ -316,6 +317,108 @@ class CarVariantService {
     }
     static async getVariantBySlug(slug) {
         return await car_variant_model_1.CarVariant.findOne({ slug, is_deleted: false });
+    }
+    // Returns variants grouped by parent car, paginating at the car level.
+    // Counts (total/live/hidden/draft) reflect ALL non-deleted variants for the car,
+    // independent of any applied filter — so the UI always shows the true picture.
+    static async getGroupedVariants(filterDto) {
+        const { page = 1, limit = 25, q, brand_id, body_type_id, fuel_type_id, transmission_type, is_archived, is_deleted, min_price, max_price, sortOrder = 'asc', } = filterDto;
+        // Build variant match conditions as an $and array to support multiple $or clauses
+        const conditions = [];
+        if (is_deleted === 'true' || is_deleted === true) {
+            conditions.push({ is_deleted: true });
+        }
+        else {
+            conditions.push({ is_deleted: false });
+        }
+        if (is_archived === undefined || is_archived === false || is_archived === 'false') {
+            conditions.push({ is_archived: false });
+        }
+        else if (is_archived === true || is_archived === 'true') {
+            conditions.push({ is_archived: true });
+        }
+        if (fuel_type_id)
+            conditions.push({ fuel_type_id });
+        if (transmission_type)
+            conditions.push({ transmission_type });
+        if (min_price !== undefined || max_price !== undefined) {
+            const pf = {};
+            if (min_price !== undefined)
+                pf.$gte = Number(min_price);
+            if (max_price !== undefined)
+                pf.$lte = Number(max_price);
+            conditions.push({ $or: [{ ex_showroom_price: pf }, { expected_price: pf }] });
+        }
+        // Search: match variant name OR car name
+        if (q) {
+            const regex = new RegExp(String(q), 'i');
+            const matchingCars = await car_model_1.Car.find({ name: regex, is_deleted: false })
+                .select('car_id')
+                .lean();
+            const carIdsByName = matchingCars.map((c) => c.car_id);
+            const orTerms = [{ variant_name: regex }, { slug: regex }];
+            if (carIdsByName.length > 0)
+                orTerms.push({ car_id: { $in: carIdsByName } });
+            conditions.push({ $or: orTerms });
+        }
+        const variantMatchFilter = conditions.length === 1 ? conditions[0] : { $and: conditions };
+        // Find which cars have matching variants
+        const matchingCarIds = await car_variant_model_1.CarVariant.distinct('car_id', variantMatchFilter);
+        if (matchingCarIds.length === 0) {
+            return { groups: [], pagination: pagination_util_1.PaginationUtil.createPaginationMeta(page, limit, 0) };
+        }
+        // Load car metadata, applying optional brand/body_type filters
+        const carFilter = { car_id: { $in: matchingCarIds }, is_deleted: false };
+        if (brand_id)
+            carFilter.brand_id = brand_id;
+        if (body_type_id)
+            carFilter.body_type_id = body_type_id;
+        const totalCars = await car_model_1.Car.countDocuments(carFilter);
+        const { skip, limit: validatedLimit } = pagination_util_1.PaginationUtil.getPaginationParams(page, limit);
+        const cars = await car_model_1.Car.find(carFilter)
+            .select('car_id name slug brand_id body_type_id body_type_name')
+            .sort({ name: sortOrder === 'desc' ? -1 : 1 })
+            .skip(skip)
+            .limit(validatedLimit)
+            .lean();
+        if (cars.length === 0) {
+            return { groups: [], pagination: pagination_util_1.PaginationUtil.createPaginationMeta(page, validatedLimit, totalCars) };
+        }
+        // Fetch ALL non-deleted variants for the paginated cars (not filtered)
+        // so counts reflect true state and all variants are visible in the group
+        const pageCarIds = cars.map((c) => c.car_id);
+        const allVariants = await car_variant_model_1.CarVariant.find({ car_id: { $in: pageCarIds }, is_deleted: false })
+            .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived is_deleted is_upcoming is_featured variant_status publish_status market_status variant_rank trim_name edition_name created_at updated_at')
+            .sort({ variant_rank: 1, variant_name: 1 })
+            .lean();
+        const transformedVariants = await variant_response_transformer_1.VariantResponseTransformer.transformBatch(allVariants);
+        variant_response_transformer_1.VariantResponseTransformer.clearCache();
+        // Group transformed variants by car_id
+        const variantsByCarId = new Map();
+        transformedVariants.forEach((v) => {
+            if (!variantsByCarId.has(v.car_id))
+                variantsByCarId.set(v.car_id, []);
+            variantsByCarId.get(v.car_id).push(v);
+        });
+        const groups = cars.map((car) => {
+            const variants = variantsByCarId.get(car.car_id) || [];
+            const first = variants[0];
+            return {
+                car_id: car.car_id,
+                car_name: first?.car_name || car.name,
+                car_slug: first?.car_slug || car.slug,
+                brand_id: car.brand_id,
+                brand_name: first?.brand_name || '—',
+                body_type_id: car.body_type_id,
+                body_type_name: first?.body_type_name || car.body_type_name || '—',
+                variant_count_total: variants.length,
+                variant_count_live: variants.filter((v) => v.is_published).length,
+                variant_count_hidden: variants.filter((v) => !v.is_published && v.publish_status === 'hidden').length,
+                variant_count_draft: variants.filter((v) => !v.is_published && v.publish_status !== 'hidden').length,
+                variants,
+            };
+        });
+        return { groups, pagination: pagination_util_1.PaginationUtil.createPaginationMeta(page, validatedLimit, totalCars) };
     }
     static async createVariant(variantData, actor = null) {
         const car = await car_model_1.Car.findOne({ car_id: variantData.car_id, is_deleted: false }).lean();

@@ -15,14 +15,15 @@ adminRouter.use(protect);
 adminRouter.use(restrictTo('admin', 'super_admin'));
 
 // GET / and POST / - List all and create (most general, placed first)
+adminRouter.get('/grouped', validatePaginationQuery, CarVariantController.getGroupedAdminVariants);
 adminRouter.get('/', validatePaginationQuery, CarVariantController.getAllAdminVariants);
 adminRouter.post('/', CarVariantController.createVariant);
 
 // Bulk operations - MUST come before /:id routes to avoid matching ':id' as parameter
 adminRouter.post('/bulk/validate', CarVariantController.bulkValidate);
-adminRouter.post('/bulk/update-status', CarVariantController.bulkUpdateStatus);
-adminRouter.post('/bulk/publish', CarVariantController.bulkPublish);
-adminRouter.post('/bulk/update-visibility', CarVariantController.bulkUpdateVisibility);
+adminRouter.post('/bulk/update-status', restrictTo('super_admin'), CarVariantController.bulkUpdateStatus);
+adminRouter.post('/bulk/publish', restrictTo('super_admin'), CarVariantController.bulkPublish);
+adminRouter.post('/bulk/update-visibility', restrictTo('super_admin'), CarVariantController.bulkUpdateVisibility);
 adminRouter.post('/bulk/update', CarVariantController.bulkUpdate);
 adminRouter.post('/bulk/export-csv', CarVariantController.bulkExportCsv);
 adminRouter.post('/bulk/refine-specs', CarVariantController.refineMultipleVariants);
@@ -37,11 +38,12 @@ adminRouter.get('/car/:carId/completeness', CarVariantController.getCarCompleten
 adminRouter.patch('/restore/:id', validateUuidIdParam, CarVariantController.restoreVariant);
 
 // Nested ID routes with specific sub-paths - MUST come before generic /:id routes
-adminRouter.patch('/:id/publish', validateUuidIdParam, CarVariantController.togglePublish);
-adminRouter.patch('/:id/publish/enable', validateUuidIdParam, CarVariantController.publishVariant);
-adminRouter.patch('/:id/publish/disable', validateUuidIdParam, CarVariantController.unpublishVariant);
-adminRouter.patch('/:id/archive', validateUuidIdParam, CarVariantController.archiveVariant);
-adminRouter.patch('/:id/unarchive', validateUuidIdParam, CarVariantController.unarchiveVariant);
+// Publish/archive/delete restricted to super_admin; regular admins/editors can only read+edit content
+adminRouter.patch('/:id/publish', validateUuidIdParam, restrictTo('super_admin'), CarVariantController.togglePublish);
+adminRouter.patch('/:id/publish/enable', validateUuidIdParam, restrictTo('super_admin'), CarVariantController.publishVariant);
+adminRouter.patch('/:id/publish/disable', validateUuidIdParam, restrictTo('super_admin'), CarVariantController.unpublishVariant);
+adminRouter.patch('/:id/archive', validateUuidIdParam, restrictTo('super_admin'), CarVariantController.archiveVariant);
+adminRouter.patch('/:id/unarchive', validateUuidIdParam, restrictTo('super_admin'), CarVariantController.unarchiveVariant);
 adminRouter.patch('/:id/visibility', validateUuidIdParam, CarVariantController.updateVisibility);
 adminRouter.patch('/:id/lifecycle/unhide-on-launch', validateUuidIdParam, CarVariantController.unhideOnLaunch);
 adminRouter.get('/:id/lifecycle/completeness', validateUuidIdParam, CarVariantController.getEstimationCompleteness);
@@ -60,7 +62,7 @@ adminRouter.get('/:id/validate/automotive-constraints', validateUuidIdParam, Car
 // Generic /:id routes - MUST come last after all specific routes
 adminRouter.get('/:id', validateUuidIdParam, CarVariantController.getAdminVariantById);
 adminRouter.put('/:id', validateUuidIdParam, CarVariantController.updateVariant);
-adminRouter.delete('/:id', validateUuidIdParam, CarVariantController.deleteVariant);
+adminRouter.delete('/:id', validateUuidIdParam, restrictTo('super_admin'), CarVariantController.deleteVariant);
 
 router.use('/admin', adminRouter);
 
