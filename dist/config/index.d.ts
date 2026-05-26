@@ -38,5 +38,10 @@ export declare const config: {
         otp_max_attempts: number;
         otp_email_recipient: string;
     };
+    lifecycle_governance: {
+        otp_ttl_seconds: number;
+        otp_max_attempts: number;
+        otp_email_recipient: string;
+    };
 };
 //# sourceMappingURL=index.d.ts.map

@@ -1,12 +1,18 @@
 import { Document } from "mongoose";
 import { MileageClass } from "../constants/mileage-benchmarks";
 export type CarStatus = 'upcoming' | 'launched' | 'discontinued' | 'archived' | 'disabled';
-export type EntityLifecycleState = 'upcoming' | 'launched' | 'facelift' | 'discontinued' | 'concept' | 'testing';
+export type EntityLifecycleState = 'upcoming' | 'launched' | 'facelift' | 'discontinued' | 'concept' | 'testing' | 'archived';
 export interface EntityStatusHistoryEntry {
+    previous_state?: EntityLifecycleState | null;
     state: EntityLifecycleState;
     changed_at: Date;
     changed_by: string;
     reason?: string;
+    actor_role?: string;
+    otp_verified?: boolean;
+    override_used?: boolean;
+    request_id?: string;
+    approval_status?: string;
 }
 export interface SEOHistoryEntry {
     field: string;

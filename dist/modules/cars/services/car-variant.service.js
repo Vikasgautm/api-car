@@ -288,7 +288,7 @@ class CarVariantService {
                 const searchFilter = filter_util_1.FilterUtil.buildSearchFilter(['variant_name'], q);
                 Object.assign(filter, searchFilter);
             }
-            const { skip, limit: validatedLimit } = pagination_util_1.PaginationUtil.getPaginationParams(page, limit);
+            const { skip, limit: validatedLimit } = pagination_util_1.PaginationUtil.getPaginationParams(page, limit, { maxLimit: 500 });
             const sortFilter = filter_util_1.FilterUtil.buildSortFilter(sortBy, sortOrder);
             const variants = await car_variant_model_1.CarVariant.find(filter)
                 .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived created_at updated_at')

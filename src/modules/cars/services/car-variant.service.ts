@@ -339,7 +339,7 @@ export class CarVariantService {
         Object.assign(filter, searchFilter);
       }
 
-      const { skip, limit: validatedLimit } = PaginationUtil.getPaginationParams(page, limit);
+      const { skip, limit: validatedLimit } = PaginationUtil.getPaginationParams(page, limit, { maxLimit: 500 });
       const sortFilter = FilterUtil.buildSortFilter(sortBy, sortOrder);
 
       const variants = await CarVariant.find(filter)

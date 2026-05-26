@@ -296,6 +296,9 @@ export interface SpecsNormalized {
     driver_display_controls?: DriverDisplayControls;
 }
 export type TransmissionType = 'manual' | 'automatic' | 'amt' | 'cvt' | 'dct' | 'dsg' | 'imt' | 'torque_converter' | 'single_speed_ev' | 'e_cvt';
+export type DriveType = 'fwd' | 'rwd' | 'awd' | '4wd' | '2wd' | '4x2' | '4x4' | 'e_awd' | 'i_awd' | 'dual_motor_awd';
+export declare const DRIVE_TYPE_VALUES: DriveType[];
+export declare function normalizeDriveType(raw: string | null | undefined): DriveType | null;
 export type VariantMarketStatus = 'available' | 'sold_out' | 'discontinued' | 'upcoming';
 export interface ChangeHistoryEntry {
     field: string;
@@ -323,7 +326,7 @@ export interface ICarVariant extends Document {
     model_year: number;
     fuel_type_id: string;
     transmission_type: TransmissionType;
-    drivetrain?: string;
+    drivetrain?: DriveType | string;
     body_type?: string;
     has_engine?: boolean;
     has_battery?: boolean;

@@ -4,13 +4,27 @@ import { CarVariant } from '../../../models/car-variant.model';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { AuditActor } from '../../../shared/utils/audit.util';
 
-const VALID_TRANSITIONS: Record<string, string[]> = {
+export const VALID_TRANSITIONS: Record<string, string[]> = {
+  concept: ['testing'],
+  testing: ['upcoming'],
   upcoming: ['launched'],
-  launched: ['discontinued', 'facelift'],
+  launched: ['facelift', 'discontinued'],
+  facelift: ['archived'],
   discontinued: ['archived'],
-  facelift: ['discontinued'],
   archived: [],
 };
+
+// Transitions that require OTP verification even for super_admin
+export const OTP_REQUIRED_TRANSITIONS = new Set([
+  'launched→discontinued',
+  'facelift→archived',
+  'discontinued→archived',
+]);
+
+// Transitions blocked by default — require explicit override by super_admin + OTP + reason
+export const BLOCKED_TRANSITIONS = new Set([
+  'discontinued→launched', // Historical generation relaunch — dangerous
+]);
 
 export class CarLifecycleService {
   /**
@@ -44,46 +58,63 @@ export class CarLifecycleService {
           );
         }
 
+        // Build history entry with previous_state for full lineage tracing
         const historyEntry: EntityStatusHistoryEntry = {
+          previous_state: currentState,
           state: newState,
           changed_at: new Date(),
           changed_by: actor.user_id || 'system',
           reason: reason || `Transitioned from ${currentState} to ${newState}`,
         };
 
-        if (!car.entity_status_history) car.entity_status_history = [];
-        car.entity_status_history.push(historyEntry);
-
-        car.entity_lifecycle_state = newState;
-        if (newState === 'launched') {
-          car.entity_launch_date = new Date();
-          car.is_upcoming = false;
-          car.is_launched = true;
-          car.status = 'launched';
-        } else if (newState === 'upcoming') {
-          car.is_upcoming = true;
-          car.is_launched = false;
-          car.status = 'upcoming';
-        } else if (newState === 'discontinued') {
-          car.status = 'discontinued';
-          car.discontinued_at = new Date();
-          car.discontinued_by = actor.user_id || 'system';
-        } else if (newState === 'facelift') {
-          car.is_facelift = true;
-          car.status = 'launched';
-        }
+        // Build scalar field updates
+        const setFields: Record<string, any> = {
+          entity_lifecycle_state: newState,
+        };
 
         if (!car.entity_created_at) {
-          car.entity_created_at = (car as any).createdAt || new Date();
+          setFields.entity_created_at = (car as any).createdAt || new Date();
         }
 
-        await car.save({ session });
+        if (newState === 'launched') {
+          setFields.entity_launch_date = new Date();
+          setFields.is_upcoming = false;
+          setFields.is_launched = true;
+          setFields.status = 'launched';
+        } else if (newState === 'upcoming') {
+          setFields.is_upcoming = true;
+          setFields.is_launched = false;
+          setFields.status = 'upcoming';
+        } else if (newState === 'discontinued') {
+          setFields.status = 'discontinued';
+          setFields.discontinued_at = new Date();
+          setFields.discontinued_by = actor.user_id || 'system';
+        } else if (newState === 'facelift') {
+          setFields.is_facelift = true;
+          setFields.status = 'launched';
+        } else if (newState === 'archived') {
+          setFields.status = 'archived';
+          setFields.archived_at = new Date();
+          setFields.archived_by = actor.user_id || 'system';
+        } else if (newState === 'concept' || newState === 'testing') {
+          setFields.status = 'upcoming';
+        }
+
+        // Atomic $push + $set — history is append-only, never overwritten
+        savedCar = await Car.findOneAndUpdate(
+          { car_id: carId, is_deleted: false },
+          {
+            $push: { entity_status_history: historyEntry },
+            $set: setFields,
+          },
+          { returnDocument: 'after', session }
+        );
+
+        if (!savedCar) throw new AppError('Car not found during update', 404);
 
         if (newState === 'launched') {
           await this.unHideCategoryOnLaunch(carId, session);
         }
-
-        savedCar = car;
       });
     } finally {
       session.endSession();
@@ -156,13 +187,17 @@ export class CarLifecycleService {
     if (!car) {
       throw new AppError('Car not found', 404);
     }
+    const allHistory = car.entity_status_history || [];
+    // Newest-first — reverse without mutating the Mongoose DocumentArray
+    const history = [...allHistory].reverse();
     return {
       car_id: car.car_id,
       name: car.name,
       current_state: car.entity_lifecycle_state || 'launched',
       entity_created_at: car.entity_created_at,
       entity_launch_date: car.entity_launch_date,
-      history: car.entity_status_history || [],
+      history,
+      total: history.length,
     };
   }
 

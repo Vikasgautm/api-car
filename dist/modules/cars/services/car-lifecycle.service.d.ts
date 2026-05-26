@@ -1,6 +1,9 @@
 import mongoose from 'mongoose';
 import { EntityLifecycleState, EntityStatusHistoryEntry } from '../../../models/car.model';
 import { AuditActor } from '../../../shared/utils/audit.util';
+export declare const VALID_TRANSITIONS: Record<string, string[]>;
+export declare const OTP_REQUIRED_TRANSITIONS: Set<string>;
+export declare const BLOCKED_TRANSITIONS: Set<string>;
 export declare class CarLifecycleService {
     /**
      * Transition a car to a new lifecycle state
@@ -22,6 +25,7 @@ export declare class CarLifecycleService {
         entity_created_at: Date | null | undefined;
         entity_launch_date: Date | null | undefined;
         history: EntityStatusHistoryEntry[];
+        total: number;
     }>;
     /**
      * Schedule a lifecycle state change for future execution

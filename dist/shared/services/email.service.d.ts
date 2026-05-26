@@ -22,6 +22,18 @@ export declare class EmailService {
         action?: string;
         entity_label?: string;
     }): Promise<SendOtpEmailResult>;
+    /**
+     * Send a lifecycle-approval OTP via email.
+     * Separate from sendOtp so messaging is lifecycle-specific.
+     */
+    static sendLifecycleOtp(recipient: string, otp: string, ctx?: {
+        request_id?: string;
+        from_state?: string;
+        to_state?: string;
+        entity_label?: string;
+        reason?: string;
+        is_override?: boolean;
+    }): Promise<SendOtpEmailResult>;
     static sendInviteEmail(recipient: string, userName: string, resetUrl: string): Promise<SendOtpEmailResult>;
 }
 //# sourceMappingURL=email.service.d.ts.map

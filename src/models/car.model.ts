@@ -2,13 +2,19 @@ import { Document, Schema, model } from "mongoose";
 import { MileageClass } from "../constants/mileage-benchmarks";
 
 export type CarStatus = 'upcoming' | 'launched' | 'discontinued' | 'archived' | 'disabled';
-export type EntityLifecycleState = 'upcoming' | 'launched' | 'facelift' | 'discontinued' | 'concept' | 'testing';
+export type EntityLifecycleState = 'upcoming' | 'launched' | 'facelift' | 'discontinued' | 'concept' | 'testing' | 'archived';
 
 export interface EntityStatusHistoryEntry {
+  previous_state?: EntityLifecycleState | null;
   state: EntityLifecycleState;
   changed_at: Date;
   changed_by: string;
   reason?: string;
+  actor_role?: string;
+  otp_verified?: boolean;
+  override_used?: boolean;
+  request_id?: string;
+  approval_status?: string;
 }
 
 export interface SEOHistoryEntry {
@@ -358,6 +364,11 @@ const carSchema = new Schema<ICar>(
     entity_created_at: { type: Date, default: null },
     entity_launch_date: { type: Date, default: null },
     entity_status_history: [{
+      previous_state: {
+        type: String,
+        enum: ['upcoming', 'launched', 'facelift', 'discontinued', 'concept', 'testing', null],
+        default: null,
+      },
       state: {
         type: String,
         enum: ['upcoming', 'launched', 'facelift', 'discontinued', 'concept', 'testing'],
@@ -366,6 +377,11 @@ const carSchema = new Schema<ICar>(
       changed_at: { type: Date, required: true },
       changed_by: { type: String, required: true },
       reason: { type: String, default: null },
+      actor_role: { type: String, default: null },
+      otp_verified: { type: Boolean, default: false },
+      override_used: { type: Boolean, default: false },
+      request_id: { type: String, default: null },
+      approval_status: { type: String, default: null },
     }],
     seo_history: [{
       field: { type: String, required: true },

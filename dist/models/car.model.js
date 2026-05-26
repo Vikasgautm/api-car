@@ -149,6 +149,11 @@ const carSchema = new mongoose_1.Schema({
     entity_created_at: { type: Date, default: null },
     entity_launch_date: { type: Date, default: null },
     entity_status_history: [{
+            previous_state: {
+                type: String,
+                enum: ['upcoming', 'launched', 'facelift', 'discontinued', 'concept', 'testing', null],
+                default: null,
+            },
             state: {
                 type: String,
                 enum: ['upcoming', 'launched', 'facelift', 'discontinued', 'concept', 'testing'],
@@ -157,6 +162,11 @@ const carSchema = new mongoose_1.Schema({
             changed_at: { type: Date, required: true },
             changed_by: { type: String, required: true },
             reason: { type: String, default: null },
+            actor_role: { type: String, default: null },
+            otp_verified: { type: Boolean, default: false },
+            override_used: { type: Boolean, default: false },
+            request_id: { type: String, default: null },
+            approval_status: { type: String, default: null },
         }],
     seo_history: [{
             field: { type: String, required: true },

@@ -329,6 +329,38 @@ export type TransmissionType =
   | 'single_speed_ev'
   | 'e_cvt';
 
+export type DriveType =
+  | 'fwd'
+  | 'rwd'
+  | 'awd'
+  | '4wd'
+  | '2wd'
+  | '4x2'
+  | '4x4'
+  | 'e_awd'
+  | 'i_awd'
+  | 'dual_motor_awd';
+
+export const DRIVE_TYPE_VALUES: DriveType[] = [
+  'fwd', 'rwd', 'awd', '4wd', '2wd', '4x2', '4x4', 'e_awd', 'i_awd', 'dual_motor_awd',
+];
+
+// Normalizes free-form drivetrain input (e.g. "FWD", "4WD", "AWD", "front", "e-AWD")
+// to a canonical DriveType value, or returns null for unrecognised inputs.
+export function normalizeDriveType(raw: string | null | undefined): DriveType | null {
+  if (!raw) return null;
+  const key = raw.trim().toLowerCase().replace(/[\s-]+/g, '_').replace(/\//g, '');
+  const aliasMap: Record<string, DriveType> = {
+    fwd: 'fwd', front: 'fwd', front_wheel_drive: 'fwd', '2wd': '2wd', '4x2': '4x2',
+    rwd: 'rwd', rear: 'rwd', rear_wheel_drive: 'rwd',
+    awd: 'awd', all_wheel_drive: 'awd', '4wd': '4wd', four_wheel_drive: '4wd', '4x4': '4x4',
+    e_awd: 'e_awd', eawd: 'e_awd', electric_awd: 'e_awd',
+    i_awd: 'i_awd', iawd: 'i_awd', intelligent_awd: 'i_awd',
+    dual_motor_awd: 'dual_motor_awd', dual_motor: 'dual_motor_awd',
+  };
+  return aliasMap[key] ?? null;
+}
+
 export type VariantMarketStatus = 'available' | 'sold_out' | 'discontinued' | 'upcoming';
 
 export interface ChangeHistoryEntry {
@@ -359,7 +391,7 @@ export interface ICarVariant extends Document {
   model_year: number;
   fuel_type_id: string;
   transmission_type: TransmissionType;
-  drivetrain?: string;
+  drivetrain?: DriveType | string;
   body_type?: string;
   // Powertrain capability flags (enables dynamic category visibility)
   has_engine?: boolean;
@@ -453,7 +485,7 @@ const variantSchema = new Schema<ICarVariant>(
         'e_cvt',
       ],
     },
-    drivetrain: { type:String },
+    drivetrain: { type: String, enum: [...DRIVE_TYPE_VALUES, null, undefined] },
     body_type: { type: String },
     // Powertrain capability flags (enables dynamic category visibility)
     has_engine: { type: Boolean, default: false },

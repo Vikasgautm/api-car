@@ -68,6 +68,7 @@ const taxonomy_routes_1 = __importDefault(require("../../modules/taxonomy/routes
 const user_routes_1 = __importDefault(require("../../modules/users/routes/user.routes"));
 const governance_routes_1 = __importDefault(require("../../modules/governance/routes/governance.routes"));
 const popular_collections_routes_1 = __importDefault(require("../../modules/popular-collections/routes/popular-collections.routes"));
+const lifecycle_governance_routes_1 = __importDefault(require("../../modules/lifecycle-governance/routes/lifecycle-governance.routes"));
 const import_staging_routes_1 = __importDefault(require("../../modules/variant-ingestion/routes/import-staging.routes"));
 const router = (0, express_1.Router)();
 router.use('/dashboard', dashboard_routes_1.default);
@@ -106,5 +107,6 @@ router.use('/rankings', rankings_routes_1.default);
 router.use('/governance', governance_routes_1.default);
 router.use('/popular-collections', popular_collections_routes_1.default);
 router.use('/admin/imports', import_staging_routes_1.default);
+router.use('/lifecycle-governance', lifecycle_governance_routes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map

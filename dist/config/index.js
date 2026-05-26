@@ -47,9 +47,13 @@ exports.config = {
     deletion_workflow: {
         otp_ttl_seconds: Number(process.env.DELETION_OTP_TTL_SECONDS) || 600, // 10 min
         otp_max_attempts: Number(process.env.DELETION_OTP_MAX_ATTEMPTS) || 5,
-        // Per-action approval recipient. Centralised here so we don't scatter the
-        // OTP email across user records — every deletion goes to this inbox.
         otp_email_recipient: process.env.DELETION_OTP_EMAIL || 'kameshkumar511@gmail.com',
+    },
+    lifecycle_governance: {
+        otp_ttl_seconds: Number(process.env.LIFECYCLE_OTP_TTL_SECONDS) || 600, // 10 min
+        otp_max_attempts: Number(process.env.LIFECYCLE_OTP_MAX_ATTEMPTS) || 5,
+        // Centralised approval inbox — all lifecycle OTPs go here.
+        otp_email_recipient: process.env.LIFECYCLE_OTP_EMAIL || process.env.DELETION_OTP_EMAIL || 'kameshkumar511@gmail.com',
     },
 };
 //# sourceMappingURL=index.js.map

@@ -51,6 +51,7 @@ const variant_bulk_service_1 = require("../../variants/services/variant-bulk.ser
 const spec_refinement_service_1 = require("../../variants/services/spec-refinement.service");
 const variant_integrity_service_1 = require("../../variants/services/variant-integrity.service");
 const variant_response_transformer_1 = require("../../../shared/transformers/variant-response.transformer");
+const car_variant_model_1 = require("../../../models/car-variant.model");
 class CarVariantController {
     // Public routes
     static getAllPublicVariants = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -130,13 +131,18 @@ class CarVariantController {
         return response_util_1.ResponseUtil.success(res, variant, 'Variant retrieved successfully');
     });
     static createVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const rawDrivetrain = req.body.drivetrain;
+        const normalizedDrivetrain = (0, car_variant_model_1.normalizeDriveType)(rawDrivetrain);
+        if (rawDrivetrain && !normalizedDrivetrain) {
+            throw new app_error_util_1.AppError(`Unknown drivetrain value "${rawDrivetrain}". Valid values: fwd, rwd, awd, 4wd, 2wd, 4x2, 4x4, e_awd, i_awd, dual_motor_awd`, 400);
+        }
         const createDto = {
             car_id: req.body.car_id,
             variant_name: req.body.variant_name,
             model_year: req.body.model_year,
             fuel_type_id: req.body.fuel_type_id,
             transmission_type: req.body.transmission_type,
-            drivetrain: req.body.drivetrain,
+            drivetrain: normalizedDrivetrain ?? undefined,
             seating_capacity: req.body.seating_capacity,
             body_type: req.body.body_type,
             ex_showroom_price: req.body.ex_showroom_price,
@@ -155,13 +161,21 @@ class CarVariantController {
         return response_util_1.ResponseUtil.created(res, variant, 'Variant created successfully');
     });
     static updateVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        let drivetrain = req.body.drivetrain;
+        if (drivetrain !== undefined) {
+            const normalized = (0, car_variant_model_1.normalizeDriveType)(drivetrain);
+            if (drivetrain && !normalized) {
+                throw new app_error_util_1.AppError(`Unknown drivetrain value "${drivetrain}". Valid values: fwd, rwd, awd, 4wd, 2wd, 4x2, 4x4, e_awd, i_awd, dual_motor_awd`, 400);
+            }
+            drivetrain = normalized ?? undefined;
+        }
         const updateDto = {
             car_id: req.body.car_id,
             variant_name: req.body.variant_name,
             model_year: req.body.model_year,
             fuel_type_id: req.body.fuel_type_id,
             transmission_type: req.body.transmission_type,
-            drivetrain: req.body.drivetrain,
+            drivetrain,
             seating_capacity: req.body.seating_capacity,
             body_type: req.body.body_type,
             ex_showroom_price: req.body.ex_showroom_price,

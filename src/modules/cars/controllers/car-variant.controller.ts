@@ -17,6 +17,7 @@ import { VariantBulkService } from '../../variants/services/variant-bulk.service
 import { SpecRefinementService } from '../../variants/services/spec-refinement.service';
 import { VariantIntegrityService } from '../../variants/services/variant-integrity.service';
 import { VariantResponseTransformer } from '../../../shared/transformers/variant-response.transformer';
+import { normalizeDriveType } from '../../../models/car-variant.model';
 
 export class CarVariantController {
   // Public routes
@@ -108,13 +109,22 @@ export class CarVariantController {
   });
 
   static createVariant = catchAsync(async (req: Request, res: Response) => {
+    const rawDrivetrain = req.body.drivetrain;
+    const normalizedDrivetrain = normalizeDriveType(rawDrivetrain);
+    if (rawDrivetrain && !normalizedDrivetrain) {
+      throw new AppError(
+        `Unknown drivetrain value "${rawDrivetrain}". Valid values: fwd, rwd, awd, 4wd, 2wd, 4x2, 4x4, e_awd, i_awd, dual_motor_awd`,
+        400
+      );
+    }
+
     const createDto: CreateVariantDto = {
       car_id: req.body.car_id,
       variant_name: req.body.variant_name,
       model_year: req.body.model_year,
       fuel_type_id: req.body.fuel_type_id,
       transmission_type: req.body.transmission_type,
-      drivetrain: req.body.drivetrain,
+      drivetrain: normalizedDrivetrain ?? undefined,
       seating_capacity: req.body.seating_capacity,
       body_type: req.body.body_type,
       ex_showroom_price: req.body.ex_showroom_price,
@@ -136,13 +146,25 @@ export class CarVariantController {
   });
 
   static updateVariant = catchAsync(async (req: Request, res: Response) => {
+    let drivetrain: string | undefined = req.body.drivetrain;
+    if (drivetrain !== undefined) {
+      const normalized = normalizeDriveType(drivetrain);
+      if (drivetrain && !normalized) {
+        throw new AppError(
+          `Unknown drivetrain value "${drivetrain}". Valid values: fwd, rwd, awd, 4wd, 2wd, 4x2, 4x4, e_awd, i_awd, dual_motor_awd`,
+          400
+        );
+      }
+      drivetrain = normalized ?? undefined;
+    }
+
     const updateDto: UpdateVariantDto = {
       car_id: req.body.car_id,
       variant_name: req.body.variant_name,
       model_year: req.body.model_year,
       fuel_type_id: req.body.fuel_type_id,
       transmission_type: req.body.transmission_type,
-      drivetrain: req.body.drivetrain,
+      drivetrain,
       seating_capacity: req.body.seating_capacity,
       body_type: req.body.body_type,
       ex_showroom_price: req.body.ex_showroom_price,

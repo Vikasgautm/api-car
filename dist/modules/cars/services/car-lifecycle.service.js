@@ -3,18 +3,30 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CarLifecycleService = void 0;
+exports.CarLifecycleService = exports.BLOCKED_TRANSITIONS = exports.OTP_REQUIRED_TRANSITIONS = exports.VALID_TRANSITIONS = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const car_model_1 = require("../../../models/car.model");
 const car_variant_model_1 = require("../../../models/car-variant.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
-const VALID_TRANSITIONS = {
+exports.VALID_TRANSITIONS = {
+    concept: ['testing'],
+    testing: ['upcoming'],
     upcoming: ['launched'],
-    launched: ['discontinued', 'facelift'],
+    launched: ['facelift', 'discontinued'],
+    facelift: ['archived'],
     discontinued: ['archived'],
-    facelift: ['discontinued'],
     archived: [],
 };
+// Transitions that require OTP verification even for super_admin
+exports.OTP_REQUIRED_TRANSITIONS = new Set([
+    'launched→discontinued',
+    'facelift→archived',
+    'discontinued→archived',
+]);
+// Transitions blocked by default — require explicit override by super_admin + OTP + reason
+exports.BLOCKED_TRANSITIONS = new Set([
+    'discontinued→launched', // Historical generation relaunch — dangerous
+]);
 class CarLifecycleService {
     /**
      * Transition a car to a new lifecycle state
@@ -33,48 +45,63 @@ class CarLifecycleService {
                 if (currentState === newState) {
                     throw new app_error_util_1.AppError(`Car is already in ${newState} state`, 400);
                 }
-                const allowed = VALID_TRANSITIONS[currentState] ?? [];
+                const allowed = exports.VALID_TRANSITIONS[currentState] ?? [];
                 if (!allowed.includes(newState)) {
                     throw new app_error_util_1.AppError(`Invalid transition: ${currentState} → ${newState}. Allowed: ${allowed.join(', ') || 'none'}`, 400);
                 }
+                // Build history entry with previous_state for full lineage tracing
                 const historyEntry = {
+                    previous_state: currentState,
                     state: newState,
                     changed_at: new Date(),
                     changed_by: actor.user_id || 'system',
                     reason: reason || `Transitioned from ${currentState} to ${newState}`,
                 };
-                if (!car.entity_status_history)
-                    car.entity_status_history = [];
-                car.entity_status_history.push(historyEntry);
-                car.entity_lifecycle_state = newState;
+                // Build scalar field updates
+                const setFields = {
+                    entity_lifecycle_state: newState,
+                };
+                if (!car.entity_created_at) {
+                    setFields.entity_created_at = car.createdAt || new Date();
+                }
                 if (newState === 'launched') {
-                    car.entity_launch_date = new Date();
-                    car.is_upcoming = false;
-                    car.is_launched = true;
-                    car.status = 'launched';
+                    setFields.entity_launch_date = new Date();
+                    setFields.is_upcoming = false;
+                    setFields.is_launched = true;
+                    setFields.status = 'launched';
                 }
                 else if (newState === 'upcoming') {
-                    car.is_upcoming = true;
-                    car.is_launched = false;
-                    car.status = 'upcoming';
+                    setFields.is_upcoming = true;
+                    setFields.is_launched = false;
+                    setFields.status = 'upcoming';
                 }
                 else if (newState === 'discontinued') {
-                    car.status = 'discontinued';
-                    car.discontinued_at = new Date();
-                    car.discontinued_by = actor.user_id || 'system';
+                    setFields.status = 'discontinued';
+                    setFields.discontinued_at = new Date();
+                    setFields.discontinued_by = actor.user_id || 'system';
                 }
                 else if (newState === 'facelift') {
-                    car.is_facelift = true;
-                    car.status = 'launched';
+                    setFields.is_facelift = true;
+                    setFields.status = 'launched';
                 }
-                if (!car.entity_created_at) {
-                    car.entity_created_at = car.createdAt || new Date();
+                else if (newState === 'archived') {
+                    setFields.status = 'archived';
+                    setFields.archived_at = new Date();
+                    setFields.archived_by = actor.user_id || 'system';
                 }
-                await car.save({ session });
+                else if (newState === 'concept' || newState === 'testing') {
+                    setFields.status = 'upcoming';
+                }
+                // Atomic $push + $set — history is append-only, never overwritten
+                savedCar = await car_model_1.Car.findOneAndUpdate({ car_id: carId, is_deleted: false }, {
+                    $push: { entity_status_history: historyEntry },
+                    $set: setFields,
+                }, { returnDocument: 'after', session });
+                if (!savedCar)
+                    throw new app_error_util_1.AppError('Car not found during update', 404);
                 if (newState === 'launched') {
                     await this.unHideCategoryOnLaunch(carId, session);
                 }
-                savedCar = car;
             });
         }
         finally {
@@ -140,13 +167,17 @@ class CarLifecycleService {
         if (!car) {
             throw new app_error_util_1.AppError('Car not found', 404);
         }
+        const allHistory = car.entity_status_history || [];
+        // Newest-first — reverse without mutating the Mongoose DocumentArray
+        const history = [...allHistory].reverse();
         return {
             car_id: car.car_id,
             name: car.name,
             current_state: car.entity_lifecycle_state || 'launched',
             entity_created_at: car.entity_created_at,
             entity_launch_date: car.entity_launch_date,
-            history: car.entity_status_history || [],
+            history,
+            total: history.length,
         };
     }
     /**

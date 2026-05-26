@@ -726,6 +726,29 @@ export class CarService {
       await MileageRecomputeService.recomputeCar(car.car_id);
     }
 
+    // When slug changes, preserve the old URL as a 301 redirect so SEO continuity
+    // is maintained. Skip if old and new slug are identical or if before is missing.
+    const oldSlug = (before as any)?.slug;
+    const newSlug = car.slug;
+    if (oldSlug && newSlug && oldSlug !== newSlug) {
+      const old_url = `/cars/${oldSlug}`;
+      const new_url = `/cars/${newSlug}`;
+      const exists = await Redirect.findOne({ old_url, is_deleted: false }).lean();
+      if (!exists) {
+        await Redirect.create({
+          redirect_id: uuidv4(),
+          old_url,
+          new_url,
+          type: '301',
+          reason: `Slug renamed from "${oldSlug}" to "${newSlug}"`,
+          created_by: actor?.user_id ?? null,
+        }).catch((err: any) => {
+          // Non-fatal — log but don't fail the update
+          console.error(`updateCar: failed to create redirect for slug change (${oldSlug} → ${newSlug})`, err);
+        });
+      }
+    }
+
     await AuditUtil.recordChanges({
       entity_type: 'car',
       entity_id: car.car_id,

@@ -670,6 +670,28 @@ class CarService {
             carData.is_electric !== undefined) {
             await mileage_recompute_service_1.MileageRecomputeService.recomputeCar(car.car_id);
         }
+        // When slug changes, preserve the old URL as a 301 redirect so SEO continuity
+        // is maintained. Skip if old and new slug are identical or if before is missing.
+        const oldSlug = before?.slug;
+        const newSlug = car.slug;
+        if (oldSlug && newSlug && oldSlug !== newSlug) {
+            const old_url = `/cars/${oldSlug}`;
+            const new_url = `/cars/${newSlug}`;
+            const exists = await redirect_model_1.Redirect.findOne({ old_url, is_deleted: false }).lean();
+            if (!exists) {
+                await redirect_model_1.Redirect.create({
+                    redirect_id: (0, uuid_1.v4)(),
+                    old_url,
+                    new_url,
+                    type: '301',
+                    reason: `Slug renamed from "${oldSlug}" to "${newSlug}"`,
+                    created_by: actor?.user_id ?? null,
+                }).catch((err) => {
+                    // Non-fatal — log but don't fail the update
+                    console.error(`updateCar: failed to create redirect for slug change (${oldSlug} → ${newSlug})`, err);
+                });
+            }
+        }
         await audit_util_1.AuditUtil.recordChanges({
             entity_type: 'car',
             entity_id: car.car_id,

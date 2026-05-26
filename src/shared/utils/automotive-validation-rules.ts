@@ -188,6 +188,100 @@ export class AutomotiveValidationRules {
       },
       errorMessage: () => 'CNG variants must have CNG mileage and tank capacity specified',
     },
+
+    // ── Impossible value detection ─────────────────────────────────────────
+    {
+      name: 'mileage_impossible_ice',
+      description: 'ICE/CNG mileage cannot exceed 50 kmpl — likely a data entry error',
+      severity: 'warning',
+      validate: (v) => {
+        const isEV = (v.fuel_type_id || '').toLowerCase().includes('electric');
+        if (isEV) return true;
+        const raw = v.specs_normalized?.mileage_range?.arai_mileage;
+        if (!raw) return true;
+        const n = parseFloat(String(raw));
+        return isNaN(n) || n <= 50;
+      },
+      errorMessage: (v) => `Possible invalid automotive value detected: ARAI mileage "${v.specs_normalized?.mileage_range?.arai_mileage}" exceeds 50 kmpl`,
+    },
+    {
+      name: 'ev_range_impossible',
+      description: 'EV range cannot exceed 1000 km — likely a data entry error',
+      severity: 'warning',
+      validate: (v) => {
+        const isEV = (v.fuel_type_id || '').toLowerCase().includes('electric');
+        if (!isEV) return true;
+        const raw = v.specs_normalized?.battery_charging?.real_world_range || v.specs_normalized?.battery_charging?.battery_wltp_km;
+        if (!raw) return true;
+        const n = parseFloat(String(raw));
+        return isNaN(n) || n <= 1000;
+      },
+      errorMessage: () => 'Possible invalid automotive value detected: EV range exceeds 1000 km',
+    },
+    {
+      name: 'power_impossible',
+      description: 'Engine power cannot exceed 800 bhp for a production car',
+      severity: 'warning',
+      validate: (v) => {
+        const raw = v.specs_normalized?.engine_performance?.max_power;
+        if (!raw) return true;
+        const m = String(raw).match(/-?\d+(?:\.\d+)?/);
+        if (!m) return true;
+        const n = Number(m[0]);
+        return isNaN(n) || n <= 800;
+      },
+      errorMessage: (v) => `Possible invalid automotive value detected: power "${v.specs_normalized?.engine_performance?.max_power}" exceeds 800 bhp`,
+    },
+    {
+      name: 'torque_impossible',
+      description: 'Torque cannot exceed 1500 Nm for a production car',
+      severity: 'warning',
+      validate: (v) => {
+        const raw = v.specs_normalized?.engine_performance?.max_torque;
+        if (!raw) return true;
+        const m = String(raw).match(/-?\d+(?:\.\d+)?/);
+        if (!m) return true;
+        const n = Number(m[0]);
+        return isNaN(n) || n <= 1500;
+      },
+      errorMessage: (v) => `Possible invalid automotive value detected: torque "${v.specs_normalized?.engine_performance?.max_torque}" exceeds 1500 Nm`,
+    },
+    {
+      name: 'airbags_impossible',
+      description: 'Airbag count cannot exceed 12 for a production car',
+      severity: 'warning',
+      validate: (v) => {
+        const raw = v.specs_normalized?.safety?.airbags;
+        if (raw == null) return true;
+        const n = Number(raw);
+        return isNaN(n) || n <= 12;
+      },
+      errorMessage: (v) => `Possible invalid automotive value detected: airbags count "${v.specs_normalized?.safety?.airbags}" exceeds 12`,
+    },
+    {
+      name: 'seating_capacity_impossible',
+      description: 'Seating capacity must be between 1 and 10',
+      severity: 'error',
+      validate: (v) => {
+        const n = v.seating_capacity;
+        return !n || (n >= 1 && n <= 10);
+      },
+      errorMessage: (v) => `Possible invalid automotive value detected: seating capacity "${v.seating_capacity}" is outside valid range (1–10)`,
+    },
+    {
+      name: 'acceleration_impossible',
+      description: '0-100 kmph acceleration cannot be under 1.5 seconds for a production car',
+      severity: 'warning',
+      validate: (v) => {
+        const raw = v.specs_normalized?.engine_performance?.acceleration_0_100;
+        if (!raw) return true;
+        const m = String(raw).match(/-?\d+(?:\.\d+)?/);
+        if (!m) return true;
+        const n = Number(m[0]);
+        return isNaN(n) || n >= 1.5;
+      },
+      errorMessage: (v) => `Possible invalid automotive value detected: 0-100 acceleration "${v.specs_normalized?.engine_performance?.acceleration_0_100}" is under 1.5 seconds`,
+    },
   ];
 
   static validate(variant: Record<string, any>): Array<{
