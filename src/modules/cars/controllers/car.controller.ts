@@ -12,6 +12,7 @@ import { CarLifecycleService } from "../services/car-lifecycle.service";
 import { RedirectService } from "../../redirects/services/redirect.service";
 import { ScheduledLaunchService } from "../../../shared/services/scheduled-launch.service";
 import { CarIntegrityService } from "../services/car-integrity.service";
+import { Car } from "../../../models/car.model";
 
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
@@ -273,6 +274,19 @@ export class CarController {
   });
 
   static updateCar = catchAsync(async (req: MulterRequest, res: Response) => {
+    // Slug changes and SEO canonical fields are restricted to super_admin.
+    const authUser = (req as AuthRequest).user;
+    const isSuperAdmin = authUser?.role === 'super_admin';
+    if (!isSuperAdmin && req.body.slug !== undefined) {
+      const currentCar = await Car
+        .findOne({ car_id: req.params.id, is_deleted: false })
+        .select('slug')
+        .lean();
+      if (currentCar && req.body.slug !== currentCar.slug) {
+        throw new AppError('Slug changes are restricted to Super Admin', 403);
+      }
+    }
+
     let thumbnailUrl = req.body.thumbnail_url;
     if (req.file) {
       // Handle both local storage (path) and Cloudinary (secure_url)

@@ -13,6 +13,7 @@ const car_lifecycle_service_1 = require("../services/car-lifecycle.service");
 const redirect_service_1 = require("../../redirects/services/redirect.service");
 const scheduled_launch_service_1 = require("../../../shared/services/scheduled-launch.service");
 const car_integrity_service_1 = require("../services/car-integrity.service");
+const car_model_1 = require("../../../models/car.model");
 function parseTagIds(input) {
     if (input === undefined || input === null || input === '')
         return undefined;
@@ -233,6 +234,18 @@ class CarController {
         return response_util_1.ResponseUtil.created(res, car, "Car created successfully");
     });
     static updateCar = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        // Slug changes and SEO canonical fields are restricted to super_admin.
+        const authUser = req.user;
+        const isSuperAdmin = authUser?.role === 'super_admin';
+        if (!isSuperAdmin && req.body.slug !== undefined) {
+            const currentCar = await car_model_1.Car
+                .findOne({ car_id: req.params.id, is_deleted: false })
+                .select('slug')
+                .lean();
+            if (currentCar && req.body.slug !== currentCar.slug) {
+                throw new app_error_util_1.AppError('Slug changes are restricted to Super Admin', 403);
+            }
+        }
         let thumbnailUrl = req.body.thumbnail_url;
         if (req.file) {
             // Handle both local storage (path) and Cloudinary (secure_url)

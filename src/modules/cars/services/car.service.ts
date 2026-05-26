@@ -238,7 +238,7 @@ export class CarService {
 
     const [cars, total] = await Promise.all([
       Car.find(filter)
-        .select('car_id name slug brand_id body_type_id body_type_name short_description thumbnail status is_upcoming is_launched expected_exshowroom_price expected_launch_date exshowroom_price is_electric is_published is_featured is_popular is_recommended is_latest top_selling tag_ids best_mileage_class best_mileage_value best_range_class best_range_value variant_count incomplete_variant_count min_variant_price max_variant_price aggregated_fuel_types meta_title meta_description model_family generation_start_year generation_end_year generation_label is_current is_facelift')
+        .select('car_id name slug brand_id body_type_id body_type_name short_description description thumbnail images status is_upcoming is_launched expected_exshowroom_price expected_launch_date exshowroom_price is_electric is_published is_featured is_popular is_recommended is_latest top_selling tag_ids best_mileage_class best_mileage_value best_range_class best_range_value variant_count incomplete_variant_count min_variant_price max_variant_price aggregated_fuel_types aggregated_transmission_types aggregated_drive_types mileage_min_kmpl mileage_max_kmpl range_min_km range_max_km max_airbags best_ncap_rating meta_title meta_description model_family generation_start_year generation_end_year generation_label is_current is_facelift entity_lifecycle_state')
         .sort(sortFilter)
         .skip(skip)
         .limit(validatedLimit)
@@ -678,6 +678,11 @@ export class CarService {
     }
     if (carData.generation_start_year !== undefined) updateData.generation_start_year = carData.generation_start_year;
     if (carData.generation_end_year !== undefined) updateData.generation_end_year = carData.generation_end_year;
+    const startYr = updateData.generation_start_year ?? (before as any)?.generation_start_year;
+    const endYr = updateData.generation_end_year ?? (before as any)?.generation_end_year;
+    if (startYr != null && endYr != null && Number(endYr) < Number(startYr)) {
+      throw new AppError('generation_end_year must be ≥ generation_start_year', 400);
+    }
     if (carData.generation_label !== undefined) updateData.generation_label = carData.generation_label;
     if (carData.is_current !== undefined) updateData.is_current = carData.is_current === true;
     if (carData.is_facelift !== undefined) updateData.is_facelift = carData.is_facelift === true;

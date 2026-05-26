@@ -26,6 +26,15 @@ export interface VariantDisplayDto {
   // Status
   is_published: boolean;
   is_archived: boolean;
+  is_deleted: boolean;
+  is_upcoming: boolean;
+  is_featured?: boolean;
+  variant_status?: string;
+  publish_status?: string;
+  market_status?: string;
+  variant_rank?: number;
+  trim_name?: string;
+  edition_name?: string;
 
   // Car details (flattened from relationship)
   car_id: string;
@@ -87,6 +96,15 @@ export class VariantResponseTransformer {
       expected_price: variant.expected_price,
       is_published: variant.is_published || false,
       is_archived: variant.is_archived || false,
+      is_deleted: variant.is_deleted || false,
+      is_upcoming: variant.is_upcoming || false,
+      is_featured: variant.is_featured,
+      variant_status: variant.variant_status,
+      publish_status: variant.publish_status,
+      market_status: variant.market_status,
+      variant_rank: variant.variant_rank,
+      trim_name: variant.trim_name,
+      edition_name: variant.edition_name,
       car_id: car?.car_id || variant.car_id?.toString() || '',
       car_name: car?.name || 'Unknown Car',
       car_slug: car?.slug || '',

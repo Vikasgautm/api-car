@@ -15,6 +15,15 @@ export interface VariantDisplayDto {
     expected_price?: number;
     is_published: boolean;
     is_archived: boolean;
+    is_deleted: boolean;
+    is_upcoming: boolean;
+    is_featured?: boolean;
+    variant_status?: string;
+    publish_status?: string;
+    market_status?: string;
+    variant_rank?: number;
+    trim_name?: string;
+    edition_name?: string;
     car_id: string;
     car_name: string;
     car_slug: string;

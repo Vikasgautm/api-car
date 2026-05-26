@@ -343,7 +343,7 @@ export class CarVariantService {
       const sortFilter = FilterUtil.buildSortFilter(sortBy, sortOrder);
 
       const variants = await CarVariant.find(filter)
-        .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived created_at updated_at')
+        .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived is_deleted is_upcoming is_featured variant_status publish_status market_status variant_rank trim_name edition_name created_at updated_at')
         .sort(sortFilter)
         .skip(skip)
         .limit(validatedLimit)
