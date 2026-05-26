@@ -2,6 +2,7 @@ import { IVariantImportStaging, VariantImportStaging } from '../models/VariantIm
 import { ImportSession } from '../models/ImportSession';
 import { CarVariant } from '../../../models/car-variant.model';
 import { Types } from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface PushResult {
   staging_id: string;
@@ -44,12 +45,15 @@ export class VariantPushService {
           update.specs_raw = { ...(existing.specs_raw || {}), ...staging.normalized_specs };
         }
         await CarVariant.updateOne({ _id: existing._id }, { $set: update });
-        variantId = String(existing._id);
+        variantId = existing.variant_id;
       } else {
+        const newVariantId = uuidv4();
         const variantData: Record<string, any> = {
+          variant_id: newVariantId,
           car_id: staging.linked_car_id,
           variant_name: staging.variant_name,
           slug,
+          model_year: new Date().getFullYear(),
           is_published: false,
           is_deleted: false,
           ex_showroom_price: staging.price,
@@ -60,7 +64,7 @@ export class VariantPushService {
 
         const variant = new CarVariant(variantData);
         await variant.save();
-        variantId = String(variant._id);
+        variantId = variant.variant_id;
       }
 
       await VariantImportStaging.updateOne(

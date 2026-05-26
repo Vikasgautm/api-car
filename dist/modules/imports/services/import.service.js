@@ -154,6 +154,7 @@ class ImportService {
             car = await car_model_1.Car.create({
                 car_id: (0, uuid_1.v4)(),
                 ...cleanData,
+                description: String(cleanData.description || ''),
                 is_deleted: false,
             });
             // Update import log

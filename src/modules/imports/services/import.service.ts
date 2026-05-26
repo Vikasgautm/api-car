@@ -179,7 +179,8 @@ export class ImportService {
 
       car = await Car.create({
         car_id: uuidv4(),
-        ...cleanData,
+        ...(cleanData as Record<string, unknown>),
+        description: String(cleanData.description || ''),
         is_deleted: false,
       });
 

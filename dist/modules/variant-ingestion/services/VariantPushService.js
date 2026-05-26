@@ -4,6 +4,7 @@ exports.VariantPushService = void 0;
 const VariantImportStaging_1 = require("../models/VariantImportStaging");
 const ImportSession_1 = require("../models/ImportSession");
 const car_variant_model_1 = require("../../../models/car-variant.model");
+const uuid_1 = require("uuid");
 class VariantPushService {
     static async pushVariant(stagingId, pushedBy) {
         const staging = await VariantImportStaging_1.VariantImportStaging.findById(stagingId);
@@ -35,13 +36,16 @@ class VariantPushService {
                     update.specs_raw = { ...(existing.specs_raw || {}), ...staging.normalized_specs };
                 }
                 await car_variant_model_1.CarVariant.updateOne({ _id: existing._id }, { $set: update });
-                variantId = String(existing._id);
+                variantId = existing.variant_id;
             }
             else {
+                const newVariantId = (0, uuid_1.v4)();
                 const variantData = {
+                    variant_id: newVariantId,
                     car_id: staging.linked_car_id,
                     variant_name: staging.variant_name,
                     slug,
+                    model_year: new Date().getFullYear(),
                     is_published: false,
                     is_deleted: false,
                     ex_showroom_price: staging.price,
@@ -51,7 +55,7 @@ class VariantPushService {
                 };
                 const variant = new car_variant_model_1.CarVariant(variantData);
                 await variant.save();
-                variantId = String(variant._id);
+                variantId = variant.variant_id;
             }
             await VariantImportStaging_1.VariantImportStaging.updateOne({ _id: staging._id }, {
                 $set: {
