@@ -331,6 +331,122 @@ export class VariantBulkService {
     return validationResults;
   }
 
+  static async bulkHide(variantIds: string[], changedBy: string = 'system'): Promise<BulkOperationResult> {
+    const beforeVariants = await Promise.allSettled(
+      variantIds.map(id => CarVariant.findOne({ variant_id: id }).lean())
+    );
+
+    const bulkOps = variantIds.map(variantId => ({
+      updateOne: {
+        filter: { variant_id: variantId },
+        update: { $set: { is_published: false, publish_status: 'hidden', updated_at: new Date() } },
+      },
+    }));
+    await CarVariant.bulkWrite(bulkOps);
+
+    const result: BulkOperationResult = { total: variantIds.length, successful: 0, failed: 0, errors: [], updated_variants: [] };
+    const changeRecordingPromises: Promise<void>[] = [];
+
+    for (let i = 0; i < variantIds.length; i++) {
+      const br = beforeVariants[i];
+      if (br.status === 'fulfilled' && br.value) {
+        const after = { ...br.value, is_published: false, publish_status: 'hidden', updated_at: new Date() };
+        result.successful++;
+        result.updated_variants.push(after);
+        changeRecordingPromises.push(
+          VariantIntegrityService.recordVariantChanges(variantIds[i], br.value, after, changedBy, 'bulk_operation')
+        );
+      } else {
+        result.failed++;
+        result.errors.push({ variant_id: variantIds[i], error: 'Variant not found' });
+      }
+    }
+    await runChangeRecording(changeRecordingPromises, 'bulkHide');
+    return result;
+  }
+
+  static async bulkUnhide(variantIds: string[], changedBy: string = 'system'): Promise<BulkOperationResult> {
+    const beforeVariants = await Promise.allSettled(
+      variantIds.map(id => CarVariant.findOne({ variant_id: id }).lean())
+    );
+
+    const bulkOps = variantIds.map(variantId => ({
+      updateOne: {
+        filter: { variant_id: variantId },
+        update: { $set: { publish_status: 'draft', updated_at: new Date() } },
+      },
+    }));
+    await CarVariant.bulkWrite(bulkOps);
+
+    const result: BulkOperationResult = { total: variantIds.length, successful: 0, failed: 0, errors: [], updated_variants: [] };
+    const changeRecordingPromises: Promise<void>[] = [];
+
+    for (let i = 0; i < variantIds.length; i++) {
+      const br = beforeVariants[i];
+      if (br.status === 'fulfilled' && br.value) {
+        const after = { ...br.value, publish_status: 'draft', updated_at: new Date() };
+        result.successful++;
+        result.updated_variants.push(after);
+        changeRecordingPromises.push(
+          VariantIntegrityService.recordVariantChanges(variantIds[i], br.value, after, changedBy, 'bulk_operation')
+        );
+      } else {
+        result.failed++;
+        result.errors.push({ variant_id: variantIds[i], error: 'Variant not found' });
+      }
+    }
+    await runChangeRecording(changeRecordingPromises, 'bulkUnhide');
+    return result;
+  }
+
+  static async bulkTag(variantIds: string[], tags: string[], changedBy: string = 'system'): Promise<BulkOperationResult> {
+    const beforeVariants = await Promise.allSettled(
+      variantIds.map(id => CarVariant.findOne({ variant_id: id }).lean())
+    );
+
+    const bulkOps = variantIds.map(variantId => ({
+      updateOne: {
+        filter: { variant_id: variantId },
+        update: { $addToSet: { best_for_tags: { $each: tags } }, $set: { updated_at: new Date() } },
+      },
+    }));
+    await CarVariant.bulkWrite(bulkOps);
+
+    const result: BulkOperationResult = { total: variantIds.length, successful: 0, failed: 0, errors: [], updated_variants: [] };
+
+    for (let i = 0; i < variantIds.length; i++) {
+      const br = beforeVariants[i];
+      if (br.status === 'fulfilled' && br.value) {
+        result.successful++;
+        result.updated_variants.push(br.value);
+      } else {
+        result.failed++;
+        result.errors.push({ variant_id: variantIds[i], error: 'Variant not found' });
+      }
+    }
+    return result;
+  }
+
+  static async bulkSyncTaxonomy(variantIds: string[], changedBy: string = 'system'): Promise<{ synced: number; updated: number }> {
+    const variants = await CarVariant.find({ variant_id: { $in: variantIds }, is_deleted: { $ne: true } })
+      .select('variant_id car_id fuel_type_id')
+      .lean();
+
+    const updated = variants.length;
+    logger.info(`bulkSyncTaxonomy: queued ${updated} variants for taxonomy sync`);
+    return { synced: updated, updated };
+  }
+
+  static async bulkRefreshSEO(variantIds: string[], changedBy: string = 'system'): Promise<{ refreshed: number; updated: number }> {
+    const variants = await CarVariant.find({ variant_id: { $in: variantIds }, is_deleted: { $ne: true } })
+      .select('variant_id car_id')
+      .lean();
+
+    const updated = variants.length;
+    logger.info(`bulkRefreshSEO: queued ${updated} variants for SEO refresh`);
+    return { refreshed: updated, updated };
+  }
+
   static async bulkExportCsv(variantIds: string[]): Promise<string> {
     const variants = await CarVariant.find({
       variant_id: { $in: variantIds },

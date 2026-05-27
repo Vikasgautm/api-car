@@ -19,7 +19,8 @@ export type AuditAction =
   | 'unpublish'
   | 'mark_launched'
   | 'mark_upcoming'
-  | 'mark_reviewed';
+  | 'mark_reviewed'
+  | 'clone';
 
 export interface IAuditLog extends Document {
   audit_id: string;

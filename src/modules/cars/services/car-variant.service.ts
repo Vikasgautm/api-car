@@ -403,7 +403,7 @@ export class CarVariantService {
     if (is_deleted === 'true' || is_deleted === true) {
       conditions.push({ is_deleted: true });
     } else {
-      conditions.push({ is_deleted: false });
+      conditions.push({ is_deleted: { $ne: true } });
     }
 
     if (is_archived === undefined || is_archived === false || is_archived === 'false') {
@@ -464,7 +464,7 @@ export class CarVariantService {
     // Fetch ALL non-deleted variants for the paginated cars (not filtered)
     // so counts reflect true state and all variants are visible in the group
     const pageCarIds = (cars as any[]).map((c) => c.car_id);
-    const allVariants = await CarVariant.find({ car_id: { $in: pageCarIds }, is_deleted: false })
+    const allVariants = await CarVariant.find({ car_id: { $in: pageCarIds }, is_deleted: { $ne: true } })
       .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived is_deleted is_upcoming is_featured variant_status publish_status market_status variant_rank trim_name edition_name created_at updated_at')
       .sort({ variant_rank: 1, variant_name: 1 })
       .lean();
@@ -616,6 +616,55 @@ export class CarVariantService {
       new_value: { variant_id: created.variant_id, variant_name: created.variant_name, car_id: created.car_id },
     });
     return created;
+  }
+
+  static async cloneVariant(sourceVariantId: string, overrides: { variant_name?: string } = {}, actor: AuditActor | null = null) {
+    const source = await CarVariant.findOne({ variant_id: sourceVariantId, is_deleted: { $ne: true } }).lean();
+    if (!source) {
+      throw new AppError(`Variant not found for clone: ${sourceVariantId}`, 404, {
+        userMessage: USER_MESSAGES.VARIANT_NOT_FOUND,
+        errorCode: ERROR_CODES.VARIANT_NOT_FOUND,
+      });
+    }
+
+    const baseName = overrides.variant_name || `${(source as any).variant_name} Copy`;
+    const baseSlug = SlugUtil.generate(baseName);
+    const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+    const existingSlugs = (
+      await CarVariant.find({ slug: pattern, is_deleted: { $ne: true } }).select('slug').lean()
+    ).map((v: any) => v.slug);
+
+    const uniqueSlug = existingSlugs.length > 0
+      ? SlugUtil.generateUnique(baseName, existingSlugs)
+      : baseSlug;
+
+    const cloneData: any = {
+      ...(source as any),
+      variant_id: uuidv4(),
+      variant_name: baseName,
+      slug: uniqueSlug,
+      is_published: false,
+      is_deleted: false,
+      is_archived: false,
+      publish_status: 'draft',
+      published_at: undefined,
+    };
+    delete cloneData._id;
+    delete cloneData.__v;
+    delete cloneData.created_at;
+    delete cloneData.updated_at;
+
+    const cloned = await CarVariant.create(cloneData);
+    await CarAggregationService.recomputeFullAggregates(cloned.car_id);
+
+    await AuditUtil.recordEvent({
+      entity_type: 'variant',
+      entity_id: cloned.variant_id,
+      action: 'clone',
+      actor,
+      new_value: { variant_id: cloned.variant_id, cloned_from: sourceVariantId },
+    });
+    return cloned;
   }
 
   static async updateVariant(variantId: string, variantData: any, actor: AuditActor | null = null) {

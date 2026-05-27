@@ -1,6 +1,6 @@
 import { Document } from 'mongoose';
 export type AuditEntityType = 'car' | 'variant' | 'tag' | 'tag_category' | 'benchmark_override' | 'blog';
-export type AuditAction = 'create' | 'update' | 'delete' | 'restore' | 'archive' | 'unarchive' | 'publish' | 'unpublish' | 'mark_launched' | 'mark_upcoming' | 'mark_reviewed';
+export type AuditAction = 'create' | 'update' | 'delete' | 'restore' | 'archive' | 'unarchive' | 'publish' | 'unpublish' | 'mark_launched' | 'mark_upcoming' | 'mark_reviewed' | 'clone';
 export interface IAuditLog extends Document {
     audit_id: string;
     entity_type: AuditEntityType;

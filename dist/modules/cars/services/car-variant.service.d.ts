@@ -56,6 +56,15 @@ export declare class CarVariantService {
     } & {
         id: string;
     }>;
+    static cloneVariant(sourceVariantId: string, overrides?: {
+        variant_name?: string;
+    }, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
     static updateVariant(variantId: string, variantData: any, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {

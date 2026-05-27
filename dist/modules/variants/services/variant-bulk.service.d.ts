@@ -24,6 +24,17 @@ export declare class VariantBulkService {
     static bulkPublish(variantIds: string[], shouldPublish: boolean, changedBy?: string): Promise<BulkOperationResult>;
     static bulkUpdate(request: BulkUpdateRequest, changedBy?: string): Promise<BulkOperationResult>;
     static bulkValidate(variantIds: string[]): Promise<Record<string, any>>;
+    static bulkHide(variantIds: string[], changedBy?: string): Promise<BulkOperationResult>;
+    static bulkUnhide(variantIds: string[], changedBy?: string): Promise<BulkOperationResult>;
+    static bulkTag(variantIds: string[], tags: string[], changedBy?: string): Promise<BulkOperationResult>;
+    static bulkSyncTaxonomy(variantIds: string[], changedBy?: string): Promise<{
+        synced: number;
+        updated: number;
+    }>;
+    static bulkRefreshSEO(variantIds: string[], changedBy?: string): Promise<{
+        refreshed: number;
+        updated: number;
+    }>;
     static bulkExportCsv(variantIds: string[]): Promise<string>;
 }
 //# sourceMappingURL=variant-bulk.service.d.ts.map

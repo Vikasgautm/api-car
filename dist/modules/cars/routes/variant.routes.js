@@ -20,6 +20,12 @@ adminRouter.post('/', car_variant_controller_1.CarVariantController.createVarian
 adminRouter.post('/bulk/validate', car_variant_controller_1.CarVariantController.bulkValidate);
 adminRouter.post('/bulk/update-status', (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.bulkUpdateStatus);
 adminRouter.post('/bulk/publish', (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.bulkPublish);
+adminRouter.post('/bulk/unpublish', (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.bulkUnpublish);
+adminRouter.post('/bulk/hide', (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.bulkHide);
+adminRouter.post('/bulk/unhide', (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.bulkUnhide);
+adminRouter.post('/bulk/tag', car_variant_controller_1.CarVariantController.bulkTag);
+adminRouter.post('/bulk/sync-taxonomy', car_variant_controller_1.CarVariantController.bulkSyncTaxonomy);
+adminRouter.post('/bulk/refresh-seo', car_variant_controller_1.CarVariantController.bulkRefreshSEO);
 adminRouter.post('/bulk/update-visibility', (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.bulkUpdateVisibility);
 adminRouter.post('/bulk/update', car_variant_controller_1.CarVariantController.bulkUpdate);
 adminRouter.post('/bulk/export-csv', car_variant_controller_1.CarVariantController.bulkExportCsv);
@@ -52,6 +58,8 @@ adminRouter.get('/:id/audit-trail', validation_1.validateUuidIdParam, car_varian
 adminRouter.get('/:id/integrity-status', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getVariantIntegrityStatus);
 adminRouter.get('/:id/validate/full', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.validateVariantFull);
 adminRouter.get('/:id/validate/automotive-constraints', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.validateAutomotiveConstraints);
+// Clone endpoint - specific sub-path before generic /:id
+adminRouter.post('/:id/clone', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.cloneVariant);
 // Generic /:id routes - MUST come last after all specific routes
 adminRouter.get('/:id', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getAdminVariantById);
 adminRouter.put('/:id', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.updateVariant);

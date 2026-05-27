@@ -204,6 +204,11 @@ class CarVariantController {
         const variant = await car_variant_service_1.CarVariantService.deleteVariant(req.params.id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, variant, 'Variant deleted successfully');
     });
+    static cloneVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const overrides = req.body.variant_name ? { variant_name: req.body.variant_name } : {};
+        const cloned = await car_variant_service_1.CarVariantService.cloneVariant(req.params.id, overrides, audit_util_1.AuditUtil.actorFromRequest(req));
+        return response_util_1.ResponseUtil.created(res, cloned, 'Variant cloned successfully');
+    });
     static restoreVariant = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const variant = await car_variant_service_1.CarVariantService.restoreVariant(req.params.id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, variant, 'Variant restored successfully');
@@ -334,6 +339,60 @@ class CarVariantController {
         const changedBy = req.user?.email || 'system';
         const result = await variant_bulk_service_1.VariantBulkService.bulkUpdateVisibility(variant_ids, hidden_sections, changedBy);
         return response_util_1.ResponseUtil.success(res, result, 'Bulk visibility update completed');
+    });
+    static bulkUnpublish = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { variant_ids } = req.body;
+        if (!variant_ids || !Array.isArray(variant_ids)) {
+            throw new app_error_util_1.AppError('variant_ids array is required', 400);
+        }
+        const changedBy = req.user?.email || 'system';
+        const result = await variant_bulk_service_1.VariantBulkService.bulkPublish(variant_ids, false, changedBy);
+        return response_util_1.ResponseUtil.success(res, result, 'Bulk unpublish completed');
+    });
+    static bulkHide = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { variant_ids } = req.body;
+        if (!variant_ids || !Array.isArray(variant_ids)) {
+            throw new app_error_util_1.AppError('variant_ids array is required', 400);
+        }
+        const changedBy = req.user?.email || 'system';
+        const result = await variant_bulk_service_1.VariantBulkService.bulkHide(variant_ids, changedBy);
+        return response_util_1.ResponseUtil.success(res, result, 'Bulk hide completed');
+    });
+    static bulkUnhide = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { variant_ids } = req.body;
+        if (!variant_ids || !Array.isArray(variant_ids)) {
+            throw new app_error_util_1.AppError('variant_ids array is required', 400);
+        }
+        const changedBy = req.user?.email || 'system';
+        const result = await variant_bulk_service_1.VariantBulkService.bulkUnhide(variant_ids, changedBy);
+        return response_util_1.ResponseUtil.success(res, result, 'Bulk unhide completed');
+    });
+    static bulkTag = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { variant_ids, tags } = req.body;
+        if (!variant_ids || !Array.isArray(variant_ids) || !tags || !Array.isArray(tags)) {
+            throw new app_error_util_1.AppError('variant_ids and tags arrays are required', 400);
+        }
+        const changedBy = req.user?.email || 'system';
+        const result = await variant_bulk_service_1.VariantBulkService.bulkTag(variant_ids, tags, changedBy);
+        return response_util_1.ResponseUtil.success(res, result, 'Bulk tag completed');
+    });
+    static bulkSyncTaxonomy = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { variant_ids } = req.body;
+        if (!variant_ids || !Array.isArray(variant_ids)) {
+            throw new app_error_util_1.AppError('variant_ids array is required', 400);
+        }
+        const changedBy = req.user?.email || 'system';
+        const result = await variant_bulk_service_1.VariantBulkService.bulkSyncTaxonomy(variant_ids, changedBy);
+        return response_util_1.ResponseUtil.success(res, result, 'Bulk taxonomy sync completed');
+    });
+    static bulkRefreshSEO = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { variant_ids } = req.body;
+        if (!variant_ids || !Array.isArray(variant_ids)) {
+            throw new app_error_util_1.AppError('variant_ids array is required', 400);
+        }
+        const changedBy = req.user?.email || 'system';
+        const result = await variant_bulk_service_1.VariantBulkService.bulkRefreshSEO(variant_ids, changedBy);
+        return response_util_1.ResponseUtil.success(res, result, 'Bulk SEO refresh completed');
     });
     static bulkUpdate = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const { variant_ids, updates } = req.body;

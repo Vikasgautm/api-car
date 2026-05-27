@@ -198,6 +198,12 @@ export class CarVariantController {
     return ResponseUtil.success(res, variant, 'Variant deleted successfully');
   });
 
+  static cloneVariant = catchAsync(async (req: Request, res: Response) => {
+    const overrides = req.body.variant_name ? { variant_name: req.body.variant_name as string } : {};
+    const cloned = await CarVariantService.cloneVariant(req.params.id as string, overrides, AuditUtil.actorFromRequest(req as AuthRequest));
+    return ResponseUtil.created(res, cloned, 'Variant cloned successfully');
+  });
+
   static restoreVariant = catchAsync(async (req: Request, res: Response) => {
     const variant = await CarVariantService.restoreVariant(req.params.id as string, AuditUtil.actorFromRequest(req as AuthRequest));
     return ResponseUtil.success(res, variant, 'Variant restored successfully');
@@ -367,6 +373,66 @@ export class CarVariantController {
     const changedBy = (req as AuthRequest).user?.email || 'system';
     const result = await VariantBulkService.bulkUpdateVisibility(variant_ids, hidden_sections, changedBy);
     return ResponseUtil.success(res, result, 'Bulk visibility update completed');
+  });
+
+  static bulkUnpublish = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids)) {
+      throw new AppError('variant_ids array is required', 400);
+    }
+    const changedBy = (req as AuthRequest).user?.email || 'system';
+    const result = await VariantBulkService.bulkPublish(variant_ids, false, changedBy);
+    return ResponseUtil.success(res, result, 'Bulk unpublish completed');
+  });
+
+  static bulkHide = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids)) {
+      throw new AppError('variant_ids array is required', 400);
+    }
+    const changedBy = (req as AuthRequest).user?.email || 'system';
+    const result = await VariantBulkService.bulkHide(variant_ids, changedBy);
+    return ResponseUtil.success(res, result, 'Bulk hide completed');
+  });
+
+  static bulkUnhide = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids)) {
+      throw new AppError('variant_ids array is required', 400);
+    }
+    const changedBy = (req as AuthRequest).user?.email || 'system';
+    const result = await VariantBulkService.bulkUnhide(variant_ids, changedBy);
+    return ResponseUtil.success(res, result, 'Bulk unhide completed');
+  });
+
+  static bulkTag = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids, tags } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids) || !tags || !Array.isArray(tags)) {
+      throw new AppError('variant_ids and tags arrays are required', 400);
+    }
+    const changedBy = (req as AuthRequest).user?.email || 'system';
+    const result = await VariantBulkService.bulkTag(variant_ids, tags, changedBy);
+    return ResponseUtil.success(res, result, 'Bulk tag completed');
+  });
+
+  static bulkSyncTaxonomy = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids)) {
+      throw new AppError('variant_ids array is required', 400);
+    }
+    const changedBy = (req as AuthRequest).user?.email || 'system';
+    const result = await VariantBulkService.bulkSyncTaxonomy(variant_ids, changedBy);
+    return ResponseUtil.success(res, result, 'Bulk taxonomy sync completed');
+  });
+
+  static bulkRefreshSEO = catchAsync(async (req: Request, res: Response) => {
+    const { variant_ids } = req.body;
+    if (!variant_ids || !Array.isArray(variant_ids)) {
+      throw new AppError('variant_ids array is required', 400);
+    }
+    const changedBy = (req as AuthRequest).user?.email || 'system';
+    const result = await VariantBulkService.bulkRefreshSEO(variant_ids, changedBy);
+    return ResponseUtil.success(res, result, 'Bulk SEO refresh completed');
   });
 
   static bulkUpdate = catchAsync(async (req: Request, res: Response) => {
