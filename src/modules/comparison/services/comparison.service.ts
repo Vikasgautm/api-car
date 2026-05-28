@@ -17,10 +17,10 @@ export class ComparisonService {
     session.startTransaction();
 
     try {
-      // Validate cars exist
+      // Validate cars exist — DTO sends MongoDB _id (24-char ObjectId)
       const [car1, car2] = await Promise.all([
-        Car.findOne({ car_id: data.car1_id }),
-        Car.findOne({ car_id: data.car2_id }),
+        Car.findById(data.car1_id),
+        Car.findById(data.car2_id),
       ]);
 
       if (!car1) throw new AppError('Car 1 not found', 404);
@@ -291,8 +291,8 @@ export class ComparisonService {
 
       // Create both directions
       const [car1, car2] = await Promise.all([
-        Car.findOne({ car_id: primaryCarId }).session(session),
-        Car.findOne({ car_id: rivalCarId }).session(session),
+        Car.findById(primaryCarId).session(session),
+        Car.findById(rivalCarId).session(session),
       ]);
 
       if (!car1 || !car2) throw new AppError('One or both cars not found', 404);

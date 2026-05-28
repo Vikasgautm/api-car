@@ -17,10 +17,10 @@ class ComparisonService {
         const session = await mongoose_1.default.startSession();
         session.startTransaction();
         try {
-            // Validate cars exist
+            // Validate cars exist — DTO sends MongoDB _id (24-char ObjectId)
             const [car1, car2] = await Promise.all([
-                car_model_1.Car.findOne({ car_id: data.car1_id }),
-                car_model_1.Car.findOne({ car_id: data.car2_id }),
+                car_model_1.Car.findById(data.car1_id),
+                car_model_1.Car.findById(data.car2_id),
             ]);
             if (!car1)
                 throw new app_error_util_1.AppError('Car 1 not found', 404);
@@ -236,8 +236,8 @@ class ComparisonService {
                 throw new app_error_util_1.AppError('Cannot set car as its own rival', 400);
             // Create both directions
             const [car1, car2] = await Promise.all([
-                car_model_1.Car.findOne({ car_id: primaryCarId }).session(session),
-                car_model_1.Car.findOne({ car_id: rivalCarId }).session(session),
+                car_model_1.Car.findById(primaryCarId).session(session),
+                car_model_1.Car.findById(rivalCarId).session(session),
             ]);
             if (!car1 || !car2)
                 throw new app_error_util_1.AppError('One or both cars not found', 404);

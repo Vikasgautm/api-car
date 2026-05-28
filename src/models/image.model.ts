@@ -1,4 +1,5 @@
 import { Document, Schema, model } from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface IImage extends Document {
   image_id: string;
@@ -18,7 +19,7 @@ export interface IImage extends Document {
 }
 
 const imageSchema = new Schema<IImage>(
-  {image_id: { type: String, required: true, unique: true },
+  {image_id: { type: String, required: true, unique: true, default: () => uuidv4() },
     
     url: { type: String, required: true },
     public_id: { type: String, index: true },

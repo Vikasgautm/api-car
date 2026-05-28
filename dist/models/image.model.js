@@ -2,7 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Image = void 0;
 const mongoose_1 = require("mongoose");
-const imageSchema = new mongoose_1.Schema({ image_id: { type: String, required: true, unique: true },
+const uuid_1 = require("uuid");
+const imageSchema = new mongoose_1.Schema({ image_id: { type: String, required: true, unique: true, default: () => (0, uuid_1.v4)() },
     url: { type: String, required: true },
     public_id: { type: String, index: true },
     original_name: { type: String, required: true },
