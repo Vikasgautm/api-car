@@ -300,6 +300,8 @@ export type DriveType = 'fwd' | 'rwd' | 'awd' | '4wd' | '2wd' | '4x2' | '4x4' | 
 export declare const DRIVE_TYPE_VALUES: DriveType[];
 export declare function normalizeDriveType(raw: string | null | undefined): DriveType | null;
 export type VariantMarketStatus = 'available' | 'sold_out' | 'discontinued' | 'upcoming';
+export type PublishStatus = 'published' | 'hidden' | 'scheduled' | 'draft';
+export type VariantLifecycleStatus = 'launched' | 'upcoming' | 'discontinued' | 'hidden' | 'review_pending' | 'draft' | 'incomplete';
 export interface ChangeHistoryEntry {
     field: string;
     old_value: any;
@@ -347,6 +349,8 @@ export interface ICarVariant extends Document {
     best_for_tags?: string[];
     variant_highlights?: string[];
     market_status?: VariantMarketStatus;
+    publish_status?: PublishStatus;
+    variant_status?: VariantLifecycleStatus;
     field_visibility?: Record<string, FieldVisibilityState>;
     section_visibility?: SectionVisibility[];
     estimated_fields?: Record<string, boolean>;

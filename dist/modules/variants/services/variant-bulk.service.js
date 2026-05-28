@@ -138,6 +138,7 @@ class VariantBulkService {
                 update: {
                     $set: {
                         is_published: shouldPublish,
+                        publish_status: (shouldPublish ? 'published' : 'draft'),
                         published_at: publishedAt,
                         updated_at: new Date(),
                     }

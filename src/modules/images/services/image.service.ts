@@ -3,6 +3,7 @@ import { UploadService } from "../../../shared/services/upload.service";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { FilterUtil } from "../../../shared/utils/filter.util";
 import { PaginationUtil } from "../../../shared/utils/pagination.util";
+import { logger } from '../../../utils/logger';
 
 export class ImageService {
   static async getAllImages(filterDto: any, includeDeleted: boolean = false) {
@@ -84,7 +85,7 @@ export class ImageService {
       try {
         await UploadService.deleteFromCloudinary(image.public_id);
       } catch (error) {
-        console.error('Error deleting from Cloudinary:', error);
+        logger.error('Error deleting from Cloudinary:', error);
         // Continue with DB deletion even if Cloudinary fails
       }
     }
@@ -121,7 +122,7 @@ export class ImageService {
       try {
         await UploadService.deleteFromCloudinary(image.public_id);
       } catch (error) {
-        console.error('Error deleting from Cloudinary:', error);
+        logger.error('Error deleting from Cloudinary:', error);
       }
     }
 
@@ -176,7 +177,7 @@ export class ImageService {
         try {
           await UploadService.deleteFromCloudinary(uploadedFile.publicId);
         } catch (cleanupError) {
-          console.error('Error during cleanup after DB save failure:', cleanupError);
+          logger.error('Error during cleanup after DB save failure:', cleanupError);
         }
       }
 
@@ -224,7 +225,7 @@ export class ImageService {
           try {
             await UploadService.deleteFromCloudinary(result.file.publicId);
           } catch (cleanupError) {
-            console.error('Error during cleanup after DB save failure:', cleanupError);
+            logger.error('Error during cleanup after DB save failure:', cleanupError);
           }
         }
         failedFiles.push(result);
@@ -239,7 +240,7 @@ export class ImageService {
           .filter(image => image.public_id)
           .map(image =>
             UploadService.deleteFromCloudinary(image.public_id!).catch(cleanupError => {
-              console.error('Error during rollback cleanup:', cleanupError);
+              logger.error('Error during rollback cleanup:', cleanupError);
             })
           )
       );

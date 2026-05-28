@@ -56,6 +56,7 @@ export class VariantPushService {
           model_year: new Date().getFullYear(),
           is_published: false,
           is_deleted: false,
+          is_archived: false,
           ex_showroom_price: staging.price,
           fuel_type_id: staging.fuel_type,
           transmission_type: staging.transmission ? staging.transmission.toLowerCase().replace(/ /g, '_') : undefined,

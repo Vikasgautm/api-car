@@ -15,6 +15,7 @@ import { VariantResponseTransformer } from "../../../shared/transformers/variant
 import { ImportNormalizerService } from "../../imports/services/import-normalizer.service";
 import { PowertrainDetectorService } from "../../variants/services/powertrain-detector.service";
 import { SEOAutoWiringService } from "../../imports/services/seo-auto-wiring.service";
+import { logger } from '../../../utils/logger';
 
 // ── Fuel-type visibility rules (mirrors variantSpecConfig.ts FuelVisibilityMap) ──
 // Maps section key → field key → which fuel types should hide that field.
@@ -166,7 +167,7 @@ export class CarVariantService {
       if (key && result[key]) {
         delete result[key];
       } else if (!key) {
-        console.warn(`Unknown section name in hidden_sections: ${sectionName}`);
+        logger.warn(`Unknown section name in hidden_sections: ${sectionName}`);
       }
     }
 
@@ -272,16 +273,15 @@ export class CarVariantService {
       if (is_deleted === 'true' || is_deleted === true) {
         filter.is_deleted = true;
       } else if (!includeDeleted) {
-        filter.is_deleted = false;
+        filter.is_deleted = { $ne: true };
       }
 
       // By default, exclude archived variants unless explicitly requested.
       // Accept boolean (from JSON callers) AND string ("true"/"false"/"all" from
-      // query-string callers). Previously the boolean `false` fell through both
-      // branches and silently disabled the filter — admins saw archived rows mixed
-      // into the active list.
+      // query-string callers). Use $ne:true so that documents without the field
+      // (created before is_archived was added) are still visible in the active view.
       if (is_archived === undefined || is_archived === false || is_archived === 'false') {
-        filter.is_archived = false;
+        filter.is_archived = { $ne: true };
       } else if (is_archived === true || is_archived === 'true') {
         filter.is_archived = true;
       }
@@ -355,7 +355,7 @@ export class CarVariantService {
 
       return { variants, pagination: paginationMeta };
     } catch (error) {
-      console.error('Error in getAllVariants:', error);
+      logger.error('Error in getAllVariants:', error);
       throw new AppError(
         'Failed to fetch variants',
         500,
@@ -407,7 +407,7 @@ export class CarVariantService {
     }
 
     if (is_archived === undefined || is_archived === false || is_archived === 'false') {
-      conditions.push({ is_archived: false });
+      conditions.push({ is_archived: { $ne: true } });
     } else if (is_archived === true || is_archived === 'true') {
       conditions.push({ is_archived: true });
     }
@@ -425,7 +425,7 @@ export class CarVariantService {
     // Search: match variant name OR car name
     if (q) {
       const regex = new RegExp(String(q), 'i');
-      const matchingCars = await Car.find({ name: regex, is_deleted: false })
+      const matchingCars = await Car.find({ name: regex, is_deleted: { $ne: true } })
         .select('car_id')
         .lean();
       const carIdsByName = matchingCars.map((c: any) => c.car_id);
@@ -443,7 +443,7 @@ export class CarVariantService {
     }
 
     // Load car metadata, applying optional brand/body_type filters
-    const carFilter: Record<string, any> = { car_id: { $in: matchingCarIds }, is_deleted: false };
+    const carFilter: Record<string, any> = { car_id: { $in: matchingCarIds }, is_deleted: { $ne: true } };
     if (brand_id) carFilter.brand_id = brand_id;
     if (body_type_id) carFilter.body_type_id = body_type_id;
 
@@ -583,6 +583,8 @@ export class CarVariantService {
       hidden_spec_keys: variantData.hidden_spec_keys || [],
       hidden_sections: variantData.hidden_sections || [],
       is_published: variantData.is_published || false,
+      publish_status: variantData.is_published ? 'published' : 'draft',
+      variant_status: variantData.variant_status || 'draft',
       is_deleted: false,
       is_archived: false,
       // Powertrain detection flags (from normalization engine)
@@ -605,7 +607,7 @@ export class CarVariantService {
         created.specs_normalized
       );
     } catch (err) {
-      console.warn(`Failed to auto-wire SEO for variant ${created.variant_id}: ${err instanceof Error ? err.message : String(err)}`);
+      logger.warn(`Failed to auto-wire SEO for variant ${created.variant_id}: ${err instanceof Error ? err.message : String(err)}`);
     }
 
     await AuditUtil.recordEvent({
@@ -798,7 +800,7 @@ export class CarVariantService {
         );
       } catch (changeTrackingError: any) {
         // Log warning but don't fail the update
-        console.warn(
+        logger.warn(
           `Failed to record change history for variant ${variantId}: ${changeTrackingError?.message || changeTrackingError}`
         );
       }
@@ -847,7 +849,7 @@ export class CarVariantService {
           variant.specs_normalized
         );
       } catch (err) {
-        console.warn(`Failed to update SEO wiring for variant ${variant.variant_id}: ${err instanceof Error ? err.message : String(err)}`);
+        logger.warn(`Failed to update SEO wiring for variant ${variant.variant_id}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 
@@ -937,6 +939,7 @@ export class CarVariantService {
 
     const previous = variant.is_published;
     variant.is_published = !variant.is_published;
+    variant.publish_status = variant.is_published ? 'published' : 'draft';
     await variant.save();
 
     await AuditUtil.recordEvent({
@@ -955,7 +958,7 @@ export class CarVariantService {
   static async publishVariant(variantId: string, actor: AuditActor | null = null) {
     const variant = await CarVariant.findOneAndUpdate(
       { variant_id: variantId, is_deleted: false },
-      { is_published: true },
+      { is_published: true, publish_status: 'published' },
       { returnDocument: 'after' }
     );
 
@@ -988,7 +991,7 @@ export class CarVariantService {
   static async unpublishVariant(variantId: string, actor: AuditActor | null = null) {
     const variant = await CarVariant.findOneAndUpdate(
       { variant_id: variantId, is_deleted: false },
-      { is_published: false },
+      { is_published: false, publish_status: 'draft' },
       { returnDocument: 'after' }
     );
 
@@ -1143,7 +1146,7 @@ export class CarVariantService {
       };
     } catch (error) {
       // Log but don't fail — normalization is an enhancement, not a requirement
-      console.warn(
+      logger.warn(
         `Failed to enhance variant with normalization: ${error instanceof Error ? error.message : String(error)}`
       );
       return variantData;

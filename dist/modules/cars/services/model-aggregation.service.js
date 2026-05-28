@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ModelAggregationService = void 0;
 const car_variant_model_1 = require("../../../models/car-variant.model");
 const car_model_1 = require("../../../models/car.model");
+const logger_1 = require("../../../utils/logger");
 class ModelAggregationService {
     /**
      * Aggregate all variant specs into model-level aggregates.
@@ -165,7 +166,7 @@ class ModelAggregationService {
         return results
             .map((result, idx) => {
             if (result.status === 'rejected') {
-                console.error(`Failed to aggregate model ${carIds[idx]}:`, result.reason);
+                logger_1.logger.error(`Failed to aggregate model ${carIds[idx]}:`, result.reason);
                 return null;
             }
             return result.value;

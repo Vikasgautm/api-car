@@ -1,5 +1,6 @@
 import { CarVariant } from '../../../models/car-variant.model';
 import { Car } from '../../../models/car.model';
+import { logger } from '../../../utils/logger';
 
 export interface ModelAggregates {
   car_id: string;
@@ -219,7 +220,7 @@ export class ModelAggregationService {
     return results
       .map((result, idx) => {
         if (result.status === 'rejected') {
-          console.error(`Failed to aggregate model ${carIds[idx]}:`, result.reason);
+          logger.error(`Failed to aggregate model ${carIds[idx]}:`, result.reason);
           return null;
         }
         return result.value;

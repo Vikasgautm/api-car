@@ -367,6 +367,8 @@ const variantSchema = new mongoose_1.Schema({
     hidden_sections: { type: [String], default: [] },
     visibility_overrides: { type: mongoose_1.Schema.Types.Mixed, default: {} },
     is_published: { type: Boolean, default: false },
+    publish_status: { type: String, enum: ['published', 'hidden', 'scheduled', 'draft'], default: 'draft' },
+    variant_status: { type: String, enum: ['launched', 'upcoming', 'discontinued', 'hidden', 'review_pending', 'draft', 'incomplete'], default: 'draft' },
     is_deleted: { type: Boolean, default: false },
     is_archived: { type: Boolean, default: false },
     archived_at: { type: Date },

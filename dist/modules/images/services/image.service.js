@@ -6,6 +6,7 @@ const upload_service_1 = require("../../../shared/services/upload.service");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
+const logger_1 = require("../../../utils/logger");
 class ImageService {
     static async getAllImages(filterDto, includeDeleted = false) {
         const { page = 1, limit = 20, folder, mime_type, tags, sortBy = 'createdAt', sortOrder = 'desc', } = filterDto;
@@ -66,7 +67,7 @@ class ImageService {
                 await upload_service_1.UploadService.deleteFromCloudinary(image.public_id);
             }
             catch (error) {
-                console.error('Error deleting from Cloudinary:', error);
+                logger_1.logger.error('Error deleting from Cloudinary:', error);
                 // Continue with DB deletion even if Cloudinary fails
             }
         }
@@ -92,7 +93,7 @@ class ImageService {
                 await upload_service_1.UploadService.deleteFromCloudinary(image.public_id);
             }
             catch (error) {
-                console.error('Error deleting from Cloudinary:', error);
+                logger_1.logger.error('Error deleting from Cloudinary:', error);
             }
         }
         // Hard delete from DB
@@ -132,7 +133,7 @@ class ImageService {
                     await upload_service_1.UploadService.deleteFromCloudinary(uploadedFile.publicId);
                 }
                 catch (cleanupError) {
-                    console.error('Error during cleanup after DB save failure:', cleanupError);
+                    logger_1.logger.error('Error during cleanup after DB save failure:', cleanupError);
                 }
             }
             // Re-throw the original error
@@ -168,7 +169,7 @@ class ImageService {
                         await upload_service_1.UploadService.deleteFromCloudinary(result.file.publicId);
                     }
                     catch (cleanupError) {
-                        console.error('Error during cleanup after DB save failure:', cleanupError);
+                        logger_1.logger.error('Error during cleanup after DB save failure:', cleanupError);
                     }
                 }
                 failedFiles.push(result);
@@ -180,7 +181,7 @@ class ImageService {
             await Promise.all(savedImages
                 .filter(image => image.public_id)
                 .map(image => upload_service_1.UploadService.deleteFromCloudinary(image.public_id).catch(cleanupError => {
-                console.error('Error during rollback cleanup:', cleanupError);
+                logger_1.logger.error('Error during rollback cleanup:', cleanupError);
             })));
             // Batch delete images from DB instead of sequential deletes
             const imageIds = savedImages.map(image => image._id);

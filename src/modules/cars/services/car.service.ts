@@ -19,6 +19,7 @@ import { PaginationUtil } from "../../../shared/utils/pagination.util";
 import { SlugUtil } from "../../../shared/utils/slug.util";
 import { Car, ICar } from '../../../models/car.model';
 import { TagService } from "../../taxonomy/services/tag.service";
+import { logger } from '../../../utils/logger';
 
 export class CarService {
   static async getAllCars(filterDto: any, includeDeleted: boolean = false) {
@@ -749,7 +750,7 @@ export class CarService {
           created_by: actor?.user_id ?? null,
         }).catch((err: any) => {
           // Non-fatal — log but don't fail the update
-          console.error(`updateCar: failed to create redirect for slug change (${oldSlug} → ${newSlug})`, err);
+          logger.error(`updateCar: failed to create redirect for slug change (${oldSlug} → ${newSlug})`, err);
         });
       }
     }
@@ -811,7 +812,7 @@ export class CarService {
         recomputed++;
       } catch (err) {
         failed++;
-        console.error(`recomputeAggregatesAll: failed for car_id=${c.car_id}`, err);
+        logger.error(`recomputeAggregatesAll: failed for car_id=${c.car_id}`, err);
       }
     }
 
@@ -820,7 +821,7 @@ export class CarService {
       try {
         await Car.bulkWrite(updateOps);
       } catch (err) {
-        console.error('Failed to batch update body_type_names:', err);
+        logger.error('Failed to batch update body_type_names:', err);
       }
     }
 

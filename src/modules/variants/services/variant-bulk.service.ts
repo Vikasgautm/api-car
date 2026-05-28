@@ -1,4 +1,4 @@
-import { CarVariant } from '../../../models/car-variant.model';
+import { CarVariant, VariantLifecycleStatus, PublishStatus } from '../../../models/car-variant.model';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { logger } from '../../../utils/logger';
 import { VariantValidationService } from './variant-validation.service';
@@ -116,7 +116,7 @@ export class VariantBulkService {
         filter: { variant_id: variantId },
         update: {
           $set: {
-            variant_status: status,
+            variant_status: status as VariantLifecycleStatus,
             updated_at: new Date(),
           }
         }
@@ -203,6 +203,7 @@ export class VariantBulkService {
           update: {
             $set: {
               is_published: shouldPublish,
+              publish_status: (shouldPublish ? 'published' : 'draft') as PublishStatus,
               published_at: publishedAt,
               updated_at: new Date(),
             }
@@ -339,7 +340,7 @@ export class VariantBulkService {
     const bulkOps = variantIds.map(variantId => ({
       updateOne: {
         filter: { variant_id: variantId },
-        update: { $set: { is_published: false, publish_status: 'hidden', updated_at: new Date() } },
+        update: { $set: { is_published: false, publish_status: 'hidden' as PublishStatus, updated_at: new Date() } },
       },
     }));
     await CarVariant.bulkWrite(bulkOps);
@@ -373,7 +374,7 @@ export class VariantBulkService {
     const bulkOps = variantIds.map(variantId => ({
       updateOne: {
         filter: { variant_id: variantId },
-        update: { $set: { publish_status: 'draft', updated_at: new Date() } },
+        update: { $set: { publish_status: 'draft' as PublishStatus, updated_at: new Date() } },
       },
     }));
     await CarVariant.bulkWrite(bulkOps);

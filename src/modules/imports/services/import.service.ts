@@ -551,6 +551,7 @@ export class ImportService {
             hidden_spec_keys: Array.isArray(cleanItemData.hidden_spec_keys) ? cleanItemData.hidden_spec_keys : [],
             is_published: Boolean(cleanItemData.is_published || false),
             is_deleted: false,
+            is_archived: false,
             // Powertrain detection flags (from normalization engine)
             has_engine: cleanItemData.has_engine !== undefined ? Boolean(cleanItemData.has_engine) : false,
             has_battery: cleanItemData.has_battery !== undefined ? Boolean(cleanItemData.has_battery) : false,

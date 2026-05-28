@@ -55,6 +55,7 @@ const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
 const car_model_1 = require("../../../models/car.model");
 const tag_service_1 = require("../../taxonomy/services/tag.service");
+const logger_1 = require("../../../utils/logger");
 class CarService {
     static async getAllCars(filterDto, includeDeleted = false) {
         try {
@@ -693,7 +694,7 @@ class CarService {
                     created_by: actor?.user_id ?? null,
                 }).catch((err) => {
                     // Non-fatal — log but don't fail the update
-                    console.error(`updateCar: failed to create redirect for slug change (${oldSlug} → ${newSlug})`, err);
+                    logger_1.logger.error(`updateCar: failed to create redirect for slug change (${oldSlug} → ${newSlug})`, err);
                 });
             }
         }
@@ -750,7 +751,7 @@ class CarService {
             }
             catch (err) {
                 failed++;
-                console.error(`recomputeAggregatesAll: failed for car_id=${c.car_id}`, err);
+                logger_1.logger.error(`recomputeAggregatesAll: failed for car_id=${c.car_id}`, err);
             }
         }
         // Batch update all body_type_names instead of sequential updateOne calls
@@ -759,7 +760,7 @@ class CarService {
                 await car_model_1.Car.bulkWrite(updateOps);
             }
             catch (err) {
-                console.error('Failed to batch update body_type_names:', err);
+                logger_1.logger.error('Failed to batch update body_type_names:', err);
             }
         }
         return { scanned: cars.length, recomputed, failed };

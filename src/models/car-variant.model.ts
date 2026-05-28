@@ -362,6 +362,8 @@ export function normalizeDriveType(raw: string | null | undefined): DriveType | 
 }
 
 export type VariantMarketStatus = 'available' | 'sold_out' | 'discontinued' | 'upcoming';
+export type PublishStatus = 'published' | 'hidden' | 'scheduled' | 'draft';
+export type VariantLifecycleStatus = 'launched' | 'upcoming' | 'discontinued' | 'hidden' | 'review_pending' | 'draft' | 'incomplete';
 
 export interface ChangeHistoryEntry {
   field: string;
@@ -414,6 +416,8 @@ export interface ICarVariant extends Document {
   best_for_tags?: string[];
   variant_highlights?: string[];
   market_status?: VariantMarketStatus;
+  publish_status?: PublishStatus;
+  variant_status?: VariantLifecycleStatus;
   // Field-level visibility and estimation tracking
   field_visibility?: Record<string, FieldVisibilityState>;
   section_visibility?: SectionVisibility[];
@@ -803,6 +807,8 @@ const variantSchema = new Schema<ICarVariant>(
     hidden_sections: { type: [String], default: [] },
     visibility_overrides: { type: Schema.Types.Mixed, default: {} },
     is_published: { type: Boolean, default: false },
+    publish_status: { type: String, enum: ['published', 'hidden', 'scheduled', 'draft'], default: 'draft' },
+    variant_status: { type: String, enum: ['launched', 'upcoming', 'discontinued', 'hidden', 'review_pending', 'draft', 'incomplete'], default: 'draft' },
     is_deleted: { type: Boolean, default: false },
     is_archived: { type: Boolean, default: false },
     archived_at: { type: Date },
