@@ -167,6 +167,7 @@ export declare const updateCarSchema: z.ZodObject<{
 }, z.core.$strict>;
 export declare const createVariantSchema: z.ZodObject<{
     car_id: z.ZodString;
+    variant_id: z.ZodOptional<z.ZodString>;
     variant_name: z.ZodString;
     model_year: z.ZodNumber;
     fuel_type_id: z.ZodString;
@@ -191,6 +192,7 @@ export declare const createVariantSchema: z.ZodObject<{
 }, z.core.$strict>;
 export declare const updateVariantSchema: z.ZodObject<{
     car_id: z.ZodOptional<z.ZodString>;
+    variant_id: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     variant_name: z.ZodOptional<z.ZodString>;
     model_year: z.ZodOptional<z.ZodNumber>;
     fuel_type_id: z.ZodOptional<z.ZodString>;

@@ -436,14 +436,42 @@ export class CarVariantService {
 
     const variantMatchFilter = conditions.length === 1 ? conditions[0] : { $and: conditions };
 
-    // Find which cars have matching variants
-    const matchingCarIds = await CarVariant.distinct('car_id', variantMatchFilter);
-    if (matchingCarIds.length === 0) {
-      return { groups: [], pagination: PaginationUtil.createPaginationMeta(page, limit, 0) };
+    // LEFT JOIN: load all non-deleted cars (optionally narrowed by brand/body_type
+    // or search-matched by name), then attach variants. Cars with zero variants
+    // still appear — the variants page needs to surface orphaned cars so admins
+    // can spot the gap. We only INNER-JOIN when variant-level filters are
+    // active (fuel/transmission/price/archive/deleted-toggle), because there
+    // showing cars without matching variants would be misleading.
+    const hasVariantLevelFilters = Boolean(
+      fuel_type_id || transmission_type || min_price !== undefined || max_price !== undefined ||
+      is_archived === true || is_archived === 'true' ||
+      is_deleted === true || is_deleted === 'true'
+    );
+
+    let restrictToCarIds: string[] | null = null;
+    if (hasVariantLevelFilters) {
+      restrictToCarIds = await CarVariant.distinct('car_id', variantMatchFilter);
+      if (restrictToCarIds.length === 0) {
+        return { groups: [], pagination: PaginationUtil.createPaginationMeta(page, limit, 0) };
+      }
+    } else if (q) {
+      // For text search without other variant filters, INNER JOIN so cars
+      // unrelated to the query don't pollute results.
+      restrictToCarIds = await CarVariant.distinct('car_id', variantMatchFilter);
+      // Also surface cars whose own name matched, even with zero variants.
+      const carNameMatches = await Car.find({
+        name: new RegExp(String(q), 'i'),
+        is_deleted: { $ne: true },
+      }).select('car_id').lean();
+      const nameMatchIds = (carNameMatches as any[]).map((c) => c.car_id);
+      restrictToCarIds = Array.from(new Set([...(restrictToCarIds || []), ...nameMatchIds]));
+      if (restrictToCarIds.length === 0) {
+        return { groups: [], pagination: PaginationUtil.createPaginationMeta(page, limit, 0) };
+      }
     }
 
-    // Load car metadata, applying optional brand/body_type filters
-    const carFilter: Record<string, any> = { car_id: { $in: matchingCarIds }, is_deleted: { $ne: true } };
+    const carFilter: Record<string, any> = { is_deleted: { $ne: true } };
+    if (restrictToCarIds) carFilter.car_id = { $in: restrictToCarIds };
     if (brand_id) carFilter.brand_id = brand_id;
     if (body_type_id) carFilter.body_type_id = body_type_id;
 
@@ -469,8 +497,20 @@ export class CarVariantService {
       .sort({ variant_rank: 1, variant_name: 1 })
       .lean();
 
-    const transformedVariants = await VariantResponseTransformer.transformBatch(allVariants);
-    VariantResponseTransformer.clearCache();
+    // Transform variants individually so a single corrupted variant (e.g. missing
+    // fuel_type_id) cannot crash the entire grouped-variants listing page.
+    // The cache is intentionally NOT cleared here — it persists across requests
+    // so FuelType/Brand lookups are reused between admin page loads.
+    const transformedVariants = await Promise.all(
+      allVariants.map(async (v: any) => {
+        try {
+          return await VariantResponseTransformer.transform(v);
+        } catch (err) {
+          logger.warn(`Failed to transform variant ${v.variant_id} — returning degraded object`, { err });
+          return { ...v, _transform_error: true };
+        }
+      })
+    );
 
     // Group transformed variants by car_id
     const variantsByCarId = new Map<string, any[]>();

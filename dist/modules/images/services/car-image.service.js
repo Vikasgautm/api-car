@@ -6,6 +6,7 @@ const uuid_1 = require("uuid");
 const car_image_model_1 = require("../../../models/car-image.model");
 const car_variant_model_1 = require("../../../models/car-variant.model");
 const car_model_1 = require("../../../models/car.model");
+const brand_model_1 = require("../../../models/brand.model");
 const media_constants_1 = require("../../../shared/services/media/media-constants");
 const media_seo_service_1 = require("../../../shared/services/media/media-seo.service");
 const media_priority_service_1 = require("../../../shared/services/media/media-priority.service");
@@ -21,10 +22,16 @@ function extractPublicId(url) {
     return match ? match[1] : null;
 }
 async function getCarName(carId) {
-    const car = await car_model_1.Car.findOne({ car_id: carId }).select('name brand').populate('brand', 'name').lean();
+    // brand_id is a plain string key, not a Mongoose ref, so .populate() throws
+    // StrictPopulateError. Resolve the brand with a follow-up findOne.
+    const car = await car_model_1.Car.findOne({ car_id: carId }).select('name brand_id').lean();
     if (!car)
         return '';
-    const brandName = car.brand?.name || '';
+    let brandName = '';
+    if (car.brand_id) {
+        const brand = await brand_model_1.Brand.findOne({ brand_id: car.brand_id }).select('name').lean();
+        brandName = brand?.name || '';
+    }
     return brandName ? `${brandName} ${car.name}` : car.name;
 }
 /** Synchronise is_published / is_deleted booleans with status field */

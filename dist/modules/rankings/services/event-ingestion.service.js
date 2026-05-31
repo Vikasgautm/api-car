@@ -4,6 +4,7 @@ exports.EventIngestionService = void 0;
 const uuid_1 = require("uuid");
 const ranking_raw_event_model_1 = require("../../../models/ranking-raw-event.model");
 const ranking_session_model_1 = require("../../../models/ranking-session.model");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
 // High-value events that signal genuine buyer evaluation
 const HIGH_VALUE_EVENTS = new Set([
     'spec_interaction', 'variant_compare', 'compare_interaction',
@@ -20,10 +21,10 @@ const COMMERCIAL_EVENTS = new Set([
 class EventIngestionService {
     static async ingest(dto) {
         if (!ranking_raw_event_model_1.VALID_EVENT_TYPES.includes(dto.event_type)) {
-            throw new Error(`Unknown event_type: ${dto.event_type}`);
+            throw app_error_util_1.AppError.badRequest(`Unknown event_type: ${dto.event_type}`, 'Unknown event type provided.');
         }
         if (!dto.entity_id || !dto.entity_type || !dto.session_id) {
-            throw new Error('entity_id, entity_type, session_id are required');
+            throw app_error_util_1.AppError.badRequest('entity_id, entity_type, session_id are required', 'Some required event fields are missing.');
         }
         const timestamp = dto.timestamp ? new Date(dto.timestamp) : new Date();
         const confidence = this.computeEventConfidence(dto, timestamp);

@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import { randomInt } from 'crypto';
+import { AppError } from '../utils/app-error.util';
 
 export class OtpService {
   /**
@@ -8,7 +9,7 @@ export class OtpService {
    */
   static generate(digits = 6): string {
     if (digits < 4 || digits > 8) {
-      throw new Error('OTP digits must be between 4 and 8');
+      throw AppError.internal('OTP digits must be between 4 and 8');
     }
     const min = 10 ** (digits - 1);
     const max = 10 ** digits;

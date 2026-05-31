@@ -6,6 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmailService = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const config_1 = require("../../config");
+const app_error_util_1 = require("../utils/app-error.util");
+// Admin-facing message for SMTP misconfiguration; technical detail stays in logs.
+const EMAIL_NOT_CONFIGURED_MSG = 'Email service is not configured properly. Please contact the administrator.';
 class EmailService {
     // Lazy-built transporter so unit tests / dev environments without SMTP creds
     // never construct a half-configured client.
@@ -35,7 +38,7 @@ class EmailService {
     static async sendOtp(recipient, otp, ctx) {
         if (!this.isConfigured()) {
             if (config_1.config.env === 'production') {
-                throw new Error('SMTP credentials missing in production — refusing to use console fallback');
+                throw app_error_util_1.AppError.serviceUnavailable('SMTP credentials missing in production — refusing to use console fallback', EMAIL_NOT_CONFIGURED_MSG);
             }
             console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             console.warn(`[EmailService] DEV FALLBACK — SMTP credentials are not set.`);
@@ -159,7 +162,7 @@ class EmailService {
     static async sendLifecycleOtp(recipient, otp, ctx) {
         if (!this.isConfigured()) {
             if (config_1.config.env === 'production') {
-                throw new Error('SMTP credentials missing in production — refusing to use console fallback');
+                throw app_error_util_1.AppError.serviceUnavailable('SMTP credentials missing in production — refusing to use console fallback', EMAIL_NOT_CONFIGURED_MSG);
             }
             console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             console.warn(`[EmailService] DEV FALLBACK — LIFECYCLE OTP`);
@@ -265,7 +268,7 @@ class EmailService {
     static async sendInviteEmail(recipient, userName, resetUrl) {
         if (!this.isConfigured()) {
             if (config_1.config.env === 'production') {
-                throw new Error('SMTP credentials missing in production');
+                throw app_error_util_1.AppError.serviceUnavailable('SMTP credentials missing in production', EMAIL_NOT_CONFIGURED_MSG);
             }
             console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             console.warn(`[EmailService] DEV FALLBACK — SMTP credentials are not set.`);

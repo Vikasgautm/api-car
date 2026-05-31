@@ -1,6 +1,7 @@
 import { CarVariant } from '../../../models/car-variant.model';
 import { Car } from '../../../models/car.model';
 import { logger } from '../../../utils/logger';
+import { AppError } from '../../../shared/utils/app-error.util';
 
 export interface ModelAggregates {
   car_id: string;
@@ -49,7 +50,7 @@ export class ModelAggregationService {
    */
   static async aggregateModelFromVariants(carId: string): Promise<ModelAggregates> {
     const car = await Car.findOne({ car_id: carId }).lean();
-    if (!car) throw new Error(`Car not found: ${carId}`);
+    if (!car) throw AppError.notFound('Car', 'car_id', carId);
 
     const variants = await CarVariant.find({
       car_id: carId,

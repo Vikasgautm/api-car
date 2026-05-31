@@ -88,7 +88,7 @@ export class ComparisonController {
 
   static async getComparisons(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const queryObj = {
+      const queryObj: any = {
         page: getQueryValue(req.query.page),
         limit: getQueryValue(req.query.limit),
         search: getQueryString(req.query.search),
@@ -98,6 +98,14 @@ export class ComparisonController {
         isTrending: getQueryValue(req.query.isTrending),
         is_deleted: getQueryValue(req.query.is_deleted),
       };
+
+      // Restrict status and is_deleted filters for guest (unauthenticated) users to prevent draft leaks.
+      const isAdmin = req.user && ['admin', 'super_admin'].includes(req.user.role);
+      if (!isAdmin) {
+        queryObj.status = 'published';
+        queryObj.is_deleted = false;
+      }
+
       const query = ComparisonQueryDTO.parse(queryObj);
       const { page, limit, ...filters } = query;
 

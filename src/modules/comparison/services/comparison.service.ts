@@ -8,30 +8,55 @@ import { CreateComparisonDTOType, UpdateComparisonDTOType } from '../../../share
 import { generateSlugWithIncrement } from '../../../shared/utils/slug.util';
 import mongoose from 'mongoose';
 
+// Accept either UUID (car_id, the cross-app canonical key) or MongoDB _id.
+// Old payloads sent _id; rest of the codebase uses car_id, so be tolerant.
+async function findCarByEitherId(id: string) {
+  if (!id) return null;
+  let car = await Car.findOne({ car_id: id, is_deleted: false });
+  if (car) return car;
+  if (mongoose.Types.ObjectId.isValid(id) && id.length === 24) {
+    car = await Car.findById(id);
+  }
+  return car;
+}
+
+function safeStartTransaction(session: mongoose.ClientSession) {
+  try {
+    const conn = mongoose.connection as any;
+    const topologyType = conn.client?.topology?.description?.type;
+    if (topologyType === 'Single') {
+      // Standalone MongoDB doesn't support transactions
+      return;
+    }
+    session.startTransaction();
+  } catch (err) {
+    // standalone MongoDB support
+  }
+}
+
 export class ComparisonService {
   static async createComparison(
     data: CreateComparisonDTOType,
     userId: string,
   ): Promise<IComparison> {
     const session = await mongoose.startSession();
-    session.startTransaction();
+    safeStartTransaction(session);
 
     try {
-      // Validate cars exist — DTO sends MongoDB _id (24-char ObjectId)
       const [car1, car2] = await Promise.all([
-        Car.findById(data.car1_id),
-        Car.findById(data.car2_id),
+        findCarByEitherId(data.car1_id),
+        findCarByEitherId(data.car2_id),
       ]);
 
-      if (!car1) throw new AppError('Car 1 not found', 404);
-      if (!car2) throw new AppError('Car 2 not found', 404);
+      if (!car1) throw new AppError(`Car 1 not found (id: ${data.car1_id})`, 404);
+      if (!car2) throw new AppError(`Car 2 not found (id: ${data.car2_id})`, 404);
       if (data.car1_id === data.car2_id) throw new AppError('Cannot compare the same car', 400);
 
       // Generate unique slug
       let slug = data.slug;
       const existingSlug = await Comparison.findOne({ slug });
       if (existingSlug) {
-        slug = await generateSlugWithIncrement(data.slug, Comparison, 'slug');
+        throw new AppError('Comparison with this slug already exists', 400);
       }
 
       // Validate variants if provided
@@ -67,7 +92,7 @@ export class ComparisonService {
         created_by: userId,
       });
 
-      await comparison.save({ session });
+      await comparison.save(session.inTransaction() ? { session } : {});
 
       // Log audit
       await AuditLog.create([{
@@ -77,12 +102,16 @@ export class ComparisonService {
         action: 'create' as any,
         actor_user_id: userId,
         new_value: { slug, title: data.title },
-      }], { session });
+      }], session.inTransaction() ? { session } : {});
 
-      await session.commitTransaction();
+      if (session.inTransaction()) {
+        await session.commitTransaction();
+      }
       return comparison;
     } catch (error) {
-      await session.abortTransaction();
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       throw error;
     } finally {
       session.endSession();
@@ -95,15 +124,15 @@ export class ComparisonService {
     userId: string,
   ): Promise<IComparison> {
     const session = await mongoose.startSession();
-    session.startTransaction();
+    safeStartTransaction(session);
 
     try {
-      const comparison = await Comparison.findById(comparisonId).session(session);
+      const comparison = await Comparison.findOne({ comparison_id: comparisonId, is_deleted: false }).session(session.inTransaction() ? session : null as any);
       if (!comparison) throw new AppError('Comparison not found', 404);
 
       // Check slug uniqueness if being changed
       if (data.slug && data.slug !== comparison.slug) {
-        const existingSlug = await Comparison.findOne({ slug: data.slug }).session(session);
+        const existingSlug = await Comparison.findOne({ slug: data.slug }).session(session.inTransaction() ? session : null as any);
         if (existingSlug) {
           data.slug = await generateSlugWithIncrement(data.slug, Comparison, 'slug');
         }
@@ -114,7 +143,7 @@ export class ComparisonService {
         updated_by: userId,
       });
 
-      await comparison.save({ session });
+      await comparison.save(session.inTransaction() ? { session } : {});
 
       await AuditLog.create([{
         audit_id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -123,12 +152,16 @@ export class ComparisonService {
         action: 'update' as any,
         actor_user_id: userId,
         new_value: data,
-      }], { session });
+      }], session.inTransaction() ? { session } : {});
 
-      await session.commitTransaction();
+      if (session.inTransaction()) {
+        await session.commitTransaction();
+      }
       return comparison;
     } catch (error) {
-      await session.abortTransaction();
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       throw error;
     } finally {
       session.endSession();
@@ -137,17 +170,24 @@ export class ComparisonService {
 
   static async deleteComparison(comparisonId: string, userId: string): Promise<void> {
     const session = await mongoose.startSession();
-    session.startTransaction();
+    safeStartTransaction(session);
 
     try {
-      const comparison = await Comparison.findByIdAndUpdate(
-        comparisonId,
+      const query: any = { is_deleted: false };
+      if (mongoose.Types.ObjectId.isValid(comparisonId) && comparisonId.length === 24) {
+        query.$or = [{ comparison_id: comparisonId }, { _id: comparisonId }];
+      } else {
+        query.comparison_id = comparisonId;
+      }
+
+      const comparison = await Comparison.findOneAndUpdate(
+        query,
         {
           is_deleted: true,
           deleted_at: new Date(),
           status: 'archived',
         },
-        { new: true, session },
+        session.inTransaction() ? { new: true, session } : { new: true },
       );
 
       if (!comparison) throw new AppError('Comparison not found', 404);
@@ -159,11 +199,15 @@ export class ComparisonService {
         action: 'delete' as any,
         actor_user_id: userId,
         new_value: { slug: comparison.slug },
-      }], { session });
+      }], session.inTransaction() ? { session } : {});
 
-      await session.commitTransaction();
+      if (session.inTransaction()) {
+        await session.commitTransaction();
+      }
     } catch (error) {
-      await session.abortTransaction();
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       throw error;
     } finally {
       session.endSession();
@@ -172,17 +216,24 @@ export class ComparisonService {
 
   static async restoreComparison(comparisonId: string, userId: string): Promise<IComparison> {
     const session = await mongoose.startSession();
-    session.startTransaction();
+    safeStartTransaction(session);
 
     try {
-      const comparison = await Comparison.findByIdAndUpdate(
-        comparisonId,
+      const query: any = { is_deleted: true };
+      if (mongoose.Types.ObjectId.isValid(comparisonId) && comparisonId.length === 24) {
+        query.$or = [{ comparison_id: comparisonId }, { _id: comparisonId }];
+      } else {
+        query.comparison_id = comparisonId;
+      }
+
+      const comparison = await Comparison.findOneAndUpdate(
+        query,
         {
           is_deleted: false,
           deleted_at: null,
           status: 'draft',
         },
-        { new: true, session },
+        session.inTransaction() ? { new: true, session } : { new: true },
       );
 
       if (!comparison) throw new AppError('Comparison not found', 404);
@@ -194,12 +245,16 @@ export class ComparisonService {
         action: 'restore' as any,
         actor_user_id: userId,
         new_value: { slug: comparison.slug },
-      }], { session });
+      }], session.inTransaction() ? { session } : {});
 
-      await session.commitTransaction();
+      if (session.inTransaction()) {
+        await session.commitTransaction();
+      }
       return comparison;
     } catch (error) {
-      await session.abortTransaction();
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       throw error;
     } finally {
       session.endSession();
@@ -252,28 +307,47 @@ export class ComparisonService {
     };
   }
 
-  static async getComparisonBySlug(slug: string): Promise<IComparison> {
-    const comparison = await Comparison.findOne({ slug, is_deleted: false })
-      
-      
-      
-      
-      ;
+  static async getComparisonBySlug(slug: string): Promise<any> {
+    const comparison = await Comparison.findOne({ slug, is_deleted: false }).lean();
 
     if (!comparison) throw new AppError('Comparison not found', 404);
-    return comparison;
+
+    // Fetch compared cars in parallel
+    const [car1, car2] = await Promise.all([
+      Car.findOne({ car_id: comparison.car1_id, is_deleted: false }).lean(),
+      Car.findOne({ car_id: comparison.car2_id, is_deleted: false }).lean(),
+    ]);
+
+    return {
+      ...comparison,
+      car1_id: car1 || comparison.car1_id,
+      car2_id: car2 || comparison.car2_id,
+    };
   }
 
-  static async getComparisonById(id: string): Promise<IComparison> {
-    const comparison = await Comparison.findById(id)
-      
-      
-      
-      
-      ;
+  static async getComparisonById(id: string): Promise<any> {
+    const query: any = { is_deleted: false };
+    if (mongoose.Types.ObjectId.isValid(id) && id.length === 24) {
+      query.$or = [{ comparison_id: id }, { _id: id }];
+    } else {
+      query.comparison_id = id;
+    }
+
+    const comparison = await Comparison.findOne(query).lean();
 
     if (!comparison) throw new AppError('Comparison not found', 404);
-    return comparison;
+
+    // Fetch compared cars in parallel
+    const [car1, car2] = await Promise.all([
+      Car.findOne({ car_id: comparison.car1_id, is_deleted: false }).lean(),
+      Car.findOne({ car_id: comparison.car2_id, is_deleted: false }).lean(),
+    ]);
+
+    return {
+      ...comparison,
+      car1_id: car1 || comparison.car1_id,
+      car2_id: car2 || comparison.car2_id,
+    };
   }
 
   // Rival Management
@@ -284,15 +358,16 @@ export class ComparisonService {
     strength: number = 50,
   ): Promise<void> {
     const session = await mongoose.startSession();
-    session.startTransaction();
+    safeStartTransaction(session);
 
     try {
       if (primaryCarId === rivalCarId) throw new AppError('Cannot set car as its own rival', 400);
 
-      // Create both directions
+      // Use findCarByEitherId (defined at top of file) which accepts both
+      // UUID strings (car_id) and MongoDB ObjectIds — guards against CastErrors.
       const [car1, car2] = await Promise.all([
-        Car.findById(primaryCarId).session(session),
-        Car.findById(rivalCarId).session(session),
+        findCarByEitherId(primaryCarId),
+        findCarByEitherId(rivalCarId),
       ]);
 
       if (!car1 || !car2) throw new AppError('One or both cars not found', 404);
@@ -306,7 +381,7 @@ export class ComparisonService {
             relationship_strength: strength,
             manual_mapping: true,
           },
-          { upsert: true, session },
+          session.inTransaction() ? { upsert: true, session } : { upsert: true },
         ),
         ComparisonRival.findOneAndUpdate(
           { primary_car_id: rivalCarId, rival_car_id: primaryCarId },
@@ -316,7 +391,7 @@ export class ComparisonService {
             relationship_strength: strength,
             manual_mapping: true,
           },
-          { upsert: true, session },
+          session.inTransaction() ? { upsert: true, session } : { upsert: true },
         ),
       ]);
 
@@ -327,11 +402,15 @@ export class ComparisonService {
         action: 'update' as any,
         actor_user_id: userId,
         new_value: { rival_id: rivalCarId },
-      }], { session });
+      }], session.inTransaction() ? { session } : {});
 
-      await session.commitTransaction();
+      if (session.inTransaction()) {
+        await session.commitTransaction();
+      }
     } catch (error) {
-      await session.abortTransaction();
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       throw error;
     } finally {
       session.endSession();
@@ -344,12 +423,12 @@ export class ComparisonService {
     userId: string,
   ): Promise<void> {
     const session = await mongoose.startSession();
-    session.startTransaction();
+    safeStartTransaction(session);
 
     try {
       await Promise.all([
-        ComparisonRival.deleteOne({ primary_car_id: primaryCarId, rival_car_id: rivalCarId }, { session }),
-        ComparisonRival.deleteOne({ primary_car_id: rivalCarId, rival_car_id: primaryCarId }, { session }),
+        ComparisonRival.deleteOne({ primary_car_id: primaryCarId, rival_car_id: rivalCarId }, session.inTransaction() ? { session } : {}),
+        ComparisonRival.deleteOne({ primary_car_id: rivalCarId, rival_car_id: primaryCarId }, session.inTransaction() ? { session } : {}),
       ]);
 
       await AuditLog.create([{
@@ -359,11 +438,15 @@ export class ComparisonService {
         action: 'update' as any,
         actor_user_id: userId,
         old_value: { rival_id: rivalCarId },
-      }], { session });
+      }], session.inTransaction() ? { session } : {});
 
-      await session.commitTransaction();
+      if (session.inTransaction()) {
+        await session.commitTransaction();
+      }
     } catch (error) {
-      await session.abortTransaction();
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
       throw error;
     } finally {
       session.endSession();

@@ -74,7 +74,7 @@ class UploadService {
                 cb(null, true);
             }
             else {
-                cb(new app_error_util_1.AppError(`Invalid file type. Allowed types: ${allowedMimeTypes.join(', ')}`, 400));
+                cb(app_error_util_1.AppError.invalidFileType(allowedMimeTypes));
             }
         };
     }

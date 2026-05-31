@@ -58,6 +58,20 @@ class VariantValidationService {
         'boot_space',
         'dimensions',
     ];
+    // Critical spec fields live nested inside specs_normalized (see variantSpecConfig).
+    // The presence check must follow these dot-paths, not a flat key, otherwise the
+    // warning can never clear once a value is filled.
+    static CRITICAL_SPEC_PATHS = {
+        engine_displacement: 'engine_performance.displacement',
+        power_bhp: 'engine_performance.max_power',
+        torque_nm: 'engine_performance.max_torque',
+        fuel_tank_capacity: 'mileage_range.fuel_tank_capacity',
+        boot_space: 'dimensions_practicality.boot_space',
+        dimensions: 'dimensions_practicality',
+    };
+    static getNestedValue(obj, path) {
+        return path.split('.').reduce((acc, key) => (acc == null ? acc : acc[key]), obj);
+    }
     static async validateVariant(variantId) {
         const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId });
         if (!variant) {
@@ -99,9 +113,17 @@ class VariantValidationService {
         // Spec validation
         const specs = variant.specs_normalized;
         if (specs && typeof specs === 'object') {
-            // Check for critical spec fields
+            // Check for critical spec fields at their real nested paths
             for (const field of this.CRITICAL_SPEC_FIELDS) {
-                if (!specs[field] || specs[field] === null || specs[field] === undefined) {
+                const path = this.CRITICAL_SPEC_PATHS[field] || field;
+                let value = this.getNestedValue(specs, path);
+                // For object-valued specs (e.g. dimensions section) treat an empty object as missing
+                if (value && typeof value === 'object' && !Array.isArray(value)) {
+                    value = Object.keys(value).some((k) => value[k] !== null && value[k] !== undefined && value[k] !== '')
+                        ? value
+                        : undefined;
+                }
+                if (value === null || value === undefined || value === '') {
                     warnings.push({
                         field: `specs.${field}`,
                         message: `Critical spec field ${field} is missing`,

@@ -116,9 +116,9 @@ class PlatformSettingsController {
         const results = {};
         switch (type) {
             case 'ai':
-                results.ai = process.env.ANTHROPIC_API_KEY
+                results.ai = process.env.CEREBRAS_API_KEY
                     ? { status: 'ok', message: 'API key is configured' }
-                    : { status: 'error', message: 'ANTHROPIC_API_KEY not configured' };
+                    : { status: 'error', message: 'CEREBRAS_API_KEY not configured' };
                 break;
             case 'cloudinary':
                 results.cloudinary = (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY)

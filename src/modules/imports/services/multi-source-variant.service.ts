@@ -1,6 +1,7 @@
 import { CarVariant } from '../../../models/car-variant.model';
 import { ImportLog } from '../../../models/import-log.model';
 import { SourcePriorityEngine, SourceType } from '../rules/source-priority-config';
+import { AppError } from '../../../shared/utils/app-error.util';
 
 export interface VariantSourceMetadata {
   variant_id: string;
@@ -23,7 +24,7 @@ export class MultiSourceVariantService {
   ): Promise<{ merged_specs: any; metadata: VariantSourceMetadata }> {
     const variant = await CarVariant.findOne({ variant_id, is_deleted: false });
     if (!variant) {
-      throw new Error(`Variant ${variant_id} not found`);
+      throw AppError.variantNotFound(variant_id);
     }
 
     const importLogs = await ImportLog.find({

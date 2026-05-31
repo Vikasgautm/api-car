@@ -53,11 +53,14 @@ exports.createCarSchema = zod_1.z.object({
 }).extend(common_validation_schemas_1.metaFieldsSchema.shape).strict();
 exports.updateCarSchema = exports.createCarSchema.partial().strict();
 // Car Variant DTO schemas
+// NOTE: car_id / fuel_type_id / variant_id are UUID strings in this project,
+// NOT Mongo ObjectIds. Keep these on uuidSchema to match the real payload shape.
 exports.createVariantSchema = zod_1.z.object({
-    car_id: common_validation_schemas_1.objectIdSchema,
+    car_id: common_validation_schemas_1.uuidSchema,
+    variant_id: common_validation_schemas_1.uuidSchema.optional(),
     variant_name: zod_1.z.string().min(2, 'Variant name must be at least 2 characters'),
     model_year: zod_1.z.number().int().min(1900).max(2100, 'Model year must be between 1900 and 2100'),
-    fuel_type_id: common_validation_schemas_1.objectIdSchema,
+    fuel_type_id: common_validation_schemas_1.uuidSchema,
     transmission_type: common_validation_schemas_1.transmissionTypeSchema,
     drivetrain: zod_1.z.string().optional(),
     seating_capacity: zod_1.z.number().int().min(2).max(10).optional(),

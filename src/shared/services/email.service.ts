@@ -1,6 +1,11 @@
 import nodemailer, { Transporter } from 'nodemailer';
 import { config } from '../../config';
 import { OtpDeliveryChannel } from '../../models/deletion-request.model';
+import { AppError } from '../utils/app-error.util';
+
+// Admin-facing message for SMTP misconfiguration; technical detail stays in logs.
+const EMAIL_NOT_CONFIGURED_MSG =
+  'Email service is not configured properly. Please contact the administrator.';
 
 export interface SendOtpEmailResult {
   channel: OtpDeliveryChannel;
@@ -46,7 +51,7 @@ export class EmailService {
   ): Promise<SendOtpEmailResult> {
     if (!this.isConfigured()) {
       if (config.env === 'production') {
-        throw new Error('SMTP credentials missing in production — refusing to use console fallback');
+        throw AppError.serviceUnavailable('SMTP credentials missing in production — refusing to use console fallback', EMAIL_NOT_CONFIGURED_MSG);
       }
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.warn(`[EmailService] DEV FALLBACK — SMTP credentials are not set.`);
@@ -186,7 +191,7 @@ export class EmailService {
   ): Promise<SendOtpEmailResult> {
     if (!this.isConfigured()) {
       if (config.env === 'production') {
-        throw new Error('SMTP credentials missing in production — refusing to use console fallback');
+        throw AppError.serviceUnavailable('SMTP credentials missing in production — refusing to use console fallback', EMAIL_NOT_CONFIGURED_MSG);
       }
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.warn(`[EmailService] DEV FALLBACK — LIFECYCLE OTP`);
@@ -301,7 +306,7 @@ export class EmailService {
   ): Promise<SendOtpEmailResult> {
     if (!this.isConfigured()) {
       if (config.env === 'production') {
-        throw new Error('SMTP credentials missing in production');
+        throw AppError.serviceUnavailable('SMTP credentials missing in production', EMAIL_NOT_CONFIGURED_MSG);
       }
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.warn(`[EmailService] DEV FALLBACK — SMTP credentials are not set.`);

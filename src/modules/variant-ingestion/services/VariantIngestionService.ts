@@ -6,6 +6,7 @@ import { SpecNormalizationService } from './SpecNormalizationService';
 import { VariantCompletenessCalculator } from '../utils/VariantCompletenessCalculator';
 import { VariantGroupingService } from './VariantGroupingService';
 import { Car } from '../../../models/car.model';
+import { AppError } from '../../../shared/utils/app-error.util';
 
 interface StagingInput {
   source_car_name: string;
@@ -153,7 +154,7 @@ export class VariantIngestionService {
 
   static async linkCar(stagingId: string, carId: string, linkedBy: string) {
     const car = await Car.findOne({ car_id: carId }).select('name car_id');
-    if (!car) throw new Error(`Car ${carId} not found`);
+    if (!car) throw AppError.carNotFound(carId);
 
     await VariantImportStaging.updateOne(
       { _id: new Types.ObjectId(stagingId) },
@@ -181,7 +182,7 @@ export class VariantIngestionService {
 
   static async bulkLinkCar(stagingIds: string[], carId: string, linkedBy: string) {
     const car = await Car.findOne({ car_id: carId }).select('name car_id');
-    if (!car) throw new Error(`Car ${carId} not found`);
+    if (!car) throw AppError.carNotFound(carId);
 
     await VariantImportStaging.updateMany(
       { _id: { $in: stagingIds.map(id => new Types.ObjectId(id)) } },

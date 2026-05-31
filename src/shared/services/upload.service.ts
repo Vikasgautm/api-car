@@ -96,7 +96,7 @@ export class UploadService {
       if (isAllowed) {
         cb(null, true);
       } else {
-        cb(new AppError(`Invalid file type. Allowed types: ${allowedMimeTypes.join(', ')}`, 400));
+        cb(AppError.invalidFileType(allowedMimeTypes));
       }
     };
   }

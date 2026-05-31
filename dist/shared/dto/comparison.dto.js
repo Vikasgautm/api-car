@@ -2,9 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GetRivalsDTO = exports.CreateRivalDTO = exports.ComparisonQueryDTO = exports.UpdateComparisonDTO = exports.CreateComparisonDTO = void 0;
 const zod_1 = require("zod");
+// Accept either Mongo ObjectId (24) or UUID (36) — the service resolves both.
+const carIdSchema = zod_1.z.string().min(24, 'Invalid car ID').max(40, 'Invalid car ID');
 exports.CreateComparisonDTO = zod_1.z.object({
-    car1_id: zod_1.z.string().min(24, 'Invalid car1 ID'),
-    car2_id: zod_1.z.string().min(24, 'Invalid car2 ID'),
+    car1_id: carIdSchema,
+    car2_id: carIdSchema,
     variant1_id: zod_1.z.string().optional(),
     variant2_id: zod_1.z.string().optional(),
     slug: zod_1.z.string().min(3, 'Slug must be at least 3 characters').regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),

@@ -98,36 +98,33 @@ export class CarService {
       }
     }
 
+    // Run all three lookup-validation queries in parallel instead of sequentially.
+    // These only check entity existence before applying as filters — safe to parallelize.
+    const [brand, bodyType, fuelTypeDoc] = await Promise.all([
+      brand_id !== undefined
+        ? Brand.findOne({ brand_id, is_deleted: false }).lean()
+        : Promise.resolve(null),
+      body_type_id !== undefined
+        ? BodyType.findOne({ body_type_id, is_deleted: false }).lean()
+        : Promise.resolve(null),
+      fuel_type_id !== undefined
+        ? (() => {
+            if (!fuel_type_id || typeof fuel_type_id !== 'string' || fuel_type_id.length < 1) {
+              throw new AppError('Invalid fuel_type_id parameter', 400);
+            }
+            return FuelType.findOne({ fuel_type_id, is_deleted: false }).lean();
+          })()
+        : Promise.resolve(null),
+    ]);
+
     if (brand_id !== undefined) {
-      const brand = await Brand.findOne({ brand_id, is_deleted: false });
-      if (brand) {
-        filter.brand_id = brand_id;
-      } else {
-        // If brand doesn't exist, return empty results
-        filter.brand_id = null;
-      }
+      filter.brand_id = brand ? brand_id : null;
     }
     if (body_type_id !== undefined) {
-      const bodyType = await BodyType.findOne({ body_type_id, is_deleted: false });
-      if (bodyType) {
-        filter.body_type_id = body_type_id;
-      } else {
-        // If body type doesn't exist, return empty results
-        filter.body_type_id = null;
-      }
+      filter.body_type_id = bodyType ? body_type_id : null;
     }
     if (fuel_type_id !== undefined) {
-      // Validate fuel_type_id format - reject invalid/corrupted values
-      if (!fuel_type_id || typeof fuel_type_id !== 'string' || fuel_type_id.length < 1) {
-        throw new AppError('Invalid fuel_type_id parameter', 400);
-      }
-      const fuelTypeDoc = await FuelType.findOne({ fuel_type_id, is_deleted: false });
-      if (fuelTypeDoc) {
-        filter.fuel_type_id = fuel_type_id;
-      } else {
-        // If fuel type doesn't exist, return empty results
-        filter.fuel_type_id = null;
-      }
+      filter.fuel_type_id = fuelTypeDoc ? fuel_type_id : null;
     }
     if (is_electric !== undefined) filter.is_electric = is_electric;
     if (model_family !== undefined && typeof model_family === 'string' && model_family.trim() !== '') {
@@ -286,7 +283,7 @@ export class CarService {
 
     return { cars: enrichedCars, pagination: paginationMeta };
   } catch (error) {
-    console.log(error);
+    logger.error('getAllCars failed', { error });
     
     throw new AppError('Failed to fetch cars', 500);
   }
@@ -296,7 +293,7 @@ export class CarService {
   }
 
   static async getCarBySlug(slug: string) {
-    const car = await Car.findOne({ slug, is_deleted: false });
+    const car = await Car.findOne({ slug, is_deleted: false, is_published: true });
 
     if (!car) return null;
 
@@ -624,7 +621,19 @@ export class CarService {
     if (carData.gallery_summary !== undefined) updateData.gallery_summary = carData.gallery_summary;
     
     // Handle launch status fields with normalization
-    if (normalizedData.status !== undefined) updateData.status = normalizedData.status;
+    if (normalizedData.status !== undefined) {
+      updateData.status = normalizedData.status;
+      // Transitioning to launched clears archive/disable/discontinue metadata so
+      // the car becomes a clean active record (matches LifecycleArchivePage restore).
+      if (normalizedData.status === 'launched') {
+        (updateData as any).archived_at = null;
+        (updateData as any).archived_by = null;
+        (updateData as any).disabled_at = null;
+        (updateData as any).disabled_by = null;
+        (updateData as any).discontinued_at = null;
+        (updateData as any).discontinued_by = null;
+      }
+    }
     if (normalizedData.is_upcoming !== undefined) updateData.is_upcoming = normalizedData.is_upcoming;
     if (normalizedData.is_launched !== undefined) updateData.is_launched = normalizedData.is_launched;
     if (normalizedData.expected_exshowroom_price !== undefined) updateData.expected_exshowroom_price = normalizedData.expected_exshowroom_price;
@@ -1182,6 +1191,13 @@ export class CarService {
       );
     }
 
+    // Cascade soft-delete to all active variants of this car so they are not
+    // queryable via the variant API after the parent car is removed.
+    await CarVariant.updateMany(
+      { car_id: carId, is_deleted: false },
+      { $set: { is_deleted: true, deleted_at: new Date() } }
+    );
+
     await AuditUtil.recordEvent({
       entity_type: 'car',
       entity_id: car.car_id,
@@ -1194,7 +1210,15 @@ export class CarService {
   static async restoreCar(carId: string, actor: AuditActor | null = null) {
     const car = await Car.findOneAndUpdate(
       { car_id: carId, is_deleted: true },
-      { is_deleted: false },
+      {
+        is_deleted: false,
+        archived_at: null,
+        archived_by: null,
+        disabled_at: null,
+        disabled_by: null,
+        discontinued_at: null,
+        discontinued_by: null,
+      },
       { returnDocument: 'after' }
     );
 

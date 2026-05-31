@@ -38,6 +38,7 @@ const platform_settings_model_1 = require("../../../models/platform-settings.mod
 const settings_history_model_1 = require("../../../models/settings-history.model");
 const settings_constants_1 = require("../constants/settings.constants");
 const settings_validator_1 = require("../validators/settings.validator");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const settingsCache = new Map();
 const CACHE_TTL_MS = 60_000;
 function cacheGet(group) {
@@ -110,7 +111,7 @@ class PlatformSettingsService {
     static async updateSettingsByGroup(group, updates, actorId, actorName) {
         const validation = (0, settings_validator_1.validateSettingsData)(group, updates);
         if (!validation.valid) {
-            throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+            throw app_error_util_1.AppError.validation(`Settings validation failed: ${validation.errors.join(', ')}`, validation.errors);
         }
         await PlatformSettingsService.ensureDefaults();
         const existing = await platform_settings_model_1.PlatformSettings.findOne({ group });
@@ -194,7 +195,7 @@ class PlatformSettingsService {
         return {
             backend: 'ok',
             mongodb: dbState,
-            ai_provider: process.env.ANTHROPIC_API_KEY ? 'configured' : 'not_configured',
+            ai_provider: process.env.CEREBRAS_API_KEY ? 'configured' : 'not_configured',
             cloudinary: (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) ? 'configured' : 'not_configured',
             node_env: process.env.NODE_ENV || 'development',
             uptime_seconds: process.uptime(),

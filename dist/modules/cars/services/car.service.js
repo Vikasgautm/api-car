@@ -112,39 +112,32 @@ class CarService {
                     filter.status = { $nin: ['archived', 'disabled'] };
                 }
             }
+            // Run all three lookup-validation queries in parallel instead of sequentially.
+            // These only check entity existence before applying as filters — safe to parallelize.
+            const [brand, bodyType, fuelTypeDoc] = await Promise.all([
+                brand_id !== undefined
+                    ? brand_model_1.Brand.findOne({ brand_id, is_deleted: false }).lean()
+                    : Promise.resolve(null),
+                body_type_id !== undefined
+                    ? body_type_model_1.BodyType.findOne({ body_type_id, is_deleted: false }).lean()
+                    : Promise.resolve(null),
+                fuel_type_id !== undefined
+                    ? (() => {
+                        if (!fuel_type_id || typeof fuel_type_id !== 'string' || fuel_type_id.length < 1) {
+                            throw new app_error_util_1.AppError('Invalid fuel_type_id parameter', 400);
+                        }
+                        return fuel_type_model_1.FuelType.findOne({ fuel_type_id, is_deleted: false }).lean();
+                    })()
+                    : Promise.resolve(null),
+            ]);
             if (brand_id !== undefined) {
-                const brand = await brand_model_1.Brand.findOne({ brand_id, is_deleted: false });
-                if (brand) {
-                    filter.brand_id = brand_id;
-                }
-                else {
-                    // If brand doesn't exist, return empty results
-                    filter.brand_id = null;
-                }
+                filter.brand_id = brand ? brand_id : null;
             }
             if (body_type_id !== undefined) {
-                const bodyType = await body_type_model_1.BodyType.findOne({ body_type_id, is_deleted: false });
-                if (bodyType) {
-                    filter.body_type_id = body_type_id;
-                }
-                else {
-                    // If body type doesn't exist, return empty results
-                    filter.body_type_id = null;
-                }
+                filter.body_type_id = bodyType ? body_type_id : null;
             }
             if (fuel_type_id !== undefined) {
-                // Validate fuel_type_id format - reject invalid/corrupted values
-                if (!fuel_type_id || typeof fuel_type_id !== 'string' || fuel_type_id.length < 1) {
-                    throw new app_error_util_1.AppError('Invalid fuel_type_id parameter', 400);
-                }
-                const fuelTypeDoc = await fuel_type_model_1.FuelType.findOne({ fuel_type_id, is_deleted: false });
-                if (fuelTypeDoc) {
-                    filter.fuel_type_id = fuel_type_id;
-                }
-                else {
-                    // If fuel type doesn't exist, return empty results
-                    filter.fuel_type_id = null;
-                }
+                filter.fuel_type_id = fuelTypeDoc ? fuel_type_id : null;
             }
             if (is_electric !== undefined)
                 filter.is_electric = is_electric;
@@ -284,7 +277,7 @@ class CarService {
             return { cars: enrichedCars, pagination: paginationMeta };
         }
         catch (error) {
-            console.log(error);
+            logger_1.logger.error('getAllCars failed', { error });
             throw new app_error_util_1.AppError('Failed to fetch cars', 500);
         }
     }
@@ -292,7 +285,7 @@ class CarService {
         return await car_model_1.Car.findOne({ car_id: carId, is_deleted: false });
     }
     static async getCarBySlug(slug) {
-        const car = await car_model_1.Car.findOne({ slug, is_deleted: false });
+        const car = await car_model_1.Car.findOne({ slug, is_deleted: false, is_published: true });
         if (!car)
             return null;
         const [variants, tags] = await Promise.all([
@@ -563,8 +556,19 @@ class CarService {
         if (carData.gallery_summary !== undefined)
             updateData.gallery_summary = carData.gallery_summary;
         // Handle launch status fields with normalization
-        if (normalizedData.status !== undefined)
+        if (normalizedData.status !== undefined) {
             updateData.status = normalizedData.status;
+            // Transitioning to launched clears archive/disable/discontinue metadata so
+            // the car becomes a clean active record (matches LifecycleArchivePage restore).
+            if (normalizedData.status === 'launched') {
+                updateData.archived_at = null;
+                updateData.archived_by = null;
+                updateData.disabled_at = null;
+                updateData.disabled_by = null;
+                updateData.discontinued_at = null;
+                updateData.discontinued_by = null;
+            }
+        }
         if (normalizedData.is_upcoming !== undefined)
             updateData.is_upcoming = normalizedData.is_upcoming;
         if (normalizedData.is_launched !== undefined)
@@ -1046,6 +1050,9 @@ class CarService {
                 },
             });
         }
+        // Cascade soft-delete to all active variants of this car so they are not
+        // queryable via the variant API after the parent car is removed.
+        await car_variant_model_1.CarVariant.updateMany({ car_id: carId, is_deleted: false }, { $set: { is_deleted: true, deleted_at: new Date() } });
         await audit_util_1.AuditUtil.recordEvent({
             entity_type: 'car',
             entity_id: car.car_id,
@@ -1055,7 +1062,15 @@ class CarService {
         return car;
     }
     static async restoreCar(carId, actor = null) {
-        const car = await car_model_1.Car.findOneAndUpdate({ car_id: carId, is_deleted: true }, { is_deleted: false }, { returnDocument: 'after' });
+        const car = await car_model_1.Car.findOneAndUpdate({ car_id: carId, is_deleted: true }, {
+            is_deleted: false,
+            archived_at: null,
+            archived_by: null,
+            disabled_at: null,
+            disabled_by: null,
+            discontinued_at: null,
+            discontinued_by: null,
+        }, { returnDocument: 'after' });
         if (!car) {
             throw new app_error_util_1.AppError(`Car not found for car_id: ${carId}`, 404, {
                 userMessage: errorMessages_1.USER_MESSAGES.CAR_NOT_FOUND,

@@ -471,6 +471,25 @@ export class CarVariantController {
     return ResponseUtil.success(res, updated, 'Refinement suggestions applied');
   });
 
+  // Missing-field AI fill endpoints (Validation panel one-click fill)
+  static suggestMissingFields = catchAsync(async (req: Request, res: Response) => {
+    const result = await SpecRefinementService.suggestMissingFields(req.params.id as string);
+    return ResponseUtil.success(res, result, 'Missing-field suggestions generated');
+  });
+
+  static applyMissingFields = catchAsync(async (req: Request, res: Response) => {
+    const { values } = req.body;
+    if (!values || !Array.isArray(values)) {
+      throw new AppError('values array is required', 400);
+    }
+    const updated = await SpecRefinementService.applyMissingFieldValues(
+      req.params.id as string,
+      values,
+      AuditUtil.actorFromRequest(req as AuthRequest)
+    );
+    return ResponseUtil.success(res, updated, 'Missing field values applied');
+  });
+
   static refineMultipleVariants = catchAsync(async (req: Request, res: Response) => {
     const { variant_ids } = req.body;
     if (!variant_ids || !Array.isArray(variant_ids)) {

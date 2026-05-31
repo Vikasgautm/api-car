@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BlogHealthService = void 0;
 const blog_model_1 = require("../../../models/blog.model");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
 function scoreFromChecks(checks) {
     const weights = {
         critical: 25,
@@ -83,7 +84,7 @@ class BlogHealthService {
     static async computeForBlog(blogId) {
         const blog = await blog_model_1.Blog.findOne({ blog_id: blogId, is_deleted: false }).lean();
         if (!blog)
-            throw new Error('Blog not found');
+            throw app_error_util_1.AppError.notFound('Blog');
         const checks = this.runChecks(blog);
         const score = scoreFromChecks(checks);
         await blog_model_1.Blog.updateOne({ blog_id: blogId }, { seo_health_score: score });

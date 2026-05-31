@@ -2,6 +2,7 @@ import { Car, EntityLifecycleState } from '../../models/car.model';
 import { CarVariant } from '../../models/car-variant.model';
 import { CarLifecycleService } from '../../modules/cars/services/car-lifecycle.service';
 import { VariantLifecycleService } from '../../modules/variants/services/variant-lifecycle.service';
+import { AppError } from '../utils/app-error.util';
 
 interface ScheduledTransition {
   carId: string;
@@ -80,7 +81,7 @@ export class ScheduledLaunchService {
   static async performBulkCategoryEvolutionOnLaunch(carId: string) {
     const car = await Car.findOne({ car_id: carId, is_deleted: false });
     if (!car) {
-      throw new Error(`Car ${carId} not found`);
+      throw AppError.carNotFound(carId);
     }
 
     const variants = await CarVariant.find({ car_id: carId, is_deleted: false });
@@ -161,11 +162,11 @@ export class ScheduledLaunchService {
   ): Promise<ScheduledTransition> {
     const car = await Car.findOne({ car_id: carId, is_deleted: false });
     if (!car) {
-      throw new Error(`Car ${carId} not found`);
+      throw AppError.carNotFound(carId);
     }
 
     if (scheduledDate <= new Date()) {
-      throw new Error('Scheduled date must be in the future');
+      throw AppError.badRequest('Scheduled date must be in the future', 'The scheduled launch date must be in the future.');
     }
 
     // Add to history as [SCHEDULED]
@@ -219,11 +220,11 @@ export class ScheduledLaunchService {
   static async cancelScheduledLaunch(carId: string, targetState: EntityLifecycleState) {
     const car = await Car.findOne({ car_id: carId, is_deleted: false });
     if (!car) {
-      throw new Error(`Car ${carId} not found`);
+      throw AppError.carNotFound(carId);
     }
 
     if (!car.entity_status_history) {
-      throw new Error('No scheduled launches found');
+      throw AppError.notFound('Scheduled launch');
     }
 
     // Remove scheduled entry

@@ -25,8 +25,8 @@ export declare class ComparisonService {
         limit: number;
         pages: number;
     }>;
-    static getComparisonBySlug(slug: string): Promise<IComparison>;
-    static getComparisonById(id: string): Promise<IComparison>;
+    static getComparisonBySlug(slug: string): Promise<any>;
+    static getComparisonById(id: string): Promise<any>;
     static addRival(primaryCarId: string, rivalCarId: string, userId: string, strength?: number): Promise<void>;
     static removeRival(primaryCarId: string, rivalCarId: string, userId: string): Promise<void>;
     static getRivals(carId: string, limit?: number): Promise<IComparisonRival[]>;

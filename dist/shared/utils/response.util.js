@@ -17,14 +17,15 @@ class ResponseUtil {
         const response = {
             success: false,
             message,
+            // Provide both keys for backward compatibility.
+            // Frontend should prefer `errorCode`; `error` is the legacy alias.
+            errorCode: code,
             error: code,
-            errors,
+            errors: errors || [],
             statusCode,
             timestamp: new Date().toISOString(),
+            details: details || {},
         };
-        if (details) {
-            response.details = details;
-        }
         return res.status(statusCode).json(response);
     }
     static paginated(res, data, pagination, message = 'Success', statusCode = 200) {

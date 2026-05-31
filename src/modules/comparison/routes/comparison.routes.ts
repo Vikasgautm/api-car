@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ComparisonController } from '../controllers/comparison.controller';
-import { protect, restrictTo } from '../../../middlewares/auth.middleware';
+import { protect, restrictTo, optionalAuth } from '../../../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -37,8 +37,7 @@ router.post(
 
 router.get(
   '/',
-  protect,
-  restrictTo('admin', 'super_admin'),
+  optionalAuth,
   (req, res, next) => ComparisonController.getComparisons(req as any, res, next),
 );
 

@@ -35,13 +35,14 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BlogFreshnessService = void 0;
 const blog_model_1 = require("../../../models/blog.model");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
 class BlogFreshnessService {
     static async checkBlog(blogId) {
         const blog = await blog_model_1.Blog.findOne({ blog_id: blogId, is_deleted: false })
             .select('blog_id title connected_cars connected_brands connected_comparisons updatedAt freshness_score stale_flags')
             .lean();
         if (!blog)
-            throw new Error('Blog not found');
+            throw app_error_util_1.AppError.notFound('Blog');
         const Car = (await Promise.resolve().then(() => __importStar(require('../../../models/car.model')))).Car;
         const stale_flags = [];
         let scoreDeduction = 0;

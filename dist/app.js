@@ -30,8 +30,8 @@ app.use((0, cors_1.default)({
 }));
 app.use(rate_limit_middleware_1.globalRateLimiter);
 app.use((0, compression_1.default)());
-app.use(express_1.default.json());
-app.use(express_1.default.urlencoded({ extended: true }));
+app.use(express_1.default.json({ limit: '2mb' }));
+app.use(express_1.default.urlencoded({ limit: '2mb', extended: true }));
 app.use((0, cookie_parser_1.default)());
 // Base route
 app.get("/", (req, res) => {

@@ -13,6 +13,8 @@ export interface ValidationResult {
 export declare class VariantValidationService {
     private static REQUIRED_FIELDS_BY_STATUS;
     private static CRITICAL_SPEC_FIELDS;
+    private static CRITICAL_SPEC_PATHS;
+    private static getNestedValue;
     static validateVariant(variantId: string): Promise<ValidationResult>;
     private static performValidation;
     static validateCarVariants(carId: string): Promise<Record<string, ValidationResult>>;

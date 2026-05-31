@@ -1,4 +1,5 @@
 import { Blog, IBlog } from '../../../models/blog.model';
+import { AppError } from '../../../shared/utils/app-error.util';
 
 interface HealthCheck {
   code: string;
@@ -100,7 +101,7 @@ export class BlogHealthService {
 
   static async computeForBlog(blogId: string): Promise<BlogHealthResult> {
     const blog = await Blog.findOne({ blog_id: blogId, is_deleted: false }).lean();
-    if (!blog) throw new Error('Blog not found');
+    if (!blog) throw AppError.notFound('Blog');
 
     const checks = this.runChecks(blog);
     const score = scoreFromChecks(checks);

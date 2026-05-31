@@ -8,9 +8,18 @@ const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
+const cache_util_1 = require("../../../utils/cache.util");
 class FuelTypeService {
     static async getAllFuelTypes(filterDto, includeDeleted = false) {
         const { page = 1, limit = 10, q, is_published, is_featured, is_deleted, sortBy = 'name', sortOrder = 'asc' } = filterDto;
+        // Only cache simple published queries without complex filters
+        const isSimpleQuery = !q && !is_featured && page === 1 && limit === 10 && is_published === 'true' && !includeDeleted;
+        const cacheKey = cache_util_1.CacheKeys.fuelType.all({ is_published: true, page: 1, limit: 10 });
+        if (isSimpleQuery) {
+            const cached = cache_util_1.cache.get(cacheKey);
+            if (cached)
+                return cached;
+        }
         const filter = {};
         if (is_deleted === 'true' || is_deleted === true) {
             filter.is_deleted = true;
@@ -36,7 +45,11 @@ class FuelTypeService {
             .limit(validatedLimit);
         const total = await fuel_type_model_1.FuelType.countDocuments(filter);
         const paginationMeta = pagination_util_1.PaginationUtil.createPaginationMeta(page, validatedLimit, total);
-        return { fuelTypes, pagination: paginationMeta };
+        const result = { fuelTypes, pagination: paginationMeta };
+        if (isSimpleQuery) {
+            cache_util_1.cache.set(cacheKey, result, 5 * 60 * 1000); // 5 minutes TTL
+        }
+        return result;
     }
     static async getFuelTypeById(fuelTypeId) {
         return await fuel_type_model_1.FuelType.findOne({ fuel_type_id: fuelTypeId, is_deleted: false });
@@ -67,7 +80,10 @@ class FuelTypeService {
             is_featured: fuelTypeData.is_featured || false,
             is_deleted: false,
         };
-        return await fuel_type_model_1.FuelType.create(fuelType);
+        const result = await fuel_type_model_1.FuelType.create(fuelType);
+        // Invalidate cache on create
+        cache_util_1.cache.invalidatePattern('fueltypes:');
+        return result;
     }
     static async updateFuelType(fuelTypeId, fuelTypeData) {
         const updateData = {};
@@ -140,6 +156,8 @@ class FuelTypeService {
         }
         fuelType.is_published = !fuelType.is_published;
         await fuelType.save();
+        // Invalidate cache on publish toggle
+        cache_util_1.cache.invalidatePattern('fueltypes:');
         return fuelType;
     }
 }

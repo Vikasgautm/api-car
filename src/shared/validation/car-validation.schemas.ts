@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { metaFieldsSchema, objectIdSchema, publishStatusSchema, transmissionTypeSchema, uuidSchema } from './common-validation.schemas';
+import { metaFieldsSchema, publishStatusSchema, transmissionTypeSchema, uuidSchema } from './common-validation.schemas';
 
 // Helper for boolean fields that may come as strings from FormData
 const booleanOrString = z.union([
@@ -54,11 +54,14 @@ export const createCarSchema = z.object({
 export const updateCarSchema = createCarSchema.partial().strict();
 
 // Car Variant DTO schemas
+// NOTE: car_id / fuel_type_id / variant_id are UUID strings in this project,
+// NOT Mongo ObjectIds. Keep these on uuidSchema to match the real payload shape.
 export const createVariantSchema = z.object({
-  car_id: objectIdSchema,
+  car_id: uuidSchema,
+  variant_id: uuidSchema.optional(),
   variant_name: z.string().min(2, 'Variant name must be at least 2 characters'),
   model_year: z.number().int().min(1900).max(2100, 'Model year must be between 1900 and 2100'),
-  fuel_type_id: objectIdSchema,
+  fuel_type_id: uuidSchema,
   transmission_type: transmissionTypeSchema,
   drivetrain: z.string().optional(),
   seating_capacity: z.number().int().min(2).max(10).optional(),

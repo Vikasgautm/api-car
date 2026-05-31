@@ -4,6 +4,7 @@ exports.VariantPushService = void 0;
 const VariantImportStaging_1 = require("../models/VariantImportStaging");
 const ImportSession_1 = require("../models/ImportSession");
 const car_variant_model_1 = require("../../../models/car-variant.model");
+const fuel_type_model_1 = require("../../../models/fuel-type.model");
 const uuid_1 = require("uuid");
 class VariantPushService {
     static async pushVariant(stagingId, pushedBy) {
@@ -20,6 +21,21 @@ class VariantPushService {
             return { staging_id: stagingId, success: false, error: 'Variant is rejected', action: 'failed' };
         }
         try {
+            // Resolve raw fuel type display name (e.g. 'Petrol') to the canonical UUID
+            // (e.g. 'fuel_type_abc123') before saving. Storing raw names in fuel_type_id
+            // corrupts the column and breaks all variant-by-fuel-type queries.
+            let resolvedFuelTypeId;
+            if (staging.fuel_type) {
+                const fuelTypeDoc = await fuel_type_model_1.FuelType.findOne({
+                    $or: [
+                        { name: { $regex: new RegExp(`^${staging.fuel_type}$`, 'i') } },
+                        { fuel_type_id: staging.fuel_type }, // already a UUID — pass through
+                    ],
+                    is_deleted: false,
+                }).lean();
+                resolvedFuelTypeId = fuelTypeDoc?.fuel_type_id;
+                // If no match, skip setting fuel_type_id rather than storing the raw name.
+            }
             const slug = this.buildSlug(staging);
             const existing = await car_variant_model_1.CarVariant.findOne({ slug });
             let variantId;
@@ -28,8 +44,8 @@ class VariantPushService {
                 const update = {};
                 if (staging.price)
                     update.ex_showroom_price = staging.price;
-                if (staging.fuel_type)
-                    update.fuel_type_id = staging.fuel_type;
+                if (resolvedFuelTypeId)
+                    update.fuel_type_id = resolvedFuelTypeId;
                 if (staging.transmission)
                     update.transmission_type = staging.transmission.toLowerCase().replace(/ /g, '_');
                 if (Object.keys(staging.normalized_specs || {}).length > 0) {
@@ -45,12 +61,12 @@ class VariantPushService {
                     car_id: staging.linked_car_id,
                     variant_name: staging.variant_name,
                     slug,
-                    model_year: new Date().getFullYear(),
+                    model_year: this.extractModelYear(staging),
                     is_published: false,
                     is_deleted: false,
                     is_archived: false,
                     ex_showroom_price: staging.price,
-                    fuel_type_id: staging.fuel_type,
+                    ...(resolvedFuelTypeId ? { fuel_type_id: resolvedFuelTypeId } : {}),
                     transmission_type: staging.transmission ? staging.transmission.toLowerCase().replace(/ /g, '_') : undefined,
                     specs_raw: staging.normalized_specs || {},
                 };
@@ -112,6 +128,26 @@ class VariantPushService {
             }
         }
         return diffs;
+    }
+    static extractModelYear(staging) {
+        const specYear = staging.normalized_specs?.model_year ||
+            staging.normalized_specs?.year ||
+            staging.raw_specs?.model_year ||
+            staging.raw_specs?.year;
+        if (specYear) {
+            const parsed = parseInt(String(specYear), 10);
+            if (!isNaN(parsed) && parsed > 1900 && parsed < 2100) {
+                return parsed;
+            }
+        }
+        const yearRegex = /\b(19\d\d|20\d\d)\b/;
+        const nameMatch = staging.variant_name?.match(yearRegex) ||
+            staging.source_car_name?.match(yearRegex) ||
+            (staging.normalized_car_name && staging.normalized_car_name.match(yearRegex));
+        if (nameMatch) {
+            return parseInt(nameMatch[1], 10);
+        }
+        return new Date().getFullYear();
     }
     static buildSlug(staging) {
         const carPart = (staging.linked_car_name || staging.source_car_name)

@@ -158,15 +158,18 @@ export class ImportService {
 
   static async saveCarImport(payload: SaveCarImportRequest, userId: string): Promise<ImportResult> {
     const { url, mode, car_id, data, unmatched_data } = payload;
+    console.log('[ImportService.saveCarImport] ▶ START', { userId, url, mode, car_id, slug: data?.slug, name: data?.name });
 
     // Clean null values from data
     const cleanData = Object.fromEntries(
       Object.entries(data).filter(([_, value]) => value !== null)
     );
+    console.log('[ImportService.saveCarImport] cleaned payload', { inputKeys: Object.keys(data).length, cleanKeys: Object.keys(cleanData).length });
 
     let car;
 
     if (mode === 'create') {
+      console.log('[ImportService.saveCarImport] mode=create — checking slug uniqueness', { slug: data.slug });
       // Check for duplicate slug
       const existingSlug = await Car.findOne({
         slug: data.slug,
@@ -174,15 +177,19 @@ export class ImportService {
       });
 
       if (existingSlug) {
+        console.warn('[ImportService.saveCarImport] ✗ duplicate slug detected', { slug: data.slug, existing_car_id: existingSlug.car_id });
         throw new AppError(`Car with slug '${data.slug}' already exists. Use update or merge mode instead.`, 409);
       }
 
+      const newCarId = uuidv4();
+      console.log('[ImportService.saveCarImport] creating new Car document', { car_id: newCarId, slug: data.slug });
       car = await Car.create({
-        car_id: uuidv4(),
+        car_id: newCarId,
         ...(cleanData as Record<string, unknown>),
         description: String(cleanData.description || ''),
         is_deleted: false,
       });
+      console.log('[ImportService.saveCarImport] ✓ Car created', { car_id: car.car_id, name: car.name });
 
       // Update import log
       await ImportLog.findOneAndUpdate(
@@ -193,9 +200,12 @@ export class ImportService {
           matched_data: data,
         }
       );
+      console.log('[ImportService.saveCarImport] ✓ ImportLog updated to status=saved', { car_id: car.car_id });
 
     } else if (mode === 'update' || mode === 'merge') {
+      console.log(`[ImportService.saveCarImport] mode=${mode}`, { car_id });
       if (!car_id) {
+        console.warn('[ImportService.saveCarImport] ✗ car_id missing for update/merge');
         throw new AppError('car_id is required for update/merge mode', 400);
       }
 
@@ -205,20 +215,24 @@ export class ImportService {
       });
 
       if (!existingCar) {
+        console.warn('[ImportService.saveCarImport] ✗ Car not found', { car_id });
         throw new AppError('Car not found', 404);
       }
+      console.log('[ImportService.saveCarImport] ✓ existing Car found', { car_id, name: existingCar.name });
 
       const updateData: any = {};
 
       if (mode === 'update') {
         // Update all provided fields (excluding nulls)
         Object.assign(updateData, cleanData);
+        console.log('[ImportService.saveCarImport] update mode — overwriting fields', { fields: Object.keys(updateData) });
       } else {
         // Merge mode: only fill empty fields (excluding nulls)
         if (!existingCar.name && cleanData.name) updateData.name = cleanData.name;
         if (!existingCar.description && cleanData.description) updateData.description = cleanData.description;
         if (!existingCar.exshowroom_price && cleanData.exshowroom_price !== undefined) updateData.exshowroom_price = cleanData.exshowroom_price;
         if (!existingCar.expected_exshowroom_price && cleanData.expected_exshowroom_price !== undefined) updateData.expected_exshowroom_price = cleanData.expected_exshowroom_price;
+        console.log('[ImportService.saveCarImport] merge mode — filling empties', { fields: Object.keys(updateData) });
       }
 
       car = await Car.findOneAndUpdate(
@@ -226,6 +240,7 @@ export class ImportService {
         updateData,
         { returnDocument: 'after' }
       );
+      console.log('[ImportService.saveCarImport] ✓ Car updated', { car_id: car?.car_id });
 
       // Update import log
       await ImportLog.findOneAndUpdate(
@@ -236,14 +251,17 @@ export class ImportService {
           matched_data: updateData,
         }
       );
+      console.log('[ImportService.saveCarImport] ✓ ImportLog updated to status=saved', { car_id: car?.car_id });
     }
 
-    return {
+    const result = {
       success: true,
       car_id: car?.car_id || '',
       warnings: [],
       errors: [],
     };
+    console.log('[ImportService.saveCarImport] ◀ DONE', { car_id: result.car_id, success: result.success });
+    return result;
   }
 
   static async previewVariantImport(carId: string, urls: string[], userId: string): Promise<VariantPreviewResponse> {
@@ -433,6 +451,7 @@ export class ImportService {
 
   static async saveVariantImport(payload: SaveVariantImportRequest, userId: string): Promise<ImportResult> {
     const { car_id, mode, items } = payload;
+    console.log('[ImportService.saveVariantImport] ▶ START', { userId, car_id, mode, itemCount: items?.length ?? 0 });
     const variantIds: string[] = [];
     const warnings: string[] = [];
     const errors: string[] = [];
@@ -440,6 +459,7 @@ export class ImportService {
     // Verify car exists
     const car = await Car.findOne({ car_id, is_deleted: false });
     if (!car) {
+      console.warn('[ImportService.saveVariantImport] ✗ Car not found', { car_id });
       throw new AppError(
         `Car not found for car_id: ${car_id}`,
         404,
@@ -453,12 +473,14 @@ export class ImportService {
         }
       );
     }
+    console.log('[ImportService.saveVariantImport] ✓ parent Car verified', { car_id, name: car.name });
 
     // Batch fetch all existing variants and fuel types before loop to avoid N+1
     const [existingVariants, allFuelTypes] = await Promise.all([
       CarVariant.find({ car_id, is_deleted: false }).lean(),
       FuelType.find({ is_deleted: false }).lean(),
     ]);
+    console.log('[ImportService.saveVariantImport] prefetched lookups', { existingVariants: existingVariants.length, fuelTypes: allFuelTypes.length });
 
     // Create maps for O(1) lookups
     const variantSlugSet = new Set(existingVariants.map((v: any) => v.slug));
@@ -468,24 +490,44 @@ export class ImportService {
     const importSettings = await PlatformSettingsService.getSettingsByGroup('imports').catch(() => ({})) as Record<string, any>;
     const minToSave: number = importSettings.min_confidence_to_save ?? 0;
     const minToPublish: number = importSettings.min_confidence_to_publish ?? 100;
+    console.log('[ImportService.saveVariantImport] confidence thresholds', { minToSave, minToPublish });
 
     // Separate processing for create and update modes
     const createPayloads: any[] = [];
     const updateOps: any[] = [];
     const importLogOps: any[] = [];
 
-    for (const item of items) {
+    for (const [idx, item] of items.entries()) {
+      console.log(`[ImportService.saveVariantImport] [${idx + 1}/${items.length}] processing item`, { url: (item as any).url, variant_id: item.variant_id, slug: item.data?.slug });
+      // Diagnostic: pre-enhancement snapshot so we can tell if specs_raw was missing
+      const specsRawPre = (item.data as any)?.specs_raw;
+      console.log(`[ImportService.saveVariantImport] [${idx + 1}/${items.length}] pre-enhance`, {
+        has_specs_raw: !!specsRawPre,
+        specs_raw_keys: specsRawPre && typeof specsRawPre === 'object' ? Object.keys(specsRawPre).length : 0,
+        has_specs_normalized: !!(item.data as any)?.specs_normalized,
+        fuel_type_id: (item.data as any)?.fuel_type_id,
+        incoming_powConf: (item.data as any)?.powertrain_detection_confidence,
+      });
       // Enhance variant data with normalization before processing
       item.data = await this.enhanceVariantWithNormalization(item.data, (item.data as any).fuel_type_id);
+      // Diagnostic: post-enhancement snapshot — surfaces what the confidence gate will read
+      console.log(`[ImportService.saveVariantImport] [${idx + 1}/${items.length}] post-enhance`, {
+        powertrain_detection_confidence: (item.data as any)?.powertrain_detection_confidence,
+        has_engine: (item.data as any)?.has_engine,
+        has_battery: (item.data as any)?.has_battery,
+        has_motor: (item.data as any)?.has_motor,
+        has_external_charging: (item.data as any)?.has_external_charging,
+      });
 
-      // Confidence gate: skip variants below min_confidence_to_save threshold.
+      // Confidence threshold is advisory only — variants are saved regardless of powertrain confidence.
       const powConf: number = Number((item.data as any).powertrain_detection_confidence ?? 0);
       if (minToSave > 0 && powConf < minToSave) {
-        warnings.push(`Skipped ${(item as any).url ?? 'variant'}: powertrain confidence ${powConf.toFixed(1)}% < min_confidence_to_save (${minToSave}%)`);
-        continue;
+        console.warn(`[ImportService.saveVariantImport] low-confidence variant — saving anyway`, { url: (item as any).url, powConf, minToSave });
+        warnings.push(`Low confidence ${powConf.toFixed(1)}% (< ${minToSave}%) for ${(item as any).url ?? 'variant'} — saved as draft, please review.`);
       }
       // Auto-publish variants that clearly exceed the publish confidence threshold.
       if (minToPublish < 100 && powConf >= minToPublish) {
+        console.log('[ImportService.saveVariantImport] auto-publishing high-confidence variant', { url: (item as any).url, powConf, minToPublish });
         (item.data as any).is_published = true;
       }
       try {
@@ -499,6 +541,7 @@ export class ImportService {
         if (mode === 'create') {
           // Check for duplicate slug using in-memory set
           if (variantSlugSet.has(item.data.slug)) {
+            console.warn('[ImportService.saveVariantImport] duplicate variant slug — skipping', { slug: item.data.slug, url: item.url });
             warnings.push(`Variant with slug '${item.data.slug}' already exists. Skipping.`);
             continue;
           }
@@ -517,6 +560,7 @@ export class ImportService {
           });
           if (!specValidation.valid) {
             const msg = specValidation.errors.map(e => e.message).join('; ');
+            console.warn('[ImportService.saveVariantImport] spec validation failed — skipping', { url: item.url, errors: msg });
             errors.push(`Spec conflict in ${item.url}: ${msg}`);
             continue;
           }
@@ -570,12 +614,14 @@ export class ImportService {
             data: item.data,
             unmatched_specs: item.unmatched_specs,
           });
+          console.log('[ImportService.saveVariantImport] queued CREATE', { variant_id: variantId, slug: item.data.slug, url: item.url });
 
           variantIds.push(variantId);
           variantSlugSet.add(item.data.slug); // Add to in-memory set to prevent duplicates in batch
 
         } else if (mode === 'update' || mode === 'merge') {
           if (!item.variant_id) {
+            console.warn('[ImportService.saveVariantImport] missing variant_id — skipping', { url: item.url });
             warnings.push(`variant_id is required for update/merge mode. Skipping ${item.url}`);
             continue;
           }
@@ -584,6 +630,7 @@ export class ImportService {
           const existingVariant = existingVariants.find((v: any) => v.variant_id === item.variant_id);
 
           if (!existingVariant) {
+            console.warn('[ImportService.saveVariantImport] existing variant not found — skipping', { variant_id: item.variant_id, url: item.url });
             warnings.push(`Variant not found: ${item.variant_id}. Skipping ${item.url}`);
             continue;
           }
@@ -692,14 +739,18 @@ export class ImportService {
             data: updateData,
             unmatched_specs: item.unmatched_specs,
           });
+          console.log(`[ImportService.saveVariantImport] queued ${mode.toUpperCase()}`, { variant_id: item.variant_id, fields: Object.keys(updateData) });
 
           variantIds.push(item.variant_id);
         }
 
       } catch (error: any) {
+        console.error('[ImportService.saveVariantImport] ✗ item processing error', { url: item.url, error: error.message });
         errors.push(`Failed to save variant from ${item.url}: ${error.message}`);
       }
     }
+
+    console.log('[ImportService.saveVariantImport] loop done — preparing bulk writes', { createCount: createPayloads.length, updateCount: updateOps.length, warnings: warnings.length, errors: errors.length });
 
     // Execute all bulk creates at once
     if (createPayloads.length > 0) {
@@ -707,7 +758,9 @@ export class ImportService {
         const bulkCreateOps = createPayloads.map(p => ({
           insertOne: { document: p.insertOne.document }
         }));
+        console.log('[ImportService.saveVariantImport] executing bulk CREATE', { count: bulkCreateOps.length });
         await CarVariant.bulkWrite(bulkCreateOps);
+        console.log('[ImportService.saveVariantImport] ✓ bulk CREATE succeeded', { count: bulkCreateOps.length });
 
         // Update import logs for all created variants in parallel
         await Promise.all(
@@ -726,6 +779,7 @@ export class ImportService {
           )
         );
       } catch (err: any) {
+        console.error('[ImportService.saveVariantImport] ✗ bulk CREATE failed', { error: err?.message });
         errors.push(`Failed to batch create variants: ${err?.message}`);
       }
     }
@@ -736,7 +790,9 @@ export class ImportService {
         const bulkUpdateOps = updateOps.map(op => ({
           updateOne: op.updateOne
         }));
+        console.log('[ImportService.saveVariantImport] executing bulk UPDATE', { count: bulkUpdateOps.length });
         await CarVariant.bulkWrite(bulkUpdateOps);
+        console.log('[ImportService.saveVariantImport] ✓ bulk UPDATE succeeded', { count: bulkUpdateOps.length });
 
         // Fetch updated variants for change history recording (in parallel)
         const updatePromises = updateOps.map(async op => {
@@ -778,6 +834,7 @@ export class ImportService {
 
         await Promise.all(updatePromises);
       } catch (err: any) {
+        console.error('[ImportService.saveVariantImport] ✗ bulk UPDATE failed', { error: err?.message });
         errors.push(`Failed to batch update variants: ${err?.message}`);
       }
     }
@@ -789,13 +846,17 @@ export class ImportService {
     // the full aggregation engine — the import is scoped to a single car_id,
     // so this is one hop, not N.
     if (variantIds.length > 0) {
+      console.log('[ImportService.saveVariantImport] recomputing parent Car aggregates', { car_id, affectedVariants: variantIds.length });
       try {
         await CarAggregationService.recomputeFullAggregates(car_id);
+        console.log('[ImportService.saveVariantImport] ✓ aggregates recomputed', { car_id });
       } catch (err: any) {
+        console.error('[ImportService.saveVariantImport] ✗ aggregate recompute failed', { car_id, error: err?.message ?? err });
         warnings.push(`Saved ${variantIds.length} variant(s) but failed to refresh car aggregates: ${err?.message ?? err}. Run /cars/admin/recompute-aggregates to fix.`);
       }
 
       // Phase 5: Auto-wire SEO connections for enabled features
+      console.log('[ImportService.saveVariantImport] auto-wiring SEO connections', { creates: createPayloads.length, updates: updateOps.length });
       try {
         // Wire created variants
         for (const payload of createPayloads) {
@@ -819,17 +880,26 @@ export class ImportService {
             );
           }
         }
+        console.log('[ImportService.saveVariantImport] ✓ SEO auto-wiring complete');
       } catch (err: any) {
+        console.error('[ImportService.saveVariantImport] ✗ SEO auto-wiring failed', { error: err?.message ?? err });
         warnings.push(`Saved variants but failed to auto-wire SEO connections: ${err?.message ?? err}. Manual SEO setup may be needed.`);
       }
     }
 
-    return {
+    const result = {
       success: errors.length === 0,
       variant_ids: variantIds,
       warnings,
       errors,
     };
+    console.log('[ImportService.saveVariantImport] ◀ DONE', {
+      success: result.success,
+      saved: variantIds.length,
+      warnings: warnings.length,
+      errors: errors.length,
+    });
+    return result;
   }
 
   private static async matchBrand(brandName: string): Promise<any> {
@@ -999,6 +1069,11 @@ export class ImportService {
       'basic_warranty_km',
       'battery_warranty_years',
       'battery_warranty_km',
+      // Safety ratings — scraped as strings like "5 Star", schema expects Number 0-5.
+      'ncap_rating',
+      'bncap_rating',
+      'global_ncap_rating',
+      'adas_level',
     ];
 
     for (const key in obj) {

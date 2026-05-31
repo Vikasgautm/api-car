@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { protect, restrictTo } from '../../../middlewares/auth.middleware';
 import { validatePaginationQuery, validateSlugParam, validateUuidIdParam } from '../../../shared/validation';
 import { CarVariantController } from '../controllers/car-variant.controller';
+import { sanitizeHtmlFields } from '../../../middlewares/sanitize-payload.middleware';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ adminRouter.use(restrictTo('admin', 'super_admin'));
 // GET / and POST / - List all and create (most general, placed first)
 adminRouter.get('/grouped', validatePaginationQuery, CarVariantController.getGroupedAdminVariants);
 adminRouter.get('/', validatePaginationQuery, CarVariantController.getAllAdminVariants);
-adminRouter.post('/', CarVariantController.createVariant);
+adminRouter.post('/', sanitizeHtmlFields, CarVariantController.createVariant);
 
 // Bulk operations - MUST come before /:id routes to avoid matching ':id' as parameter
 adminRouter.post('/bulk/validate', CarVariantController.bulkValidate);
@@ -59,6 +60,8 @@ adminRouter.get('/:id/completeness', validateUuidIdParam, CarVariantController.g
 adminRouter.get('/:id/import-health', validateUuidIdParam, CarVariantController.getVariantImportHealth);
 adminRouter.get('/:id/refine-specs', validateUuidIdParam, CarVariantController.refineVariantSpecs);
 adminRouter.post('/:id/apply-refinement', validateUuidIdParam, CarVariantController.applyRefinementSuggestions);
+adminRouter.get('/:id/missing-fields/suggest', validateUuidIdParam, CarVariantController.suggestMissingFields);
+adminRouter.post('/:id/missing-fields/apply', validateUuidIdParam, CarVariantController.applyMissingFields);
 adminRouter.get('/:id/change-history', validateUuidIdParam, CarVariantController.getVariantChangeHistory);
 adminRouter.get('/:id/audit-trail', validateUuidIdParam, CarVariantController.getVariantAuditTrail);
 adminRouter.get('/:id/integrity-status', validateUuidIdParam, CarVariantController.getVariantIntegrityStatus);
@@ -70,7 +73,7 @@ adminRouter.post('/:id/clone', validateUuidIdParam, CarVariantController.cloneVa
 
 // Generic /:id routes - MUST come last after all specific routes
 adminRouter.get('/:id', validateUuidIdParam, CarVariantController.getAdminVariantById);
-adminRouter.put('/:id', validateUuidIdParam, CarVariantController.updateVariant);
+adminRouter.put('/:id', validateUuidIdParam, sanitizeHtmlFields, CarVariantController.updateVariant);
 adminRouter.delete('/:id', validateUuidIdParam, restrictTo('super_admin'), CarVariantController.deleteVariant);
 
 router.use('/admin', adminRouter);

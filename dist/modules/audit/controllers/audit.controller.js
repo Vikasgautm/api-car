@@ -6,6 +6,7 @@ const audit_util_1 = require("../../../shared/utils/audit.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
 const audit_service_1 = require("../services/audit.service");
+const audit_operations_service_1 = require("../services/audit-operations.service");
 const ENTITY_TYPES = ['car', 'variant', 'tag', 'tag_category', 'benchmark_override'];
 function parseEntityType(input) {
     if (input == null || input === '')
@@ -59,6 +60,59 @@ class AuditController {
         }
         const updated = await audit_service_1.AuditService.markReviewed(entityType, req.params.entity_id, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, updated, 'Marked as reviewed');
+    });
+    // ── Operations Center ───────────────────────────────────────────────────────
+    // GET /audit/admin/activity — grouped activity timeline (Tabs 1 & 2)
+    static activity = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { entity_type, entity_id, action, actor_user_id, from, to, page, limit } = req.query;
+        const result = await audit_operations_service_1.AuditOperationsService.getActivity({
+            page: page ? Number(page) : undefined,
+            limit: limit ? Number(limit) : undefined,
+            entity_type: entity_type ? String(entity_type) : undefined,
+            entity_id: entity_id ? String(entity_id) : undefined,
+            action: action ? String(action) : undefined,
+            actor_user_id: actor_user_id ? String(actor_user_id) : undefined,
+            from: from ? String(from) : undefined,
+            to: to ? String(to) : undefined,
+        });
+        return response_util_1.ResponseUtil.paginated(res, result.events, result.pagination, 'Activity timeline retrieved');
+    });
+    // GET /audit/admin/imports — import monitoring (Tab 3)
+    static imports = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { status, import_type, source, page, limit } = req.query;
+        const result = await audit_operations_service_1.AuditOperationsService.getImports({
+            page: page ? Number(page) : undefined,
+            limit: limit ? Number(limit) : undefined,
+            status: status ? String(status) : undefined,
+            import_type: import_type ? String(import_type) : undefined,
+            source: source ? String(source) : undefined,
+        });
+        return response_util_1.ResponseUtil.success(res, result, 'Import monitoring data retrieved');
+    });
+    // GET /audit/admin/imports/:import_id — import detail drawer (Tab 3)
+    static importDetail = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const detail = await audit_operations_service_1.AuditOperationsService.getImportDetail(String(req.params.import_id));
+        if (!detail)
+            return response_util_1.ResponseUtil.notFound(res, 'Import log not found');
+        return response_util_1.ResponseUtil.success(res, detail, 'Import detail retrieved');
+    });
+    // GET /audit/admin/alerts — system alerts, generated on demand (Tab 4)
+    static alerts = (0, catchAsync_1.catchAsync)(async (_req, res) => {
+        const result = await audit_operations_service_1.AuditOperationsService.getAlerts();
+        return response_util_1.ResponseUtil.success(res, result, 'System alerts generated');
+    });
+    // GET /audit/admin/entity/search?q= — entity history search (Tab 6)
+    static entitySearch = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const q = String(req.query.q ?? '').trim();
+        if (q.length < 2)
+            return response_util_1.ResponseUtil.success(res, [], 'Query too short');
+        const results = await audit_operations_service_1.AuditOperationsService.searchEntities(q);
+        return response_util_1.ResponseUtil.success(res, results, 'Entity search results retrieved');
+    });
+    // GET /audit/admin/entity/:entity_type/:entity_id/history — full entity timeline (Tab 6)
+    static entityHistory = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const result = await audit_operations_service_1.AuditOperationsService.getEntityHistory(String(req.params.entity_type), String(req.params.entity_id));
+        return response_util_1.ResponseUtil.success(res, result, 'Entity history retrieved');
     });
 }
 exports.AuditController = AuditController;

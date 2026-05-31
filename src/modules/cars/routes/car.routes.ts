@@ -5,6 +5,7 @@ import { createCarSchema, updateCarSchema, validatePaginationQuery, validateSlug
 import { CarController } from '../controllers/car.controller';
 import { validateBody } from '../../../middlewares/validate.middleware';
 import { requireFeatureEnabled } from '../../../middlewares/feature-flag.middleware';
+import { stripBackendManagedCarFields, sanitizeHtmlFields } from '../../../middlewares/sanitize-payload.middleware';
 
 const router = Router();
 
@@ -32,8 +33,8 @@ const thumbnailUpload = UploadService.createUploadMiddleware({
   folder: 'cars',
 });
 
-adminRouter.post('/', validateBody(createCarSchema), thumbnailUpload, CarController.createCar);
-adminRouter.put('/:id', validateUuidIdParam, validateBody(updateCarSchema), thumbnailUpload, CarController.updateCar);
+adminRouter.post('/', stripBackendManagedCarFields, sanitizeHtmlFields, validateBody(createCarSchema), thumbnailUpload, CarController.createCar);
+adminRouter.put('/:id', validateUuidIdParam, stripBackendManagedCarFields, sanitizeHtmlFields, validateBody(updateCarSchema), thumbnailUpload, CarController.updateCar);
 // Direct hard-delete is now reserved for super_admin. Day-to-day removals go
 // through the OTP-gated deletion workflow (`POST /deletion-requests/admin`).
 adminRouter.delete('/:id', validateUuidIdParam, restrictTo('super_admin'), CarController.deleteCar);

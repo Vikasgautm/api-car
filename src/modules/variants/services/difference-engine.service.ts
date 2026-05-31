@@ -1,5 +1,6 @@
 import { CarVariant } from '../../../models/car-variant.model';
 import { Car } from '../../../models/car.model';
+import { AppError } from '../../../shared/utils/app-error.util';
 
 export interface VariantDifference {
   variant_id: string;
@@ -16,7 +17,7 @@ export class DifferenceEngineService {
    */
   static async calculateVariantDifference(variantId: string): Promise<VariantDifference> {
     const variant = await CarVariant.findOne({ variant_id: variantId }).populate('car_id').lean();
-    if (!variant) throw new Error(`Variant not found: ${variantId}`);
+    if (!variant) throw AppError.variantNotFound(variantId);
 
     // Get all variants of the same car, sorted by price
     const carVariants = await CarVariant.find({

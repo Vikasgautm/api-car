@@ -13,8 +13,8 @@ import { seedPopularCollections } from "./seeds/popular-collections.seed";
 import { auditRoutes, logRouteAudit } from "./shared/utils/route-audit.util";
 
 const startServer = async () => {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    logger.warn('ANTHROPIC_API_KEY is not set — LLM intelligence flags and spec refinement will be disabled until the env var is configured');
+  if (!process.env.CEREBRAS_API_KEY) {
+    logger.warn('CEREBRAS_API_KEY is not set — LLM intelligence flags and spec refinement will be disabled until the env var is configured');
   }
 
   try {
@@ -22,30 +22,22 @@ const startServer = async () => {
     await mongoose.connect(config.mongodb_uri);
     logger.info("Successfully connected to MongoDB", { mongodb_uri: config.mongodb_uri });
     console.log("MongoDB URI:", config.mongodb_uri);
-    
-    // Create default superadmin
-    await createDefaultSuperAdmin();
 
-    // Seed cities from JSON file
-    await seedCities();
+    // Run lightweight idempotent seeds in parallel to minimise startup time.
+    // Each seed is a no-op when data already exists, so ordering doesn't matter.
+    await Promise.all([
+      createDefaultSuperAdmin(),
+      seedCities(),
+      seedFuelTypes(),
+      seedIntentTags(),
+      seedPopularCollections(),
+    ]);
 
-    // Seed default fuel types
-    await seedFuelTypes();
-
-    // Seed intent taxonomy (intent category + 19 default intent tags)
-    await seedIntentTags();
-
-    // Backfill mileage / EV-range classifications for any variant or car still missing them.
-    await computeMileageClassesIfNeeded();
-
-    // Seed popular collections (runs once — skips if any collections already exist)
-    await seedPopularCollections();
-
-    // Start auto-launch cron jobs
+    // Start cron jobs
     UpdateUpcomingCarsJob.start();
     ProcessScheduledLaunchesJob.start();
 
-    // Start Express Server
+    // Start accepting HTTP traffic immediately — health checks pass from this point.
     app.listen(config.port, () => {
       logger.info(`Server is running on http://localhost:${config.port}`);
 
@@ -55,6 +47,17 @@ const startServer = async () => {
       // logRouteAudit(audit);
       if (audit.warnings.length > 0) {
         logger.warn(`Route audit detected ${audit.warnings.length} warning(s)`);
+      }
+    });
+
+    // Run the heavy backfill asynchronously AFTER the server is already listening.
+    // This scan can take seconds on large datasets and must not block readiness.
+    setImmediate(async () => {
+      try {
+        await computeMileageClassesIfNeeded();
+        logger.info('Mileage class backfill completed successfully');
+      } catch (backfillError) {
+        logger.error('Mileage class backfill failed (non-fatal):', backfillError);
       }
     });
   } catch (error) {

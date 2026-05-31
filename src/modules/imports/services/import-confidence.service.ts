@@ -1,6 +1,7 @@
 import { ImportLog } from '../../../models/import-log.model';
 import { CarVariant } from '../../../models/car-variant.model';
 import { SourcePriorityEngine, SourceType } from '../rules/source-priority-config';
+import { AppError } from '../../../shared/utils/app-error.util';
 
 export interface ImportConfidenceScore {
   import_id: string;
@@ -28,7 +29,7 @@ export class ImportConfidenceService {
   static async scoreImport(import_id: string): Promise<ImportConfidenceScore> {
     const log = await ImportLog.findOne({ import_id, is_deleted: false });
     if (!log) {
-      throw new Error(`Import ${import_id} not found`);
+      throw AppError.notFound('Import', 'import_id', import_id);
     }
 
     const matched = (log.matched_data?.matched as any[]) || [];

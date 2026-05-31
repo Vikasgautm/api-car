@@ -15,7 +15,7 @@ router.delete('/rivals/:car_id/:rival_id', auth_middleware_1.protect, (0, auth_m
 router.get('/rivals/:car_id', (req, res, next) => comparison_controller_1.ComparisonController.getRivals(req, res, next));
 // Admin routes (require authentication and admin role)
 router.post('/', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), (req, res, next) => comparison_controller_1.ComparisonController.createComparison(req, res, next));
-router.get('/', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), (req, res, next) => comparison_controller_1.ComparisonController.getComparisons(req, res, next));
+router.get('/', auth_middleware_1.optionalAuth, (req, res, next) => comparison_controller_1.ComparisonController.getComparisons(req, res, next));
 // Generic routes with ID (must come last)
 router.put('/:id', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), (req, res, next) => comparison_controller_1.ComparisonController.updateComparison(req, res, next));
 router.patch('/:id/restore', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), (req, res, next) => comparison_controller_1.ComparisonController.restoreComparison(req, res, next));

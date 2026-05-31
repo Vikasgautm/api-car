@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { IRankingRawEvent, RankingRawEvent, RankingEventType, VALID_EVENT_TYPES } from '../../../models/ranking-raw-event.model';
 import { RankingSession } from '../../../models/ranking-session.model';
+import { AppError } from '../../../shared/utils/app-error.util';
 
 interface IngestEventDto {
   event_type: string;
@@ -40,10 +41,10 @@ const COMMERCIAL_EVENTS = new Set<RankingEventType>([
 export class EventIngestionService {
   static async ingest(dto: IngestEventDto): Promise<IRankingRawEvent> {
     if (!VALID_EVENT_TYPES.includes(dto.event_type as RankingEventType)) {
-      throw new Error(`Unknown event_type: ${dto.event_type}`);
+      throw AppError.badRequest(`Unknown event_type: ${dto.event_type}`, 'Unknown event type provided.');
     }
     if (!dto.entity_id || !dto.entity_type || !dto.session_id) {
-      throw new Error('entity_id, entity_type, session_id are required');
+      throw AppError.badRequest('entity_id, entity_type, session_id are required', 'Some required event fields are missing.');
     }
 
     const timestamp = dto.timestamp ? new Date(dto.timestamp) : new Date();

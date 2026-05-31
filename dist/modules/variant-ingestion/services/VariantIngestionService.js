@@ -9,6 +9,7 @@ const SpecNormalizationService_1 = require("./SpecNormalizationService");
 const VariantCompletenessCalculator_1 = require("../utils/VariantCompletenessCalculator");
 const VariantGroupingService_1 = require("./VariantGroupingService");
 const car_model_1 = require("../../../models/car.model");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
 class VariantIngestionService {
     static async createSession(input) {
         const session = new ImportSession_1.ImportSession({
@@ -131,7 +132,7 @@ class VariantIngestionService {
     static async linkCar(stagingId, carId, linkedBy) {
         const car = await car_model_1.Car.findOne({ car_id: carId }).select('name car_id');
         if (!car)
-            throw new Error(`Car ${carId} not found`);
+            throw app_error_util_1.AppError.carNotFound(carId);
         await VariantImportStaging_1.VariantImportStaging.updateOne({ _id: new mongoose_1.Types.ObjectId(stagingId) }, {
             $set: {
                 linked_car_id: carId,
@@ -153,7 +154,7 @@ class VariantIngestionService {
     static async bulkLinkCar(stagingIds, carId, linkedBy) {
         const car = await car_model_1.Car.findOne({ car_id: carId }).select('name car_id');
         if (!car)
-            throw new Error(`Car ${carId} not found`);
+            throw app_error_util_1.AppError.carNotFound(carId);
         await VariantImportStaging_1.VariantImportStaging.updateMany({ _id: { $in: stagingIds.map(id => new mongoose_1.Types.ObjectId(id)) } }, {
             $set: {
                 linked_car_id: carId,

@@ -2,6 +2,7 @@ import { PlatformSettings, SettingsGroup, SETTINGS_GROUPS } from '../../../model
 import { SettingsHistory } from '../../../models/settings-history.model';
 import { SETTINGS_DEFAULTS, SUPER_ADMIN_ONLY_GROUPS } from '../constants/settings.constants';
 import { validateSettingsData } from '../validators/settings.validator';
+import { AppError } from '../../../shared/utils/app-error.util';
 
 // In-memory settings cache (group → data, expires in 60s)
 interface CacheEntry { data: Record<string, any>; expiresAt: number }
@@ -84,7 +85,7 @@ export class PlatformSettingsService {
   ): Promise<Record<string, any>> {
     const validation = validateSettingsData(group, updates);
     if (!validation.valid) {
-      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      throw AppError.validation(`Settings validation failed: ${validation.errors.join(', ')}`, validation.errors);
     }
 
     await PlatformSettingsService.ensureDefaults();
@@ -209,7 +210,7 @@ export class PlatformSettingsService {
     return {
       backend: 'ok',
       mongodb: dbState,
-      ai_provider: process.env.ANTHROPIC_API_KEY ? 'configured' : 'not_configured',
+      ai_provider: process.env.CEREBRAS_API_KEY ? 'configured' : 'not_configured',
       cloudinary: (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) ? 'configured' : 'not_configured',
       node_env: process.env.NODE_ENV || 'development',
       uptime_seconds: process.uptime(),

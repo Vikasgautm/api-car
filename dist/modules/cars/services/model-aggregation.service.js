@@ -4,6 +4,7 @@ exports.ModelAggregationService = void 0;
 const car_variant_model_1 = require("../../../models/car-variant.model");
 const car_model_1 = require("../../../models/car.model");
 const logger_1 = require("../../../utils/logger");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
 class ModelAggregationService {
     /**
      * Aggregate all variant specs into model-level aggregates.
@@ -12,7 +13,7 @@ class ModelAggregationService {
     static async aggregateModelFromVariants(carId) {
         const car = await car_model_1.Car.findOne({ car_id: carId }).lean();
         if (!car)
-            throw new Error(`Car not found: ${carId}`);
+            throw app_error_util_1.AppError.notFound('Car', 'car_id', carId);
         const variants = await car_variant_model_1.CarVariant.find({
             car_id: carId,
             is_deleted: false,

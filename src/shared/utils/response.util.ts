@@ -30,15 +30,15 @@ export class ResponseUtil {
     const response: ApiResponse = {
       success: false,
       message,
+      // Provide both keys for backward compatibility.
+      // Frontend should prefer `errorCode`; `error` is the legacy alias.
+      errorCode: code,
       error: code,
-      errors,
+      errors: errors || [],
       statusCode,
       timestamp: new Date().toISOString(),
+      details: details || {},
     };
-
-    if (details) {
-      (response as any).details = details;
-    }
 
     return res.status(statusCode).json(response);
   }

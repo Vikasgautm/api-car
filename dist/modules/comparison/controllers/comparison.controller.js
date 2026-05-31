@@ -85,6 +85,12 @@ class ComparisonController {
                 isTrending: getQueryValue(req.query.isTrending),
                 is_deleted: getQueryValue(req.query.is_deleted),
             };
+            // Restrict status and is_deleted filters for guest (unauthenticated) users to prevent draft leaks.
+            const isAdmin = req.user && ['admin', 'super_admin'].includes(req.user.role);
+            if (!isAdmin) {
+                queryObj.status = 'published';
+                queryObj.is_deleted = false;
+            }
             const query = comparison_dto_1.ComparisonQueryDTO.parse(queryObj);
             const { page, limit, ...filters } = query;
             const result = await comparison_service_1.ComparisonService.getComparisons(page, limit, filters);

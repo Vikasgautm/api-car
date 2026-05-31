@@ -72,9 +72,9 @@ export const SETTINGS_DEFAULTS: Record<SettingsGroup, Record<string, any>> = {
     daily_token_limit: 100000,
     monthly_token_limit: 2000000,
     emergency_ai_off: false,
-    active_provider: 'anthropic',
+    active_provider: 'cerebras',
     fallback_provider: null,
-    model: 'claude-haiku-4-5',
+    model: 'gpt-oss-120b',
   },
 
   lifecycle_publishing: {

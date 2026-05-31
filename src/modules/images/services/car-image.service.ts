@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { CarImage, ICarImage } from '../../../models/car-image.model';
 import { CarVariant } from '../../../models/car-variant.model';
 import { Car } from '../../../models/car.model';
+import { Brand } from '../../../models/brand.model';
 import {
   ImageStatus,
   MainCategory,
@@ -27,9 +28,15 @@ function extractPublicId(url: string): string | null {
 }
 
 async function getCarName(carId: string): Promise<string> {
-  const car = await Car.findOne({ car_id: carId }).select('name brand').populate('brand', 'name').lean() as any;
+  // brand_id is a plain string key, not a Mongoose ref, so .populate() throws
+  // StrictPopulateError. Resolve the brand with a follow-up findOne.
+  const car = await Car.findOne({ car_id: carId }).select('name brand_id').lean() as any;
   if (!car) return '';
-  const brandName = car.brand?.name || '';
+  let brandName = '';
+  if (car.brand_id) {
+    const brand = await Brand.findOne({ brand_id: car.brand_id }).select('name').lean() as any;
+    brandName = brand?.name || '';
+  }
   return brandName ? `${brandName} ${car.name}` : car.name;
 }
 

@@ -30,7 +30,7 @@ export declare class CarImageService {
     } | {
         image: null;
         fallback: import("../../../shared/services/media").FallbackImageResult;
-        level: "body_type" | "standard" | "brand" | "variant_showcase" | "placeholder";
+        level: "body_type" | "brand" | "standard" | "variant_showcase" | "placeholder";
     }>;
     static getPublicGallery(filterDto: any): Promise<{
         images: (ICarImage & Required<{

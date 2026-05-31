@@ -3,11 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImportConfidenceService = void 0;
 const import_log_model_1 = require("../../../models/import-log.model");
 const source_priority_config_1 = require("../rules/source-priority-config");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
 class ImportConfidenceService {
     static async scoreImport(import_id) {
         const log = await import_log_model_1.ImportLog.findOne({ import_id, is_deleted: false });
         if (!log) {
-            throw new Error(`Import ${import_id} not found`);
+            throw app_error_util_1.AppError.notFound('Import', 'import_id', import_id);
         }
         const matched = log.matched_data?.matched || [];
         const unmatched = log.unmatched_data?.unmatched || [];

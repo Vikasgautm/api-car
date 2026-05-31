@@ -3,14 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BodyTypeService = void 0;
 const uuid_1 = require("uuid");
 const errorMessages_1 = require("../../../constants/errorMessages");
-const car_model_1 = require("../../../models/car.model");
-const car_variant_model_1 = require("../../../models/car-variant.model");
-const seo_collection_model_1 = require("../../../models/seo-collection.model");
 const body_type_model_1 = require("../../../models/body-type.model");
+const car_variant_model_1 = require("../../../models/car-variant.model");
+const car_model_1 = require("../../../models/car.model");
+const seo_collection_model_1 = require("../../../models/seo-collection.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const slug_util_1 = require("../../../shared/utils/slug.util");
+const cache_util_1 = require("../../../utils/cache.util");
 const SEO_FIELDS = ['slug', 'seo_title', 'meta_description', 'intro_content', 'short_description', 'hero_image'];
 function computeSeoCompleteness(bt) {
     const missing = [];
@@ -32,6 +33,14 @@ function computeSeoCompleteness(bt) {
 class BodyTypeService {
     static async getAllBodyTypes(filterDto, includeDeleted = false) {
         const { page = 1, limit = 10, q, is_published, is_featured, is_deleted, has_cars, missing_seo, parent_only, child_only, sortBy = 'sort_order', sortOrder = 'asc', } = filterDto;
+        // Only cache simple published queries without complex filters
+        const isSimpleQuery = !q && !is_featured && !has_cars && !missing_seo && !parent_only && !child_only && page === 1 && limit === 10 && is_published === 'true' && !includeDeleted;
+        const cacheKey = cache_util_1.CacheKeys.bodyType.all({ is_published: true, page: 1, limit: 10 });
+        if (isSimpleQuery) {
+            const cached = cache_util_1.cache.get(cacheKey);
+            if (cached)
+                return cached;
+        }
         const filter = {};
         if (is_deleted === 'true' || is_deleted === true) {
             filter.is_deleted = true;
@@ -123,7 +132,11 @@ class BodyTypeService {
             };
         });
         const paginationMeta = pagination_util_1.PaginationUtil.createPaginationMeta(page, validatedLimit, total);
-        return { bodyTypes, pagination: paginationMeta };
+        const result = { bodyTypes, pagination: paginationMeta };
+        if (isSimpleQuery) {
+            cache_util_1.cache.set(cacheKey, result, 5 * 60 * 1000); // 5 minutes TTL
+        }
+        return result;
     }
     static async getStats() {
         const [total, published, draft, archived, missingImages] = await Promise.all([
@@ -217,6 +230,8 @@ class BodyTypeService {
             },
         }));
         await body_type_model_1.BodyType.bulkWrite(ops);
+        // Invalidate cache on reorder
+        cache_util_1.cache.invalidatePattern('bodytypes:');
         return { updated: items.length };
     }
     static async getBodyTypeById(bodyTypeId) {
@@ -358,6 +373,8 @@ class BodyTypeService {
         if (existingBodyType.is_deleted)
             return existingBodyType;
         const bodyType = await body_type_model_1.BodyType.findOneAndUpdate({ body_type_id: bodyTypeId, is_deleted: false }, { is_deleted: true }, { returnDocument: 'after' });
+        // Invalidate cache on delete
+        cache_util_1.cache.invalidatePattern('bodytypes:');
         return bodyType;
     }
     static async restoreBodyType(bodyTypeId) {
@@ -385,6 +402,8 @@ class BodyTypeService {
             bodyType.published_at = new Date();
         }
         await bodyType.save();
+        // Invalidate cache on publish toggle
+        cache_util_1.cache.invalidatePattern('bodytypes:');
         return bodyType;
     }
 }

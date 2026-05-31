@@ -52,3 +52,20 @@ export const config = {
     otp_email_recipient: process.env.LIFECYCLE_OTP_EMAIL || process.env.DELETION_OTP_EMAIL || 'kameshkumar511@gmail.com',
   },
 };
+
+// Production environment safety checks
+if (process.env.NODE_ENV === 'production') {
+  const missingVars = [];
+  if (!process.env.MONGODB_URI) missingVars.push('MONGODB_URI');
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'your-secret-key') missingVars.push('JWT_SECRET');
+  if (!process.env.JWT_REFRESH_SECRET || process.env.JWT_REFRESH_SECRET === 'your-refresh-secret-key') missingVars.push('JWT_REFRESH_SECRET');
+  
+  if (process.env.CORS_ORIGIN === '*') {
+    console.warn('⚠️ WARNING: Permissive CORS (*) is not recommended in production. Set CORS_ORIGIN to a secure domain.');
+  }
+
+  if (missingVars.length > 0) {
+    console.error(`❌ CRITICAL SECURITY ERROR: Missing or insecure production environment variables: ${missingVars.join(', ')}`);
+    process.exit(1);
+  }
+}

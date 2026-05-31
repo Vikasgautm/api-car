@@ -4,6 +4,7 @@ exports.MultiSourceVariantService = void 0;
 const car_variant_model_1 = require("../../../models/car-variant.model");
 const import_log_model_1 = require("../../../models/import-log.model");
 const source_priority_config_1 = require("../rules/source-priority-config");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
 class MultiSourceVariantService {
     /**
      * Consolidate specs from multiple import logs into a single high-quality variant.
@@ -12,7 +13,7 @@ class MultiSourceVariantService {
     static async consolidateFromMultipleSources(variant_id) {
         const variant = await car_variant_model_1.CarVariant.findOne({ variant_id, is_deleted: false });
         if (!variant) {
-            throw new Error(`Variant ${variant_id} not found`);
+            throw app_error_util_1.AppError.variantNotFound(variant_id);
         }
         const importLogs = await import_log_model_1.ImportLog.find({
             variant_id,

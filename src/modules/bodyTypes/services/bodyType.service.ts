@@ -1,13 +1,14 @@
 import { v4 as uuidv4 } from "uuid";
 import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
-import { Car } from "../../../models/car.model";
-import { CarVariant } from "../../../models/car-variant.model";
-import { SeoCollection } from "../../../models/seo-collection.model";
 import { BodyType, IBodyType } from "../../../models/body-type.model";
+import { CarVariant } from "../../../models/car-variant.model";
+import { Car } from "../../../models/car.model";
+import { SeoCollection } from "../../../models/seo-collection.model";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { FilterUtil } from "../../../shared/utils/filter.util";
 import { PaginationUtil } from "../../../shared/utils/pagination.util";
 import { SlugUtil } from "../../../shared/utils/slug.util";
+import { cache, CacheKeys } from "../../../utils/cache.util";
 
 const SEO_FIELDS = ['slug', 'seo_title', 'meta_description', 'intro_content', 'short_description', 'hero_image'];
 
@@ -24,7 +25,7 @@ function computeSeoCompleteness(bt: any): { score: number; missing: string[] } {
 }
 
 export class BodyTypeService {
-  static async getAllBodyTypes(filterDto: any, includeDeleted: boolean = false) {
+  static async getAllBodyTypes(filterDto: any, includeDeleted: boolean = false): Promise<{ bodyTypes: any[]; pagination: any }> {
     const {
       page = 1,
       limit = 10,
@@ -39,6 +40,15 @@ export class BodyTypeService {
       sortBy = 'sort_order',
       sortOrder = 'asc',
     } = filterDto;
+
+    // Only cache simple published queries without complex filters
+    const isSimpleQuery = !q && !is_featured && !has_cars && !missing_seo && !parent_only && !child_only && page === 1 && limit === 10 && is_published === 'true' && !includeDeleted;
+    const cacheKey = CacheKeys.bodyType.all({ is_published: true, page: 1, limit: 10 });
+
+    if (isSimpleQuery) {
+      const cached = cache.get<{ bodyTypes: any[]; pagination: any }>(cacheKey);
+      if (cached) return cached;
+    }
 
     const filter: Record<string, unknown> = {};
 
@@ -145,8 +155,13 @@ export class BodyTypeService {
     });
 
     const paginationMeta = PaginationUtil.createPaginationMeta(page, validatedLimit, total);
+    const result = { bodyTypes, pagination: paginationMeta };
 
-    return { bodyTypes, pagination: paginationMeta };
+    if (isSimpleQuery) {
+      cache.set(cacheKey, result, 5 * 60 * 1000); // 5 minutes TTL
+    }
+
+    return result;
   }
 
   static async getStats() {
@@ -255,6 +270,10 @@ export class BodyTypeService {
       },
     }));
     await BodyType.bulkWrite(ops);
+    
+    // Invalidate cache on reorder
+    cache.invalidatePattern('bodytypes:');
+    
     return { updated: items.length };
   }
 
@@ -422,6 +441,9 @@ export class BodyTypeService {
       { returnDocument: 'after' }
     );
 
+    // Invalidate cache on delete
+    cache.invalidatePattern('bodytypes:');
+    
     return bodyType;
   }
 
@@ -467,6 +489,9 @@ export class BodyTypeService {
     }
     await bodyType.save();
 
+    // Invalidate cache on publish toggle
+    cache.invalidatePattern('bodytypes:');
+    
     return bodyType;
   }
 }

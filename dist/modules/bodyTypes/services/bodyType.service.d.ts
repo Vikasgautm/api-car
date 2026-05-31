@@ -2,7 +2,7 @@ import { IBodyType } from "../../../models/body-type.model";
 export declare class BodyTypeService {
     static getAllBodyTypes(filterDto: any, includeDeleted?: boolean): Promise<{
         bodyTypes: any[];
-        pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
+        pagination: any;
     }>;
     static getStats(): Promise<{
         total: number;

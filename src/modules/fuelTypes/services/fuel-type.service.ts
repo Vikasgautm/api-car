@@ -5,10 +5,20 @@ import { AppError } from "../../../shared/utils/app-error.util";
 import { FilterUtil } from "../../../shared/utils/filter.util";
 import { PaginationUtil } from "../../../shared/utils/pagination.util";
 import { SlugUtil } from "../../../shared/utils/slug.util";
+import { cache, CacheKeys } from "../../../utils/cache.util";
 
 export class FuelTypeService {
-  static async getAllFuelTypes(filterDto: any, includeDeleted: boolean = false) {
+  static async getAllFuelTypes(filterDto: any, includeDeleted: boolean = false): Promise<{ fuelTypes: any[]; pagination: any }> {
     const { page = 1, limit = 10, q, is_published, is_featured, is_deleted, sortBy = 'name', sortOrder = 'asc' } = filterDto;
+
+    // Only cache simple published queries without complex filters
+    const isSimpleQuery = !q && !is_featured && page === 1 && limit === 10 && is_published === 'true' && !includeDeleted;
+    const cacheKey = CacheKeys.fuelType.all({ is_published: true, page: 1, limit: 10 });
+
+    if (isSimpleQuery) {
+      const cached = cache.get<{ fuelTypes: any[]; pagination: any }>(cacheKey);
+      if (cached) return cached;
+    }
 
     const filter: Record<string, unknown> = {};
 
@@ -42,7 +52,13 @@ export class FuelTypeService {
     const total = await FuelType.countDocuments(filter);
     const paginationMeta = PaginationUtil.createPaginationMeta(page, validatedLimit, total);
 
-    return { fuelTypes, pagination: paginationMeta };
+    const result = { fuelTypes, pagination: paginationMeta };
+
+    if (isSimpleQuery) {
+      cache.set(cacheKey, result, 5 * 60 * 1000); // 5 minutes TTL
+    }
+
+    return result;
   }
 
   static async getFuelTypeById(fuelTypeId: string) {
@@ -80,7 +96,12 @@ export class FuelTypeService {
       is_deleted: false,
     };
 
-    return await FuelType.create(fuelType);
+    const result = await FuelType.create(fuelType);
+    
+    // Invalidate cache on create
+    cache.invalidatePattern('fueltypes:');
+    
+    return result;
   }
 
   static async updateFuelType(fuelTypeId: string, fuelTypeData: any) {
@@ -193,6 +214,9 @@ export class FuelTypeService {
     fuelType.is_published = !fuelType.is_published;
     await fuelType.save();
 
+    // Invalidate cache on publish toggle
+    cache.invalidatePattern('fueltypes:');
+    
     return fuelType;
   }
 }

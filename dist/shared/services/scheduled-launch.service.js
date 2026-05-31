@@ -5,6 +5,7 @@ const car_model_1 = require("../../models/car.model");
 const car_variant_model_1 = require("../../models/car-variant.model");
 const car_lifecycle_service_1 = require("../../modules/cars/services/car-lifecycle.service");
 const variant_lifecycle_service_1 = require("../../modules/variants/services/variant-lifecycle.service");
+const app_error_util_1 = require("../utils/app-error.util");
 class ScheduledLaunchService {
     /**
      * Process all scheduled launches that are due
@@ -60,7 +61,7 @@ class ScheduledLaunchService {
     static async performBulkCategoryEvolutionOnLaunch(carId) {
         const car = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false });
         if (!car) {
-            throw new Error(`Car ${carId} not found`);
+            throw app_error_util_1.AppError.carNotFound(carId);
         }
         const variants = await car_variant_model_1.CarVariant.find({ car_id: carId, is_deleted: false });
         const results = {
@@ -121,10 +122,10 @@ class ScheduledLaunchService {
     static async scheduleLaunchTransition(carId, targetState, scheduledDate, reason) {
         const car = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false });
         if (!car) {
-            throw new Error(`Car ${carId} not found`);
+            throw app_error_util_1.AppError.carNotFound(carId);
         }
         if (scheduledDate <= new Date()) {
-            throw new Error('Scheduled date must be in the future');
+            throw app_error_util_1.AppError.badRequest('Scheduled date must be in the future', 'The scheduled launch date must be in the future.');
         }
         // Add to history as [SCHEDULED]
         if (!car.entity_status_history) {
@@ -169,10 +170,10 @@ class ScheduledLaunchService {
     static async cancelScheduledLaunch(carId, targetState) {
         const car = await car_model_1.Car.findOne({ car_id: carId, is_deleted: false });
         if (!car) {
-            throw new Error(`Car ${carId} not found`);
+            throw app_error_util_1.AppError.carNotFound(carId);
         }
         if (!car.entity_status_history) {
-            throw new Error('No scheduled launches found');
+            throw app_error_util_1.AppError.notFound('Scheduled launch');
         }
         // Remove scheduled entry
         car.entity_status_history = car.entity_status_history.filter((h) => !(h.reason?.startsWith('[SCHEDULED]') && h.state === targetState));

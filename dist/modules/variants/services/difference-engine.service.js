@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DifferenceEngineService = void 0;
 const car_variant_model_1 = require("../../../models/car-variant.model");
+const app_error_util_1 = require("../../../shared/utils/app-error.util");
 class DifferenceEngineService {
     /**
      * For a given variant, calculate what features it adds compared to the next cheaper variant,
@@ -12,7 +13,7 @@ class DifferenceEngineService {
     static async calculateVariantDifference(variantId) {
         const variant = await car_variant_model_1.CarVariant.findOne({ variant_id: variantId }).populate('car_id').lean();
         if (!variant)
-            throw new Error(`Variant not found: ${variantId}`);
+            throw app_error_util_1.AppError.variantNotFound(variantId);
         // Get all variants of the same car, sorted by price
         const carVariants = await car_variant_model_1.CarVariant.find({
             car_id: variant.car_id,

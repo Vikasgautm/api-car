@@ -29,10 +29,8 @@ const fuelTypeSchema = new Schema<IFuelType>(
   }
 );
 
-fuelTypeSchema.index({ is_deleted: 1 });
-fuelTypeSchema.index({ is_published: 1 });
+// Consolidated index - compound index handles queries that would use single boolean indexes
 fuelTypeSchema.index({ is_published: 1, is_deleted: 1 });
-fuelTypeSchema.index({ is_featured: 1 });
 fuelTypeSchema.index({ name: 1 });
 fuelTypeSchema.index({ name: 'text' });
 

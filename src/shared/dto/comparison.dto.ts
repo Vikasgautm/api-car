@@ -1,8 +1,11 @@
 import { z } from 'zod';
 
+// Accept either Mongo ObjectId (24) or UUID (36) — the service resolves both.
+const carIdSchema = z.string().min(24, 'Invalid car ID').max(40, 'Invalid car ID');
+
 export const CreateComparisonDTO = z.object({
-  car1_id: z.string().min(24, 'Invalid car1 ID'),
-  car2_id: z.string().min(24, 'Invalid car2 ID'),
+  car1_id: carIdSchema,
+  car2_id: carIdSchema,
   variant1_id: z.string().optional(),
   variant2_id: z.string().optional(),
   slug: z.string().min(3, 'Slug must be at least 3 characters').regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),

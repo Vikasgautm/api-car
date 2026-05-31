@@ -13,6 +13,7 @@ export declare class VariantPushService {
         existing: any;
         imported: any;
     }[]>;
+    private static extractModelYear;
     private static buildSlug;
 }
 //# sourceMappingURL=VariantPushService.d.ts.map

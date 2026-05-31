@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImageService = void 0;
+const uuid_1 = require("uuid");
 const image_model_1 = require("../../../models/image.model");
 const upload_service_1 = require("../../../shared/services/upload.service");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
@@ -40,7 +41,10 @@ class ImageService {
         return image;
     }
     static async createImage(imageData, uploadedBy) {
+        // Set image_id explicitly; relying on the schema default has been flaky in
+        // prod (sporadic "Path `image_id` is required" 400s on /images/upload/save).
         const image = {
+            image_id: imageData.image_id || (0, uuid_1.v4)(),
             url: imageData.url,
             public_id: imageData.publicId,
             original_name: imageData.originalName,

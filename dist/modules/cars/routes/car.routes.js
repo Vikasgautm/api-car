@@ -8,6 +8,7 @@ const validation_1 = require("../../../shared/validation");
 const car_controller_1 = require("../controllers/car.controller");
 const validate_middleware_1 = require("../../../middlewares/validate.middleware");
 const feature_flag_middleware_1 = require("../../../middlewares/feature-flag.middleware");
+const sanitize_payload_middleware_1 = require("../../../middlewares/sanitize-payload.middleware");
 const router = (0, express_1.Router)();
 // Public routes
 router.get('/public', validation_1.validatePaginationQuery, car_controller_1.CarController.getAllPublicCars);
@@ -30,8 +31,8 @@ const thumbnailUpload = upload_service_1.UploadService.createUploadMiddleware({
     useCloudinary: true,
     folder: 'cars',
 });
-adminRouter.post('/', (0, validate_middleware_1.validateBody)(validation_1.createCarSchema), thumbnailUpload, car_controller_1.CarController.createCar);
-adminRouter.put('/:id', validation_1.validateUuidIdParam, (0, validate_middleware_1.validateBody)(validation_1.updateCarSchema), thumbnailUpload, car_controller_1.CarController.updateCar);
+adminRouter.post('/', sanitize_payload_middleware_1.stripBackendManagedCarFields, sanitize_payload_middleware_1.sanitizeHtmlFields, (0, validate_middleware_1.validateBody)(validation_1.createCarSchema), thumbnailUpload, car_controller_1.CarController.createCar);
+adminRouter.put('/:id', validation_1.validateUuidIdParam, sanitize_payload_middleware_1.stripBackendManagedCarFields, sanitize_payload_middleware_1.sanitizeHtmlFields, (0, validate_middleware_1.validateBody)(validation_1.updateCarSchema), thumbnailUpload, car_controller_1.CarController.updateCar);
 // Direct hard-delete is now reserved for super_admin. Day-to-day removals go
 // through the OTP-gated deletion workflow (`POST /deletion-requests/admin`).
 adminRouter.delete('/:id', validation_1.validateUuidIdParam, (0, auth_middleware_1.restrictTo)('super_admin'), car_controller_1.CarController.deleteCar);

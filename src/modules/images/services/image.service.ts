@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { IImage, Image } from "../../../models/image.model";
 import { UploadService } from "../../../shared/services/upload.service";
 import { AppError } from "../../../shared/utils/app-error.util";
@@ -55,7 +56,10 @@ export class ImageService {
   }
 
   static async createImage(imageData: any, uploadedBy?: string) {
+    // Set image_id explicitly; relying on the schema default has been flaky in
+    // prod (sporadic "Path `image_id` is required" 400s on /images/upload/save).
     const image: Partial<IImage> = {
+      image_id: imageData.image_id || uuidv4(),
       url: imageData.url,
       public_id: imageData.publicId,
       original_name: imageData.originalName,

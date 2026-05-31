@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OtpService = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const crypto_1 = require("crypto");
+const app_error_util_1 = require("../utils/app-error.util");
 class OtpService {
     /**
      * Generate a numeric OTP of `digits` digits (default 6). Uses `crypto.randomInt`
@@ -13,7 +14,7 @@ class OtpService {
      */
     static generate(digits = 6) {
         if (digits < 4 || digits > 8) {
-            throw new Error('OTP digits must be between 4 and 8');
+            throw app_error_util_1.AppError.internal('OTP digits must be between 4 and 8');
         }
         const min = 10 ** (digits - 1);
         const max = 10 ** digits;

@@ -1,4 +1,5 @@
 import { Blog } from '../../../models/blog.model';
+import { AppError } from '../../../shared/utils/app-error.util';
 
 export class BlogFreshnessService {
   static async checkBlog(blogId: string) {
@@ -6,7 +7,7 @@ export class BlogFreshnessService {
       .select('blog_id title connected_cars connected_brands connected_comparisons updatedAt freshness_score stale_flags')
       .lean();
 
-    if (!blog) throw new Error('Blog not found');
+    if (!blog) throw AppError.notFound('Blog');
 
     const Car = (await import('../../../models/car.model')).Car;
 

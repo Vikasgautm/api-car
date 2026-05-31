@@ -4,6 +4,7 @@ const express_1 = require("express");
 const auth_middleware_1 = require("../../../middlewares/auth.middleware");
 const validation_1 = require("../../../shared/validation");
 const car_variant_controller_1 = require("../controllers/car-variant.controller");
+const sanitize_payload_middleware_1 = require("../../../middlewares/sanitize-payload.middleware");
 const router = (0, express_1.Router)();
 // Public routes
 router.get('/public', validation_1.validatePaginationQuery, car_variant_controller_1.CarVariantController.getAllPublicVariants);
@@ -15,7 +16,7 @@ adminRouter.use((0, auth_middleware_1.restrictTo)('admin', 'super_admin'));
 // GET / and POST / - List all and create (most general, placed first)
 adminRouter.get('/grouped', validation_1.validatePaginationQuery, car_variant_controller_1.CarVariantController.getGroupedAdminVariants);
 adminRouter.get('/', validation_1.validatePaginationQuery, car_variant_controller_1.CarVariantController.getAllAdminVariants);
-adminRouter.post('/', car_variant_controller_1.CarVariantController.createVariant);
+adminRouter.post('/', sanitize_payload_middleware_1.sanitizeHtmlFields, car_variant_controller_1.CarVariantController.createVariant);
 // Bulk operations - MUST come before /:id routes to avoid matching ':id' as parameter
 adminRouter.post('/bulk/validate', car_variant_controller_1.CarVariantController.bulkValidate);
 adminRouter.post('/bulk/update-status', (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.bulkUpdateStatus);
@@ -53,6 +54,8 @@ adminRouter.get('/:id/completeness', validation_1.validateUuidIdParam, car_varia
 adminRouter.get('/:id/import-health', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getVariantImportHealth);
 adminRouter.get('/:id/refine-specs', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.refineVariantSpecs);
 adminRouter.post('/:id/apply-refinement', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.applyRefinementSuggestions);
+adminRouter.get('/:id/missing-fields/suggest', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.suggestMissingFields);
+adminRouter.post('/:id/missing-fields/apply', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.applyMissingFields);
 adminRouter.get('/:id/change-history', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getVariantChangeHistory);
 adminRouter.get('/:id/audit-trail', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getVariantAuditTrail);
 adminRouter.get('/:id/integrity-status', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getVariantIntegrityStatus);
@@ -62,7 +65,7 @@ adminRouter.get('/:id/validate/automotive-constraints', validation_1.validateUui
 adminRouter.post('/:id/clone', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.cloneVariant);
 // Generic /:id routes - MUST come last after all specific routes
 adminRouter.get('/:id', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.getAdminVariantById);
-adminRouter.put('/:id', validation_1.validateUuidIdParam, car_variant_controller_1.CarVariantController.updateVariant);
+adminRouter.put('/:id', validation_1.validateUuidIdParam, sanitize_payload_middleware_1.sanitizeHtmlFields, car_variant_controller_1.CarVariantController.updateVariant);
 adminRouter.delete('/:id', validation_1.validateUuidIdParam, (0, auth_middleware_1.restrictTo)('super_admin'), car_variant_controller_1.CarVariantController.deleteVariant);
 router.use('/admin', adminRouter);
 // Legacy routes for backward compatibility

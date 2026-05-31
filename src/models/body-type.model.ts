@@ -58,10 +58,8 @@ const bodyTypeSchema = new Schema<IBodyType>(
   }
 );
 
-bodyTypeSchema.index({ is_deleted: 1 });
-bodyTypeSchema.index({ is_published: 1 });
+// Consolidated index - compound index handles queries that would use single boolean indexes
 bodyTypeSchema.index({ is_published: 1, is_deleted: 1 });
-bodyTypeSchema.index({ is_featured: 1 });
 bodyTypeSchema.index({ sort_order: 1 });
 bodyTypeSchema.index({ parent_id: 1 });
 bodyTypeSchema.index({ name: 'text', seo_title: 'text', meta_description: 'text' });

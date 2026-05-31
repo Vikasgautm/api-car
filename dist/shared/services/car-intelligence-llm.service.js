@@ -4,21 +4,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarIntelligenceLLMService = void 0;
-const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
+const cerebras_cloud_sdk_1 = __importDefault(require("@cerebras/cerebras_cloud_sdk"));
 const car_model_1 = require("../../models/car.model");
 const car_aggregation_service_1 = require("./car-aggregation.service");
 const platform_settings_service_1 = require("../../modules/settings/services/platform-settings.service");
-const HAIKU_MODEL = 'claude-haiku-4-5';
-// One persistent client. The SDK reads ANTHROPIC_API_KEY from env. If the key is
-// missing, the call still throws on first request — we surface that as a
-// service-level error rather than crashing at boot.
+const app_error_util_1 = require("../utils/app-error.util");
+const CEREBRAS_MODEL = 'gpt-oss-120b';
+// One persistent client.
 let cachedClient = null;
 const getClient = () => {
     if (!cachedClient) {
-        if (!process.env.ANTHROPIC_API_KEY) {
-            throw new Error('ANTHROPIC_API_KEY is not set. LLM refinement is disabled — set the env var in .env to enable it.');
+        if (!process.env.CEREBRAS_API_KEY) {
+            throw app_error_util_1.AppError.serviceUnavailable('CEREBRAS_API_KEY is not set. LLM refinement is disabled — set the env var in .env to enable it.', 'AI refinement is currently unavailable. Please contact the administrator.');
         }
-        cachedClient = new sdk_1.default();
+        cachedClient = new cerebras_cloud_sdk_1.default({ apiKey: process.env.CEREBRAS_API_KEY });
     }
     return cachedClient;
 };
@@ -137,14 +136,16 @@ const buildToolSchema = (flagsToReview) => {
         };
     }
     return {
-        name: 'set_flag_verdicts',
-        description: 'Record your reviewed verdict and rationale for each requested AI intelligence flag.',
-        strict: true,
-        input_schema: {
-            type: 'object',
-            properties,
-            required: flagsToReview,
-            additionalProperties: false,
+        type: 'function',
+        function: {
+            name: 'set_flag_verdicts',
+            description: 'Record your reviewed verdict and rationale for each requested AI intelligence flag.',
+            parameters: {
+                type: 'object',
+                properties,
+                required: flagsToReview,
+                additionalProperties: false,
+            },
         },
     };
 };
@@ -192,12 +193,12 @@ class CarIntelligenceLLMService {
      */
     static async refineAmbiguousFlags(carId) {
         // Read live AI settings — emergency kill, model selection, and confidence threshold.
-        let dynamicModel = HAIKU_MODEL;
+        let dynamicModel = CEREBRAS_MODEL;
         let dynamicThreshold = car_aggregation_service_1.AMBIGUOUS_CONFIDENCE_THRESHOLD;
         try {
             const aiSettings = await platform_settings_service_1.PlatformSettingsService.getSettingsByGroup('ai_intelligence');
             if (aiSettings.emergency_ai_off === true) {
-                throw new Error('AI refinement is disabled via emergency kill switch (Settings → AI Intelligence → Emergency AI Off).');
+                throw app_error_util_1.AppError.serviceUnavailable('AI refinement is disabled via emergency kill switch (Settings → AI Intelligence → Emergency AI Off).', 'AI refinement is currently disabled by an administrator.');
             }
             if (aiSettings.model)
                 dynamicModel = aiSettings.model;
@@ -214,13 +215,13 @@ class CarIntelligenceLLMService {
             .select('car_id name slug')
             .lean();
         if (!car) {
-            throw new Error(`Car ${carId} not found`);
+            throw app_error_util_1.AppError.carNotFound(carId);
         }
         // Recompute so we get fresh confidence scores. This persists current rule
         // verdicts already (in case the caller skipped the explicit recompute).
         const agg = await car_aggregation_service_1.CarAggregationService.recomputeFullAggregates(carId);
         if (!agg) {
-            throw new Error(`No variants to aggregate for car ${carId}`);
+            throw app_error_util_1.AppError.badRequest(`No variants to aggregate for car ${carId}`, 'This car has no variants to analyze yet.');
         }
         const ambiguous = car_aggregation_service_1.AI_FLAG_KEYS.filter(flag => (agg.ai_intelligence_meta.confidence_scores[flag] ?? 0) < dynamicThreshold);
         if (ambiguous.length === 0) {
@@ -232,19 +233,16 @@ class CarIntelligenceLLMService {
         const ruleVerdicts = ambiguous
             .map(f => `  - ${f}: rules say ${agg[f] ? 'YES' : 'NO'} (confidence ${(agg.ai_intelligence_meta.confidence_scores[f] ?? 0).toFixed(2)}; rationale: "${agg.ai_intelligence_meta.flag_rationale[f] ?? ''}")`)
             .join('\n');
-        const response = await client.messages.create({
+        const response = await client.chat.completions.create({
             model: dynamicModel,
             max_tokens: 2048,
-            system: [
-                {
-                    type: 'text',
-                    text: RUBRIC,
-                    cache_control: { type: 'ephemeral' },
-                },
-            ],
             tools: [tool],
-            tool_choice: { type: 'tool', name: 'set_flag_verdicts' },
+            tool_choice: { type: 'function', function: { name: 'set_flag_verdicts' } },
             messages: [
+                {
+                    role: 'system',
+                    content: RUBRIC,
+                },
                 {
                     role: 'user',
                     content: `Review the following ${ambiguous.length} ambiguous flag(s) for this car. The deterministic rules produced low confidence; flip the verdict if the spec snapshot warrants it, otherwise confirm.
@@ -261,11 +259,11 @@ Call set_flag_verdicts once with your verdict for each of the ${ambiguous.length
         });
         // Extract the tool_use block. With tool_choice forced to the tool above and
         // strict: true, the SDK guarantees this is present and matches the schema.
-        const toolUseBlock = response.content.find(b => b.type === 'tool_use');
-        if (!toolUseBlock || toolUseBlock.type !== 'tool_use') {
-            throw new Error('LLM did not produce a tool_use response — refinement failed');
+        const toolCall = response.choices[0]?.message?.tool_calls?.find((b) => b.function.name === 'set_flag_verdicts');
+        if (!toolCall) {
+            throw app_error_util_1.AppError.internal('LLM did not produce a tool_use response — refinement failed', 'AI refinement failed. Please try again.');
         }
-        const verdicts = toolUseBlock.input;
+        const verdicts = JSON.parse(toolCall.function.arguments);
         // Apply verdicts back to the car. Build the $set payload directly so we don't
         // need a round-trip through the aggregation service (which would overwrite
         // confidence_scores again from the still-current variant state).
@@ -291,7 +289,7 @@ Call set_flag_verdicts once with your verdict for each of the ${ambiguous.length
         }
         setPayload['ai_intelligence_meta.refined_by_llm'] = ambiguous;
         setPayload['ai_intelligence_meta.last_refined_at'] = new Date();
-        setPayload['ai_intelligence_meta.model_used'] = response.model;
+        setPayload['ai_intelligence_meta.model_used'] = response.model || dynamicModel;
         await car_model_1.Car.updateOne({ car_id: carId }, { $set: setPayload });
         return {
             car_id: carId,
@@ -300,11 +298,11 @@ Call set_flag_verdicts once with your verdict for each of the ${ambiguous.length
             flags_flipped: flipped,
             rationale: rationaleOut,
             verdicts: verdictsOut,
-            model_used: response.model,
-            input_tokens: response.usage.input_tokens,
-            output_tokens: response.usage.output_tokens,
-            cache_read_input_tokens: response.usage.cache_read_input_tokens ?? 0,
-            cache_creation_input_tokens: response.usage.cache_creation_input_tokens ?? 0,
+            model_used: response.model || 'gpt-oss-120b',
+            input_tokens: response.usage?.prompt_tokens ?? 0,
+            output_tokens: response.usage?.completion_tokens ?? 0,
+            cache_read_input_tokens: 0,
+            cache_creation_input_tokens: 0,
         };
     }
 }

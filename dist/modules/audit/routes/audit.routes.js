@@ -11,6 +11,13 @@ adminRouter.get('/', audit_controller_1.AuditController.list);
 adminRouter.get('/recent', audit_controller_1.AuditController.recent);
 adminRouter.get('/stale', audit_controller_1.AuditController.stale);
 adminRouter.post('/mark-reviewed/:entity_type/:entity_id', audit_controller_1.AuditController.markReviewed);
+// Operations Center (unified /audit page)
+adminRouter.get('/activity', audit_controller_1.AuditController.activity);
+adminRouter.get('/imports', audit_controller_1.AuditController.imports);
+adminRouter.get('/imports/:import_id', audit_controller_1.AuditController.importDetail);
+adminRouter.get('/alerts', audit_controller_1.AuditController.alerts);
+adminRouter.get('/entity/search', audit_controller_1.AuditController.entitySearch);
+adminRouter.get('/entity/:entity_type/:entity_id/history', audit_controller_1.AuditController.entityHistory);
 router.use('/admin', adminRouter);
 exports.default = router;
 //# sourceMappingURL=audit.routes.js.map
