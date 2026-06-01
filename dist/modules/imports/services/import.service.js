@@ -21,7 +21,6 @@ const seo_tag_generator_service_1 = require("./seo-tag-generator.service");
 const import_normalizer_service_1 = require("./import-normalizer.service");
 const powertrain_detector_service_1 = require("../../variants/services/powertrain-detector.service");
 const seo_auto_wiring_service_1 = require("./seo-auto-wiring.service");
-const platform_settings_service_1 = require("../../../modules/settings/services/platform-settings.service");
 class ImportService {
     static detectSource(url) {
         if (url.includes('carwale.com'))
@@ -403,11 +402,6 @@ class ImportService {
         // Create maps for O(1) lookups
         const variantSlugSet = new Set(existingVariants.map((v) => v.slug));
         const fuelTypeMap = new Map(allFuelTypes.map((ft) => [ft.fuel_type_id, ft]));
-        // Read import confidence thresholds from live settings (falls back to 0 / 100 if unavailable).
-        const importSettings = await platform_settings_service_1.PlatformSettingsService.getSettingsByGroup('imports').catch(() => ({}));
-        const minToSave = importSettings.min_confidence_to_save ?? 0;
-        const minToPublish = importSettings.min_confidence_to_publish ?? 100;
-        console.log('[ImportService.saveVariantImport] confidence thresholds', { minToSave, minToPublish });
         // Separate processing for create and update modes
         const createPayloads = [];
         const updateOps = [];
@@ -421,33 +415,19 @@ class ImportService {
                 specs_raw_keys: specsRawPre && typeof specsRawPre === 'object' ? Object.keys(specsRawPre).length : 0,
                 has_specs_normalized: !!item.data?.specs_normalized,
                 fuel_type_id: item.data?.fuel_type_id,
-                incoming_powConf: item.data?.powertrain_detection_confidence,
             });
             // Enhance variant data with normalization before processing
             item.data = await this.enhanceVariantWithNormalization(item.data, item.data.fuel_type_id);
-            // Diagnostic: post-enhancement snapshot — surfaces what the confidence gate will read
+            // Diagnostic: post-enhancement snapshot
             console.log(`[ImportService.saveVariantImport] [${idx + 1}/${items.length}] post-enhance`, {
-                powertrain_detection_confidence: item.data?.powertrain_detection_confidence,
                 has_engine: item.data?.has_engine,
                 has_battery: item.data?.has_battery,
                 has_motor: item.data?.has_motor,
                 has_external_charging: item.data?.has_external_charging,
             });
-            // Confidence threshold is advisory only — variants are saved regardless of powertrain confidence.
-            const powConf = Number(item.data.powertrain_detection_confidence ?? 0);
-            if (minToSave > 0 && powConf < minToSave) {
-                console.warn(`[ImportService.saveVariantImport] low-confidence variant — saving anyway`, { url: item.url, powConf, minToSave });
-                warnings.push(`Low confidence ${powConf.toFixed(1)}% (< ${minToSave}%) for ${item.url ?? 'variant'} — saved as draft, please review.`);
-            }
-            // Auto-publish variants that clearly exceed the publish confidence threshold.
-            if (minToPublish < 100 && powConf >= minToPublish) {
-                console.log('[ImportService.saveVariantImport] auto-publishing high-confidence variant', { url: item.url, powConf, minToPublish });
-                item.data.is_published = true;
-            }
             try {
                 // Clean null values from item data
                 const cleanItemData = Object.fromEntries(Object.entries(item.data).filter(([_, value]) => value !== null));
-                let variant;
                 if (mode === 'create') {
                     // Check for duplicate slug using in-memory set
                     if (variantSlugSet.has(item.data.slug)) {
@@ -503,7 +483,6 @@ class ImportService {
                         has_battery: cleanItemData.has_battery !== undefined ? Boolean(cleanItemData.has_battery) : false,
                         has_motor: cleanItemData.has_motor !== undefined ? Boolean(cleanItemData.has_motor) : false,
                         has_external_charging: cleanItemData.has_external_charging !== undefined ? Boolean(cleanItemData.has_external_charging) : false,
-                        powertrain_detection_confidence: cleanItemData.powertrain_detection_confidence !== undefined ? Number(cleanItemData.powertrain_detection_confidence) : 0,
                     };
                     // Auto-convert types to match CarVariant schema requirements
                     variantPayload = this.convertSpecsTypes(variantPayload);
@@ -579,8 +558,6 @@ class ImportService {
                             updateData.has_motor = Boolean(cleanItemData.has_motor);
                         if (cleanItemData.has_external_charging !== undefined)
                             updateData.has_external_charging = Boolean(cleanItemData.has_external_charging);
-                        if (cleanItemData.powertrain_detection_confidence !== undefined)
-                            updateData.powertrain_detection_confidence = Number(cleanItemData.powertrain_detection_confidence);
                     }
                     else {
                         // Merge mode: only fill empty fields (excluding nulls)
@@ -615,12 +592,6 @@ class ImportService {
                             updateData.has_motor = Boolean(cleanItemData.has_motor);
                         if (cleanItemData.has_external_charging !== undefined && !existingVariant.has_external_charging)
                             updateData.has_external_charging = Boolean(cleanItemData.has_external_charging);
-                        if (cleanItemData.powertrain_detection_confidence !== undefined) {
-                            const newConfidence = Number(cleanItemData.powertrain_detection_confidence);
-                            if (!existingVariant.powertrain_detection_confidence || newConfidence > (existingVariant.powertrain_detection_confidence || 0)) {
-                                updateData.powertrain_detection_confidence = newConfidence;
-                            }
-                        }
                     }
                     // Auto-convert types to match CarVariant schema requirements
                     if (updateData.specs_normalized) {
