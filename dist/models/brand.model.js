@@ -56,7 +56,7 @@ const brandSchema = new mongoose_1.Schema({
     brand_id: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     alias: { type: String },
-    slug: { type: String, required: true, unique: true },
+    slug: { type: String, required: true },
     slug_history: [
         {
             slug: { type: String },
@@ -106,5 +106,9 @@ brandSchema.index({ is_discontinued: 1, is_deleted: 1 });
 brandSchema.index({ 'aggregates_cache.has_ev': 1, is_deleted: 1 });
 brandSchema.index({ 'aggregates_cache.total_variants': -1, is_deleted: 1 });
 brandSchema.index({ name: 'text' });
+// Slug must be unique only among non-deleted brands so admins can reuse the slug
+// of a soft-deleted brand. In production, drop the old index first:
+// db.brands.dropIndex("slug_1")
+brandSchema.index({ slug: 1 }, { unique: true, partialFilterExpression: { is_deleted: false }, name: 'uniq_slug_active' });
 exports.Brand = (0, mongoose_1.model)('Brand', brandSchema);
 //# sourceMappingURL=brand.model.js.map

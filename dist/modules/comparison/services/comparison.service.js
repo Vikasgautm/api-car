@@ -49,16 +49,16 @@ class ComparisonService {
                 findCarByEitherId(data.car2_id),
             ]);
             if (!car1)
-                throw new app_error_util_1.AppError(`Car 1 not found (id: ${data.car1_id})`, 404);
+                throw new app_error_util_1.AppError(`Car 1 not found (id: ${data.car1_id})`, 404, { errorCode: 'CAR_NOT_FOUND' });
             if (!car2)
-                throw new app_error_util_1.AppError(`Car 2 not found (id: ${data.car2_id})`, 404);
+                throw new app_error_util_1.AppError(`Car 2 not found (id: ${data.car2_id})`, 404, { errorCode: 'CAR_NOT_FOUND' });
             if (data.car1_id === data.car2_id)
-                throw new app_error_util_1.AppError('Cannot compare the same car', 400);
+                throw new app_error_util_1.AppError('Cannot compare the same car', 400, { errorCode: 'INVALID_INPUT' });
             // Generate unique slug
             let slug = data.slug;
             const existingSlug = await comparison_model_1.Comparison.findOne({ slug });
             if (existingSlug) {
-                throw new app_error_util_1.AppError('Comparison with this slug already exists', 400);
+                throw new app_error_util_1.AppError('Comparison with this slug already exists', 409, { errorCode: 'SLUG_ALREADY_EXISTS' });
             }
             // Validate variants if provided
             if (data.variant1_id) {

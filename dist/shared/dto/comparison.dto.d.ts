@@ -10,8 +10,8 @@ export declare const CreateComparisonDTO: z.ZodObject<{
         ev: "ev";
         hatchback: "hatchback";
         sedan: "sedan";
-        coupe: "coupe";
         suv: "suv";
+        coupe: "coupe";
         mpv: "mpv";
         luxury: "luxury";
         budget: "budget";
@@ -44,8 +44,8 @@ export declare const UpdateComparisonDTO: z.ZodObject<{
         ev: "ev";
         hatchback: "hatchback";
         sedan: "sedan";
-        coupe: "coupe";
         suv: "suv";
+        coupe: "coupe";
         mpv: "mpv";
         luxury: "luxury";
         budget: "budget";

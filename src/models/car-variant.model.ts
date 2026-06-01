@@ -466,7 +466,7 @@ const variantSchema = new Schema<ICarVariant>(
     variant_id: { type: String, required: true, unique: true },
     car_id: { type: String, required: true },
     variant_name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true },
+    slug: { type: String, required: true },
     model_year: {
       type: Number,
       required: true,
@@ -879,5 +879,13 @@ variantSchema.index({ car_id: 1, variant_rank: 1, is_published: 1, is_deleted: 1
 variantSchema.index({ value_for_money_tag: 1 });
 variantSchema.index({ market_status: 1 });
 variantSchema.index({ on_road_price: 1, is_published: 1, is_deleted: 1, is_archived: 1 });
+
+// Slug must be unique only among non-deleted variants so admins can reuse the slug
+// of a soft-deleted variant. In production, drop the old index first:
+// db.carvariants.dropIndex("slug_1")
+variantSchema.index(
+  { slug: 1 },
+  { unique: true, partialFilterExpression: { is_deleted: false }, name: 'uniq_slug_active' }
+);
 
 export const CarVariant = model<ICarVariant>('CarVariant', variantSchema);

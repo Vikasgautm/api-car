@@ -4,6 +4,8 @@ import {
   EV_BENCHMARKS,
   FuelCategory,
   ICE_BENCHMARKS,
+  ICE_FUEL_BENCHMARKS,
+  IceFuelType,
   MileageClass,
   MileageSource,
   resolveBenchmarkKey,
@@ -49,6 +51,7 @@ export function parseMileageValue(input: unknown): number | null {
 type CachedSnapshot = {
   bodyTypeSlugById: Map<string, string>;
   fuelCategoryById: Map<string, FuelCategory>;
+  fuelTypeSlugById: Map<string, string>;
   overrides: Map<string, BenchmarkThresholds>; // key: `${body_type_id}:${fuel_category}`
 };
 
@@ -68,10 +71,12 @@ async function buildCache(): Promise<CachedSnapshot> {
   }
 
   const fuelCategoryById = new Map<string, FuelCategory>();
+  const fuelTypeSlugById = new Map<string, string>();
   for (const ft of fuelTypes) {
     const ident = (ft.slug || ft.name || '').toLowerCase();
     const isEv = ident === 'ev' || ident === 'bev' || ident.includes('electric');
     fuelCategoryById.set(ft.fuel_type_id, isEv ? 'ev' : 'ice');
+    fuelTypeSlugById.set(ft.fuel_type_id, ident);
   }
 
   const overrideMap = new Map<string, BenchmarkThresholds>();
@@ -79,7 +84,7 @@ async function buildCache(): Promise<CachedSnapshot> {
     overrideMap.set(`${ov.body_type_id}:${ov.fuel_category}`, ov.thresholds);
   }
 
-  return { bodyTypeSlugById, fuelCategoryById, overrides: overrideMap };
+  return { bodyTypeSlugById, fuelCategoryById, fuelTypeSlugById, overrides: overrideMap };
 }
 
 async function getCache(): Promise<CachedSnapshot> {
@@ -132,15 +137,33 @@ export class MileageClassifierService {
   }
 
   /**
+   * Resolve the specific ICE fuel sub-type for granular benchmark lookup.
+   * Falls back to 'petrol' when the fuel type is unknown or unmatched.
+   */
+  static detectIceFuelType(
+    variant: Pick<ICarVariant, 'fuel_type_id'>,
+    fuelTypeSlugById: Map<string, string>
+  ): IceFuelType {
+    if (!variant.fuel_type_id) return 'petrol';
+    const slug = fuelTypeSlugById.get(variant.fuel_type_id) ?? '';
+    if (slug.includes('diesel')) return 'diesel';
+    if (slug.includes('cng') || slug.includes('compressed') || slug.includes('natural-gas')) return 'cng';
+    if (slug.includes('hybrid') || slug.includes('mhev') || slug.includes('phev') || slug.includes('self-charging')) return 'hybrid';
+    return 'petrol';
+  }
+
+  /**
    * Get the thresholds for a (body_type_id, fuel_category) pair. Precedence:
    *   1. Override row for this body_type_id + fuel_category
-   *   2. Constant table keyed by the resolved benchmark key derived from body type slug
-   *   3. null if neither yields a match
+   *   2. Fuel-specific ICE constant (ICE_FUEL_BENCHMARKS[key][iceFuelType])
+   *   3. Generic ICE constant (ICE_BENCHMARKS[key], petrol defaults)
+   *   4. null if neither yields a match
    */
   static resolveThresholds(
     bodyTypeId: string | undefined,
     fuelCategory: FuelCategory,
-    snapshot: CachedSnapshot
+    snapshot: CachedSnapshot,
+    iceFuelType?: IceFuelType
   ): BenchmarkThresholds | null {
     if (!bodyTypeId) return null;
 
@@ -152,6 +175,11 @@ export class MileageClassifierService {
     if (!key) return null;
 
     if (fuelCategory === 'ev') return EV_BENCHMARKS[key] ?? null;
+
+    if (iceFuelType) {
+      const specific = ICE_FUEL_BENCHMARKS[key]?.[iceFuelType];
+      if (specific) return specific;
+    }
     return ICE_BENCHMARKS[key] ?? null;
   }
 
@@ -216,7 +244,8 @@ export class MileageClassifierService {
 
     const snapshot = await getCache();
     const fuelCategory = this.detectFuelCategory(variant, parentCar, snapshot.fuelCategoryById);
-    const thresholds = this.resolveThresholds(parentCar.body_type_id, fuelCategory, snapshot);
+    const iceFuelType = fuelCategory === 'ice' ? this.detectIceFuelType(variant, snapshot.fuelTypeSlugById) : undefined;
+    const thresholds = this.resolveThresholds(parentCar.body_type_id, fuelCategory, snapshot, iceFuelType);
 
     if (fuelCategory === 'ev') {
       const picked = this.pickEvValue(variant);

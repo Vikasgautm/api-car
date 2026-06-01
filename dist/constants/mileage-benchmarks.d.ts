@@ -13,6 +13,8 @@
  */
 export type MileageClass = 'weak' | 'average' | 'good' | 'excellent';
 export type FuelCategory = 'ice' | 'ev';
+/** Specific ICE sub-type used for granular benchmark lookup. */
+export type IceFuelType = 'petrol' | 'diesel' | 'cng' | 'hybrid';
 export type MileageSource = 'arai' | 'real' | 'city' | 'highway' | 'cng' | 'electric_range' | 'real_range' | 'real_world_range' | 'battery_wltp_km';
 export declare const MILEAGE_CLASS_ORDER: Record<MileageClass, number>;
 export interface BenchmarkThresholds {
@@ -24,7 +26,16 @@ export interface BenchmarkThresholds {
  * Canonical benchmark keys. Resolve a body-type slug or name to one of these via
  * `resolveBenchmarkKey()` below.
  */
-export type BenchmarkKey = 'hatchback' | 'sedan' | 'compact-sedan' | 'compact-suv' | 'mid-size-suv' | 'full-size-suv' | 'muv' | 'minivan' | 'pickup' | 'coupe' | 'convertible';
+export type BenchmarkKey = 'hatchback' | 'sedan' | 'compact-sedan' | 'compact-suv' | 'suv' | 'mid-size-suv' | 'full-size-suv' | 'muv' | 'minivan' | 'pickup' | 'coupe' | 'coupe-suv' | 'convertible';
+/**
+ * Per-fuel-type ICE benchmarks keyed by body type.
+ * Missing fuel type entries fall back to ICE_BENCHMARKS (petrol defaults).
+ */
+export declare const ICE_FUEL_BENCHMARKS: Record<BenchmarkKey, Partial<Record<IceFuelType, BenchmarkThresholds>>>;
+/**
+ * ICE_BENCHMARKS is kept for backward compatibility (admin matrix display + legacy overrides).
+ * It represents petrol defaults, falling back to diesel when petrol is absent.
+ */
 export declare const ICE_BENCHMARKS: Record<BenchmarkKey, BenchmarkThresholds>;
 export declare const EV_BENCHMARKS: Partial<Record<BenchmarkKey, BenchmarkThresholds>>;
 /**

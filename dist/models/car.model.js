@@ -5,7 +5,7 @@ const mongoose_1 = require("mongoose");
 const carSchema = new mongoose_1.Schema({
     car_id: { type: String, required: true, unique: true },
     name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true },
+    slug: { type: String, required: true },
     brand_id: { type: String, required: true },
     body_type_id: { type: String, required: true },
     fuel_type_id: { type: String },
@@ -298,5 +298,9 @@ carSchema.index({ model_family: 1, is_current: 1 }, {
     },
     name: 'uniq_current_per_family',
 });
+// Slug must be unique only among non-deleted cars so admins can reuse the slug
+// of a soft-deleted car without hitting E11000. In production, drop the old
+// global 'slug_1' index first: db.cars.dropIndex("slug_1")
+carSchema.index({ slug: 1 }, { unique: true, partialFilterExpression: { is_deleted: false }, name: 'uniq_slug_active' });
 exports.Car = (0, mongoose_1.model)("Car", carSchema);
 //# sourceMappingURL=car.model.js.map

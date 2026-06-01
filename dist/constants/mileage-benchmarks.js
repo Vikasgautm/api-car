@@ -13,7 +13,7 @@
  * via the MileageBenchmarkOverride collection.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EV_BENCHMARKS = exports.ICE_BENCHMARKS = exports.MILEAGE_CLASS_ORDER = void 0;
+exports.EV_BENCHMARKS = exports.ICE_BENCHMARKS = exports.ICE_FUEL_BENCHMARKS = exports.MILEAGE_CLASS_ORDER = void 0;
 exports.resolveBenchmarkKey = resolveBenchmarkKey;
 exports.applyThresholds = applyThresholds;
 exports.maxClass = maxClass;
@@ -23,30 +23,114 @@ exports.MILEAGE_CLASS_ORDER = {
     good: 2,
     excellent: 3,
 };
+/**
+ * Per-fuel-type ICE benchmarks keyed by body type.
+ * Missing fuel type entries fall back to ICE_BENCHMARKS (petrol defaults).
+ */
+exports.ICE_FUEL_BENCHMARKS = {
+    hatchback: {
+        petrol: { weak_max: 16, average_max: 20, good_max: 24 },
+        diesel: { weak_max: 18, average_max: 22, good_max: 26 },
+        cng: { weak_max: 24, average_max: 30, good_max: 34 },
+        hybrid: { weak_max: 20, average_max: 25, good_max: 30 },
+    },
+    'compact-sedan': {
+        petrol: { weak_max: 15, average_max: 19, good_max: 23 },
+        diesel: { weak_max: 18, average_max: 22, good_max: 26 },
+        cng: { weak_max: 24, average_max: 30, good_max: 34 },
+        hybrid: { weak_max: 20, average_max: 25, good_max: 30 },
+    },
+    sedan: {
+        petrol: { weak_max: 14, average_max: 18, good_max: 22 },
+        diesel: { weak_max: 17, average_max: 21, good_max: 25 },
+        cng: { weak_max: 22, average_max: 28, good_max: 32 },
+        hybrid: { weak_max: 20, average_max: 25, good_max: 30 },
+    },
+    'compact-suv': {
+        petrol: { weak_max: 12, average_max: 16, good_max: 20 },
+        diesel: { weak_max: 15, average_max: 19, good_max: 23 },
+        cng: { weak_max: 22, average_max: 28, good_max: 32 },
+        hybrid: { weak_max: 18, average_max: 24, good_max: 28 },
+    },
+    suv: {
+        petrol: { weak_max: 11, average_max: 15, good_max: 19 },
+        diesel: { weak_max: 13, average_max: 17, good_max: 21 },
+        cng: { weak_max: 20, average_max: 26, good_max: 30 },
+        hybrid: { weak_max: 18, average_max: 24, good_max: 28 },
+    },
+    'mid-size-suv': {
+        petrol: { weak_max: 10, average_max: 14, good_max: 18 },
+        diesel: { weak_max: 12, average_max: 16, good_max: 20 },
+        cng: { weak_max: 16, average_max: 22, good_max: 26 },
+        hybrid: { weak_max: 18, average_max: 24, good_max: 28 },
+    },
+    'full-size-suv': {
+        petrol: { weak_max: 8, average_max: 12, good_max: 15 },
+        diesel: { weak_max: 10, average_max: 14, good_max: 18 },
+        hybrid: { weak_max: 14, average_max: 20, good_max: 25 },
+    },
+    muv: {
+        petrol: { weak_max: 11, average_max: 15, good_max: 19 },
+        diesel: { weak_max: 13, average_max: 17, good_max: 21 },
+        cng: { weak_max: 22, average_max: 28, good_max: 32 },
+        hybrid: { weak_max: 18, average_max: 24, good_max: 28 },
+    },
+    minivan: {
+        petrol: { weak_max: 10, average_max: 14, good_max: 18 },
+        diesel: { weak_max: 12, average_max: 16, good_max: 20 },
+        cng: { weak_max: 22, average_max: 28, good_max: 32 },
+        hybrid: { weak_max: 18, average_max: 24, good_max: 28 },
+    },
+    pickup: {
+        diesel: { weak_max: 8, average_max: 12, good_max: 15 },
+    },
+    'coupe-suv': {
+        petrol: { weak_max: 10, average_max: 14, good_max: 18 },
+        diesel: { weak_max: 12, average_max: 16, good_max: 20 },
+        hybrid: { weak_max: 18, average_max: 24, good_max: 28 },
+    },
+    coupe: {
+        petrol: { weak_max: 8, average_max: 12, good_max: 16 },
+        diesel: { weak_max: 10, average_max: 14, good_max: 18 },
+        hybrid: { weak_max: 14, average_max: 20, good_max: 25 },
+    },
+    convertible: {
+        petrol: { weak_max: 8, average_max: 12, good_max: 16 },
+        hybrid: { weak_max: 14, average_max: 20, good_max: 25 },
+    },
+};
+/**
+ * ICE_BENCHMARKS is kept for backward compatibility (admin matrix display + legacy overrides).
+ * It represents petrol defaults, falling back to diesel when petrol is absent.
+ */
 exports.ICE_BENCHMARKS = {
-    hatchback: { weak_max: 14, average_max: 18, good_max: 22 },
-    sedan: { weak_max: 13, average_max: 17, good_max: 21 },
-    'compact-sedan': { weak_max: 15, average_max: 18, good_max: 22 },
-    'compact-suv': { weak_max: 12, average_max: 16, good_max: 20 },
-    'mid-size-suv': { weak_max: 10, average_max: 14, good_max: 18 },
-    'full-size-suv': { weak_max: 8, average_max: 12, good_max: 15 },
-    muv: { weak_max: 10, average_max: 14, good_max: 18 },
-    minivan: { weak_max: 9, average_max: 13, good_max: 17 },
-    pickup: { weak_max: 8, average_max: 12, good_max: 15 },
-    coupe: { weak_max: 8, average_max: 12, good_max: 16 },
-    convertible: { weak_max: 7, average_max: 11, good_max: 15 },
+    hatchback: exports.ICE_FUEL_BENCHMARKS.hatchback.petrol,
+    'compact-sedan': exports.ICE_FUEL_BENCHMARKS['compact-sedan'].petrol,
+    sedan: exports.ICE_FUEL_BENCHMARKS.sedan.petrol,
+    'compact-suv': exports.ICE_FUEL_BENCHMARKS['compact-suv'].petrol,
+    suv: exports.ICE_FUEL_BENCHMARKS.suv.petrol,
+    'mid-size-suv': exports.ICE_FUEL_BENCHMARKS['mid-size-suv'].petrol,
+    'full-size-suv': exports.ICE_FUEL_BENCHMARKS['full-size-suv'].petrol,
+    muv: exports.ICE_FUEL_BENCHMARKS.muv.petrol,
+    minivan: exports.ICE_FUEL_BENCHMARKS.minivan.petrol,
+    pickup: exports.ICE_FUEL_BENCHMARKS.pickup.diesel,
+    'coupe-suv': exports.ICE_FUEL_BENCHMARKS['coupe-suv'].petrol,
+    coupe: exports.ICE_FUEL_BENCHMARKS.coupe.petrol,
+    convertible: exports.ICE_FUEL_BENCHMARKS.convertible.petrol,
 };
 exports.EV_BENCHMARKS = {
-    hatchback: { weak_max: 180, average_max: 280, good_max: 400 },
-    sedan: { weak_max: 250, average_max: 400, good_max: 550 },
-    'compact-suv': { weak_max: 220, average_max: 350, good_max: 500 },
-    'mid-size-suv': { weak_max: 280, average_max: 420, good_max: 550 },
-    'full-size-suv': { weak_max: 320, average_max: 500, good_max: 650 },
-    muv: { weak_max: 250, average_max: 380, good_max: 500 },
-    pickup: { weak_max: 300, average_max: 450, good_max: 650 },
-    coupe: { weak_max: 300, average_max: 500, good_max: 700 },
-    convertible: { weak_max: 250, average_max: 450, good_max: 600 },
-    // 'compact-sedan' and 'minivan' have no EV table in the spec — fall back to sedan / muv.
+    hatchback: { weak_max: 220, average_max: 320, good_max: 420 },
+    'compact-sedan': { weak_max: 250, average_max: 380, good_max: 500 },
+    sedan: { weak_max: 300, average_max: 450, good_max: 550 },
+    'compact-suv': { weak_max: 280, average_max: 400, good_max: 550 },
+    suv: { weak_max: 300, average_max: 420, good_max: 580 },
+    'mid-size-suv': { weak_max: 350, average_max: 500, good_max: 600 },
+    'full-size-suv': { weak_max: 400, average_max: 550, good_max: 650 },
+    muv: { weak_max: 280, average_max: 420, good_max: 550 },
+    minivan: { weak_max: 280, average_max: 420, good_max: 550 },
+    pickup: { weak_max: 350, average_max: 500, good_max: 600 },
+    'coupe-suv': { weak_max: 300, average_max: 450, good_max: 600 },
+    convertible: { weak_max: 300, average_max: 450, good_max: 600 },
 };
 /**
  * Body-type slugs vary across data sources, so we resolve via fuzzy keyword matching
@@ -56,6 +140,9 @@ function resolveBenchmarkKey(bodyTypeSlugOrName) {
     if (!bodyTypeSlugOrName)
         return null;
     const s = bodyTypeSlugOrName.toLowerCase().replace(/[\s_]+/g, '-');
+    // Coupe SUV must be checked before bare coupe and bare SUV
+    if (s.includes('coupe') && s.includes('suv'))
+        return 'coupe-suv';
     if (s.includes('convertible') || s.includes('cabriolet') || s.includes('roadster'))
         return 'convertible';
     if (s.includes('coupe'))
@@ -64,7 +151,7 @@ function resolveBenchmarkKey(bodyTypeSlugOrName) {
         return 'pickup';
     if (s.includes('minivan') || s.includes('van'))
         return 'minivan';
-    // SUV variants need to be checked before bare 'suv'.
+    // SUV variants — check before bare 'suv'
     const isSuv = s.includes('suv');
     if (isSuv) {
         if (s.includes('full') || s.includes('large'))
@@ -73,7 +160,7 @@ function resolveBenchmarkKey(bodyTypeSlugOrName) {
             return 'mid-size-suv';
         if (s.includes('compact') || s.includes('sub'))
             return 'compact-suv';
-        return 'compact-suv'; // Default for bare "SUV"
+        return 'suv';
     }
     if (s.includes('muv') || s.includes('mpv') || s.includes('multi-purpose') || s.includes('people'))
         return 'muv';

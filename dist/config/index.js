@@ -65,8 +65,8 @@ if (process.env.NODE_ENV === 'production') {
         missingVars.push('JWT_SECRET');
     if (!process.env.JWT_REFRESH_SECRET || process.env.JWT_REFRESH_SECRET === 'your-refresh-secret-key')
         missingVars.push('JWT_REFRESH_SECRET');
-    if (process.env.CORS_ORIGIN === '*') {
-        console.warn('⚠️ WARNING: Permissive CORS (*) is not recommended in production. Set CORS_ORIGIN to a secure domain.');
+    if (!process.env.CORS_ORIGIN || process.env.CORS_ORIGIN === '*') {
+        missingVars.push('CORS_ORIGIN (must be a specific domain, not *)');
     }
     if (missingVars.length > 0) {
         console.error(`❌ CRITICAL SECURITY ERROR: Missing or insecure production environment variables: ${missingVars.join(', ')}`);
