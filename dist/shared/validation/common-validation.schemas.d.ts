@@ -41,8 +41,8 @@ export declare const paginationSchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const publishStatusSchema: z.ZodOptional<z.ZodEnum<{
     archived: "archived";
-    launched: "launched";
     upcoming: "upcoming";
+    launched: "launched";
     discontinued: "discontinued";
     disabled: "disabled";
 }>>;

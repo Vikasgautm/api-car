@@ -40,21 +40,21 @@ class DashboardSearchService {
             id: c.car_id,
             title: c.name,
             subtitle: c.status,
-            link: `/cars/${c.car_id}`,
+            link: `/cars?editId=${c.car_id}`,
         }));
         const variantResults = variants.map((v) => ({
             type: 'variant',
             id: v.variant_id,
             title: v.variant_name,
             subtitle: v.fuel_type_id ?? undefined,
-            link: `/variants/${v.variant_id}`,
+            link: `/variants/${v.variant_id}/edit`,
         }));
         const collectionResults = collections.map((s) => ({
             type: 'seo_collection',
             id: s.collection_id,
             title: s.title,
             subtitle: s.status,
-            link: `/seo-collections/${s.collection_id}`,
+            link: `/seo-collection-editor/${s.collection_id}`,
         }));
         const comparisonResults = comparisons.map((c) => ({
             type: 'comparison',
@@ -67,7 +67,7 @@ class DashboardSearchService {
             type: 'blog',
             id: b.blog_id,
             title: b.title,
-            link: `/blogs/${b.blog_id}`,
+            link: `/blogs`,
         }));
         const total = carResults.length + variantResults.length + collectionResults.length + comparisonResults.length + blogResults.length;
         return {

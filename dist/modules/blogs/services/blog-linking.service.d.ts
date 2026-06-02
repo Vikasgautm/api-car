@@ -6,11 +6,15 @@ interface LinkSuggestion {
 }
 export declare class BlogLinkingService {
     static suggestLinks(content: string): Promise<LinkSuggestion[]>;
-    static searchEntities(query: string, entityType: string): Promise<(import("../../../models/fuel-type.model").IFuelType & Required<{
+    static searchEntities(query: string, entityType: string): Promise<(import("../../../models/car.model").ICar & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
-    })[] | (import("../../../models/car.model").ICar & Required<{
+    })[] | (import("../../../models/blog.model").IBlog & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    })[] | (import("../../../models/fuel-type.model").IFuelType & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
@@ -19,10 +23,6 @@ export declare class BlogLinkingService {
     }> & {
         __v: number;
     })[] | (import("../../../models/comparison.model").IComparison & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    })[] | (import("../../../models/blog.model").IBlog & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;

@@ -16,8 +16,8 @@ export declare const createCarSchema: z.ZodObject<{
     gallery_summary: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
         archived: "archived";
-        launched: "launched";
         upcoming: "upcoming";
+        launched: "launched";
         discontinued: "discontinued";
         disabled: "disabled";
     }>>>;
@@ -99,8 +99,8 @@ export declare const updateCarSchema: z.ZodObject<{
     gallery_summary: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     status: z.ZodOptional<z.ZodOptional<z.ZodOptional<z.ZodEnum<{
         archived: "archived";
-        launched: "launched";
         upcoming: "upcoming";
+        launched: "launched";
         discontinued: "discontinued";
         disabled: "disabled";
     }>>>>;
@@ -228,8 +228,8 @@ export declare const carFilterSchema: z.ZodObject<{
     body_type_id: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
         archived: "archived";
-        launched: "launched";
         upcoming: "upcoming";
+        launched: "launched";
         discontinued: "discontinued";
         disabled: "disabled";
     }>>>;

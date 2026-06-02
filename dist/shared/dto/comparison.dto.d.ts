@@ -27,9 +27,9 @@ export declare const CreateComparisonDTO: z.ZodObject<{
     seoMetaDescription: z.ZodOptional<z.ZodString>;
     seoFAQSchema: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
     status: z.ZodDefault<z.ZodEnum<{
-        archived: "archived";
-        published: "published";
         draft: "draft";
+        published: "published";
+        archived: "archived";
     }>>;
     is_published: z.ZodDefault<z.ZodBoolean>;
 }, z.core.$strip>;
@@ -61,9 +61,9 @@ export declare const UpdateComparisonDTO: z.ZodObject<{
     seoMetaDescription: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     seoFAQSchema: z.ZodOptional<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>>;
     status: z.ZodOptional<z.ZodDefault<z.ZodEnum<{
-        archived: "archived";
-        published: "published";
         draft: "draft";
+        published: "published";
+        archived: "archived";
     }>>>;
     is_published: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
 }, z.core.$strip>;
@@ -73,9 +73,9 @@ export declare const ComparisonQueryDTO: z.ZodObject<{
     search: z.ZodOptional<z.ZodString>;
     category: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodEnum<{
-        archived: "archived";
-        published: "published";
         draft: "draft";
+        published: "published";
+        archived: "archived";
     }>>;
     isPopular: z.ZodOptional<z.ZodBoolean>;
     isTrending: z.ZodOptional<z.ZodBoolean>;

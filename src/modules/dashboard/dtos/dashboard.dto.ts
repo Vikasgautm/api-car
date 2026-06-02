@@ -47,9 +47,11 @@ export interface ActivityItem {
   title: string;
   entity_type: string;
   entity_id: string;
+  entity_name?: string | null;
   action: string;
   actor_email?: string | null;
   timestamp: Date;
+  redirect_link?: string | null;
 }
 
 export interface DashboardRecentActivity {
