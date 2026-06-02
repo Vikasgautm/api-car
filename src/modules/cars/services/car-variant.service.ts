@@ -386,6 +386,7 @@ export class CarVariantService {
       page = 1,
       limit = 25,
       q,
+      car_id,
       brand_id,
       body_type_id,
       fuel_type_id,
@@ -471,7 +472,12 @@ export class CarVariantService {
     }
 
     const carFilter: Record<string, any> = { is_deleted: { $ne: true } };
-    if (restrictToCarIds) carFilter.car_id = { $in: restrictToCarIds };
+    if (car_id) carFilter.car_id = car_id;
+    if (restrictToCarIds) {
+      carFilter.car_id = car_id
+        ? { $in: restrictToCarIds.includes(car_id) ? [car_id] : [] }
+        : { $in: restrictToCarIds };
+    }
     if (brand_id) carFilter.brand_id = brand_id;
     if (body_type_id) carFilter.body_type_id = body_type_id;
 

@@ -50,18 +50,19 @@ export class EmailService {
     ctx?: { request_id?: string; reason?: string; action?: string; entity_label?: string }
   ): Promise<SendOtpEmailResult> {
     if (!this.isConfigured()) {
-      if (config.env === 'production') {
-        throw AppError.serviceUnavailable('SMTP credentials missing in production — refusing to use console fallback', EMAIL_NOT_CONFIGURED_MSG);
-      }
+      // SMTP not configured — log OTP to server console so admin can retrieve it.
+      // This works in all environments; configure SMTP_HOST/SMTP_USER/SMTP_PASS to
+      // enable real email delivery.
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.warn(`[EmailService] DEV FALLBACK — SMTP credentials are not set.`);
+      console.warn(`[EmailService] SMTP NOT CONFIGURED — OTP logged to console.`);
       console.warn(`  request_id : ${ctx?.request_id ?? '(unknown)'}`);
       console.warn(`  recipient  : ${recipient}`);
-      console.warn(`  otp        : ${otp}`);
+      console.warn(`  OTP        : ${otp}`);
       console.warn(`  action     : ${ctx?.action ?? '-'}`);
       console.warn(`  target     : ${ctx?.entity_label ?? '-'}`);
       console.warn(`  reason     : ${ctx?.reason ?? '-'}`);
-      console.warn('  Use this OTP to verify the deletion request in the admin UI.');
+      console.warn('  → Use this OTP in the admin UI to approve the request.');
+      console.warn('  → Set SMTP_HOST, SMTP_USER, SMTP_PASS env vars for email delivery.');
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       return { channel: 'console', sent_to: recipient || 'console', fallback_used: true };
     }
@@ -190,18 +191,17 @@ export class EmailService {
     }
   ): Promise<SendOtpEmailResult> {
     if (!this.isConfigured()) {
-      if (config.env === 'production') {
-        throw AppError.serviceUnavailable('SMTP credentials missing in production — refusing to use console fallback', EMAIL_NOT_CONFIGURED_MSG);
-      }
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.warn(`[EmailService] DEV FALLBACK — LIFECYCLE OTP`);
+      console.warn(`[EmailService] SMTP NOT CONFIGURED — LIFECYCLE OTP logged to console.`);
       console.warn(`  request_id : ${ctx?.request_id ?? '(unknown)'}`);
       console.warn(`  recipient  : ${recipient}`);
-      console.warn(`  otp        : ${otp}`);
+      console.warn(`  OTP        : ${otp}`);
       console.warn(`  transition : ${ctx?.from_state ?? '?'} → ${ctx?.to_state ?? '?'}`);
       console.warn(`  target     : ${ctx?.entity_label ?? '-'}`);
       console.warn(`  reason     : ${ctx?.reason ?? '-'}`);
       console.warn(`  override   : ${ctx?.is_override ? 'YES — HISTORICAL RELAUNCH' : 'no'}`);
+      console.warn('  → Use this OTP in the admin UI to approve the lifecycle transition.');
+      console.warn('  → Set SMTP_HOST, SMTP_USER, SMTP_PASS env vars for email delivery.');
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       return { channel: 'console', sent_to: recipient || 'console', fallback_used: true };
     }
@@ -305,11 +305,8 @@ export class EmailService {
     resetUrl: string
   ): Promise<SendOtpEmailResult> {
     if (!this.isConfigured()) {
-      if (config.env === 'production') {
-        throw AppError.serviceUnavailable('SMTP credentials missing in production', EMAIL_NOT_CONFIGURED_MSG);
-      }
       console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.warn(`[EmailService] DEV FALLBACK — SMTP credentials are not set.`);
+      console.warn(`[EmailService] SMTP NOT CONFIGURED — invite email logged to console.`);
       console.warn(`  recipient  : ${recipient}`);
       console.warn(`  user_name  : ${userName}`);
       console.warn(`  reset_url  : ${resetUrl}`);

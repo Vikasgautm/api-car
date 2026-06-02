@@ -59,7 +59,7 @@ const logger_1 = require("../../../utils/logger");
 class CarService {
     static async getAllCars(filterDto, includeDeleted = false) {
         try {
-            const { page = 1, limit = 10, q, brand_id, body_type_id, fuel_type_id, status, is_electric, is_published, is_featured, is_popular, is_recommended, is_latest, top_selling, min_price, max_price, is_deleted, tag_ids, tag_slugs, mileage_class, range_class, model_family, is_current, sortBy = 'name', sortOrder = 'asc', } = filterDto;
+            const { page = 1, limit = 25, q, brand_id, body_type_id, fuel_type_id, status, is_electric, is_published, is_featured, is_popular, is_recommended, is_latest, top_selling, min_price, max_price, is_deleted, tag_ids, tag_slugs, mileage_class, range_class, model_family, is_current, sortBy = 'name', sortOrder = 'asc', } = filterDto;
             const filter = {};
             if (is_deleted === 'true' || is_deleted === true) {
                 filter.is_deleted = true;
@@ -137,7 +137,14 @@ class CarService {
                 filter.body_type_id = bodyType ? body_type_id : null;
             }
             if (fuel_type_id !== undefined) {
-                filter.fuel_type_id = fuelTypeDoc ? fuel_type_id : null;
+                // Cars don't store fuel_type_id directly — fuel types are aggregated from
+                // variants into aggregated_fuel_types: [String] (e.g. ["Petrol","Diesel"]).
+                if (fuelTypeDoc) {
+                    filter.aggregated_fuel_types = { $in: [fuelTypeDoc.name] };
+                }
+                else {
+                    filter.aggregated_fuel_types = { $in: ['__no_match__'] };
+                }
             }
             if (is_electric !== undefined)
                 filter.is_electric = is_electric;
@@ -192,9 +199,24 @@ class CarService {
                 const stripped = yearMatch ? String(q).replace(yearMatch[0], '').trim() : String(q).trim();
                 const andClauses = [];
                 if (stripped) {
-                    const searchFilter = filter_util_1.FilterUtil.buildSearchFilter(['name', 'short_description', 'description'], stripped);
-                    if (searchFilter.$or)
-                        andClauses.push({ $or: searchFilter.$or });
+                    const searchRegex = new RegExp(stripped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+                    // Resolve brand IDs whose name matches the search term (e.g. "Honda")
+                    const brandMatches = await brand_model_1.Brand.find({ name: searchRegex, is_deleted: false })
+                        .select('brand_id')
+                        .lean();
+                    const matchedBrandIds = brandMatches.map((b) => b.brand_id);
+                    const orClauses = [
+                        { name: searchRegex },
+                        { short_description: searchRegex },
+                        { description: searchRegex },
+                        { body_type_name: searchRegex },
+                        { aggregated_fuel_types: searchRegex },
+                        { model_family: searchRegex },
+                    ];
+                    if (matchedBrandIds.length > 0) {
+                        orClauses.push({ brand_id: { $in: matchedBrandIds } });
+                    }
+                    andClauses.push({ $or: orClauses });
                 }
                 if (yearMatch) {
                     const year = Number(yearMatch[0]);

@@ -26,7 +26,7 @@ export class CarService {
     try {
       const {
         page = 1,
-        limit = 10,
+        limit = 25,
         q,
         brand_id,
         body_type_id,
@@ -124,7 +124,13 @@ export class CarService {
       filter.body_type_id = bodyType ? body_type_id : null;
     }
     if (fuel_type_id !== undefined) {
-      filter.fuel_type_id = fuelTypeDoc ? fuel_type_id : null;
+      // Cars don't store fuel_type_id directly — fuel types are aggregated from
+      // variants into aggregated_fuel_types: [String] (e.g. ["Petrol","Diesel"]).
+      if (fuelTypeDoc) {
+        filter.aggregated_fuel_types = { $in: [(fuelTypeDoc as any).name] };
+      } else {
+        filter.aggregated_fuel_types = { $in: ['__no_match__'] };
+      }
     }
     if (is_electric !== undefined) filter.is_electric = is_electric;
     if (model_family !== undefined && typeof model_family === 'string' && model_family.trim() !== '') {
@@ -187,11 +193,25 @@ export class CarService {
       const andClauses: Record<string, unknown>[] = [];
 
       if (stripped) {
-        const searchFilter = FilterUtil.buildSearchFilter(
-          ['name', 'short_description', 'description'],
-          stripped
-        );
-        if (searchFilter.$or) andClauses.push({ $or: searchFilter.$or });
+        const searchRegex = new RegExp(stripped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        // Resolve brand IDs whose name matches the search term (e.g. "Honda")
+        const brandMatches = await Brand.find({ name: searchRegex, is_deleted: false })
+          .select('brand_id')
+          .lean();
+        const matchedBrandIds = (brandMatches as any[]).map((b: any) => b.brand_id);
+
+        const orClauses: Record<string, unknown>[] = [
+          { name: searchRegex },
+          { short_description: searchRegex },
+          { description: searchRegex },
+          { body_type_name: searchRegex },
+          { aggregated_fuel_types: searchRegex },
+          { model_family: searchRegex },
+        ];
+        if (matchedBrandIds.length > 0) {
+          orClauses.push({ brand_id: { $in: matchedBrandIds } });
+        }
+        andClauses.push({ $or: orClauses });
       }
 
       if (yearMatch) {

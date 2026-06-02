@@ -26,6 +26,12 @@ const ENTITY_LABELS: Record<string, string> = {
   tag_category: 'Tag Category',
   benchmark_override: 'Benchmark Override',
   blog: 'Blog',
+  seo_collection: 'SEO Collection',
+  comparison: 'Comparison',
+  import: 'Import',
+  brand: 'Brand',
+  user: 'User',
+  setting: 'Setting',
 };
 
 function adminRedirectLink(entityType: string, entityId: string): string {
@@ -70,9 +76,10 @@ export class DashboardActivityService {
       else if (log.entity_type === 'variant') entityName = variantNames.get(log.entity_id) ?? null;
       else if (log.entity_type === 'blog') entityName = blogNames.get(log.entity_id) ?? null;
 
+      // Build a rich title: "Honda City — created" or "Car — created (ID: abc123)" as fallback
       const title = entityName
-        ? `${entityName} ${actionLabel}`
-        : `${entityLabel} ${actionLabel}`;
+        ? `${entityName} — ${actionLabel}`
+        : `${entityLabel} — ${actionLabel}`;
 
       return {
         activity_id: log.audit_id,

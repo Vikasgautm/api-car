@@ -18,6 +18,10 @@ export declare class BlogLinkingService {
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;
+    })[] | (import("../../../models/brand.model").IBrand & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
     })[] | (import("../../../models/seo-collection.model").ISeoCollection & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
@@ -27,10 +31,6 @@ export declare class BlogLinkingService {
     }> & {
         __v: number;
     })[] | (import("../../../models/body-type.model").IBodyType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    })[] | (import("../../../models/brand.model").IBrand & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {
         __v: number;

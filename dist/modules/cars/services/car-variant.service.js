@@ -322,7 +322,7 @@ class CarVariantService {
     // Counts (total/live/hidden/draft) reflect ALL non-deleted variants for the car,
     // independent of any applied filter — so the UI always shows the true picture.
     static async getGroupedVariants(filterDto) {
-        const { page = 1, limit = 25, q, brand_id, body_type_id, fuel_type_id, transmission_type, is_archived, is_deleted, min_price, max_price, sortOrder = 'asc', } = filterDto;
+        const { page = 1, limit = 25, q, car_id, brand_id, body_type_id, fuel_type_id, transmission_type, is_archived, is_deleted, min_price, max_price, sortOrder = 'asc', } = filterDto;
         // Build variant match conditions as an $and array to support multiple $or clauses
         const conditions = [];
         if (is_deleted === 'true' || is_deleted === true) {
@@ -394,8 +394,13 @@ class CarVariantService {
             }
         }
         const carFilter = { is_deleted: { $ne: true } };
-        if (restrictToCarIds)
-            carFilter.car_id = { $in: restrictToCarIds };
+        if (car_id)
+            carFilter.car_id = car_id;
+        if (restrictToCarIds) {
+            carFilter.car_id = car_id
+                ? { $in: restrictToCarIds.includes(car_id) ? [car_id] : [] }
+                : { $in: restrictToCarIds };
+        }
         if (brand_id)
             carFilter.brand_id = brand_id;
         if (body_type_id)
