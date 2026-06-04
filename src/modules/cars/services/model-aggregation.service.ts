@@ -1,5 +1,6 @@
 import { CarVariant } from '../../../models/car-variant.model';
 import { Car } from '../../../models/car.model';
+import { FuelType } from '../../../models/fuel-type.model';
 import { logger } from '../../../utils/logger';
 import { AppError } from '../../../shared/utils/app-error.util';
 
@@ -201,7 +202,17 @@ export class ModelAggregationService {
       aggregates.best_ncap_rating = Math.max(...ncapRatings);
     }
 
-    aggregates.available_fuel_types = Array.from(fuelTypes);
+    // Resolve fuel_type_id UUIDs to human-readable names
+    const fuelTypeIds = Array.from(fuelTypes);
+    if (fuelTypeIds.length > 0) {
+      const fuelDocs = await FuelType.find({ fuel_type_id: { $in: fuelTypeIds }, is_deleted: false })
+        .select('fuel_type_id name')
+        .lean();
+      const fuelNameMap = new Map(fuelDocs.map((f: any) => [f.fuel_type_id, f.name]));
+      aggregates.available_fuel_types = fuelTypeIds.map(id => fuelNameMap.get(id) || id);
+    } else {
+      aggregates.available_fuel_types = [];
+    }
     aggregates.available_transmissions = Array.from(transmissions);
     aggregates.available_drivetrains = Array.from(drivetrains);
 

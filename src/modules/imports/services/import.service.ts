@@ -555,6 +555,16 @@ export class ImportService {
           );
 
           const variantId = uuidv4();
+          // Promote root-level fields that KeyMatcher stores inside specs_normalized
+          const sn = (cleanItemData.specs_normalized as any) || {};
+          if (!cleanItemData.drivetrain && sn.drivetrain) {
+            cleanItemData.drivetrain = sn.drivetrain;
+          }
+          if (!cleanItemData.seating_capacity) {
+            const seatsFromSpecs = sn.dimensions_practicality?.seating_capacity;
+            if (seatsFromSpecs != null) cleanItemData.seating_capacity = seatsFromSpecs;
+          }
+
           let variantPayload: Partial<ICarVariant> = {
             variant_id: variantId,
             car_id: car_id,
@@ -564,6 +574,8 @@ export class ImportService {
             fuel_type_id: cleanItemData.fuel_type_id ? String(cleanItemData.fuel_type_id) : undefined,
             transmission_type: cleanItemData.transmission_type ? String(cleanItemData.transmission_type) as any : undefined,
             drivetrain: cleanItemData.drivetrain ? String(cleanItemData.drivetrain) : undefined,
+            body_type: cleanItemData.body_type ? String(cleanItemData.body_type) : undefined,
+            trim_name: cleanItemData.trim_name ? String(cleanItemData.trim_name) : undefined,
             seating_capacity: cleanItemData.seating_capacity ? Number(cleanItemData.seating_capacity) : undefined,
             ex_showroom_price: cleanItemData.ex_showroom_price !== undefined ? Number(cleanItemData.ex_showroom_price) : undefined,
             expected_price: cleanItemData.expected_price !== undefined ? Number(cleanItemData.expected_price) : undefined,
@@ -625,6 +637,15 @@ export class ImportService {
           const updateData: any = {};
 
           if (mode === 'update') {
+            // Promote root-level fields that KeyMatcher stores inside specs_normalized
+            const snUp = (cleanItemData.specs_normalized as any) || {};
+            if (!cleanItemData.drivetrain && snUp.drivetrain) {
+              cleanItemData.drivetrain = snUp.drivetrain;
+            }
+            if (!cleanItemData.seating_capacity) {
+              const seatsUp = snUp.dimensions_practicality?.seating_capacity;
+              if (seatsUp != null) cleanItemData.seating_capacity = seatsUp;
+            }
             // Map fields correctly: 'name' from frontend -> 'variant_name' in model
             if (cleanItemData.name !== undefined) updateData.variant_name = cleanItemData.name;
             if (cleanItemData.slug !== undefined) updateData.slug = cleanItemData.slug;
@@ -632,6 +653,8 @@ export class ImportService {
             if (cleanItemData.fuel_type_id !== undefined) updateData.fuel_type_id = cleanItemData.fuel_type_id;
             if (cleanItemData.transmission_type !== undefined) updateData.transmission_type = cleanItemData.transmission_type;
             if (cleanItemData.drivetrain !== undefined) updateData.drivetrain = cleanItemData.drivetrain;
+            if (cleanItemData.body_type !== undefined) updateData.body_type = cleanItemData.body_type;
+            if (cleanItemData.trim_name !== undefined) updateData.trim_name = cleanItemData.trim_name;
             if (cleanItemData.seating_capacity !== undefined) updateData.seating_capacity = cleanItemData.seating_capacity;
             if (cleanItemData.ex_showroom_price !== undefined) updateData.ex_showroom_price = cleanItemData.ex_showroom_price;
             if (cleanItemData.expected_price !== undefined) updateData.expected_price = cleanItemData.expected_price;

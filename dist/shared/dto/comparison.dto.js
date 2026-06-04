@@ -25,15 +25,16 @@ exports.CreateComparisonDTO = zod_1.z.object({
     is_published: zod_1.z.boolean().default(false),
 });
 exports.UpdateComparisonDTO = exports.CreateComparisonDTO.partial();
+const booleanFromQuery = zod_1.z.preprocess((val) => (val === 'false' ? false : val === 'true' ? true : val), zod_1.z.boolean());
 exports.ComparisonQueryDTO = zod_1.z.object({
     page: zod_1.z.coerce.number().int().positive().default(1),
     limit: zod_1.z.coerce.number().int().positive().max(100).default(10),
     search: zod_1.z.string().optional(),
     category: zod_1.z.string().optional(),
     status: zod_1.z.enum(['draft', 'published', 'archived']).optional(),
-    isPopular: zod_1.z.boolean().optional(),
-    isTrending: zod_1.z.boolean().optional(),
-    is_deleted: zod_1.z.coerce.boolean().default(false),
+    isPopular: booleanFromQuery.optional(),
+    isTrending: booleanFromQuery.optional(),
+    is_deleted: booleanFromQuery.default(false),
 });
 exports.CreateRivalDTO = zod_1.z.object({
     primary_car_id: zod_1.z.string().min(24, 'Invalid primary car ID'),

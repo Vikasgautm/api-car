@@ -130,7 +130,7 @@ export class KeyMatcher {
 
         matched.push({
           source_label: spec.label,
-          source_value: spec.value,
+          source_value: parsedValue,
           matched_key_id: canonicalMapping.key,
           matched_key_name: canonicalMapping.key,
           matched_key_slug: canonicalMapping.key,

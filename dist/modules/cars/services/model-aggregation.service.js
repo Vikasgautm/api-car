@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ModelAggregationService = void 0;
 const car_variant_model_1 = require("../../../models/car-variant.model");
 const car_model_1 = require("../../../models/car.model");
+const fuel_type_model_1 = require("../../../models/fuel-type.model");
 const logger_1 = require("../../../utils/logger");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 class ModelAggregationService {
@@ -152,7 +153,18 @@ class ModelAggregationService {
         if (ncapRatings.length > 0) {
             aggregates.best_ncap_rating = Math.max(...ncapRatings);
         }
-        aggregates.available_fuel_types = Array.from(fuelTypes);
+        // Resolve fuel_type_id UUIDs to human-readable names
+        const fuelTypeIds = Array.from(fuelTypes);
+        if (fuelTypeIds.length > 0) {
+            const fuelDocs = await fuel_type_model_1.FuelType.find({ fuel_type_id: { $in: fuelTypeIds }, is_deleted: false })
+                .select('fuel_type_id name')
+                .lean();
+            const fuelNameMap = new Map(fuelDocs.map((f) => [f.fuel_type_id, f.name]));
+            aggregates.available_fuel_types = fuelTypeIds.map(id => fuelNameMap.get(id) || id);
+        }
+        else {
+            aggregates.available_fuel_types = [];
+        }
         aggregates.available_transmissions = Array.from(transmissions);
         aggregates.available_drivetrains = Array.from(drivetrains);
         // Set feature flags

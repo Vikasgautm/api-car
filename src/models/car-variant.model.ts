@@ -32,8 +32,8 @@ export interface EnginePerformance {
   alternate_fuel_type?: string;
   cng_power_torque?: string;
   electric_assist?: string;
-  drive_modes?: string;
-  terrain_modes?: string;
+  drive_modes?: string[];
+  terrain_modes?: string[];
   acceleration_0_100?: string;
   top_speed?: string;
   idle_start_stop?: boolean;
@@ -64,6 +64,7 @@ export interface BatteryCharging {
   electric_range?: string;
   motor_type?: string;
   motor_power_kw?: string;
+  motor_power_bhp?: string;
   motor_torque_nm?: string;
   number_of_motors?: number;
   drivetrain_ev?: string;
@@ -83,6 +84,7 @@ export interface BatteryCharging {
   real_world_range?: number;
   battery_wltp_km?: number;
   ev_mode?: string;
+  ev_mode_available?: boolean;
 }
 
 export interface DimensionsPracticality {
@@ -550,8 +552,8 @@ const variantSchema = new Schema<ICarVariant>(
         alternate_fuel_type: String,
         cng_power_torque: String,
         electric_assist: String,
-        drive_modes: String,
-        terrain_modes: String,
+        drive_modes: [String],
+        terrain_modes: [String],
         acceleration_0_100: String,
         top_speed: String,
         idle_start_stop: Boolean,
@@ -580,6 +582,7 @@ const variantSchema = new Schema<ICarVariant>(
         electric_range: String,
         motor_type: String,
         motor_power_kw: String,
+        motor_power_bhp: String,
         motor_torque_nm: String,
         number_of_motors: { type: Number, min: 0 },
         drivetrain_ev: String,
@@ -599,6 +602,7 @@ const variantSchema = new Schema<ICarVariant>(
         real_world_range: { type: Number, min: 0 },
         battery_wltp_km: { type: Number, min: 0 },
         ev_mode: String,
+        ev_mode_available: Boolean,
       },
       dimensions_practicality: {
         length: String,

@@ -264,7 +264,7 @@ export class CarVariantService {
         max_price,
         min_model_year,
         max_model_year,
-        sortBy = 'variant_name',
+        sortBy = 'ex_showroom_price',
         sortOrder = 'asc',
       } = filterDto;
 
@@ -500,7 +500,7 @@ export class CarVariantService {
     const pageCarIds = (cars as any[]).map((c) => c.car_id);
     const allVariants = await CarVariant.find({ car_id: { $in: pageCarIds }, is_deleted: { $ne: true } })
       .select('variant_id car_id variant_name slug model_year fuel_type_id transmission_type drivetrain seating_capacity ex_showroom_price expected_price is_published is_archived is_deleted is_upcoming is_featured variant_status publish_status market_status variant_rank trim_name edition_name created_at updated_at')
-      .sort({ variant_rank: 1, variant_name: 1 })
+      .sort({ ex_showroom_price: 1, expected_price: 1, variant_rank: 1, variant_name: 1 })
       .lean();
 
     // Transform variants individually so a single corrupted variant (e.g. missing

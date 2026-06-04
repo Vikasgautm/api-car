@@ -27,8 +27,8 @@ export interface EnginePerformance {
     alternate_fuel_type?: string;
     cng_power_torque?: string;
     electric_assist?: string;
-    drive_modes?: string;
-    terrain_modes?: string;
+    drive_modes?: string[];
+    terrain_modes?: string[];
     acceleration_0_100?: string;
     top_speed?: string;
     idle_start_stop?: boolean;
@@ -57,6 +57,7 @@ export interface BatteryCharging {
     electric_range?: string;
     motor_type?: string;
     motor_power_kw?: string;
+    motor_power_bhp?: string;
     motor_torque_nm?: string;
     number_of_motors?: number;
     drivetrain_ev?: string;
@@ -76,6 +77,7 @@ export interface BatteryCharging {
     real_world_range?: number;
     battery_wltp_km?: number;
     ev_mode?: string;
+    ev_mode_available?: boolean;
 }
 export interface DimensionsPracticality {
     length?: string;

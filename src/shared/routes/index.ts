@@ -32,6 +32,7 @@ import governanceRoutes from '../../modules/governance/routes/governance.routes'
 import popularCollectionsRoutes from '../../modules/popular-collections/routes/popular-collections.routes';
 import lifecycleGovernanceRoutes from '../../modules/lifecycle-governance/routes/lifecycle-governance.routes';
 import variantIngestionRoutes from '../../modules/variant-ingestion/routes/import-staging.routes';
+import masterDataRoutes from '../../modules/master-data/routes/master-data.routes';
 
 const router = Router();
 
@@ -73,5 +74,6 @@ router.use('/governance', governanceRoutes);
 router.use('/popular-collections', popularCollectionsRoutes);
 router.use('/admin/imports', variantIngestionRoutes);
 router.use('/lifecycle-governance', lifecycleGovernanceRoutes);
+router.use('/master-data/admin', masterDataRoutes);
 
 export default router;
