@@ -45,6 +45,10 @@ export declare class CityService {
     } & {
         id: string;
     }>;
+    static bulkSeedCities(): Promise<{
+        inserted: number;
+        skipped: number;
+    }>;
     static restoreCity(cityId: string): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {

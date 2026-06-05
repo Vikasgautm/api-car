@@ -4,6 +4,7 @@ import {
   EV_BENCHMARKS,
   FuelCategory,
   ICE_BENCHMARKS,
+  ICE_FUEL_BENCHMARKS,
   resolveBenchmarkKey,
 } from '../../../constants/mileage-benchmarks';
 import { BodyType } from '../../../models/body-type.model';
@@ -16,21 +17,23 @@ import { MileageClassifierService } from '../../../shared/services/mileage-class
 import { MileageRecomputeService } from '../../../shared/services/mileage-recompute.service';
 import { AppError } from '../../../shared/utils/app-error.util';
 
+export interface BenchmarkCell {
+  thresholds: BenchmarkThresholds | null;
+  source: 'override' | 'default' | 'none';
+  override_id?: string;
+}
+
 export interface BenchmarkMatrixRow {
   body_type_id: string;
   body_type_name: string;
   body_type_slug: string;
   benchmark_key: string | null;
-  ice: {
-    thresholds: BenchmarkThresholds | null;
-    source: 'override' | 'default' | 'none';
-    override_id?: string;
-  };
-  ev: {
-    thresholds: BenchmarkThresholds | null;
-    source: 'override' | 'default' | 'none';
-    override_id?: string;
-  };
+  ice: BenchmarkCell;
+  ev: BenchmarkCell;
+  petrol: BenchmarkCell;
+  diesel: BenchmarkCell;
+  cng: BenchmarkCell;
+  hybrid: BenchmarkCell;
 }
 
 export class IntelligenceService {
@@ -49,29 +52,32 @@ export class IntelligenceService {
       overrideByKey.set(`${ov.body_type_id}:${ov.fuel_category}`, ov as IMileageBenchmarkOverride);
     }
 
+    const resolveCell = (
+      bodyTypeId: string,
+      fuelCategory: FuelCategory,
+      defaultThresholds: BenchmarkThresholds | null | undefined,
+    ): BenchmarkCell => {
+      const override = overrideByKey.get(`${bodyTypeId}:${fuelCategory}`);
+      if (override) return { thresholds: override.thresholds, source: 'override', override_id: override.override_id };
+      if (defaultThresholds) return { thresholds: defaultThresholds, source: 'default' };
+      return { thresholds: null, source: 'none' };
+    };
+
     return bodyTypes.map(bt => {
       const benchmarkKey = resolveBenchmarkKey(bt.slug || bt.name);
-      const iceOverride = overrideByKey.get(`${bt.body_type_id}:ice`);
-      const evOverride = overrideByKey.get(`${bt.body_type_id}:ev`);
-
-      const iceDefault = benchmarkKey ? ICE_BENCHMARKS[benchmarkKey] ?? null : null;
-      const evDefault = benchmarkKey ? EV_BENCHMARKS[benchmarkKey] ?? null : null;
+      const iceFuel = benchmarkKey ? ICE_FUEL_BENCHMARKS[benchmarkKey] : null;
 
       return {
         body_type_id: bt.body_type_id,
         body_type_name: bt.name,
         body_type_slug: bt.slug,
         benchmark_key: benchmarkKey,
-        ice: iceOverride
-          ? { thresholds: iceOverride.thresholds, source: 'override', override_id: iceOverride.override_id }
-          : iceDefault
-            ? { thresholds: iceDefault, source: 'default' }
-            : { thresholds: null, source: 'none' },
-        ev: evOverride
-          ? { thresholds: evOverride.thresholds, source: 'override', override_id: evOverride.override_id }
-          : evDefault
-            ? { thresholds: evDefault, source: 'default' }
-            : { thresholds: null, source: 'none' },
+        ice:    resolveCell(bt.body_type_id, 'ice',    benchmarkKey ? ICE_BENCHMARKS[benchmarkKey] ?? null : null),
+        ev:     resolveCell(bt.body_type_id, 'ev',     benchmarkKey ? EV_BENCHMARKS[benchmarkKey]  ?? null : null),
+        petrol: resolveCell(bt.body_type_id, 'petrol', iceFuel?.petrol ?? null),
+        diesel: resolveCell(bt.body_type_id, 'diesel', iceFuel?.diesel ?? null),
+        cng:    resolveCell(bt.body_type_id, 'cng',    iceFuel?.cng    ?? null),
+        hybrid: resolveCell(bt.body_type_id, 'hybrid', iceFuel?.hybrid ?? null),
       };
     });
   }

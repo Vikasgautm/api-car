@@ -20,6 +20,7 @@ adminRouter.post('/', CityController.createCity);
 adminRouter.put('/:id', validateUuidIdParam, CityController.updateCity);
 adminRouter.delete('/:id', validateUuidIdParam, CityController.deleteCity);
 adminRouter.patch('/restore/:id', validateUuidIdParam, CityController.restoreCity);
+adminRouter.post('/bulk-seed', CityController.bulkSeedCities);
 
 router.use('/admin', adminRouter);
 

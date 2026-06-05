@@ -72,6 +72,10 @@ class CityController {
         const city = await city_service_1.CityService.restoreCity(req.params.id);
         return response_util_1.ResponseUtil.success(res, city, "City restored successfully");
     });
+    static bulkSeedCities = (0, catchAsync_1.catchAsync)(async (_req, res) => {
+        const result = await city_service_1.CityService.bulkSeedCities();
+        return response_util_1.ResponseUtil.success(res, result, `Seeded ${result.inserted} cities (${result.skipped} already existed)`);
+    });
 }
 exports.CityController = CityController;
 //# sourceMappingURL=city.controller.js.map

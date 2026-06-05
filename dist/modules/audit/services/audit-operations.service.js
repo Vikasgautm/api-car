@@ -10,6 +10,7 @@ const comparison_model_1 = require("../../../models/comparison.model");
 const faq_model_1 = require("../../../models/faq.model");
 const import_log_model_1 = require("../../../models/import-log.model");
 const seo_collection_model_1 = require("../../../models/seo-collection.model");
+const tag_model_1 = require("../../../models/tag.model");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const content_health_service_1 = require("../../content-health/services/content-health.service");
 const audit_service_1 = require("./audit.service");
@@ -72,6 +73,12 @@ class AuditOperationsService {
             const ids = Array.from(byType.blog);
             tasks.push(blog_model_1.Blog.find({ blog_id: { $in: ids } }).select('blog_id title').lean().then((rows) => {
                 rows.forEach((r) => add('blog', r.blog_id, r.title));
+            }));
+        }
+        if (byType.tag) {
+            const ids = Array.from(byType.tag);
+            tasks.push(tag_model_1.Tag.find({ tag_id: { $in: ids } }).select('tag_id name').lean().then((rows) => {
+                rows.forEach((r) => add('tag', r.tag_id, r.name));
             }));
         }
         await Promise.all(tasks);

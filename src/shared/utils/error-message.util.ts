@@ -145,7 +145,7 @@ function combineFieldMessage(field: string, message?: string): string {
   if (lower === 'invalid' || lower === 'invalid input') {
     return `${label} is invalid`;
   }
-  if (lower === 'invalid url') {
+  if (lower === 'invalid url' || lower === 'invalid_url') {
     return `${label} must be a valid URL (e.g. https://www.cardekho.com/...)`;
   }
   if (lower === 'invalid email') {

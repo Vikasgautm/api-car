@@ -13,7 +13,7 @@
  */
 
 export type MileageClass = 'weak' | 'average' | 'good' | 'excellent';
-export type FuelCategory = 'ice' | 'ev';
+export type FuelCategory = 'ice' | 'ev' | 'petrol' | 'diesel' | 'cng' | 'hybrid';
 
 /** Specific ICE sub-type used for granular benchmark lookup. */
 export type IceFuelType = 'petrol' | 'diesel' | 'cng' | 'hybrid';

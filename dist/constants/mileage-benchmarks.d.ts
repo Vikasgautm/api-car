@@ -12,7 +12,7 @@
  * via the MileageBenchmarkOverride collection.
  */
 export type MileageClass = 'weak' | 'average' | 'good' | 'excellent';
-export type FuelCategory = 'ice' | 'ev';
+export type FuelCategory = 'ice' | 'ev' | 'petrol' | 'diesel' | 'cng' | 'hybrid';
 /** Specific ICE sub-type used for granular benchmark lookup. */
 export type IceFuelType = 'petrol' | 'diesel' | 'cng' | 'hybrid';
 export type MileageSource = 'arai' | 'real' | 'city' | 'highway' | 'cng' | 'electric_range' | 'real_range' | 'real_world_range' | 'battery_wltp_km';

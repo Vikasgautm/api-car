@@ -83,4 +83,9 @@ export class CityController {
     return ResponseUtil.success(res, city, "City restored successfully");
   });
 
+  static bulkSeedCities = catchAsync(async (_req: Request, res: Response) => {
+    const result = await CityService.bulkSeedCities();
+    return ResponseUtil.success(res, result, `Seeded ${result.inserted} cities (${result.skipped} already existed)`);
+  });
+
 }

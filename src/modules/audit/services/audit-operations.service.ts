@@ -7,6 +7,7 @@ import { Comparison } from '../../../models/comparison.model';
 import { FAQ } from '../../../models/faq.model';
 import { ImportLog } from '../../../models/import-log.model';
 import { SeoCollection } from '../../../models/seo-collection.model';
+import { Tag } from '../../../models/tag.model';
 import { PaginationUtil } from '../../../shared/utils/pagination.util';
 import { ContentHealthService } from '../../content-health/services/content-health.service';
 import { AuditService } from './audit.service';
@@ -130,6 +131,14 @@ export class AuditOperationsService {
       tasks.push(
         Blog.find({ blog_id: { $in: ids } }).select('blog_id title').lean().then((rows) => {
           rows.forEach((r) => add('blog', r.blog_id, r.title));
+        }),
+      );
+    }
+    if (byType.tag) {
+      const ids = Array.from(byType.tag);
+      tasks.push(
+        Tag.find({ tag_id: { $in: ids } }).select('tag_id name').lean().then((rows) => {
+          rows.forEach((r) => add('tag', r.tag_id, r.name));
         }),
       );
     }

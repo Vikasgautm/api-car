@@ -5,7 +5,7 @@ const mongoose_1 = require("mongoose");
 const overrideSchema = new mongoose_1.Schema({
     override_id: { type: String, required: true, unique: true },
     body_type_id: { type: String, required: true },
-    fuel_category: { type: String, enum: ['ice', 'ev'], required: true },
+    fuel_category: { type: String, enum: ['ice', 'ev', 'petrol', 'diesel', 'cng', 'hybrid'], required: true },
     thresholds: {
         weak_max: { type: Number, required: true, min: 0 },
         average_max: { type: Number, required: true, min: 0 },

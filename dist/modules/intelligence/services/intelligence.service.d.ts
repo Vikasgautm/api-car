@@ -1,20 +1,21 @@
 import { BenchmarkThresholds, FuelCategory } from '../../../constants/mileage-benchmarks';
 import { IMileageBenchmarkOverride } from '../../../models/mileage-benchmark-override.model';
+export interface BenchmarkCell {
+    thresholds: BenchmarkThresholds | null;
+    source: 'override' | 'default' | 'none';
+    override_id?: string;
+}
 export interface BenchmarkMatrixRow {
     body_type_id: string;
     body_type_name: string;
     body_type_slug: string;
     benchmark_key: string | null;
-    ice: {
-        thresholds: BenchmarkThresholds | null;
-        source: 'override' | 'default' | 'none';
-        override_id?: string;
-    };
-    ev: {
-        thresholds: BenchmarkThresholds | null;
-        source: 'override' | 'default' | 'none';
-        override_id?: string;
-    };
+    ice: BenchmarkCell;
+    ev: BenchmarkCell;
+    petrol: BenchmarkCell;
+    diesel: BenchmarkCell;
+    cng: BenchmarkCell;
+    hybrid: BenchmarkCell;
 }
 export declare class IntelligenceService {
     /**
