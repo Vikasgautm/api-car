@@ -84,26 +84,6 @@ class SpecNormalizationService {
         }
         return raw.trim();
     }
-    static normalizeTransmission(raw) {
-        if (!raw)
-            return undefined;
-        const s = raw.toLowerCase().trim();
-        if (s.includes('manual') && !s.includes('auto'))
-            return 'Manual';
-        if (s.includes('automatic') || s.includes('auto'))
-            return 'Automatic';
-        if (s.includes('amt'))
-            return 'AMT';
-        if (s.includes('cvt'))
-            return 'CVT';
-        if (s.includes('dct'))
-            return 'DCT';
-        if (s.includes('dsg'))
-            return 'DSG';
-        if (s.includes('imt'))
-            return 'IMT';
-        return raw.trim();
-    }
     static normalizePrice(raw) {
         if (raw === undefined || raw === null)
             return undefined;
@@ -135,7 +115,6 @@ class SpecNormalizationService {
             displacement: this.normalizeDisplacement.bind(this),
             engine_displacement: this.normalizeDisplacement.bind(this),
             fuel_type: this.normalizeFuelType.bind(this),
-            transmission: this.normalizeTransmission.bind(this),
             price: this.normalizePrice.bind(this),
             ex_showroom_price: this.normalizePrice.bind(this),
         };

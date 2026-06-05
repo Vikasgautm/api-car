@@ -85,4 +85,44 @@ export class MasterDataController {
       return ResponseUtil.success(res, result);
     } catch (err) { next(err); }
   }
+
+  // ── Unknown Value Queue ───────────────────────────────────────────────────────
+
+  // GET /master-data/admin/unknown-values?resolved=false
+  static async getUnknownValues(req: Request, res: Response, next: NextFunction) {
+    try {
+      const resolved = req.query.resolved === 'true' ? true : req.query.resolved === 'false' ? false : undefined;
+      const records = await MasterDataService.getUnknownValues(resolved);
+      return ResponseUtil.success(res, records);
+    } catch (err) { next(err); }
+  }
+
+  // PATCH /master-data/admin/unknown-values/:unknownId/resolve
+  static async resolveUnknownValue(req: Request, res: Response, next: NextFunction) {
+    try {
+      const unknownId = req.params['unknownId'] as string;
+      const { target_option_value } = req.body;
+      if (!target_option_value) return res.status(400).json({ success: false, message: 'target_option_value is required' });
+      const record = await MasterDataService.resolveUnknownValue(unknownId, target_option_value);
+      return ResponseUtil.success(res, record);
+    } catch (err) { next(err); }
+  }
+
+  // PATCH /master-data/admin/unknown-values/:unknownId/dismiss
+  static async dismissUnknownValue(req: Request, res: Response, next: NextFunction) {
+    try {
+      const unknownId = req.params['unknownId'] as string;
+      await MasterDataService.dismissUnknownValue(unknownId);
+      return ResponseUtil.success(res, { dismissed: true });
+    } catch (err) { next(err); }
+  }
+
+  // POST /master-data/admin/unknown-values/:unknownId/promote
+  static async promoteUnknownToMaster(req: Request, res: Response, next: NextFunction) {
+    try {
+      const unknownId = req.params['unknownId'] as string;
+      const option = await MasterDataService.promoteUnknownToMaster(unknownId);
+      return ResponseUtil.created(res, option);
+    } catch (err) { next(err); }
+  }
 }

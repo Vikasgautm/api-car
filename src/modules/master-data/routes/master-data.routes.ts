@@ -18,4 +18,10 @@ router.patch('/options/:categoryKey/:optionId/toggle', MasterDataController.togg
 router.patch('/options/:categoryKey/reorder', MasterDataController.reorderOptions);
 router.post('/seed', MasterDataController.seedDefaults);
 
+// Unknown value review queue
+router.get('/unknown-values', MasterDataController.getUnknownValues);
+router.patch('/unknown-values/:unknownId/resolve', MasterDataController.resolveUnknownValue);
+router.patch('/unknown-values/:unknownId/dismiss', MasterDataController.dismissUnknownValue);
+router.post('/unknown-values/:unknownId/promote', MasterDataController.promoteUnknownToMaster);
+
 export default router;

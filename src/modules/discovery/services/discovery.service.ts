@@ -8,6 +8,7 @@ import { TagCategory } from '../../../models/tag-category.model';
 import { MileageClass } from '../../../constants/mileage-benchmarks';
 import { PaginationUtil } from '../../../shared/utils/pagination.util';
 import { PlatformSettingsService } from '../../settings/services/platform-settings.service';
+import { MasterDataService } from '../../master-data/services/master-data.service';
 
 // Module-level facet cache. Key = stable JSON of resolved filters + variant IDs.
 // Evicted when cache grows past 300 entries or when TTL expires per entry.
@@ -240,8 +241,14 @@ export class DiscoveryService {
     const showHidden = statuses.includes('archived') || statuses.includes('disabled');
 
     const transmissionsRaw = csvToArray(filters.transmission).map(s => s.toLowerCase());
-    const allowedTransmissions = new Set(['manual', 'automatic', 'cvt', 'dct', 'amt']);
-    const transmissions = transmissionsRaw.filter(t => allowedTransmissions.has(t));
+    // Build allowed set from master data (cached 5 min). Falls back to accepting all if master data unavailable.
+    const masterOptions = await MasterDataService.getAllActiveOptions().catch(() => ({} as Record<string, any[]>));
+    const allowedTransmissions = new Set<string>(
+      (masterOptions['transmission'] ?? []).map((o: any) => o.value as string)
+    );
+    const transmissions = allowedTransmissions.size > 0
+      ? transmissionsRaw.filter(t => allowedTransmissions.has(t))
+      : transmissionsRaw;
 
     const mileageClassRaw = csvToArray(filters.mileage_class);
     const allowedClasses = new Set<string>(['weak', 'average', 'good', 'excellent']);

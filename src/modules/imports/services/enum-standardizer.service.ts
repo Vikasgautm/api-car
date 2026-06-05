@@ -1,6 +1,29 @@
 import { BodyType } from '../../../models/body-type.model';
 import { FuelType } from '../../../models/fuel-type.model';
 import { CarVariant } from '../../../models/car-variant.model';
+import { MasterDataService } from '../../master-data/services/master-data.service';
+
+// Master-data-backed single-value fields
+const MASTER_SINGLE_FIELDS: Record<string, string> = {
+  transmission_type: 'transmission',
+  drivetrain: 'drive_type',
+  gearbox: 'gearbox',
+  sunroof_type: 'sunroof_type',
+  parking_sensor: 'parking_sensor',
+  headlamp_type: 'headlamp_type',
+  seat_upholstery: 'seat_upholstery',
+  instrument_cluster: 'instrument_cluster',
+  battery_type: 'battery_type',
+  battery_cooling: 'battery_cooling',
+  charging_port: 'charging_port',
+};
+
+// Master-data-backed multi-value fields
+const MASTER_MULTI_FIELDS: Record<string, string> = {
+  drive_modes: 'drive_modes',
+  terrain_modes: 'terrain_modes',
+  charging_options: 'charging_options',
+};
 
 export interface EnumStandardizationResult {
   field: string;
@@ -132,95 +155,58 @@ export class EnumStandardizerService {
   }
 
   /**
-   * Standardize a transmission type to valid TransmissionType enum.
+   * Resolve a single-value field against the master data DB.
+   * Logs unknown values for admin review. Falls back to 'other'.
    */
-  static standardizeTransmissionType(
-    value: string
-  ): EnumStandardizationResult {
-    const validTypes = [
-      'manual',
-      'automatic',
-      'amt',
-      'cvt',
-      'dct',
-      'dsg',
-      'imt',
-      'torque_converter',
-      'single_speed_ev',
-      'e_cvt',
-    ];
-
-    if (!value) {
-      return {
-        field: 'transmission_type',
-        original_value: value,
-        standardized_value: null,
-        matched_id: null,
-        confidence: 0,
-      };
+  static async standardizeMasterField(
+    field: string,
+    categoryKey: string,
+    rawValue: string,
+    context?: string,
+  ): Promise<EnumStandardizationResult> {
+    if (!rawValue) {
+      return { field, original_value: rawValue, standardized_value: null, matched_id: null, confidence: 0 };
     }
 
-    const normalized = value.toLowerCase().trim();
-
-    // Exact match
-    if (validTypes.includes(normalized)) {
-      return {
-        field: 'transmission_type',
-        original_value: value,
-        standardized_value: normalized,
-        matched_id: null,
-        confidence: 1,
-      };
+    const resolved = await MasterDataService.resolveDropdownImport(categoryKey, rawValue);
+    if (!resolved || resolved === 'other') {
+      await MasterDataService.logUnknownValue(categoryKey, rawValue, context);
+      return { field, original_value: rawValue, standardized_value: 'other', matched_id: null, confidence: 0.1 };
     }
 
-    // Fuzzy matches
-    const fuzzyMap: Record<string, string> = {
-      dsg: 'dsg',
-      'dual clutch': 'dct',
-      'dual-clutch': 'dct',
-      imt: 'imt',
-      'intelligent manual': 'imt',
-      'e-cvt': 'e_cvt',
-      ecvt: 'e_cvt',
-      'torque converter': 'torque_converter',
-      'single speed': 'single_speed_ev',
-      'single-speed': 'single_speed_ev',
-      'reduction gear': 'single_speed_ev',
-      amt: 'amt',
-      'automated manual': 'amt',
-      cvt: 'cvt',
-      'continuously variable': 'cvt',
-      manual: 'manual',
-      automatic: 'automatic',
-      auto: 'automatic',
-    };
+    return { field, original_value: rawValue, standardized_value: resolved, matched_id: null, confidence: 0.95 };
+  }
 
-    for (const [pattern, type] of Object.entries(fuzzyMap)) {
-      if (normalized.includes(pattern)) {
-        return {
-          field: 'transmission_type',
-          original_value: value,
-          standardized_value: type,
-          matched_id: null,
-          confidence: 0.9,
-        };
+  /**
+   * Resolve a multi-value field against the master data DB.
+   * Each unmatched value is logged. Unknown values map to 'other'.
+   */
+  static async standardizeMasterMultiField(
+    field: string,
+    categoryKey: string,
+    rawValue: any,
+    context?: string,
+  ): Promise<string[]> {
+    const raw = MasterDataService.normalizeMultiSelectImport(rawValue);
+    const results: string[] = [];
+    for (const item of raw) {
+      const resolved = await MasterDataService.resolveDropdownImport(categoryKey, item);
+      if (!resolved || resolved === 'other') {
+        await MasterDataService.logUnknownValue(categoryKey, item, context);
+        if (!results.includes('other')) results.push('other');
+      } else {
+        if (!results.includes(resolved)) results.push(resolved);
       }
     }
-
-    return {
-      field: 'transmission_type',
-      original_value: value,
-      standardized_value: null,
-      matched_id: null,
-      confidence: 0,
-    };
+    return results;
   }
 
   /**
    * Standardize all enum fields in a variant payload.
    */
   static async standardizeVariantEnums(
-    variantData: Record<string, any>
+    variantData: Record<string, any>,
+    context?: string,
   ): Promise<Record<string, EnumStandardizationResult>> {
     const results: Record<string, EnumStandardizationResult> = {};
 
@@ -232,8 +218,30 @@ export class EnumStandardizerService {
       results.fuel_type = await this.standardizeFuelType(variantData.fuel_type);
     }
 
-    if (variantData.transmission_type) {
-      results.transmission_type = this.standardizeTransmissionType(variantData.transmission_type);
+    // All master-data-backed single-value fields
+    for (const [field, categoryKey] of Object.entries(MASTER_SINGLE_FIELDS)) {
+      if (variantData[field]) {
+        results[field] = await this.standardizeMasterField(field, categoryKey, variantData[field], context);
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Normalize all master-data multi-select fields in a variant payload.
+   * Returns resolved string arrays keyed by field name.
+   */
+  static async standardizeVariantMultiFields(
+    variantData: Record<string, any>,
+    context?: string,
+  ): Promise<Record<string, string[]>> {
+    const results: Record<string, string[]> = {};
+
+    for (const [field, categoryKey] of Object.entries(MASTER_MULTI_FIELDS)) {
+      if (variantData[field]) {
+        results[field] = await this.standardizeMasterMultiField(field, categoryKey, variantData[field], context);
+      }
     }
 
     return results;

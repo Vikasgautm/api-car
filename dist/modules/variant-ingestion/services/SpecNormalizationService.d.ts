@@ -4,7 +4,6 @@ export declare class SpecNormalizationService {
     static normalizeTorque(raw: string | undefined): string | undefined;
     static normalizeDisplacement(raw: string | undefined): string | undefined;
     static normalizeFuelType(raw: string | undefined): string | undefined;
-    static normalizeTransmission(raw: string | undefined): string | undefined;
     static normalizePrice(raw: string | number | undefined): number | undefined;
     static normalizeSpecs(rawSpecs: Record<string, any>): Record<string, any>;
 }

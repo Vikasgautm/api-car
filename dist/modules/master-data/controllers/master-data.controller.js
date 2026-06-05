@@ -105,6 +105,54 @@ class MasterDataController {
             next(err);
         }
     }
+    // ── Unknown Value Queue ───────────────────────────────────────────────────────
+    // GET /master-data/admin/unknown-values?resolved=false
+    static async getUnknownValues(req, res, next) {
+        try {
+            const resolved = req.query.resolved === 'true' ? true : req.query.resolved === 'false' ? false : undefined;
+            const records = await master_data_service_1.MasterDataService.getUnknownValues(resolved);
+            return response_util_1.ResponseUtil.success(res, records);
+        }
+        catch (err) {
+            next(err);
+        }
+    }
+    // PATCH /master-data/admin/unknown-values/:unknownId/resolve
+    static async resolveUnknownValue(req, res, next) {
+        try {
+            const unknownId = req.params['unknownId'];
+            const { target_option_value } = req.body;
+            if (!target_option_value)
+                return res.status(400).json({ success: false, message: 'target_option_value is required' });
+            const record = await master_data_service_1.MasterDataService.resolveUnknownValue(unknownId, target_option_value);
+            return response_util_1.ResponseUtil.success(res, record);
+        }
+        catch (err) {
+            next(err);
+        }
+    }
+    // PATCH /master-data/admin/unknown-values/:unknownId/dismiss
+    static async dismissUnknownValue(req, res, next) {
+        try {
+            const unknownId = req.params['unknownId'];
+            await master_data_service_1.MasterDataService.dismissUnknownValue(unknownId);
+            return response_util_1.ResponseUtil.success(res, { dismissed: true });
+        }
+        catch (err) {
+            next(err);
+        }
+    }
+    // POST /master-data/admin/unknown-values/:unknownId/promote
+    static async promoteUnknownToMaster(req, res, next) {
+        try {
+            const unknownId = req.params['unknownId'];
+            const option = await master_data_service_1.MasterDataService.promoteUnknownToMaster(unknownId);
+            return response_util_1.ResponseUtil.created(res, option);
+        }
+        catch (err) {
+            next(err);
+        }
+    }
 }
 exports.MasterDataController = MasterDataController;
 //# sourceMappingURL=master-data.controller.js.map

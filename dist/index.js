@@ -15,6 +15,7 @@ const compute_mileage_classes_seed_1 = require("./seeds/compute-mileage-classes.
 const fuel_type_seed_1 = require("./seeds/fuel-type.seed");
 const intent_tags_seed_1 = require("./seeds/intent-tags.seed");
 const popular_collections_seed_1 = require("./seeds/popular-collections.seed");
+const master_data_seed_1 = require("./seeds/master-data.seed");
 const route_audit_util_1 = require("./shared/utils/route-audit.util");
 const startServer = async () => {
     if (!process.env.CEREBRAS_API_KEY) {
@@ -33,6 +34,7 @@ const startServer = async () => {
             (0, fuel_type_seed_1.seedFuelTypes)(),
             (0, intent_tags_seed_1.seedIntentTags)(),
             (0, popular_collections_seed_1.seedPopularCollections)(),
+            (0, master_data_seed_1.seedMasterData)(),
         ]);
         // Start cron jobs
         updateUpcomingCars_job_1.UpdateUpcomingCarsJob.start();

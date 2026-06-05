@@ -7,6 +7,7 @@ import { VariantCompletenessCalculator } from '../utils/VariantCompletenessCalcu
 import { VariantGroupingService } from './VariantGroupingService';
 import { Car } from '../../../models/car.model';
 import { AppError } from '../../../shared/utils/app-error.util';
+import { EnumStandardizerService } from '../../imports/services/enum-standardizer.service';
 
 interface StagingInput {
   source_car_name: string;
@@ -41,7 +42,18 @@ export class VariantIngestionService {
       const normalizedSpecs = SpecNormalizationService.normalizeSpecs(v.raw_specs || {});
       const price = SpecNormalizationService.normalizePrice(v.price);
       const fuelType = SpecNormalizationService.normalizeFuelType(v.fuel_type);
-      const transmission = SpecNormalizationService.normalizeTransmission(v.transmission);
+
+      // Resolve transmission against master data (cached after first variant).
+      // Falls back to raw value if master data is unavailable.
+      const transmissionResult = v.transmission
+        ? await EnumStandardizerService.standardizeMasterField(
+            'transmission_type',
+            'transmission',
+            v.transmission,
+            String(session._id),
+          )
+        : null;
+      const transmission = transmissionResult?.standardized_value ?? v.transmission ?? undefined;
 
       const validationResults = VariantImportValidator.validate({
         variant_name: v.variant_name,
@@ -90,11 +102,15 @@ export class VariantIngestionService {
   }
 
   static async previewStaging(variants: StagingInput[]) {
-    return variants.map(v => {
+    const previews = [];
+    for (const v of variants) {
       const normalizedSpecs = SpecNormalizationService.normalizeSpecs(v.raw_specs || {});
       const price = SpecNormalizationService.normalizePrice(v.price);
       const fuelType = SpecNormalizationService.normalizeFuelType(v.fuel_type);
-      const transmission = SpecNormalizationService.normalizeTransmission(v.transmission);
+      const transmissionResult = v.transmission
+        ? await EnumStandardizerService.standardizeMasterField('transmission_type', 'transmission', v.transmission)
+        : null;
+      const transmission = transmissionResult?.standardized_value ?? v.transmission ?? undefined;
 
       const validationResults = VariantImportValidator.validate({
         variant_name: v.variant_name,
@@ -113,7 +129,7 @@ export class VariantIngestionService {
         transmission,
       });
 
-      return {
+      previews.push({
         source_car_name: v.source_car_name,
         variant_name: v.variant_name,
         price,
@@ -123,8 +139,9 @@ export class VariantIngestionService {
         validation_results: validationResults,
         completeness_score: completeness.score,
         has_errors: VariantImportValidator.hasErrors(validationResults),
-      };
-    });
+      });
+    }
+    return previews;
   }
 
   static async getStagingList(filters: Record<string, any> = {}, page = 1, limit = 50) {

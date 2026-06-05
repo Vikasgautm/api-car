@@ -16,5 +16,10 @@ router.delete('/options/:categoryKey/:optionId', master_data_controller_1.Master
 router.patch('/options/:categoryKey/:optionId/toggle', master_data_controller_1.MasterDataController.toggleActive);
 router.patch('/options/:categoryKey/reorder', master_data_controller_1.MasterDataController.reorderOptions);
 router.post('/seed', master_data_controller_1.MasterDataController.seedDefaults);
+// Unknown value review queue
+router.get('/unknown-values', master_data_controller_1.MasterDataController.getUnknownValues);
+router.patch('/unknown-values/:unknownId/resolve', master_data_controller_1.MasterDataController.resolveUnknownValue);
+router.patch('/unknown-values/:unknownId/dismiss', master_data_controller_1.MasterDataController.dismissUnknownValue);
+router.post('/unknown-values/:unknownId/promote', master_data_controller_1.MasterDataController.promoteUnknownToMaster);
 exports.default = router;
 //# sourceMappingURL=master-data.routes.js.map

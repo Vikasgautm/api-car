@@ -1,4 +1,5 @@
 import { IMasterOption, MasterCategory } from '../models/master-option.model';
+import { IUnknownValue } from '../models/unknown-value.model';
 export declare class MasterDataService {
     static getCategories(): Promise<MasterCategory[]>;
     static getOptions(categoryKey: string, includeInactive?: boolean): Promise<IMasterOption[]>;
@@ -24,20 +25,15 @@ export declare class MasterDataService {
         created: number;
         skipped: number;
     }>;
-    /**
-     * Normalise a raw imported toggle/boolean value to true/false/null.
-     * Handles: Yes, No, Available, Not Available, Standard, Included, Optional, NA, etc.
-     */
     static normalizeBooleanImport(raw: any): boolean | null;
-    /**
-     * Normalise a raw imported multi-select value to string[].
-     * Handles comma-separated strings and arrays.
-     */
     static normalizeMultiSelectImport(raw: any): string[];
-    /**
-     * Find the closest matching option value for a category, or return 'other'.
-     */
     static resolveDropdownImport(categoryKey: string, raw: any): Promise<string>;
+    static logUnknownValue(categoryKey: string, rawValue: string, context?: string): Promise<void>;
+    static getUnknownValues(resolvedFilter?: boolean): Promise<IUnknownValue[]>;
+    static resolveUnknownValue(unknownId: string, targetOptionValue: string): Promise<IUnknownValue>;
+    static dismissUnknownValue(unknownId: string): Promise<void>;
+    static promoteUnknownToMaster(unknownId: string): Promise<IMasterOption>;
+    static getPublicLabelMap(): Promise<Record<string, Record<string, string>>>;
     private static assertValidCategory;
 }
 //# sourceMappingURL=master-data.service.d.ts.map

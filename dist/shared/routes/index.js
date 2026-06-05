@@ -71,6 +71,7 @@ const popular_collections_routes_1 = __importDefault(require("../../modules/popu
 const lifecycle_governance_routes_1 = __importDefault(require("../../modules/lifecycle-governance/routes/lifecycle-governance.routes"));
 const import_staging_routes_1 = __importDefault(require("../../modules/variant-ingestion/routes/import-staging.routes"));
 const master_data_routes_1 = __importDefault(require("../../modules/master-data/routes/master-data.routes"));
+const master_data_public_routes_1 = __importDefault(require("../../modules/master-data/routes/master-data-public.routes"));
 const router = (0, express_1.Router)();
 router.use('/dashboard', dashboard_routes_1.default);
 router.use('/auth', auth_routes_1.default);
@@ -110,5 +111,6 @@ router.use('/popular-collections', popular_collections_routes_1.default);
 router.use('/admin/imports', import_staging_routes_1.default);
 router.use('/lifecycle-governance', lifecycle_governance_routes_1.default);
 router.use('/master-data/admin', master_data_routes_1.default);
+router.use('/master-data/public', master_data_public_routes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map

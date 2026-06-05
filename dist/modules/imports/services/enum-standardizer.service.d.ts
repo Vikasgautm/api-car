@@ -15,13 +15,24 @@ export declare class EnumStandardizerService {
      */
     static standardizeFuelType(value: string): Promise<EnumStandardizationResult>;
     /**
-     * Standardize a transmission type to valid TransmissionType enum.
+     * Resolve a single-value field against the master data DB.
+     * Logs unknown values for admin review. Falls back to 'other'.
      */
-    static standardizeTransmissionType(value: string): EnumStandardizationResult;
+    static standardizeMasterField(field: string, categoryKey: string, rawValue: string, context?: string): Promise<EnumStandardizationResult>;
+    /**
+     * Resolve a multi-value field against the master data DB.
+     * Each unmatched value is logged. Unknown values map to 'other'.
+     */
+    static standardizeMasterMultiField(field: string, categoryKey: string, rawValue: any, context?: string): Promise<string[]>;
     /**
      * Standardize all enum fields in a variant payload.
      */
-    static standardizeVariantEnums(variantData: Record<string, any>): Promise<Record<string, EnumStandardizationResult>>;
+    static standardizeVariantEnums(variantData: Record<string, any>, context?: string): Promise<Record<string, EnumStandardizationResult>>;
+    /**
+     * Normalize all master-data multi-select fields in a variant payload.
+     * Returns resolved string arrays keyed by field name.
+     */
+    static standardizeVariantMultiFields(variantData: Record<string, any>, context?: string): Promise<Record<string, string[]>>;
     /**
      * Get standardization report for recent imports.
      */

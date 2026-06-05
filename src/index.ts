@@ -10,6 +10,7 @@ import { computeMileageClassesIfNeeded } from "./seeds/compute-mileage-classes.s
 import { seedFuelTypes } from "./seeds/fuel-type.seed";
 import { seedIntentTags } from "./seeds/intent-tags.seed";
 import { seedPopularCollections } from "./seeds/popular-collections.seed";
+import { seedMasterData } from "./seeds/master-data.seed";
 import { auditRoutes, logRouteAudit } from "./shared/utils/route-audit.util";
 
 const startServer = async () => {
@@ -31,6 +32,7 @@ const startServer = async () => {
       seedFuelTypes(),
       seedIntentTags(),
       seedPopularCollections(),
+      seedMasterData(),
     ]);
 
     // Start cron jobs
