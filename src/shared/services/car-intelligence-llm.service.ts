@@ -1,4 +1,3 @@
-import Cerebras from '@cerebras/cerebras_cloud_sdk';
 import { Car } from '../../models/car.model';
 import {
   AI_FLAG_KEYS,
@@ -9,23 +8,10 @@ import {
 } from './car-aggregation.service';
 import { PlatformSettingsService } from '../../modules/settings/services/platform-settings.service';
 import { AppError } from '../utils/app-error.util';
+import { getCerebrasClient, INTELLIGENCE_MODEL } from './cerebras-client';
 
-const CEREBRAS_MODEL = 'gpt-oss-120b';
-
-// One persistent client.
-let cachedClient: Cerebras | null = null;
-const getClient = (): Cerebras => {
-  if (!cachedClient) {
-    if (!process.env.CEREBRAS_API_KEY) {
-      throw AppError.serviceUnavailable(
-        'CEREBRAS_API_KEY is not set. LLM refinement is disabled — set the env var in .env to enable it.',
-        'AI refinement is currently unavailable. Please contact the administrator.',
-      );
-    }
-    cachedClient = new Cerebras({ apiKey: process.env.CEREBRAS_API_KEY });
-  }
-  return cachedClient;
-};
+const CEREBRAS_MODEL = INTELLIGENCE_MODEL;
+const getClient = getCerebrasClient;
 
 // Rubric for each AI intelligence flag. Goes in the cached system prompt so we
 // pay the cache-write premium once and read from cache on every subsequent car.

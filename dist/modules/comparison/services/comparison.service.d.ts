@@ -15,11 +15,7 @@ export declare class ComparisonService {
         isTrending?: boolean;
         is_deleted?: boolean;
     }): Promise<{
-        comparisons: (IComparison & Required<{
-            _id: mongoose.Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        comparisons: any[];
         total: number;
         page: number;
         limit: number;

@@ -3,7 +3,9 @@ import { z } from 'zod';
 // Accept either Mongo ObjectId (24) or UUID (36) — the service resolves both.
 const carIdSchema = z.string().min(24, 'Invalid car ID').max(40, 'Invalid car ID');
 
-export const CreateComparisonDTO = z.object({
+// Base schema shared between create and update (partial).
+// Refine for car1 ≠ car2 is applied only on create since update is partial.
+const ComparisonBaseSchema = z.object({
   car1_id: carIdSchema,
   car2_id: carIdSchema,
   variant1_id: z.string().optional(),
@@ -24,7 +26,12 @@ export const CreateComparisonDTO = z.object({
   is_published: z.boolean().default(false),
 });
 
-export const UpdateComparisonDTO = CreateComparisonDTO.partial();
+export const CreateComparisonDTO = ComparisonBaseSchema.refine(
+  (d) => d.car1_id !== d.car2_id,
+  { message: 'Car 1 and Car 2 cannot be the same', path: ['car2_id'] },
+);
+
+export const UpdateComparisonDTO = ComparisonBaseSchema.partial();
 
 const booleanFromQuery = z.preprocess(
   (val) => (val === 'false' ? false : val === 'true' ? true : val),

@@ -1,5 +1,5 @@
 import { Document, Types } from 'mongoose';
-export type ImportStatus = 'imported' | 'grouped' | 'linked' | 'validation_failed' | 'reviewed' | 'ready_to_push' | 'pushed' | 'rejected' | 'draft';
+export type ImportStatus = 'imported' | 'grouped' | 'linked' | 'validation_failed' | 'push_failed' | 'reviewed' | 'ready_to_push' | 'pushed' | 'rejected' | 'draft';
 export interface ValidationIssue {
     field: string;
     message: string;
@@ -28,6 +28,7 @@ export interface IVariantImportStaging extends Document {
     linked_by?: string;
     pushed_by?: string;
     pushed_variant_id?: string;
+    push_error?: string;
     rejection_reason?: string;
     created_at: Date;
     updated_at: Date;

@@ -34,11 +34,27 @@ function safeStartTransaction(session: mongoose.ClientSession) {
   }
 }
 
+// Batch-resolve car names from a set of car_ids in one query.
+async function resolveCarNames(carIds: string[]): Promise<Map<string, { name: string; generation_start_year?: number | null }>> {
+  const unique = Array.from(new Set(carIds.filter(Boolean)));
+  if (!unique.length) return new Map();
+  const cars = await Car.find({ car_id: { $in: unique } }).select('car_id name generation_start_year').lean();
+  return new Map(cars.map((c: any) => [c.car_id, { name: c.name, generation_start_year: c.generation_start_year }]));
+}
+
 export class ComparisonService {
   static async createComparison(
     data: CreateComparisonDTOType,
     userId: string,
   ): Promise<IComparison> {
+    // Cheap guard first — before any DB round-trips.
+    if (data.car1_id === data.car2_id) {
+      throw new AppError('Cannot compare the same car', 400, {
+        errorCode: 'INVALID_INPUT',
+        userMessage: 'Car 1 and Car 2 cannot be the same. Please select two different cars.',
+      });
+    }
+
     const session = await mongoose.startSession();
     safeStartTransaction(session);
 
@@ -50,26 +66,54 @@ export class ComparisonService {
 
       if (!car1) throw new AppError(`Car 1 not found (id: ${data.car1_id})`, 404, { errorCode: 'CAR_NOT_FOUND' });
       if (!car2) throw new AppError(`Car 2 not found (id: ${data.car2_id})`, 404, { errorCode: 'CAR_NOT_FOUND' });
-      if (data.car1_id === data.car2_id) throw new AppError('Cannot compare the same car', 400, { errorCode: 'INVALID_INPUT' });
 
-      // Generate unique slug
-      let slug = data.slug;
-      const existingSlug = await Comparison.findOne({ slug });
-      if (existingSlug) {
-        throw new AppError('Comparison with this slug already exists', 409, { errorCode: 'SLUG_ALREADY_EXISTS' });
+      // Prevent duplicate comparison for the same car pair regardless of order.
+      const duplicatePair = await Comparison.findOne({
+        is_deleted: false,
+        $or: [
+          { car1_id: data.car1_id, car2_id: data.car2_id },
+          { car1_id: data.car2_id, car2_id: data.car1_id },
+        ],
+      }).select('slug').lean();
+      if (duplicatePair) {
+        throw new AppError(
+          `Comparison between these cars already exists (slug: ${(duplicatePair as any).slug})`,
+          409,
+          {
+            errorCode: 'DUPLICATE_COMPARISON',
+            userMessage: 'A comparison between these two cars already exists.',
+            details: { existing_slug: (duplicatePair as any).slug },
+          },
+        );
       }
 
-      // Validate variants if provided
+      // Auto-increment slug on collision instead of hard-failing.
+      let slug = data.slug;
+      const existingSlug = await Comparison.findOne({ slug, is_deleted: false }).select('_id').lean();
+      if (existingSlug) {
+        slug = await generateSlugWithIncrement(slug, Comparison, 'slug');
+      }
+
+      // Validate variants belong to their respective cars.
       if (data.variant1_id) {
-        const variant1 = await CarVariant.findOne({ variant_id: data.variant1_id });
-        if (!variant1) throw new AppError('Variant 1 not found', 404);
+        const variant1 = await CarVariant.findOne({ variant_id: data.variant1_id, car_id: data.car1_id });
+        if (!variant1) {
+          throw new AppError('Variant 1 not found or does not belong to Car 1', 404, {
+            errorCode: 'VARIANT_NOT_FOUND',
+            userMessage: 'Selected Variant 1 does not belong to the selected Car 1.',
+          });
+        }
       }
       if (data.variant2_id) {
-        const variant2 = await CarVariant.findOne({ variant_id: data.variant2_id });
-        if (!variant2) throw new AppError('Variant 2 not found', 404);
+        const variant2 = await CarVariant.findOne({ variant_id: data.variant2_id, car_id: data.car2_id });
+        if (!variant2) {
+          throw new AppError('Variant 2 not found or does not belong to Car 2', 404, {
+            errorCode: 'VARIANT_NOT_FOUND',
+            userMessage: 'Selected Variant 2 does not belong to the selected Car 2.',
+          });
+        }
       }
 
-      // Create comparison
       const comparison = new Comparison({
         car1_id: data.car1_id,
         car2_id: data.car2_id,
@@ -94,7 +138,6 @@ export class ComparisonService {
 
       await comparison.save(session.inTransaction() ? { session } : {});
 
-      // Log audit
       await AuditLog.create([{
         audit_id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         entity_type: 'comparison' as any,
@@ -135,6 +178,29 @@ export class ComparisonService {
         const existingSlug = await Comparison.findOne({ slug: data.slug }).session(session.inTransaction() ? session : null as any);
         if (existingSlug) {
           data.slug = await generateSlugWithIncrement(data.slug, Comparison, 'slug');
+        }
+      }
+
+      // Re-validate variants if either was changed, ensuring they belong to the correct car.
+      const resolvedCar1Id = data.car1_id || comparison.car1_id;
+      const resolvedCar2Id = data.car2_id || comparison.car2_id;
+
+      if (data.variant1_id) {
+        const variant1 = await CarVariant.findOne({ variant_id: data.variant1_id, car_id: resolvedCar1Id });
+        if (!variant1) {
+          throw new AppError('Variant 1 not found or does not belong to Car 1', 404, {
+            errorCode: 'VARIANT_NOT_FOUND',
+            userMessage: 'Selected Variant 1 does not belong to the selected Car 1.',
+          });
+        }
+      }
+      if (data.variant2_id) {
+        const variant2 = await CarVariant.findOne({ variant_id: data.variant2_id, car_id: resolvedCar2Id });
+        if (!variant2) {
+          throw new AppError('Variant 2 not found or does not belong to Car 2', 404, {
+            errorCode: 'VARIANT_NOT_FOUND',
+            userMessage: 'Selected Variant 2 does not belong to the selected Car 2.',
+          });
         }
       }
 
@@ -289,17 +355,23 @@ export class ComparisonService {
 
     const total = await Comparison.countDocuments(query);
     const comparisons = await Comparison.find(query)
-      
-      
-      
-      
       .sort({ created_at: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
 
+    // Batch-resolve car names in a single query — no N+1.
+    const carIds = comparisons.flatMap((c: any) => [c.car1_id, c.car2_id]);
+    const carMap = await resolveCarNames(carIds);
+
+    const enriched = comparisons.map((c: any) => ({
+      ...c,
+      car1_name: carMap.get(c.car1_id)?.name || c.car1_id,
+      car2_name: carMap.get(c.car2_id)?.name || c.car2_id,
+    }));
+
     return {
-      comparisons,
+      comparisons: enriched,
       total,
       page,
       limit,
@@ -312,7 +384,6 @@ export class ComparisonService {
 
     if (!comparison) throw new AppError('Comparison not found', 404);
 
-    // Fetch compared cars in parallel
     const [car1, car2] = await Promise.all([
       Car.findOne({ car_id: comparison.car1_id, is_deleted: false }).lean(),
       Car.findOne({ car_id: comparison.car2_id, is_deleted: false }).lean(),
@@ -337,7 +408,6 @@ export class ComparisonService {
 
     if (!comparison) throw new AppError('Comparison not found', 404);
 
-    // Fetch compared cars in parallel
     const [car1, car2] = await Promise.all([
       Car.findOne({ car_id: comparison.car1_id, is_deleted: false }).lean(),
       Car.findOne({ car_id: comparison.car2_id, is_deleted: false }).lean(),
@@ -468,8 +538,6 @@ export class ComparisonService {
     if (category) query.category = category;
 
     return Comparison.find(query)
-      
-      
       .sort({ created_at: -1 })
       .limit(limit)
       .lean();
@@ -477,8 +545,6 @@ export class ComparisonService {
 
   static async getTrendingComparisons(limit: number = 10) {
     return Comparison.find({ is_published: true, is_deleted: false, isTrending: true })
-      
-      
       .sort({ updated_at: -1 })
       .limit(limit)
       .lean();
@@ -500,8 +566,6 @@ export class ComparisonService {
       is_published: true,
       is_deleted: false,
     })
-      
-      
       .sort({ created_at: -1 })
       .skip((page - 1) * limit)
       .limit(limit)

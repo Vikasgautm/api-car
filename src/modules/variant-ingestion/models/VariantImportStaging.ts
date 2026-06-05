@@ -5,6 +5,7 @@ export type ImportStatus =
   | 'grouped'
   | 'linked'
   | 'validation_failed'
+  | 'push_failed'
   | 'reviewed'
   | 'ready_to_push'
   | 'pushed'
@@ -40,6 +41,7 @@ export interface IVariantImportStaging extends Document {
   linked_by?: string;
   pushed_by?: string;
   pushed_variant_id?: string;
+  push_error?: string;
   rejection_reason?: string;
   created_at: Date;
   updated_at: Date;
@@ -73,7 +75,7 @@ const VariantImportStagingSchema = new Schema<IVariantImportStaging>(
     validation_results: { type: [ValidationIssueSchema], default: [] },
     import_status: {
       type: String,
-      enum: ['imported', 'grouped', 'linked', 'validation_failed', 'reviewed', 'ready_to_push', 'pushed', 'rejected', 'draft'],
+      enum: ['imported', 'grouped', 'linked', 'validation_failed', 'push_failed', 'reviewed', 'ready_to_push', 'pushed', 'rejected', 'draft'],
       default: 'imported',
     },
     import_session_id: { type: Schema.Types.ObjectId, ref: 'ImportSession' },
@@ -82,6 +84,7 @@ const VariantImportStagingSchema = new Schema<IVariantImportStaging>(
     linked_by: { type: String },
     pushed_by: { type: String },
     pushed_variant_id: { type: String },
+    push_error: { type: String },
     rejection_reason: { type: String },
   },
   {

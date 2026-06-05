@@ -6,6 +6,7 @@ import { SpecNormalizationService } from './SpecNormalizationService';
 import { VariantCompletenessCalculator } from '../utils/VariantCompletenessCalculator';
 import { VariantGroupingService } from './VariantGroupingService';
 import { Car } from '../../../models/car.model';
+import { FuelType } from '../../../models/fuel-type.model';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { EnumStandardizerService } from '../../imports/services/enum-standardizer.service';
 
@@ -38,6 +39,10 @@ export class VariantIngestionService {
 
     const staged: IVariantImportStaging[] = [];
 
+    // Fetch fuel type names once for validation so new master data entries are recognised
+    const fuelTypeDocs = await FuelType.find({ is_deleted: false }).select('name').lean();
+    const validFuelTypeNames = fuelTypeDocs.map((f: any) => f.name as string);
+
     for (const v of input.variants) {
       const normalizedSpecs = SpecNormalizationService.normalizeSpecs(v.raw_specs || {});
       const price = SpecNormalizationService.normalizePrice(v.price);
@@ -63,7 +68,7 @@ export class VariantIngestionService {
         transmission,
         raw_specs: v.raw_specs || {},
         normalized_specs: normalizedSpecs,
-      });
+      }, validFuelTypeNames);
 
       const completeness = VariantCompletenessCalculator.calculate({
         normalized_specs: normalizedSpecs,
@@ -103,6 +108,10 @@ export class VariantIngestionService {
 
   static async previewStaging(variants: StagingInput[]) {
     const previews = [];
+
+    const fuelTypeDocs = await FuelType.find({ is_deleted: false }).select('name').lean();
+    const validFuelTypeNames = fuelTypeDocs.map((f: any) => f.name as string);
+
     for (const v of variants) {
       const normalizedSpecs = SpecNormalizationService.normalizeSpecs(v.raw_specs || {});
       const price = SpecNormalizationService.normalizePrice(v.price);
@@ -120,7 +129,7 @@ export class VariantIngestionService {
         transmission,
         raw_specs: v.raw_specs || {},
         normalized_specs: normalizedSpecs,
-      });
+      }, validFuelTypeNames);
 
       const completeness = VariantCompletenessCalculator.calculate({
         normalized_specs: normalizedSpecs,
@@ -219,6 +228,9 @@ export class VariantIngestionService {
     const docs = await VariantImportStaging.find({ _id: { $in: stagingIds.map(id => new Types.ObjectId(id)) } });
     const results = [];
 
+    const fuelTypeDocs = await FuelType.find({ is_deleted: false }).select('name').lean();
+    const validFuelTypeNames = fuelTypeDocs.map((f: any) => f.name as string);
+
     for (const doc of docs) {
       const issues = VariantImportValidator.validate({
         variant_name: doc.variant_name,
@@ -228,7 +240,7 @@ export class VariantIngestionService {
         transmission: doc.transmission,
         raw_specs: doc.raw_specs,
         normalized_specs: doc.normalized_specs,
-      });
+      }, validFuelTypeNames);
       const hasErrors = VariantImportValidator.hasErrors(issues);
       const completeness = VariantCompletenessCalculator.calculate({
         normalized_specs: doc.normalized_specs,

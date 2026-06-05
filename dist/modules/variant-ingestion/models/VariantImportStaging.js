@@ -25,7 +25,7 @@ const VariantImportStagingSchema = new mongoose_1.Schema({
     validation_results: { type: [ValidationIssueSchema], default: [] },
     import_status: {
         type: String,
-        enum: ['imported', 'grouped', 'linked', 'validation_failed', 'reviewed', 'ready_to_push', 'pushed', 'rejected', 'draft'],
+        enum: ['imported', 'grouped', 'linked', 'validation_failed', 'push_failed', 'reviewed', 'ready_to_push', 'pushed', 'rejected', 'draft'],
         default: 'imported',
     },
     import_session_id: { type: mongoose_1.Schema.Types.ObjectId, ref: 'ImportSession' },
@@ -34,6 +34,7 @@ const VariantImportStagingSchema = new mongoose_1.Schema({
     linked_by: { type: String },
     pushed_by: { type: String },
     pushed_variant_id: { type: String },
+    push_error: { type: String },
     rejection_reason: { type: String },
 }, {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

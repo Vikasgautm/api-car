@@ -9,7 +9,7 @@ interface VariantInput {
     normalized_specs?: Record<string, any>;
 }
 export declare class VariantImportValidator {
-    static validate(input: VariantInput): ValidationIssue[];
+    static validate(input: VariantInput, validFuelTypeNames?: string[]): ValidationIssue[];
     private static validateSpecs;
     static hasErrors(issues: ValidationIssue[]): boolean;
 }

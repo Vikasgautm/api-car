@@ -14,7 +14,7 @@ interface VariantInput {
 }
 
 export class VariantImportValidator {
-  static validate(input: VariantInput): ValidationIssue[] {
+  static validate(input: VariantInput, validFuelTypeNames?: string[]): ValidationIssue[] {
     const issues: ValidationIssue[] = [];
 
     // Required fields
@@ -41,12 +41,15 @@ export class VariantImportValidator {
       issues.push({ field: 'price', message: 'Price is missing', severity: 'warning' });
     }
 
-    // Fuel type validation
+    // Fuel type validation — use live master data names when provided, fall back to hardcoded list
     if (!input.fuel_type) {
       issues.push({ field: 'fuel_type', message: 'Fuel type is missing', severity: 'warning' });
     } else {
       const normalized = input.fuel_type.toLowerCase().trim();
-      if (!VALID_FUEL_TYPES.some(f => normalized.includes(f))) {
+      const fuelTypes = validFuelTypeNames?.length
+        ? validFuelTypeNames.map(f => f.toLowerCase())
+        : VALID_FUEL_TYPES;
+      if (!fuelTypes.some(f => normalized.includes(f))) {
         issues.push({ field: 'fuel_type', message: `Fuel type "${input.fuel_type}" is not recognised`, severity: 'error' });
       }
     }

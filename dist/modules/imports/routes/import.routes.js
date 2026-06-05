@@ -6,6 +6,7 @@ const roles_guard_1 = require("../../../modules/auth/guards/roles.guard");
 const import_controller_1 = require("../controllers/import.controller");
 const analytics_controller_1 = require("../controllers/analytics.controller");
 const import_normalizer_controller_1 = require("../controllers/import-normalizer.controller");
+const unified_import_controller_1 = require("../controllers/unified-import.controller");
 const import_validation_1 = require("../validation/import.validation");
 const validate_middleware_1 = require("../../../middlewares/validate.middleware");
 const feature_flag_middleware_1 = require("../../../middlewares/feature-flag.middleware");
@@ -14,7 +15,15 @@ const router = (0, express_1.Router)();
 router.use(jwt_auth_guard_1.jwtAuthGuard);
 router.use(roles_guard_1.adminGuard);
 router.use((0, feature_flag_middleware_1.requireFeatureEnabled)('enable_imports'));
-// Car import routes (source auto-detected from URL domain)
+// ── Unified import routes (new combined car + variant flow) ──────────────────
+router.post('/unified/preview', (0, validate_middleware_1.validateBody)(import_validation_1.unifiedPreviewSchema), unified_import_controller_1.UnifiedImportController.unifiedPreview);
+router.post('/unified/save', (0, validate_middleware_1.validateBody)(import_validation_1.unifiedSaveSchema), unified_import_controller_1.UnifiedImportController.unifiedSave);
+// Available target fields (used by admin UI dropdowns)
+router.get('/available-fields', unified_import_controller_1.UnifiedImportController.getAvailableFields);
+// Key mapping management
+router.get('/key-mappings', unified_import_controller_1.UnifiedImportController.getKeyMappings);
+router.delete('/key-mappings/:mapping_id', unified_import_controller_1.UnifiedImportController.deleteKeyMapping);
+// ── Original car import routes (source auto-detected from URL domain) ────────
 router.post('/car/preview', (0, validate_middleware_1.validateBody)(import_validation_1.carPreviewSchema), import_controller_1.ImportController.previewCarImport);
 router.post('/car/save', (0, validate_middleware_1.validateBody)(import_validation_1.carSaveSchema), import_controller_1.ImportController.saveCarImport);
 // Variant import routes (source auto-detected from URL domain)

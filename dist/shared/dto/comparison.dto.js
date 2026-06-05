@@ -4,7 +4,9 @@ exports.GetRivalsDTO = exports.CreateRivalDTO = exports.ComparisonQueryDTO = exp
 const zod_1 = require("zod");
 // Accept either Mongo ObjectId (24) or UUID (36) — the service resolves both.
 const carIdSchema = zod_1.z.string().min(24, 'Invalid car ID').max(40, 'Invalid car ID');
-exports.CreateComparisonDTO = zod_1.z.object({
+// Base schema shared between create and update (partial).
+// Refine for car1 ≠ car2 is applied only on create since update is partial.
+const ComparisonBaseSchema = zod_1.z.object({
     car1_id: carIdSchema,
     car2_id: carIdSchema,
     variant1_id: zod_1.z.string().optional(),
@@ -24,7 +26,8 @@ exports.CreateComparisonDTO = zod_1.z.object({
     status: zod_1.z.enum(['draft', 'published', 'archived']).default('draft'),
     is_published: zod_1.z.boolean().default(false),
 });
-exports.UpdateComparisonDTO = exports.CreateComparisonDTO.partial();
+exports.CreateComparisonDTO = ComparisonBaseSchema.refine((d) => d.car1_id !== d.car2_id, { message: 'Car 1 and Car 2 cannot be the same', path: ['car2_id'] });
+exports.UpdateComparisonDTO = ComparisonBaseSchema.partial();
 const booleanFromQuery = zod_1.z.preprocess((val) => (val === 'false' ? false : val === 'true' ? true : val), zod_1.z.boolean());
 exports.ComparisonQueryDTO = zod_1.z.object({
     page: zod_1.z.coerce.number().int().positive().default(1),

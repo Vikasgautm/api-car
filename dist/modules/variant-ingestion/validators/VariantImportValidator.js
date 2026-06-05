@@ -4,7 +4,7 @@ exports.VariantImportValidator = void 0;
 const VALID_FUEL_TYPES = ['petrol', 'diesel', 'electric', 'ev', 'hybrid', 'cng', 'lpg', 'cng + petrol'];
 const VALID_TRANSMISSIONS = ['manual', 'automatic', 'amt', 'cvt', 'dct', 'dsg', 'imt', 'torque_converter', 'single_speed_ev', 'e_cvt'];
 class VariantImportValidator {
-    static validate(input) {
+    static validate(input, validFuelTypeNames) {
         const issues = [];
         // Required fields
         if (!input.variant_name || !input.variant_name.trim()) {
@@ -31,13 +31,16 @@ class VariantImportValidator {
         else {
             issues.push({ field: 'price', message: 'Price is missing', severity: 'warning' });
         }
-        // Fuel type validation
+        // Fuel type validation — use live master data names when provided, fall back to hardcoded list
         if (!input.fuel_type) {
             issues.push({ field: 'fuel_type', message: 'Fuel type is missing', severity: 'warning' });
         }
         else {
             const normalized = input.fuel_type.toLowerCase().trim();
-            if (!VALID_FUEL_TYPES.some(f => normalized.includes(f))) {
+            const fuelTypes = validFuelTypeNames?.length
+                ? validFuelTypeNames.map(f => f.toLowerCase())
+                : VALID_FUEL_TYPES;
+            if (!fuelTypes.some(f => normalized.includes(f))) {
                 issues.push({ field: 'fuel_type', message: `Fuel type "${input.fuel_type}" is not recognised`, severity: 'error' });
             }
         }

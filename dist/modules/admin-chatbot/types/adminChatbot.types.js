@@ -1,0 +1,69 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ROLE_TOOL_PERMISSIONS = void 0;
+exports.isIntentAllowedForRole = isIntentAllowedForRole;
+exports.ROLE_TOOL_PERMISSIONS = {
+    viewer: [
+        'dashboard_summary',
+        'car_count',
+        'brand_summary',
+        'fuel_type_summary',
+        'body_type_summary',
+    ],
+    editor: [
+        'dashboard_summary',
+        'car_search',
+        'car_count',
+        'car_data_quality',
+        'variant_search',
+        'variant_data_quality',
+        'brand_summary',
+        'fuel_type_summary',
+        'body_type_summary',
+        'import_history',
+        'unmatched_keys',
+        'blog_summary',
+        'faq_summary',
+    ],
+    admin: [
+        'dashboard_summary',
+        'car_search',
+        'car_count',
+        'car_data_quality',
+        'variant_search',
+        'variant_data_quality',
+        'brand_summary',
+        'fuel_type_summary',
+        'body_type_summary',
+        'import_history',
+        'unmatched_keys',
+        'blog_summary',
+        'faq_summary',
+        'user_summary',
+        'system_health',
+        'error_logs',
+    ],
+    super_admin: [
+        'dashboard_summary',
+        'car_search',
+        'car_count',
+        'car_data_quality',
+        'variant_search',
+        'variant_data_quality',
+        'brand_summary',
+        'fuel_type_summary',
+        'body_type_summary',
+        'import_history',
+        'unmatched_keys',
+        'blog_summary',
+        'faq_summary',
+        'user_summary',
+        'system_health',
+        'error_logs',
+    ],
+};
+function isIntentAllowedForRole(intent, role) {
+    const allowed = exports.ROLE_TOOL_PERMISSIONS[role] ?? exports.ROLE_TOOL_PERMISSIONS.viewer;
+    return allowed.includes(intent);
+}
+//# sourceMappingURL=adminChatbot.types.js.map

@@ -4,7 +4,8 @@ import { adminGuard } from '../../../modules/auth/guards/roles.guard';
 import { ImportController } from '../controllers/import.controller';
 import { AnalyticsController } from '../controllers/analytics.controller';
 import { ImportNormalizerController } from '../controllers/import-normalizer.controller';
-import { carPreviewSchema, carSaveSchema, variantPreviewSchema, variantSaveSchema } from '../validation/import.validation';
+import { UnifiedImportController } from '../controllers/unified-import.controller';
+import { carPreviewSchema, carSaveSchema, variantPreviewSchema, variantSaveSchema, unifiedPreviewSchema, unifiedSaveSchema } from '../validation/import.validation';
 import { validateBody } from '../../../middlewares/validate.middleware';
 import { requireFeatureEnabled } from '../../../middlewares/feature-flag.middleware';
 
@@ -15,7 +16,25 @@ router.use(jwtAuthGuard);
 router.use(adminGuard);
 router.use(requireFeatureEnabled('enable_imports'));
 
-// Car import routes (source auto-detected from URL domain)
+// ── Unified import routes (new combined car + variant flow) ──────────────────
+router.post('/unified/preview',
+  validateBody(unifiedPreviewSchema),
+  UnifiedImportController.unifiedPreview
+);
+
+router.post('/unified/save',
+  validateBody(unifiedSaveSchema),
+  UnifiedImportController.unifiedSave
+);
+
+// Available target fields (used by admin UI dropdowns)
+router.get('/available-fields', UnifiedImportController.getAvailableFields);
+
+// Key mapping management
+router.get('/key-mappings', UnifiedImportController.getKeyMappings);
+router.delete('/key-mappings/:mapping_id', UnifiedImportController.deleteKeyMapping);
+
+// ── Original car import routes (source auto-detected from URL domain) ────────
 router.post('/car/preview',
   validateBody(carPreviewSchema),
   ImportController.previewCarImport

@@ -9,6 +9,7 @@ const SpecNormalizationService_1 = require("./SpecNormalizationService");
 const VariantCompletenessCalculator_1 = require("../utils/VariantCompletenessCalculator");
 const VariantGroupingService_1 = require("./VariantGroupingService");
 const car_model_1 = require("../../../models/car.model");
+const fuel_type_model_1 = require("../../../models/fuel-type.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const enum_standardizer_service_1 = require("../../imports/services/enum-standardizer.service");
 class VariantIngestionService {
@@ -22,6 +23,9 @@ class VariantIngestionService {
         });
         await session.save();
         const staged = [];
+        // Fetch fuel type names once for validation so new master data entries are recognised
+        const fuelTypeDocs = await fuel_type_model_1.FuelType.find({ is_deleted: false }).select('name').lean();
+        const validFuelTypeNames = fuelTypeDocs.map((f) => f.name);
         for (const v of input.variants) {
             const normalizedSpecs = SpecNormalizationService_1.SpecNormalizationService.normalizeSpecs(v.raw_specs || {});
             const price = SpecNormalizationService_1.SpecNormalizationService.normalizePrice(v.price);
@@ -40,7 +44,7 @@ class VariantIngestionService {
                 transmission,
                 raw_specs: v.raw_specs || {},
                 normalized_specs: normalizedSpecs,
-            });
+            }, validFuelTypeNames);
             const completeness = VariantCompletenessCalculator_1.VariantCompletenessCalculator.calculate({
                 normalized_specs: normalizedSpecs,
                 price,
@@ -73,6 +77,8 @@ class VariantIngestionService {
     }
     static async previewStaging(variants) {
         const previews = [];
+        const fuelTypeDocs = await fuel_type_model_1.FuelType.find({ is_deleted: false }).select('name').lean();
+        const validFuelTypeNames = fuelTypeDocs.map((f) => f.name);
         for (const v of variants) {
             const normalizedSpecs = SpecNormalizationService_1.SpecNormalizationService.normalizeSpecs(v.raw_specs || {});
             const price = SpecNormalizationService_1.SpecNormalizationService.normalizePrice(v.price);
@@ -89,7 +95,7 @@ class VariantIngestionService {
                 transmission,
                 raw_specs: v.raw_specs || {},
                 normalized_specs: normalizedSpecs,
-            });
+            }, validFuelTypeNames);
             const completeness = VariantCompletenessCalculator_1.VariantCompletenessCalculator.calculate({
                 normalized_specs: normalizedSpecs,
                 price,
@@ -179,6 +185,8 @@ class VariantIngestionService {
     static async bulkValidate(stagingIds) {
         const docs = await VariantImportStaging_1.VariantImportStaging.find({ _id: { $in: stagingIds.map(id => new mongoose_1.Types.ObjectId(id)) } });
         const results = [];
+        const fuelTypeDocs = await fuel_type_model_1.FuelType.find({ is_deleted: false }).select('name').lean();
+        const validFuelTypeNames = fuelTypeDocs.map((f) => f.name);
         for (const doc of docs) {
             const issues = VariantImportValidator_1.VariantImportValidator.validate({
                 variant_name: doc.variant_name,
@@ -188,7 +196,7 @@ class VariantIngestionService {
                 transmission: doc.transmission,
                 raw_specs: doc.raw_specs,
                 normalized_specs: doc.normalized_specs,
-            });
+            }, validFuelTypeNames);
             const hasErrors = VariantImportValidator_1.VariantImportValidator.hasErrors(issues);
             const completeness = VariantCompletenessCalculator_1.VariantCompletenessCalculator.calculate({
                 normalized_specs: doc.normalized_specs,

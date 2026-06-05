@@ -1,26 +1,13 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarIntelligenceLLMService = void 0;
-const cerebras_cloud_sdk_1 = __importDefault(require("@cerebras/cerebras_cloud_sdk"));
 const car_model_1 = require("../../models/car.model");
 const car_aggregation_service_1 = require("./car-aggregation.service");
 const platform_settings_service_1 = require("../../modules/settings/services/platform-settings.service");
 const app_error_util_1 = require("../utils/app-error.util");
-const CEREBRAS_MODEL = 'gpt-oss-120b';
-// One persistent client.
-let cachedClient = null;
-const getClient = () => {
-    if (!cachedClient) {
-        if (!process.env.CEREBRAS_API_KEY) {
-            throw app_error_util_1.AppError.serviceUnavailable('CEREBRAS_API_KEY is not set. LLM refinement is disabled — set the env var in .env to enable it.', 'AI refinement is currently unavailable. Please contact the administrator.');
-        }
-        cachedClient = new cerebras_cloud_sdk_1.default({ apiKey: process.env.CEREBRAS_API_KEY });
-    }
-    return cachedClient;
-};
+const cerebras_client_1 = require("./cerebras-client");
+const CEREBRAS_MODEL = cerebras_client_1.INTELLIGENCE_MODEL;
+const getClient = cerebras_client_1.getCerebrasClient;
 // Rubric for each AI intelligence flag. Goes in the cached system prompt so we
 // pay the cache-write premium once and read from cache on every subsequent car.
 // Padded with deliberately verbose, stable wording so the prefix exceeds the

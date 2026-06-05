@@ -1,0 +1,326 @@
+export interface TargetField {
+  key: string;
+  label: string;
+  type: 'string' | 'number' | 'boolean' | 'array';
+  model: 'Car' | 'CarVariant';
+}
+
+export interface TargetFieldGroup {
+  section: string;
+  fields: TargetField[];
+}
+
+const car = (key: string, label: string, type: TargetField['type'] = 'string'): TargetField => ({
+  key, label, type, model: 'Car',
+});
+
+const variant = (path: string, label: string, type: TargetField['type'] = 'string'): TargetField => ({
+  key: path, label, type, model: 'CarVariant',
+});
+
+export const AVAILABLE_TARGET_FIELD_GROUPS: TargetFieldGroup[] = [
+  {
+    section: 'Car Fields',
+    fields: [
+      car('name', 'Car Name'),
+      car('description', 'Description'),
+      car('exshowroom_price', 'Ex-Showroom Price', 'number'),
+      car('expected_exshowroom_price', 'Expected Price', 'number'),
+      car('is_electric', 'Is Electric', 'boolean'),
+      car('short_description', 'Short Description'),
+    ],
+  },
+  {
+    section: 'Variant Basic',
+    fields: [
+      variant('variant_name', 'Variant Name'),
+      variant('slug', 'Slug'),
+      variant('model_year', 'Model Year', 'number'),
+      variant('transmission_type', 'Transmission Type'),
+      variant('drivetrain', 'Drive Type'),
+      variant('seating_capacity', 'Seating Capacity', 'number'),
+      variant('ex_showroom_price', 'Ex-Showroom Price', 'number'),
+      variant('expected_price', 'Expected Price', 'number'),
+      variant('body_type', 'Body Type'),
+      variant('trim_name', 'Trim Name'),
+    ],
+  },
+  {
+    section: 'Engine & Performance',
+    fields: [
+      variant('specs_normalized.engine_performance.engine_type', 'Engine Type'),
+      variant('specs_normalized.engine_performance.displacement', 'Displacement'),
+      variant('specs_normalized.engine_performance.max_power', 'Max Power'),
+      variant('specs_normalized.engine_performance.max_torque', 'Max Torque'),
+      variant('specs_normalized.engine_performance.cylinders', 'Cylinders', 'number'),
+      variant('specs_normalized.engine_performance.valves_per_cylinder', 'Valves Per Cylinder', 'number'),
+      variant('specs_normalized.engine_performance.fuel_system', 'Fuel Supply System'),
+      variant('specs_normalized.engine_performance.turbocharger', 'Turbocharger', 'boolean'),
+      variant('specs_normalized.engine_performance.supercharger', 'Supercharger', 'boolean'),
+      variant('specs_normalized.engine_performance.gearbox', 'Gearbox'),
+      variant('specs_normalized.engine_performance.top_speed', 'Top Speed'),
+      variant('specs_normalized.engine_performance.acceleration_0_100', 'Acceleration 0-100 kmph'),
+      variant('specs_normalized.engine_performance.idle_start_stop', 'Idle Start Stop', 'boolean'),
+      variant('specs_normalized.engine_performance.alternate_fuel_type', 'Alternate Fuel Type'),
+      variant('specs_normalized.engine_performance.drive_modes', 'Drive Modes', 'array'),
+      variant('specs_normalized.engine_performance.terrain_modes', 'Terrain Modes', 'array'),
+    ],
+  },
+  {
+    section: 'Mileage / Range',
+    fields: [
+      variant('specs_normalized.mileage_range.arai_mileage', 'ARAI Mileage'),
+      variant('specs_normalized.mileage_range.city_mileage', 'City Mileage'),
+      variant('specs_normalized.mileage_range.highway_mileage', 'Highway Mileage'),
+      variant('specs_normalized.mileage_range.fuel_tank_capacity', 'Fuel Tank Capacity'),
+      variant('specs_normalized.mileage_range.emission_standard', 'Emission Standard'),
+      variant('specs_normalized.mileage_range.real_mileage', 'Real-World Mileage'),
+      variant('specs_normalized.mileage_range.cng_mileage', 'CNG Mileage'),
+      variant('specs_normalized.mileage_range.cng_tank_capacity', 'CNG Tank Capacity'),
+      variant('specs_normalized.mileage_range.e20_compatibility', 'E20 Fuel Compatibility', 'boolean'),
+      variant('specs_normalized.mileage_range.ethanol_compatibility', 'Ethanol Compatibility'),
+    ],
+  },
+  {
+    section: 'Battery & Charging',
+    fields: [
+      variant('specs_normalized.battery_charging.battery_capacity', 'Battery Capacity'),
+      variant('specs_normalized.battery_charging.battery_capacity_kwh', 'Battery Capacity (kWh)', 'number'),
+      variant('specs_normalized.battery_charging.battery_type', 'Battery Type'),
+      variant('specs_normalized.battery_charging.battery_chemistry', 'Battery Chemistry'),
+      variant('specs_normalized.battery_charging.electric_range', 'Electric Range'),
+      variant('specs_normalized.battery_charging.real_range', 'Real-World Range'),
+      variant('specs_normalized.battery_charging.motor_type', 'Motor Type'),
+      variant('specs_normalized.battery_charging.motor_power_kw', 'Motor Power (kW)'),
+      variant('specs_normalized.battery_charging.motor_power_bhp', 'Motor Power (bhp)'),
+      variant('specs_normalized.battery_charging.motor_torque_nm', 'Motor Torque (Nm)'),
+      variant('specs_normalized.battery_charging.number_of_motors', 'Number of Motors', 'number'),
+      variant('specs_normalized.battery_charging.charging_time', 'Charging Time'),
+      variant('specs_normalized.battery_charging.ac_charging_time', 'AC Charging Time'),
+      variant('specs_normalized.battery_charging.dc_fast_charging_time', 'DC Fast Charging Time'),
+      variant('specs_normalized.battery_charging.fast_charge_0_80', 'Fast Charge 0-80%'),
+      variant('specs_normalized.battery_charging.charging_port_type', 'Charging Port Type'),
+      variant('specs_normalized.battery_charging.max_ac_charging_speed_kw', 'Max AC Charging Speed (kW)', 'number'),
+      variant('specs_normalized.battery_charging.max_dc_charging_speed_kw', 'Max DC Charging Speed (kW)', 'number'),
+      variant('specs_normalized.battery_charging.charging_options', 'Charging Options', 'array'),
+      variant('specs_normalized.battery_charging.regenerative_braking', 'Regenerative Braking', 'boolean'),
+      variant('specs_normalized.battery_charging.regenerative_braking_levels', 'Regenerative Braking Levels', 'number'),
+      variant('specs_normalized.battery_charging.vehicle_to_load', 'Vehicle to Load (V2L)', 'boolean'),
+      variant('specs_normalized.battery_charging.vehicle_to_vehicle', 'Vehicle to Vehicle (V2V)', 'boolean'),
+    ],
+  },
+  {
+    section: 'Dimensions',
+    fields: [
+      variant('specs_normalized.dimensions_practicality.length', 'Length'),
+      variant('specs_normalized.dimensions_practicality.width', 'Width'),
+      variant('specs_normalized.dimensions_practicality.height', 'Height'),
+      variant('specs_normalized.dimensions_practicality.wheelbase', 'Wheelbase'),
+      variant('specs_normalized.dimensions_practicality.ground_clearance', 'Ground Clearance'),
+      variant('specs_normalized.dimensions_practicality.boot_space', 'Boot Space'),
+      variant('specs_normalized.dimensions_practicality.boot_space_folded', 'Boot Space (Folded)'),
+      variant('specs_normalized.dimensions_practicality.frunk_space', 'Frunk Space'),
+      variant('specs_normalized.dimensions_practicality.seating_capacity', 'Seating Capacity', 'number'),
+      variant('specs_normalized.dimensions_practicality.number_of_rows', 'Number of Rows', 'number'),
+      variant('specs_normalized.dimensions_practicality.doors', 'Doors', 'number'),
+      variant('specs_normalized.dimensions_practicality.kerb_weight', 'Kerb Weight'),
+      variant('specs_normalized.dimensions_practicality.gross_vehicle_weight', 'Gross Vehicle Weight'),
+    ],
+  },
+  {
+    section: 'Suspension & Brakes',
+    fields: [
+      variant('specs_normalized.suspension_steering_brakes.front_suspension', 'Front Suspension'),
+      variant('specs_normalized.suspension_steering_brakes.rear_suspension', 'Rear Suspension'),
+      variant('specs_normalized.suspension_steering_brakes.steering_type', 'Steering Type'),
+      variant('specs_normalized.suspension_steering_brakes.steering_adjustment', 'Steering Adjustment'),
+      variant('specs_normalized.suspension_steering_brakes.steering_column', 'Steering Column'),
+      variant('specs_normalized.suspension_steering_brakes.front_brake_type', 'Front Brake Type'),
+      variant('specs_normalized.suspension_steering_brakes.rear_brake_type', 'Rear Brake Type'),
+      variant('specs_normalized.suspension_steering_brakes.parking_brake', 'Parking Brake'),
+    ],
+  },
+  {
+    section: 'Tyres & Wheels',
+    fields: [
+      variant('specs_normalized.tyres_wheels.tyre_type', 'Tyre Type'),
+      variant('specs_normalized.tyres_wheels.tyre_size', 'Tyre Size'),
+      variant('specs_normalized.tyres_wheels.wheel_size', 'Wheel Size'),
+      variant('specs_normalized.tyres_wheels.alloy_wheels', 'Alloy Wheels', 'boolean'),
+      variant('specs_normalized.tyres_wheels.spare_tyre', 'Spare Tyre'),
+    ],
+  },
+  {
+    section: 'Safety',
+    fields: [
+      variant('specs_normalized.safety.airbags', 'Airbags', 'number'),
+      variant('specs_normalized.safety.abs', 'ABS', 'boolean'),
+      variant('specs_normalized.safety.ebd', 'EBD', 'boolean'),
+      variant('specs_normalized.safety.brake_assist', 'Brake Assist', 'boolean'),
+      variant('specs_normalized.safety.esp', 'ESP', 'boolean'),
+      variant('specs_normalized.safety.traction_control', 'Traction Control', 'boolean'),
+      variant('specs_normalized.safety.hill_hold', 'Hill Hold', 'boolean'),
+      variant('specs_normalized.safety.hill_descent', 'Hill Descent', 'boolean'),
+      variant('specs_normalized.safety.parking_sensors', 'Parking Sensors'),
+      variant('specs_normalized.safety.rear_camera', 'Rear Camera', 'boolean'),
+      variant('specs_normalized.safety.camera_360', '360 Camera', 'boolean'),
+      variant('specs_normalized.safety.isofix', 'ISOFIX', 'boolean'),
+      variant('specs_normalized.safety.seat_belt_warning', 'Seat Belt Warning', 'boolean'),
+      variant('specs_normalized.safety.speed_alert', 'Speed Alert', 'boolean'),
+      variant('specs_normalized.safety.crash_sensor', 'Crash Sensor', 'boolean'),
+      variant('specs_normalized.safety.engine_immobilizer', 'Engine Immobilizer', 'boolean'),
+      variant('specs_normalized.safety.central_locking', 'Central Locking', 'boolean'),
+      variant('specs_normalized.safety.child_safety_lock', 'Child Safety Lock', 'boolean'),
+      variant('specs_normalized.safety.tpms', 'TPMS', 'boolean'),
+      variant('specs_normalized.safety.ncap_rating', 'NCAP Rating', 'number'),
+      variant('specs_normalized.safety.bncap_rating', 'Bharat NCAP Rating', 'number'),
+      variant('specs_normalized.safety.global_ncap_rating', 'Global NCAP Rating', 'number'),
+      variant('specs_normalized.safety.adas_level', 'ADAS Level', 'number'),
+    ],
+  },
+  {
+    section: 'ADAS',
+    fields: [
+      variant('specs_normalized.adas.adaptive_cruise_control', 'Adaptive Cruise Control', 'boolean'),
+      variant('specs_normalized.adas.lane_keep_assist', 'Lane Keep Assist', 'boolean'),
+      variant('specs_normalized.adas.lane_departure_warning', 'Lane Departure Warning', 'boolean'),
+      variant('specs_normalized.adas.blind_spot_monitoring', 'Blind Spot Monitoring', 'boolean'),
+      variant('specs_normalized.adas.forward_collision_warning', 'Forward Collision Warning', 'boolean'),
+      variant('specs_normalized.adas.automatic_emergency_braking', 'Automatic Emergency Braking', 'boolean'),
+      variant('specs_normalized.adas.traffic_sign_recognition', 'Traffic Sign Recognition', 'boolean'),
+      variant('specs_normalized.adas.autonomous_emergency_braking', 'Autonomous Emergency Braking', 'boolean'),
+      variant('specs_normalized.adas.rear_cross_traffic_alert', 'Rear Cross Traffic Alert', 'boolean'),
+      variant('specs_normalized.adas.driver_attention_warning', 'Driver Attention Warning', 'boolean'),
+      variant('specs_normalized.adas.adaptive_high_beam_assist', 'Adaptive High Beam Assist', 'boolean'),
+    ],
+  },
+  {
+    section: 'Comfort & Convenience',
+    fields: [
+      variant('specs_normalized.comfort_convenience.climate_control', 'Climate Control'),
+      variant('specs_normalized.comfort_convenience.automatic_climate_control', 'Automatic Climate Control', 'boolean'),
+      variant('specs_normalized.comfort_convenience.air_quality_control', 'Air Quality Control', 'boolean'),
+      variant('specs_normalized.comfort_convenience.rear_ac_vents', 'Rear AC Vents', 'boolean'),
+      variant('specs_normalized.comfort_convenience.heated_seats', 'Heated Seats'),
+      variant('specs_normalized.comfort_convenience.ventilated_seats', 'Ventilated Seats'),
+      variant('specs_normalized.comfort_convenience.steering_adjustment', 'Steering Adjustment'),
+      variant('specs_normalized.comfort_convenience.steering_mounted_controls', 'Steering Mounted Controls', 'boolean'),
+      variant('specs_normalized.comfort_convenience.cruise_control', 'Cruise Control', 'boolean'),
+      variant('specs_normalized.comfort_convenience.paddle_shifters', 'Paddle Shifters', 'boolean'),
+      variant('specs_normalized.comfort_convenience.electric_adjustable_seats', 'Electric Adjustable Seats'),
+      variant('specs_normalized.comfort_convenience.memory_seats', 'Memory Seats'),
+      variant('specs_normalized.comfort_convenience.lumbar_support', 'Lumbar Support', 'boolean'),
+      variant('specs_normalized.comfort_convenience.seat_material', 'Seat Material'),
+      variant('specs_normalized.comfort_convenience.folding_rear_seats', 'Folding Rear Seats'),
+      variant('specs_normalized.comfort_convenience.remote_start', 'Remote Start', 'boolean'),
+      variant('specs_normalized.comfort_convenience.keyless_entry', 'Keyless Entry', 'boolean'),
+      variant('specs_normalized.comfort_convenience.push_button_start', 'Push Button Start', 'boolean'),
+      variant('specs_normalized.comfort_convenience.power_windows', 'Power Windows'),
+      variant('specs_normalized.comfort_convenience.rear_window_defogger', 'Rear Window Defogger', 'boolean'),
+      variant('specs_normalized.comfort_convenience.rear_wiper', 'Rear Wiper', 'boolean'),
+      variant('specs_normalized.comfort_convenience.headlamp_washer', 'Headlamp Washer', 'boolean'),
+    ],
+  },
+  {
+    section: 'Infotainment',
+    fields: [
+      variant('specs_normalized.infotainment_connectivity.touchscreen', 'Touchscreen Size'),
+      variant('specs_normalized.infotainment_connectivity.android_auto', 'Android Auto', 'boolean'),
+      variant('specs_normalized.infotainment_connectivity.apple_carplay', 'Apple CarPlay', 'boolean'),
+      variant('specs_normalized.infotainment_connectivity.bluetooth', 'Bluetooth', 'boolean'),
+      variant('specs_normalized.infotainment_connectivity.usb_ports', 'USB Ports', 'number'),
+      variant('specs_normalized.infotainment_connectivity.wireless_charging', 'Wireless Charging', 'boolean'),
+      variant('specs_normalized.infotainment_connectivity.navigation', 'Navigation', 'boolean'),
+      variant('specs_normalized.infotainment_connectivity.voice_command', 'Voice Command', 'boolean'),
+      variant('specs_normalized.infotainment_connectivity.speakers', 'Speakers', 'number'),
+      variant('specs_normalized.infotainment_connectivity.wifi_hotspot', 'Wi-Fi Hotspot', 'boolean'),
+      variant('specs_normalized.infotainment_connectivity.internet_connectivity', 'Internet Connectivity', 'boolean'),
+      variant('specs_normalized.infotainment_connectivity.ota_updates', 'OTA Updates', 'boolean'),
+    ],
+  },
+  {
+    section: 'Connected Car',
+    fields: [
+      variant('specs_normalized.connected_car.connected_car_tech', 'Connected Car Tech'),
+      variant('specs_normalized.connected_car.app_connectivity', 'App Connectivity', 'boolean'),
+      variant('specs_normalized.connected_car.vehicle_tracking', 'Vehicle Tracking', 'boolean'),
+      variant('specs_normalized.connected_car.geofencing', 'Geofencing', 'boolean'),
+      variant('specs_normalized.connected_car.remote_vehicle_control', 'Remote Vehicle Control', 'boolean'),
+      variant('specs_normalized.connected_car.sos_emergency_assist', 'SOS Emergency Assist', 'boolean'),
+      variant('specs_normalized.connected_car.find_my_car', 'Find My Car', 'boolean'),
+      variant('specs_normalized.connected_car.live_location', 'Live Location', 'boolean'),
+      variant('specs_normalized.connected_car.remote_engine_start_stop', 'Remote Engine Start/Stop', 'boolean'),
+      variant('specs_normalized.connected_car.remote_lock', 'Remote Lock', 'boolean'),
+      variant('specs_normalized.connected_car.digital_key', 'Digital Key', 'boolean'),
+    ],
+  },
+  {
+    section: 'Interior',
+    fields: [
+      variant('specs_normalized.interior.dashboard_type', 'Dashboard Type'),
+      variant('specs_normalized.interior.instrument_cluster', 'Instrument Cluster'),
+      variant('specs_normalized.interior.digital_driver_display', 'Digital Driver Display', 'boolean'),
+      variant('specs_normalized.interior.ambient_lighting', 'Ambient Lighting', 'boolean'),
+      variant('specs_normalized.interior.leather_wrapped_steering', 'Leather Wrapped Steering', 'boolean'),
+      variant('specs_normalized.interior.panoramic_sunroof', 'Panoramic Sunroof', 'boolean'),
+      variant('specs_normalized.interior.moonroof', 'Moonroof', 'boolean'),
+      variant('specs_normalized.interior.sunroof', 'Sunroof'),
+      variant('specs_normalized.interior.interior_color', 'Interior Color'),
+      variant('specs_normalized.interior.interior_material', 'Interior Material'),
+    ],
+  },
+  {
+    section: 'Exterior',
+    fields: [
+      variant('specs_normalized.exterior.headlight_type', 'Headlight Type'),
+      variant('specs_normalized.exterior.led_headlights', 'LED Headlights', 'boolean'),
+      variant('specs_normalized.exterior.led_tail_lights', 'LED Tail Lights', 'boolean'),
+      variant('specs_normalized.exterior.drl', 'DRL', 'boolean'),
+      variant('specs_normalized.exterior.fog_lights', 'Fog Lights'),
+      variant('specs_normalized.exterior.automatic_headlamps', 'Automatic Headlamps', 'boolean'),
+      variant('specs_normalized.exterior.roof_rails', 'Roof Rails', 'boolean'),
+      variant('specs_normalized.exterior.spoiler', 'Spoiler', 'boolean'),
+      variant('specs_normalized.exterior.skid_plate', 'Skid Plate', 'boolean'),
+      variant('specs_normalized.exterior.alloy_wheels_design', 'Alloy Wheels Design'),
+      variant('specs_normalized.exterior.orvm_type', 'ORVM Type'),
+      variant('specs_normalized.exterior.orvm_indicators', 'ORVM Indicators', 'boolean'),
+      variant('specs_normalized.exterior.flush_door_handles', 'Flush Door Handles', 'boolean'),
+      variant('specs_normalized.exterior.rain_sensing_wipers', 'Rain Sensing Wipers', 'boolean'),
+    ],
+  },
+  {
+    section: 'Warranty',
+    fields: [
+      variant('specs_normalized.warranty.basic_warranty_years', 'Basic Warranty (Years)', 'number'),
+      variant('specs_normalized.warranty.basic_warranty_km', 'Basic Warranty (km)', 'number'),
+      variant('specs_normalized.warranty.battery_warranty_years', 'Battery Warranty (Years)', 'number'),
+      variant('specs_normalized.warranty.battery_warranty_km', 'Battery Warranty (km)', 'number'),
+    ],
+  },
+  {
+    section: 'Storage & Cabin',
+    fields: [
+      variant('specs_normalized.storage_cabin_practicality.cupholders_front', 'Front Cupholders', 'number'),
+      variant('specs_normalized.storage_cabin_practicality.cupholders_rear', 'Rear Cupholders', 'number'),
+      variant('specs_normalized.storage_cabin_practicality.bottle_holders', 'Bottle Holders', 'number'),
+      variant('specs_normalized.storage_cabin_practicality.cooled_glovebox', 'Cooled Glovebox', 'boolean'),
+      variant('specs_normalized.storage_cabin_practicality.door_pockets', 'Door Pockets', 'boolean'),
+      variant('specs_normalized.storage_cabin_practicality.rear_armrest', 'Rear Armrest', 'boolean'),
+      variant('specs_normalized.storage_cabin_practicality.sunglass_holder', 'Sunglass Holder', 'boolean'),
+    ],
+  },
+  {
+    section: 'Ignore / Raw',
+    fields: [
+      variant('specs_raw', 'Store in Raw (unmatched)', 'string'),
+    ],
+  },
+];
+
+// Flat list of all fields for easy lookup
+export const ALL_TARGET_FIELDS: TargetField[] = AVAILABLE_TARGET_FIELD_GROUPS.flatMap(g => g.fields);
+
+// Build a quick lookup map from key → TargetField
+export const TARGET_FIELD_MAP: Record<string, TargetField> = Object.fromEntries(
+  ALL_TARGET_FIELDS.map(f => [f.key, f])
+);
