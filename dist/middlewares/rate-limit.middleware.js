@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.publicCarsRateLimiter = exports.discoverRateLimiter = exports.uploadRateLimiter = exports.authRateLimiter = exports.adminRateLimiter = exports.globalRateLimiter = void 0;
+exports.chatbotRateLimiter = exports.publicCarsRateLimiter = exports.discoverRateLimiter = exports.uploadRateLimiter = exports.authRateLimiter = exports.adminRateLimiter = exports.globalRateLimiter = void 0;
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 // Admin routes are JWT-protected — skip IP rate limiting for them.
 const isAdminRequest = (req) => req.path.includes('/admin') || !!req.headers.authorization;
@@ -48,6 +48,13 @@ exports.publicCarsRateLimiter = (0, express_rate_limit_1.default)({
     windowMs: 60_000,
     max: 120,
     message: 'Too many requests, please try again after a minute',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+exports.chatbotRateLimiter = (0, express_rate_limit_1.default)({
+    windowMs: Number(process.env.ADMIN_CHATBOT_RATE_LIMIT_WINDOW_MS) || 60_000,
+    max: Number(process.env.ADMIN_CHATBOT_RATE_LIMIT_MAX) || 30,
+    message: 'Too many chatbot requests, please wait a moment before asking again.',
     standardHeaders: true,
     legacyHeaders: false,
 });

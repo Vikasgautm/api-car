@@ -15,7 +15,7 @@ export class AdminChatbotController {
 
       const parsed = chatbotAskSchema.safeParse(req.body);
       if (!parsed.success) {
-        return next(AppError.validationError(parsed.error.errors.map(e => e.message).join(', ')));
+        return next(AppError.validation(parsed.error.issues.map((e: { message: string }) => e.message).join(', ')));
       }
 
       const { question, sessionId, context, conversationHistory, page, limit } = parsed.data;

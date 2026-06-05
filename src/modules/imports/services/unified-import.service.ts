@@ -223,7 +223,6 @@ export class UnifiedImportService {
     const matched: MatchedCarField[] = [];
     const unmatched: UnmatchedCarField[] = [];
     const raw: Record<string, any> = {};
-
     // Name
     matched.push({ scrapedKey: 'Car Name', value: extracted.name, targetField: 'name', targetLabel: 'Car Name', confidence: 1.0, matchType: 'exact' });
 

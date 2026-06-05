@@ -5,7 +5,7 @@ import express, { Application, NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import { config } from "./config";
 import { requestLogger } from "./middlewares/logging.middleware";
-import { adminRateLimiter, discoverRateLimiter, globalRateLimiter, publicCarsRateLimiter } from "./middlewares/rate-limit.middleware";
+import { adminRateLimiter, chatbotRateLimiter, discoverRateLimiter, globalRateLimiter, publicCarsRateLimiter } from "./middlewares/rate-limit.middleware";
 
 const app: Application = express();
 
@@ -52,6 +52,7 @@ app.use("/uploads", express.static("uploads"));
 app.use('/api/v1/discover', discoverRateLimiter);
 app.use('/api/v1/cars/public', publicCarsRateLimiter);
 app.use('/api/v1/content-health/admin', adminRateLimiter);
+app.use('/api/v1/chatbot', chatbotRateLimiter);
 app.use("/api/v1", routes);
 
 // Handle 404 - Route not found

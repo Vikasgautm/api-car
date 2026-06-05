@@ -58,18 +58,13 @@ const ACRONYMS = new Set(['id', 'url', 'seo', 'faq', 'og', 'ncap', 'ev', 'v2l', 
  *   model_year     -> Model Year
  *   meta_description -> Meta Description
  */
-function formatFieldName(field) {
-    if (!field)
-        return 'Field';
-    // Use the last segment of a dotted path: "user.email" -> "email".
-    const key = String(field).split('.').pop();
+function formatKey(key) {
     if (FIELD_LABEL_OVERRIDES[key])
         return FIELD_LABEL_OVERRIDES[key];
     let tokens = key
-        .replace(/([a-z0-9])([A-Z])/g, '$1_$2') // split camelCase
+        .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
         .split(/[_\s]+/)
         .filter(Boolean);
-    // Drop a trailing standalone "id" foreign-key suffix (brand_id -> brand).
     if (tokens.length > 1 && tokens[tokens.length - 1].toLowerCase() === 'id') {
         tokens = tokens.slice(0, -1);
     }
@@ -83,6 +78,23 @@ function formatFieldName(field) {
         return lower.charAt(0).toUpperCase() + lower.slice(1);
     })
         .join(' ');
+}
+function formatFieldName(field) {
+    if (!field)
+        return 'Field';
+    const segments = String(field).split('.');
+    let key = segments[segments.length - 1];
+    // When the last segment is a numeric array index (e.g. "urls.0", "body.items.2"),
+    // use the nearest non-numeric parent as the label so we get "URL 1" not "0".
+    if (/^\d+$/.test(key)) {
+        const idx = parseInt(key, 10);
+        const parentKey = [...segments].reverse().find((s) => !/^\d+$/.test(s));
+        if (parentKey) {
+            return `${formatKey(parentKey)} ${idx + 1}`;
+        }
+        return `Item ${idx + 1}`;
+    }
+    return formatKey(key);
 }
 /**
  * Convert a Mongoose-style validation message into a clean sentence.
@@ -123,7 +135,16 @@ function combineFieldMessage(field, message) {
     if (lower === 'required field' || lower === 'this field is required') {
         return `${label} is required`;
     }
-    if (lower === 'invalid' || lower === 'invalid input' || lower.startsWith('invalid ')) {
+    if (lower === 'invalid' || lower === 'invalid input') {
+        return `${label} is invalid`;
+    }
+    if (lower === 'invalid url') {
+        return `${label} must be a valid URL (e.g. https://www.cardekho.com/...)`;
+    }
+    if (lower === 'invalid email') {
+        return `${label} must be a valid email address`;
+    }
+    if (lower.startsWith('invalid ')) {
         return `${label} is invalid`;
     }
     // If the message already reads like a full sentence referencing the field,

@@ -12,17 +12,6 @@
  * This util is intentionally framework-agnostic and side-effect free so it can
  * be unit-tested in isolation and reused by the error middleware.
  */
-/**
- * Convert a raw field key into a human-readable label.
- *
- *   description    -> Description
- *   variant_name   -> Variant Name
- *   brand_id       -> Brand
- *   body_type_id   -> Body Type
- *   fuel_type_id   -> Fuel Type
- *   model_year     -> Model Year
- *   meta_description -> Meta Description
- */
 export declare function formatFieldName(field: string): string;
 /**
  * Convert a Mongoose-style validation message into a clean sentence.

@@ -49,6 +49,7 @@ app.use("/uploads", express_1.default.static("uploads"));
 app.use('/api/v1/discover', rate_limit_middleware_1.discoverRateLimiter);
 app.use('/api/v1/cars/public', rate_limit_middleware_1.publicCarsRateLimiter);
 app.use('/api/v1/content-health/admin', rate_limit_middleware_1.adminRateLimiter);
+app.use('/api/v1/chatbot', rate_limit_middleware_1.chatbotRateLimiter);
 app.use("/api/v1", routes_1.default);
 // Handle 404 - Route not found
 app.use((req, res, next) => {

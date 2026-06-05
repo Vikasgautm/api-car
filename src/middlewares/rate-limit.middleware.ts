@@ -54,3 +54,11 @@ export const publicCarsRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+export const chatbotRateLimiter = rateLimit({
+  windowMs: Number(process.env.ADMIN_CHATBOT_RATE_LIMIT_WINDOW_MS) || 60_000,
+  max: Number(process.env.ADMIN_CHATBOT_RATE_LIMIT_MAX) || 30,
+  message: 'Too many chatbot requests, please wait a moment before asking again.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});

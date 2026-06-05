@@ -52,8 +52,8 @@ async function getDashboardSummary(page, limit) {
         brand_model_1.Brand.countDocuments({ is_deleted: false }),
         blog_model_1.Blog.countDocuments({ is_deleted: false }),
         blog_model_1.Blog.countDocuments({ is_published: true, is_deleted: false }),
-        faq_model_1.Faq.countDocuments({ is_deleted: false }),
-        faq_model_1.Faq.countDocuments({ is_published: true, is_deleted: false }),
+        faq_model_1.FAQ.countDocuments({ is_deleted: false }),
+        faq_model_1.FAQ.countDocuments({ is_published: true, is_deleted: false }),
         user_model_1.User.countDocuments({ is_deleted: false }),
     ]);
     const summary = {
@@ -98,7 +98,7 @@ async function searchCars(filters, page, limit) {
 }
 async function getCarDataQualityReport(page, limit) {
     const [noBrandCars, noVariantCars, duplicateSlugs, missingSeoTitle, missingMetaDesc, publishedWithNoPublishedVariant,] = await Promise.all([
-        car_model_1.Car.find({ brand_id: { $in: [null, '', undefined] }, is_deleted: false })
+        car_model_1.Car.find({ brand_id: { $in: [null, ''] }, is_deleted: false })
             .select(SAFE_CAR_FIELDS).limit(MAX_ROWS).lean(),
         car_model_1.Car.aggregate([
             { $match: { is_deleted: false } },
@@ -392,11 +392,11 @@ async function getBlogsSummary(page, limit) {
 }
 async function getFAQsSummary(page, limit) {
     const [total, noAnswer, unpublished] = await Promise.all([
-        faq_model_1.Faq.countDocuments({ is_deleted: false }),
-        faq_model_1.Faq.countDocuments({ $or: [{ answer: { $in: [null, ''] } }, { answer: { $exists: false } }], is_deleted: false }),
-        faq_model_1.Faq.countDocuments({ is_published: false, is_deleted: false }),
+        faq_model_1.FAQ.countDocuments({ is_deleted: false }),
+        faq_model_1.FAQ.countDocuments({ $or: [{ answer: { $in: [null, ''] } }, { answer: { $exists: false } }], is_deleted: false }),
+        faq_model_1.FAQ.countDocuments({ is_published: false, is_deleted: false }),
     ]);
-    const faqs = await faq_model_1.Faq.find({ is_deleted: false })
+    const faqs = await faq_model_1.FAQ.find({ is_deleted: false })
         .select(SAFE_FAQ_FIELDS)
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)

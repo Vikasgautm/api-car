@@ -13,7 +13,7 @@ class AdminChatbotController {
             }
             const parsed = adminChatbot_validation_1.chatbotAskSchema.safeParse(req.body);
             if (!parsed.success) {
-                return next(app_error_util_1.AppError.validationError(parsed.error.errors.map(e => e.message).join(', ')));
+                return next(app_error_util_1.AppError.validation(parsed.error.issues.map((e) => e.message).join(', ')));
             }
             const { question, sessionId, context, conversationHistory, page, limit } = parsed.data;
             const chatReq = {

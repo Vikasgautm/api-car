@@ -4,4 +4,5 @@ export declare const authRateLimiter: import("express-rate-limit").RateLimitRequ
 export declare const uploadRateLimiter: import("express-rate-limit").RateLimitRequestHandler;
 export declare const discoverRateLimiter: import("express-rate-limit").RateLimitRequestHandler;
 export declare const publicCarsRateLimiter: import("express-rate-limit").RateLimitRequestHandler;
+export declare const chatbotRateLimiter: import("express-rate-limit").RateLimitRequestHandler;
 //# sourceMappingURL=rate-limit.middleware.d.ts.map

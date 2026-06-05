@@ -4,7 +4,7 @@ import { Brand } from '../../../models/brand.model';
 import { FuelType } from '../../../models/fuel-type.model';
 import { BodyType } from '../../../models/body-type.model';
 import { Blog } from '../../../models/blog.model';
-import { Faq } from '../../../models/faq.model';
+import { FAQ } from '../../../models/faq.model';
 import { User } from '../../../models/user.model';
 import { ImportLog } from '../../../models/import-log.model';
 import { AuditLog } from '../../../models/audit-log.model';
@@ -46,8 +46,8 @@ export async function getDashboardSummary(page: number, limit: number): Promise<
     Brand.countDocuments({ is_deleted: false }),
     Blog.countDocuments({ is_deleted: false }),
     Blog.countDocuments({ is_published: true, is_deleted: false }),
-    Faq.countDocuments({ is_deleted: false }),
-    Faq.countDocuments({ is_published: true, is_deleted: false }),
+    FAQ.countDocuments({ is_deleted: false }),
+    FAQ.countDocuments({ is_published: true, is_deleted: false }),
     User.countDocuments({ is_deleted: false }),
   ]);
 
@@ -109,7 +109,7 @@ export async function getCarDataQualityReport(page: number, limit: number): Prom
     missingMetaDesc,
     publishedWithNoPublishedVariant,
   ] = await Promise.all([
-    Car.find({ brand_id: { $in: [null, '', undefined] }, is_deleted: false })
+    Car.find({ brand_id: { $in: [null, ''] }, is_deleted: false })
       .select(SAFE_CAR_FIELDS).limit(MAX_ROWS).lean(),
     Car.aggregate([
       { $match: { is_deleted: false } },
@@ -154,11 +154,11 @@ export async function getCarDataQualityReport(page: number, limit: number): Prom
   ]);
 
   const issues = [
-    ...noBrandCars.map(c => ({ ...(c as Record<string,unknown>), issue: 'missing_brand' })),
+    ...noBrandCars.map(c => ({ ...(c as unknown as Record<string,unknown>), issue: 'missing_brand' })),
     ...noVariantCars.map((c: Record<string,unknown>) => ({ ...c, issue: 'no_variants' })),
     ...duplicateSlugs.map((d: Record<string,unknown>) => ({ slug: d._id, count: d.count, car_ids: d.car_ids, issue: 'duplicate_slug' })),
-    ...missingSeoTitle.map(c => ({ ...(c as Record<string,unknown>), issue: 'missing_seo_title' })),
-    ...missingMetaDesc.map(c => ({ ...(c as Record<string,unknown>), issue: 'missing_meta_description' })),
+    ...missingSeoTitle.map(c => ({ ...(c as unknown as Record<string,unknown>), issue: 'missing_seo_title' })),
+    ...missingMetaDesc.map(c => ({ ...(c as unknown as Record<string,unknown>), issue: 'missing_meta_description' })),
     ...publishedWithNoPublishedVariant.map((c: Record<string,unknown>) => ({ ...c, issue: 'published_no_published_variant' })),
   ];
 
@@ -281,9 +281,9 @@ export async function getVariantDataQualityReport(page: number, limit: number): 
   ]);
 
   const issues = [
-    ...missingPrice.map(v => ({ ...(v as Record<string,unknown>), issue: 'missing_price' })),
-    ...missingFuelType.map(v => ({ ...(v as Record<string,unknown>), issue: 'missing_fuel_type' })),
-    ...missingBodyType.map(v => ({ ...(v as Record<string,unknown>), issue: 'missing_body_type' })),
+    ...missingPrice.map(v => ({ ...(v as unknown as Record<string,unknown>), issue: 'missing_price' })),
+    ...missingFuelType.map(v => ({ ...(v as unknown as Record<string,unknown>), issue: 'missing_fuel_type' })),
+    ...missingBodyType.map(v => ({ ...(v as unknown as Record<string,unknown>), issue: 'missing_body_type' })),
     ...orphanedVariants.map((v: Record<string,unknown>) => ({ ...v, issue: 'orphaned_variant' })),
     ...unpublishedUnderPublished.map((v: Record<string,unknown>) => ({ ...v, issue: 'unpublished_under_published_car' })),
   ];
@@ -342,7 +342,7 @@ export async function getFuelTypesSummary(page: number, limit: number): Promise<
   ]);
   const usageMap = Object.fromEntries(usageCounts.map((u: { _id: string; count: number }) => [u._id, u.count]));
   const enriched = fuelTypes.map(ft => ({
-    ...(ft as Record<string, unknown>),
+    ...(ft as unknown as Record<string, unknown>),
     variant_count: usageMap[(ft as { fuel_type_id: string }).fuel_type_id] ?? 0,
   }));
   const paged = paginate(enriched, page, limit);
@@ -361,7 +361,7 @@ export async function getBodyTypesSummary(page: number, limit: number): Promise<
   ]);
   const usageMap = Object.fromEntries(usageCounts.map((u: { _id: string; count: number }) => [u._id, u.count]));
   const enriched = bodyTypes.map(bt => ({
-    ...(bt as Record<string, unknown>),
+    ...(bt as unknown as Record<string, unknown>),
     variant_count: usageMap[(bt as { body_type_id: string }).body_type_id] ?? 0,
   }));
   const paged = paginate(enriched, page, limit);
@@ -452,12 +452,12 @@ export async function getBlogsSummary(page: number, limit: number): Promise<Tool
 
 export async function getFAQsSummary(page: number, limit: number): Promise<ToolResult> {
   const [total, noAnswer, unpublished] = await Promise.all([
-    Faq.countDocuments({ is_deleted: false }),
-    Faq.countDocuments({ $or: [{ answer: { $in: [null, ''] } }, { answer: { $exists: false } }], is_deleted: false }),
-    Faq.countDocuments({ is_published: false, is_deleted: false }),
+    FAQ.countDocuments({ is_deleted: false }),
+    FAQ.countDocuments({ $or: [{ answer: { $in: [null, ''] } }, { answer: { $exists: false } }], is_deleted: false }),
+    FAQ.countDocuments({ is_published: false, is_deleted: false }),
   ]);
 
-  const faqs = await Faq.find({ is_deleted: false })
+  const faqs = await FAQ.find({ is_deleted: false })
     .select(SAFE_FAQ_FIELDS)
     .sort({ createdAt: -1 })
     .skip((page - 1) * limit)
@@ -507,8 +507,8 @@ export async function getRecentErrors(page: number, limit: number): Promise<Tool
     .lean();
 
   const combined = [
-    ...failedImports.map(i => ({ ...(i as Record<string,unknown>), type: 'failed_import' })),
-    ...recentAuditErrors.map(a => ({ ...(a as Record<string,unknown>), type: 'audit_error' })),
+    ...failedImports.map(i => ({ ...(i as unknown as Record<string,unknown>), type: 'failed_import' })),
+    ...recentAuditErrors.map(a => ({ ...(a as unknown as Record<string,unknown>), type: 'audit_error' })),
   ].sort((a, b) => {
     const dateA = (a as { createdAt?: Date }).createdAt;
     const dateB = (b as { createdAt?: Date }).createdAt;
