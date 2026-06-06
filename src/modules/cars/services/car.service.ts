@@ -251,7 +251,7 @@ export class CarService {
       filter.car_id = { $in: matchingCarIds };
     }
 
-    const { skip, limit: validatedLimit } = PaginationUtil.getPaginationParams(page, limit);
+    const { skip, limit: validatedLimit } = PaginationUtil.getPaginationParams(page, limit, { maxLimit: 2000 });
     const sortFilter = FilterUtil.buildSortFilter(sortBy, sortOrder);
 
     const [cars, total] = await Promise.all([

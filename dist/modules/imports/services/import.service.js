@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImportService = void 0;
 const uuid_1 = require("uuid");
+const logger_1 = require("../../../utils/logger");
 const errorMessages_1 = require("../../../constants/errorMessages");
 const body_type_model_1 = require("../../../models/body-type.model");
 const brand_model_1 = require("../../../models/brand.model");
@@ -695,7 +696,7 @@ class ImportService {
                         });
                         if (updatedVariant) {
                             await variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(op.variant_id, op.beforeDoc, updatedVariant.toObject(), op.url || 'import', 'import').catch(err => {
-                                console.warn(`Failed to record change history for variant ${op.variant_id}: ${err?.message}`);
+                                logger_1.logger.error(`AUDIT_GAP: recordVariantChanges failed | variant=${op.variant_id} source=import error=${err?.message}`);
                             });
                         }
                         // Update import log

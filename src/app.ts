@@ -48,11 +48,13 @@ app.get("/", (req: Request, res: Response) => {
 import { errorMiddleware } from "./middlewares/error.middleware";
 import routes from "./shared/routes";
 import { AppError } from "./shared/utils/app-error.util";
+import { SitemapController } from "./modules/sitemap/controllers/sitemap.controller";
 app.use("/uploads", express.static("uploads"));
 app.use('/api/v1/discover', discoverRateLimiter);
 app.use('/api/v1/cars/public', publicCarsRateLimiter);
 app.use('/api/v1/content-health/admin', adminRateLimiter);
 app.use('/api/v1/chatbot', chatbotRateLimiter);
+app.get('/sitemap.xml', SitemapController.getXml);
 app.use("/api/v1", routes);
 
 // Handle 404 - Route not found

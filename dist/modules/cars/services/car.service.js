@@ -253,7 +253,7 @@ class CarService {
                 }).distinct('car_id');
                 filter.car_id = { $in: matchingCarIds };
             }
-            const { skip, limit: validatedLimit } = pagination_util_1.PaginationUtil.getPaginationParams(page, limit);
+            const { skip, limit: validatedLimit } = pagination_util_1.PaginationUtil.getPaginationParams(page, limit, { maxLimit: 2000 });
             const sortFilter = filter_util_1.FilterUtil.buildSortFilter(sortBy, sortOrder);
             const [cars, total] = await Promise.all([
                 car_model_1.Car.find(filter)

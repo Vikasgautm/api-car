@@ -166,16 +166,19 @@ export class SpecRefinementService {
     const prompt = this.buildRefinementPrompt(variant, car, currentSpecs, missingFields, emptyOrLowQualityFields);
 
     try {
-      const message = await this.getClient().chat.completions.create({
-        model: 'gpt-oss-120b',
-        max_tokens: 1024,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-      });
+      const AI_TIMEOUT_MS = 15_000;
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('AI_TIMEOUT: spec refinement exceeded 15s')), AI_TIMEOUT_MS)
+      );
+
+      const message = await Promise.race([
+        this.getClient().chat.completions.create({
+          model: 'gpt-oss-120b',
+          max_tokens: 1024,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+        timeoutPromise,
+      ]);
 
       const responseText = (message as any).choices[0]?.message?.content || '';
       const suggestions = this.parseRefinementResponse(responseText);
@@ -183,11 +186,12 @@ export class SpecRefinementService {
       return {
         variant_id: variantId,
         variant_name: variant.variant_name,
-        suggestions: suggestions.slice(0, 5), // Limit to 5 suggestions
+        suggestions: suggestions.slice(0, 5),
         generated_at: new Date().toISOString(),
       };
-    } catch (error) {
-      console.error('LLM refinement failed:', error);
+    } catch (error: any) {
+      const isTimeout = error?.message?.startsWith('AI_TIMEOUT');
+      console.error(isTimeout ? 'LLM refinement timed out (15s)' : 'LLM refinement failed:', error?.message);
       return {
         variant_id: variantId,
         variant_name: variant.variant_name,
@@ -419,17 +423,23 @@ Provide 3-5 most impactful suggestions only.`;
     let aiValues: Record<string, { value: any; reason: string; confidence: number }> = {};
     try {
       const prompt = this.buildMissingFieldsPrompt(variant, car, missingKeys);
-      const message = await this.getClient().chat.completions.create({
-        model: 'gpt-oss-120b',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }],
-      });
+      const AI_TIMEOUT_MS = 15_000;
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('AI_TIMEOUT: missing-field fill exceeded 15s')), AI_TIMEOUT_MS)
+      );
+      const message = await Promise.race([
+        this.getClient().chat.completions.create({
+          model: 'gpt-oss-120b',
+          max_tokens: 1024,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+        timeoutPromise,
+      ]);
       const responseText = (message as any).choices[0]?.message?.content || '';
       aiValues = this.parseMissingFieldsResponse(responseText);
-    } catch (error) {
-      // AI failure is non-fatal — still return the missing fields with blank
-      // suggestions so the admin can type values in manually and save.
-      console.error('Missing-field AI suggestion failed:', error);
+    } catch (error: any) {
+      const isTimeout = error?.message?.startsWith('AI_TIMEOUT');
+      console.error(isTimeout ? 'Missing-field AI timed out (15s)' : 'Missing-field AI suggestion failed:', error?.message);
     }
 
     const fields: MissingFieldSuggestion[] = missingKeys.map((key) => {

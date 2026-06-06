@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '../../../utils/logger';
 import { ERROR_CODES, USER_MESSAGES } from '../../../constants/errorMessages';
 import { BodyType } from '../../../models/body-type.model';
 import { Brand } from '../../../models/brand.model';
@@ -806,7 +807,7 @@ export class ImportService {
                 op.url || 'import',
                 'import'
               ).catch(err => {
-                console.warn(`Failed to record change history for variant ${op.variant_id}: ${err?.message}`);
+                logger.error(`AUDIT_GAP: recordVariantChanges failed | variant=${op.variant_id} source=import error=${err?.message}`);
               });
             }
 

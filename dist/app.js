@@ -45,11 +45,13 @@ app.get("/", (req, res) => {
 const error_middleware_1 = require("./middlewares/error.middleware");
 const routes_1 = __importDefault(require("./shared/routes"));
 const app_error_util_1 = require("./shared/utils/app-error.util");
+const sitemap_controller_1 = require("./modules/sitemap/controllers/sitemap.controller");
 app.use("/uploads", express_1.default.static("uploads"));
 app.use('/api/v1/discover', rate_limit_middleware_1.discoverRateLimiter);
 app.use('/api/v1/cars/public', rate_limit_middleware_1.publicCarsRateLimiter);
 app.use('/api/v1/content-health/admin', rate_limit_middleware_1.adminRateLimiter);
 app.use('/api/v1/chatbot', rate_limit_middleware_1.chatbotRateLimiter);
+app.get('/sitemap.xml', sitemap_controller_1.SitemapController.getXml);
 app.use("/api/v1", routes_1.default);
 // Handle 404 - Route not found
 app.use((req, res, next) => {

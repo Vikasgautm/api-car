@@ -35,6 +35,7 @@ import variantIngestionRoutes from '../../modules/variant-ingestion/routes/impor
 import masterDataRoutes from '../../modules/master-data/routes/master-data.routes';
 import masterDataPublicRoutes from '../../modules/master-data/routes/master-data-public.routes';
 import adminChatbotRoutes from '../../modules/admin-chatbot/routes/adminChatbot.routes';
+import sitemapRoutes from '../../modules/sitemap/routes/sitemap.routes';
 
 const router = Router();
 
@@ -79,5 +80,6 @@ router.use('/lifecycle-governance', lifecycleGovernanceRoutes);
 router.use('/master-data/admin', masterDataRoutes);
 router.use('/master-data/public', masterDataPublicRoutes);
 router.use('/chatbot', adminChatbotRoutes);
+router.use('/sitemap', sitemapRoutes);
 
 export default router;

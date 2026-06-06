@@ -73,6 +73,7 @@ const import_staging_routes_1 = __importDefault(require("../../modules/variant-i
 const master_data_routes_1 = __importDefault(require("../../modules/master-data/routes/master-data.routes"));
 const master_data_public_routes_1 = __importDefault(require("../../modules/master-data/routes/master-data-public.routes"));
 const adminChatbot_routes_1 = __importDefault(require("../../modules/admin-chatbot/routes/adminChatbot.routes"));
+const sitemap_routes_1 = __importDefault(require("../../modules/sitemap/routes/sitemap.routes"));
 const router = (0, express_1.Router)();
 router.use('/dashboard', dashboard_routes_1.default);
 router.use('/auth', auth_routes_1.default);
@@ -114,5 +115,6 @@ router.use('/lifecycle-governance', lifecycle_governance_routes_1.default);
 router.use('/master-data/admin', master_data_routes_1.default);
 router.use('/master-data/public', master_data_public_routes_1.default);
 router.use('/chatbot', adminChatbot_routes_1.default);
+router.use('/sitemap', sitemap_routes_1.default);
 exports.default = router;
 //# sourceMappingURL=index.js.map
