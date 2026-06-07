@@ -36,8 +36,8 @@ class UnifiedImportController {
         const userId = req.user?.user_id || 'admin';
         if (!payload.source)
             throw new app_error_util_1.AppError('source is required', 400);
-        if (!payload.car && !payload.variant) {
-            throw new app_error_util_1.AppError('At least one of car or variant payload is required.', 400);
+        if (!payload.car && !(payload.variants && payload.variants.length > 0)) {
+            throw new app_error_util_1.AppError('At least one of car or variants payload is required.', 400);
         }
         const result = await unified_import_service_1.UnifiedImportService.unifiedSave(payload, userId);
         return response_util_1.ResponseUtil.created(res, result, 'Import saved successfully');

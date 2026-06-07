@@ -770,7 +770,12 @@ export class ImportService {
                 unmatched_data: { unmatched_specs: p.unmatched_specs },
               }
             ).catch(err => {
-              console.warn(`Failed to update import log for ${p.url}: ${err?.message}`);
+              logger.error('AUDIT_GAP', {
+                url: p.url,
+                source: 'import-log-create',
+                error: err instanceof Error ? err.message : String(err),
+                timestamp: new Date().toISOString(),
+              });
             })
           )
         );
@@ -821,10 +826,21 @@ export class ImportService {
                 unmatched_data: { unmatched_specs: op.unmatched_specs },
               }
             ).catch(err => {
-              console.warn(`Failed to update import log for ${op.url}: ${err?.message}`);
+              logger.error('AUDIT_GAP', {
+                variant_id: op.variant_id,
+                url: op.url,
+                source: 'import-log-update',
+                error: err instanceof Error ? err.message : String(err),
+                timestamp: new Date().toISOString(),
+              });
             });
           } catch (err: any) {
-            console.warn(`Failed to process update for variant ${op.variant_id}: ${err?.message}`);
+            logger.error('AUDIT_GAP', {
+              variant_id: op.variant_id,
+              source: 'import-variant-update',
+              error: err instanceof Error ? err.message : String(err),
+              timestamp: new Date().toISOString(),
+            });
           }
         });
 
@@ -1186,7 +1202,7 @@ export class ImportService {
       };
     } catch (error) {
       // Log but don't fail — normalization is an enhancement, not a requirement
-      console.warn(
+      logger.warn(
         `Failed to enhance variant with normalization: ${error instanceof Error ? error.message : String(error)}`
       );
       return variantData;

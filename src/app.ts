@@ -1,3 +1,13 @@
+import * as Sentry from "@sentry/node";
+
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || "development",
+    tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 0,
+  });
+}
+
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -61,6 +71,11 @@ app.use("/api/v1", routes);
 app.use((req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
+
+// Sentry error handler must come before the custom error handler
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
 
 // Error handling
 app.use(errorMiddleware);

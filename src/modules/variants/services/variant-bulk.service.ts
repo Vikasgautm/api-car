@@ -24,15 +24,22 @@ export interface BulkOperationResult {
 }
 
 async function runChangeRecording(
-  promises: Promise<void>[],
+  entries: Array<{ variantId: string; promise: Promise<void> }>,
   label: string,
 ): Promise<void> {
-  if (promises.length === 0) return;
-  const results = await Promise.allSettled(promises);
-  const failedCount = results.filter(r => r.status === 'rejected').length;
-  if (failedCount > 0) {
-    logger.warn(`${failedCount} of ${promises.length} change record(s) failed in ${label}`);
-  }
+  if (entries.length === 0) return;
+  const results = await Promise.allSettled(entries.map(e => e.promise));
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      logger.error('AUDIT_GAP', {
+        variant_id: entries[i].variantId,
+        source: 'variant-bulk',
+        operation: label,
+        error: r.reason instanceof Error ? r.reason.message : String(r.reason),
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
 }
 
 export class VariantBulkService {
@@ -63,7 +70,7 @@ export class VariantBulkService {
 
     await CarVariant.bulkWrite(bulkOps);
 
-    const changeRecordingPromises: Promise<void>[] = [];
+    const changeRecordingPromises: Array<{ variantId: string; promise: Promise<void> }> = [];
 
     for (let i = 0; i < variantIds.length; i++) {
       const variantId = variantIds[i];
@@ -74,15 +81,16 @@ export class VariantBulkService {
         result.successful++;
         result.updated_variants.push(afterObj);
 
-        changeRecordingPromises.push(
-          VariantIntegrityService.recordVariantChanges(
+        changeRecordingPromises.push({
+          variantId,
+          promise: VariantIntegrityService.recordVariantChanges(
             variantId,
             beforeResult.value,
             afterObj,
             changedBy,
             'bulk_operation'
-          )
-        );
+          ),
+        });
       } else {
         result.failed++;
         result.errors.push({ variant_id: variantId, error: 'Failed to update variant' });
@@ -125,7 +133,7 @@ export class VariantBulkService {
 
     await CarVariant.bulkWrite(bulkOps);
 
-    const changeRecordingPromises: Promise<void>[] = [];
+    const changeRecordingPromises: Array<{ variantId: string; promise: Promise<void> }> = [];
 
     for (let i = 0; i < variantIds.length; i++) {
       const variantId = variantIds[i];
@@ -136,15 +144,16 @@ export class VariantBulkService {
         result.successful++;
         result.updated_variants.push(afterObj);
 
-        changeRecordingPromises.push(
-          VariantIntegrityService.recordVariantChanges(
+        changeRecordingPromises.push({
+          variantId,
+          promise: VariantIntegrityService.recordVariantChanges(
             variantId,
             beforeResult.value,
             afterObj,
             changedBy,
             'bulk_operation'
-          )
-        );
+          ),
+        });
       } else {
         result.failed++;
         result.errors.push({ variant_id: variantId, error: 'Failed to update variant' });
@@ -215,7 +224,7 @@ export class VariantBulkService {
       await CarVariant.bulkWrite(bulkOps);
     }
 
-    const changeRecordingPromises: Promise<void>[] = [];
+    const changeRecordingPromises: Array<{ variantId: string; promise: Promise<void> }> = [];
     const filteredSet = new Set(bulkOps.map((op: any) => op.updateOne.filter.variant_id));
 
     for (let i = 0; i < variantIds.length; i++) {
@@ -229,15 +238,16 @@ export class VariantBulkService {
         result.successful++;
         result.updated_variants.push(afterObj);
 
-        changeRecordingPromises.push(
-          VariantIntegrityService.recordVariantChanges(
+        changeRecordingPromises.push({
+          variantId,
+          promise: VariantIntegrityService.recordVariantChanges(
             variantId,
             beforeResult.value,
             afterObj,
             changedBy,
             'bulk_operation'
-          )
-        );
+          ),
+        });
       } else {
         result.failed++;
         result.errors.push({ variant_id: variantId, error: 'Failed to update variant' });
@@ -281,7 +291,7 @@ export class VariantBulkService {
       await CarVariant.bulkWrite(bulkOps);
     }
 
-    const changeRecordingPromises: Promise<void>[] = [];
+    const changeRecordingPromises: Array<{ variantId: string; promise: Promise<void> }> = [];
 
     for (let i = 0; i < request.variant_ids.length; i++) {
       const variantId = request.variant_ids[i];
@@ -292,15 +302,16 @@ export class VariantBulkService {
         result.successful++;
         result.updated_variants.push(afterObj);
 
-        changeRecordingPromises.push(
-          VariantIntegrityService.recordVariantChanges(
+        changeRecordingPromises.push({
+          variantId,
+          promise: VariantIntegrityService.recordVariantChanges(
             variantId,
             beforeResult.value,
             afterObj,
             changedBy,
             'bulk_operation'
-          )
-        );
+          ),
+        });
       } else {
         result.failed++;
         result.errors.push({ variant_id: variantId, error: 'Failed to update variant' });
@@ -346,7 +357,7 @@ export class VariantBulkService {
     await CarVariant.bulkWrite(bulkOps);
 
     const result: BulkOperationResult = { total: variantIds.length, successful: 0, failed: 0, errors: [], updated_variants: [] };
-    const changeRecordingPromises: Promise<void>[] = [];
+    const changeRecordingPromises: Array<{ variantId: string; promise: Promise<void> }> = [];
 
     for (let i = 0; i < variantIds.length; i++) {
       const br = beforeVariants[i];
@@ -354,9 +365,10 @@ export class VariantBulkService {
         const after = { ...br.value, is_published: false, publish_status: 'hidden', updated_at: new Date() };
         result.successful++;
         result.updated_variants.push(after);
-        changeRecordingPromises.push(
-          VariantIntegrityService.recordVariantChanges(variantIds[i], br.value, after, changedBy, 'bulk_operation')
-        );
+        changeRecordingPromises.push({
+          variantId: variantIds[i],
+          promise: VariantIntegrityService.recordVariantChanges(variantIds[i], br.value, after, changedBy, 'bulk_operation'),
+        });
       } else {
         result.failed++;
         result.errors.push({ variant_id: variantIds[i], error: 'Variant not found' });
@@ -380,7 +392,7 @@ export class VariantBulkService {
     await CarVariant.bulkWrite(bulkOps);
 
     const result: BulkOperationResult = { total: variantIds.length, successful: 0, failed: 0, errors: [], updated_variants: [] };
-    const changeRecordingPromises: Promise<void>[] = [];
+    const changeRecordingPromises: Array<{ variantId: string; promise: Promise<void> }> = [];
 
     for (let i = 0; i < variantIds.length; i++) {
       const br = beforeVariants[i];
@@ -388,9 +400,10 @@ export class VariantBulkService {
         const after = { ...br.value, publish_status: 'draft', updated_at: new Date() };
         result.successful++;
         result.updated_variants.push(after);
-        changeRecordingPromises.push(
-          VariantIntegrityService.recordVariantChanges(variantIds[i], br.value, after, changedBy, 'bulk_operation')
-        );
+        changeRecordingPromises.push({
+          variantId: variantIds[i],
+          promise: VariantIntegrityService.recordVariantChanges(variantIds[i], br.value, after, changedBy, 'bulk_operation'),
+        });
       } else {
         result.failed++;
         result.errors.push({ variant_id: variantIds[i], error: 'Variant not found' });

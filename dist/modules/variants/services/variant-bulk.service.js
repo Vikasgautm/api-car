@@ -6,14 +6,21 @@ const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const logger_1 = require("../../../utils/logger");
 const variant_validation_service_1 = require("./variant-validation.service");
 const variant_integrity_service_1 = require("./variant-integrity.service");
-async function runChangeRecording(promises, label) {
-    if (promises.length === 0)
+async function runChangeRecording(entries, label) {
+    if (entries.length === 0)
         return;
-    const results = await Promise.allSettled(promises);
-    const failedCount = results.filter(r => r.status === 'rejected').length;
-    if (failedCount > 0) {
-        logger_1.logger.warn(`${failedCount} of ${promises.length} change record(s) failed in ${label}`);
-    }
+    const results = await Promise.allSettled(entries.map(e => e.promise));
+    results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+            logger_1.logger.error('AUDIT_GAP', {
+                variant_id: entries[i].variantId,
+                source: 'variant-bulk',
+                operation: label,
+                error: r.reason instanceof Error ? r.reason.message : String(r.reason),
+                timestamp: new Date().toISOString(),
+            });
+        }
+    });
 }
 class VariantBulkService {
     static async bulkUpdateVisibility(variantIds, hiddenSections, changedBy = 'system') {
@@ -45,7 +52,10 @@ class VariantBulkService {
                 const afterObj = { ...beforeResult.value, hidden_sections: hiddenSections, updated_at: new Date() };
                 result.successful++;
                 result.updated_variants.push(afterObj);
-                changeRecordingPromises.push(variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantId, beforeResult.value, afterObj, changedBy, 'bulk_operation'));
+                changeRecordingPromises.push({
+                    variantId,
+                    promise: variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantId, beforeResult.value, afterObj, changedBy, 'bulk_operation'),
+                });
             }
             else {
                 result.failed++;
@@ -88,7 +98,10 @@ class VariantBulkService {
                 const afterObj = { ...beforeResult.value, variant_status: status, updated_at: new Date() };
                 result.successful++;
                 result.updated_variants.push(afterObj);
-                changeRecordingPromises.push(variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantId, beforeResult.value, afterObj, changedBy, 'bulk_operation'));
+                changeRecordingPromises.push({
+                    variantId,
+                    promise: variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantId, beforeResult.value, afterObj, changedBy, 'bulk_operation'),
+                });
             }
             else {
                 result.failed++;
@@ -159,7 +172,10 @@ class VariantBulkService {
                 const afterObj = { ...beforeResult.value, is_published: shouldPublish, published_at: publishedAt, updated_at: new Date() };
                 result.successful++;
                 result.updated_variants.push(afterObj);
-                changeRecordingPromises.push(variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantId, beforeResult.value, afterObj, changedBy, 'bulk_operation'));
+                changeRecordingPromises.push({
+                    variantId,
+                    promise: variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantId, beforeResult.value, afterObj, changedBy, 'bulk_operation'),
+                });
             }
             else {
                 result.failed++;
@@ -207,7 +223,10 @@ class VariantBulkService {
                 const afterObj = { ...beforeResult.value, ...sharedUpdate };
                 result.successful++;
                 result.updated_variants.push(afterObj);
-                changeRecordingPromises.push(variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantId, beforeResult.value, afterObj, changedBy, 'bulk_operation'));
+                changeRecordingPromises.push({
+                    variantId,
+                    promise: variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantId, beforeResult.value, afterObj, changedBy, 'bulk_operation'),
+                });
             }
             else {
                 result.failed++;
@@ -250,7 +269,10 @@ class VariantBulkService {
                 const after = { ...br.value, is_published: false, publish_status: 'hidden', updated_at: new Date() };
                 result.successful++;
                 result.updated_variants.push(after);
-                changeRecordingPromises.push(variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantIds[i], br.value, after, changedBy, 'bulk_operation'));
+                changeRecordingPromises.push({
+                    variantId: variantIds[i],
+                    promise: variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantIds[i], br.value, after, changedBy, 'bulk_operation'),
+                });
             }
             else {
                 result.failed++;
@@ -277,7 +299,10 @@ class VariantBulkService {
                 const after = { ...br.value, publish_status: 'draft', updated_at: new Date() };
                 result.successful++;
                 result.updated_variants.push(after);
-                changeRecordingPromises.push(variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantIds[i], br.value, after, changedBy, 'bulk_operation'));
+                changeRecordingPromises.push({
+                    variantId: variantIds[i],
+                    promise: variant_integrity_service_1.VariantIntegrityService.recordVariantChanges(variantIds[i], br.value, after, changedBy, 'bulk_operation'),
+                });
             }
             else {
                 result.failed++;
