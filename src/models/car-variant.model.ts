@@ -112,6 +112,7 @@ export interface SuspensionSteeringBrakes {
   front_brake_type?: string;
   rear_brake_type?: string;
   parking_brake?: string;
+  turning_radius?: string;
 }
 
 export interface TyresWheels {
@@ -208,6 +209,8 @@ export interface ComfortConvenience {
   keyless_entry?: boolean;
   push_button_start?: boolean;
   power_windows?: string;
+  anti_pinch_windows?: string;
+  manual_height_adj_seat?: boolean;
   rear_window_defogger?: boolean;
   rear_wiper?: boolean;
   headlamp_washer?: boolean;
@@ -221,6 +224,7 @@ export interface InfotainmentConnectivity {
   usb_ports?: number;
   wireless_charging?: boolean;
   navigation?: boolean;
+  live_traffic_navigation?: boolean;
   voice_command?: boolean;
   speakers?: number;
   wifi_hotspot?: boolean;
@@ -238,11 +242,18 @@ export interface ConnectedCar {
   find_my_car?: boolean;
   live_location?: boolean;
   remote_engine_start_stop?: boolean;
+  engine_start_alarm?: boolean;
   remote_lock?: boolean;
   remote_ac?: boolean;
   remote_sunroof?: boolean;
   digital_key?: boolean;
   emergency_sos_button?: boolean;
+  voice_assistant?: string;
+  valet_mode?: boolean;
+  tow_away_alert?: boolean;
+  smartwatch_app?: boolean;
+  live_weather?: boolean;
+  remote_vehicle_status?: boolean;
 }
 
 export interface Interior {
@@ -275,6 +286,7 @@ export interface Exterior {
   led_tail_lights?: boolean;
   drl?: boolean;
   fog_lights?: string;
+  cornering_fog_lamps?: boolean;
   automatic_headlamps?: boolean;
   follow_me_home?: boolean;
   roof_rails?: boolean;
@@ -628,6 +640,7 @@ const variantSchema = new Schema<ICarVariant>(
         front_brake_type: String,
         rear_brake_type: String,
         parking_brake: String,
+        turning_radius: String,
       },
       tyres_wheels: {
         tyre_type: String,
@@ -696,6 +709,8 @@ const variantSchema = new Schema<ICarVariant>(
         keyless_entry: Boolean,
         push_button_start: Boolean,
         power_windows: String,
+        anti_pinch_windows: String,
+        manual_height_adj_seat: Boolean,
         rear_window_defogger: Boolean,
         rear_wiper: Boolean,
         headlamp_washer: Boolean,
@@ -708,6 +723,7 @@ const variantSchema = new Schema<ICarVariant>(
         usb_ports: { type: Number, min: 0 },
         wireless_charging: Boolean,
         navigation: Boolean,
+        live_traffic_navigation: Boolean,
         voice_command: Boolean,
         speakers: { type: Number, min: 0 },
         wifi_hotspot: Boolean,
@@ -724,11 +740,18 @@ const variantSchema = new Schema<ICarVariant>(
         find_my_car: Boolean,
         live_location: Boolean,
         remote_engine_start_stop: Boolean,
+        engine_start_alarm: Boolean,
         remote_lock: Boolean,
         remote_ac: Boolean,
         remote_sunroof: Boolean,
         digital_key: Boolean,
         emergency_sos_button: Boolean,
+        voice_assistant: String,
+        valet_mode: Boolean,
+        tow_away_alert: Boolean,
+        smartwatch_app: Boolean,
+        live_weather: Boolean,
+        remote_vehicle_status: Boolean,
       },
       interior: {
         dashboard_type: String,
@@ -759,6 +782,7 @@ const variantSchema = new Schema<ICarVariant>(
         led_tail_lights: Boolean,
         drl: Boolean,
         fog_lights: String,
+        cornering_fog_lamps: Boolean,
         automatic_headlamps: Boolean,
         follow_me_home: Boolean,
         roof_rails: Boolean,

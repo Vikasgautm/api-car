@@ -103,6 +103,7 @@ export interface SuspensionSteeringBrakes {
     front_brake_type?: string;
     rear_brake_type?: string;
     parking_brake?: string;
+    turning_radius?: string;
 }
 export interface TyresWheels {
     tyre_type?: string;
@@ -193,6 +194,8 @@ export interface ComfortConvenience {
     keyless_entry?: boolean;
     push_button_start?: boolean;
     power_windows?: string;
+    anti_pinch_windows?: string;
+    manual_height_adj_seat?: boolean;
     rear_window_defogger?: boolean;
     rear_wiper?: boolean;
     headlamp_washer?: boolean;
@@ -205,6 +208,7 @@ export interface InfotainmentConnectivity {
     usb_ports?: number;
     wireless_charging?: boolean;
     navigation?: boolean;
+    live_traffic_navigation?: boolean;
     voice_command?: boolean;
     speakers?: number;
     wifi_hotspot?: boolean;
@@ -221,11 +225,18 @@ export interface ConnectedCar {
     find_my_car?: boolean;
     live_location?: boolean;
     remote_engine_start_stop?: boolean;
+    engine_start_alarm?: boolean;
     remote_lock?: boolean;
     remote_ac?: boolean;
     remote_sunroof?: boolean;
     digital_key?: boolean;
     emergency_sos_button?: boolean;
+    voice_assistant?: string;
+    valet_mode?: boolean;
+    tow_away_alert?: boolean;
+    smartwatch_app?: boolean;
+    live_weather?: boolean;
+    remote_vehicle_status?: boolean;
 }
 export interface Interior {
     dashboard_type?: string;
@@ -256,6 +267,7 @@ export interface Exterior {
     led_tail_lights?: boolean;
     drl?: boolean;
     fog_lights?: string;
+    cornering_fog_lamps?: boolean;
     automatic_headlamps?: boolean;
     follow_me_home?: boolean;
     roof_rails?: boolean;
