@@ -5,9 +5,12 @@ export interface ICity extends Document {
     slug: string;
     state: string;
     country?: string;
-    pincode?: number;
+    pincode?: string;
     longitude?: number;
     latitude?: number;
+    is_published?: boolean;
+    is_featured?: boolean;
+    noindex?: boolean;
     is_deleted?: boolean;
     deleted_at?: Date;
 }

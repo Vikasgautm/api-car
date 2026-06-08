@@ -26,3 +26,11 @@ export const chatbotAskSchema = z.object({
 });
 
 export type ChatbotAskInput = z.infer<typeof chatbotAskSchema>;
+
+export const chatbotActionSchema = z.object({
+  action: z.enum(['publish', 'unpublish']),
+  entity_type: z.enum(['car', 'variant']),
+  entity_id: z.string().min(1).max(100),
+});
+
+export type ChatbotActionInput = z.infer<typeof chatbotActionSchema>;

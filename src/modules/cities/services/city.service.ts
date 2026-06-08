@@ -194,7 +194,7 @@ export class CityService {
       slug: cityData.slug,
       state: cityData.state,
       country: cityData.country,
-      pincode: cityData.pincode,
+      pincode: cityData.pincode != null ? String(cityData.pincode) : undefined,
       longitude: cityData.longitude,
       latitude: cityData.latitude,
     };
@@ -235,7 +235,7 @@ export class CityService {
       }
     }
 
-    if (cityData.pincode !== undefined) updateData.pincode = cityData.pincode;
+    if (cityData.pincode !== undefined) updateData.pincode = cityData.pincode != null ? String(cityData.pincode) : undefined;
     if (cityData.longitude !== undefined) updateData.longitude = cityData.longitude;
     if (cityData.latitude !== undefined) updateData.latitude = cityData.latitude;
 
@@ -279,7 +279,7 @@ export class CityService {
         slug,
         state: c.state,
         country: 'India',
-        pincode: c.pincode,
+        pincode: c.pincode != null ? String(c.pincode) : undefined,
         latitude: c.latitude,
         longitude: c.longitude,
       });

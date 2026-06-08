@@ -17,4 +17,16 @@ export declare const chatbotAskSchema: z.ZodObject<{
     limit: z.ZodDefault<z.ZodOptional<z.ZodCoercedNumber<unknown>>>;
 }, z.core.$strip>;
 export type ChatbotAskInput = z.infer<typeof chatbotAskSchema>;
+export declare const chatbotActionSchema: z.ZodObject<{
+    action: z.ZodEnum<{
+        publish: "publish";
+        unpublish: "unpublish";
+    }>;
+    entity_type: z.ZodEnum<{
+        car: "car";
+        variant: "variant";
+    }>;
+    entity_id: z.ZodString;
+}, z.core.$strip>;
+export type ChatbotActionInput = z.infer<typeof chatbotActionSchema>;
 //# sourceMappingURL=adminChatbot.validation.d.ts.map

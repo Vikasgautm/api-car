@@ -8,7 +8,11 @@ import { FAQ } from '../../../models/faq.model';
 import { User } from '../../../models/user.model';
 import { ImportLog } from '../../../models/import-log.model';
 import { AuditLog } from '../../../models/audit-log.model';
-import type { ToolResult } from '../types/adminChatbot.types';
+import { City } from '../../../models/city.model';
+import { RankingScore } from '../../../models/ranking-score.model';
+import { SeoCollection } from '../../../models/seo-collection.model';
+import { PopularCollection } from '../../../models/popular-collection.model';
+import type { ToolResult, ActionProposal, ChatbotWriteAction } from '../types/adminChatbot.types';
 
 const MAX_ROWS = Number(process.env.ADMIN_CHATBOT_MAX_RESULTS) || 20;
 
@@ -26,6 +30,69 @@ const SAFE_BODYTYPE_FIELDS = 'body_type_id name slug is_active';
 function paginate<T>(arr: T[], page: number, limit: number): T[] {
   const start = (page - 1) * limit;
   return arr.slice(start, start + limit);
+}
+
+async function enrichCarRows(rows: Record<string, unknown>[]): Promise<Record<string, unknown>[]> {
+  const brandIds = [...new Set(rows.map(r => r.brand_id as string).filter(Boolean))];
+  const brandMap: Record<string, string> = {};
+  if (brandIds.length) {
+    const brands = await Brand.find({ brand_id: { $in: brandIds } }).select('brand_id name').lean();
+    (brands as { brand_id: string; name: string }[]).forEach(b => { brandMap[b.brand_id] = b.name; });
+  }
+  return rows.map(r => {
+    if (!r.brand_id) return r;
+    const { brand_id, ...rest } = r;
+    return { ...rest, brand: brandMap[brand_id as string] ?? '—' };
+  });
+}
+
+async function enrichVariantRows(rows: Record<string, unknown>[]): Promise<Record<string, unknown>[]> {
+  const carIds = [...new Set(rows.map(r => r.car_id as string).filter(Boolean))];
+  const fuelTypeIds = [...new Set(rows.map(r => r.fuel_type_id as string).filter(Boolean))];
+  const bodyTypeIds = [...new Set(rows.map(r => r.body_type_id as string).filter(Boolean))];
+
+  const [carDocs, fuelDocs, bodyDocs] = await Promise.all([
+    carIds.length ? Car.find({ car_id: { $in: carIds } }).select('car_id name').lean() : [],
+    fuelTypeIds.length ? FuelType.find({ fuel_type_id: { $in: fuelTypeIds } }).select('fuel_type_id name').lean() : [],
+    bodyTypeIds.length ? BodyType.find({ body_type_id: { $in: bodyTypeIds } }).select('body_type_id name').lean() : [],
+  ]);
+
+  const carMap: Record<string, string> = {};
+  const fuelMap: Record<string, string> = {};
+  const bodyMap: Record<string, string> = {};
+  (carDocs as { car_id: string; name: string }[]).forEach(c => { carMap[c.car_id] = c.name; });
+  (fuelDocs as { fuel_type_id: string; name: string }[]).forEach(f => { fuelMap[f.fuel_type_id] = f.name; });
+  (bodyDocs as { body_type_id: string; name: string }[]).forEach(b => { bodyMap[b.body_type_id] = b.name; });
+
+  return rows.map(r => {
+    const result: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(r)) {
+      if (key === 'car_id') {
+        result.car = val ? (carMap[val as string] ?? 'NOT FOUND') : undefined;
+      } else if (key === 'fuel_type_id') {
+        result.fuel_type = val ? (fuelMap[val as string] ?? '—') : undefined;
+      } else if (key === 'body_type_id') {
+        result.body_type = val ? (bodyMap[val as string] ?? '—') : undefined;
+      } else {
+        result[key] = val;
+      }
+    }
+    return result;
+  });
+}
+
+async function enrichFaqRows(rows: Record<string, unknown>[]): Promise<Record<string, unknown>[]> {
+  const carIds = [...new Set(rows.map(r => r.car_id as string).filter(Boolean))];
+  const carMap: Record<string, string> = {};
+  if (carIds.length) {
+    const cars = await Car.find({ car_id: { $in: carIds } }).select('car_id name').lean();
+    (cars as { car_id: string; name: string }[]).forEach(c => { carMap[c.car_id] = c.name; });
+  }
+  return rows.map(r => {
+    if (!r.car_id) return r;
+    const { car_id, ...rest } = r;
+    return { ...rest, car: carMap[car_id as string] ?? '—' };
+  });
 }
 
 export async function getDashboardSummary(page: number, limit: number): Promise<ToolResult> {
@@ -91,10 +158,10 @@ export async function searchCars(
     .limit(limit)
     .lean();
 
-  const rows = cars as unknown as Record<string, unknown>[];
+  const enriched = await enrichCarRows(cars as unknown as Record<string, unknown>[]);
 
   return {
-    data: rows,
+    data: enriched,
     summary: { total, critical: filters.is_published === false ? total : 0 },
     fallbackAnswer: `Found ${total} cars matching your filter.`,
   };
@@ -153,7 +220,7 @@ export async function getCarDataQualityReport(page: number, limit: number): Prom
     ]),
   ]);
 
-  const issues = [
+  const rawIssues = [
     ...noBrandCars.map(c => ({ ...(c as unknown as Record<string,unknown>), issue: 'missing_brand' })),
     ...noVariantCars.map((c: Record<string,unknown>) => ({ ...c, issue: 'no_variants' })),
     ...duplicateSlugs.map((d: Record<string,unknown>) => ({ slug: d._id, count: d.count, car_ids: d.car_ids, issue: 'duplicate_slug' })),
@@ -162,6 +229,7 @@ export async function getCarDataQualityReport(page: number, limit: number): Prom
     ...publishedWithNoPublishedVariant.map((c: Record<string,unknown>) => ({ ...c, issue: 'published_no_published_variant' })),
   ];
 
+  const issues = await enrichCarRows(rawIssues);
   const paged = paginate(issues, page, limit);
   const total = issues.length;
   const critical = noVariantCars.length + duplicateSlugs.length + noBrandCars.length;
@@ -221,8 +289,10 @@ export async function searchVariants(
     .limit(limit)
     .lean();
 
+  const enriched = await enrichVariantRows(variants as unknown as Record<string, unknown>[]);
+
   return {
-    data: variants as unknown as Record<string, unknown>[],
+    data: enriched,
     summary: { total },
     fallbackAnswer: `Found ${total} variants matching your filter.`,
   };
@@ -280,13 +350,14 @@ export async function getVariantDataQualityReport(page: number, limit: number): 
     ]),
   ]);
 
-  const issues = [
+  const rawIssues = [
     ...missingPrice.map(v => ({ ...(v as unknown as Record<string,unknown>), issue: 'missing_price' })),
     ...missingFuelType.map(v => ({ ...(v as unknown as Record<string,unknown>), issue: 'missing_fuel_type' })),
     ...missingBodyType.map(v => ({ ...(v as unknown as Record<string,unknown>), issue: 'missing_body_type' })),
     ...orphanedVariants.map((v: Record<string,unknown>) => ({ ...v, issue: 'orphaned_variant' })),
     ...unpublishedUnderPublished.map((v: Record<string,unknown>) => ({ ...v, issue: 'unpublished_under_published_car' })),
   ];
+  const issues = await enrichVariantRows(rawIssues);
 
   const paged = paginate(issues, page, limit);
   const total = issues.length;
@@ -464,8 +535,10 @@ export async function getFAQsSummary(page: number, limit: number): Promise<ToolR
     .limit(limit)
     .lean();
 
+  const enriched = await enrichFaqRows(faqs as unknown as Record<string, unknown>[]);
+
   return {
-    data: faqs as unknown as Record<string, unknown>[],
+    data: enriched,
     summary: { total, no_answer: noAnswer, unpublished },
     fallbackAnswer: `${total} FAQs. ${noAnswer} missing answers. ${unpublished} unpublished.`,
   };
@@ -569,4 +642,245 @@ export async function getSystemHealth(page: number, limit: number): Promise<Tool
     summary,
     fallbackAnswer: `System health score: ${healthScore}%. ${carsWithIssues} cars and ${variantsWithIssues} variants have issues. ${failedImports} failed imports.`,
   };
+}
+
+export async function searchByCarName(name: string, page: number, limit: number): Promise<ToolResult> {
+  const query = { name: new RegExp(name, 'i'), is_deleted: false };
+  const total = await Car.countDocuments(query);
+  const cars = await Car.find(query)
+    .select(SAFE_CAR_FIELDS)
+    .sort({ name: 1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+  const enriched = await enrichCarRows(cars as unknown as Record<string, unknown>[]);
+  return {
+    data: enriched,
+    summary: { total },
+    fallbackAnswer: total === 0
+      ? `No cars found matching "${name}".`
+      : `Found ${total} car${total > 1 ? 's' : ''} matching "${name}".`,
+  };
+}
+
+export async function searchByVariantName(name: string, carNameOrId: string | undefined, page: number, limit: number): Promise<ToolResult> {
+  const query: Record<string, unknown> = { name: new RegExp(name, 'i'), is_deleted: false };
+  if (carNameOrId) {
+    const car = await Car.findOne({ name: new RegExp(carNameOrId, 'i'), is_deleted: false }).select('car_id').lean();
+    if (car) query.car_id = (car as { car_id: string }).car_id;
+  }
+  const total = await CarVariant.countDocuments(query);
+  const variants = await CarVariant.find(query)
+    .select(SAFE_VARIANT_FIELDS)
+    .sort({ name: 1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+  const enriched = await enrichVariantRows(variants as unknown as Record<string, unknown>[]);
+  return {
+    data: enriched,
+    summary: { total },
+    fallbackAnswer: total === 0 ? `No variants found matching "${name}".` : `Found ${total} variants matching "${name}".`,
+  };
+}
+
+export async function findCarForAction(name: string, action: ChatbotWriteAction): Promise<ToolResult> {
+  const cars = await Car.find({ name: new RegExp(name, 'i'), is_deleted: false })
+    .select(SAFE_CAR_FIELDS)
+    .limit(5)
+    .lean();
+
+  if (!cars.length) {
+    return { data: [], summary: {}, fallbackAnswer: `Could not find a car matching "${name}". Try the exact car name.` };
+  }
+
+  const enriched = await enrichCarRows(cars as unknown as Record<string, unknown>[]);
+  const car = cars[0] as { car_id: string; name: string; is_published: boolean };
+  const targetState = action === 'publish';
+
+  if (car.is_published === targetState) {
+    return {
+      data: enriched,
+      summary: { total: cars.length },
+      fallbackAnswer: `"${car.name}" is already ${action === 'publish' ? 'published' : 'unpublished'}.`,
+    };
+  }
+
+  const proposal: ActionProposal = {
+    action,
+    entity_type: 'car',
+    entity_id: car.car_id,
+    entity_name: car.name,
+    label: `${action === 'publish' ? 'Publish' : 'Unpublish'} "${car.name}"`,
+    current_state: car.is_published,
+    warning: action === 'publish'
+      ? 'This car will be visible to users on the public site.'
+      : 'This car will be hidden from the public site.',
+  };
+
+  return {
+    data: enriched,
+    summary: { total: cars.length },
+    fallbackAnswer: `Found "${car.name}". Ready to ${action}.`,
+    action_proposal: proposal,
+  };
+}
+
+export async function findVariantForAction(name: string, action: ChatbotWriteAction): Promise<ToolResult> {
+  const variants = await CarVariant.find({ name: new RegExp(name, 'i'), is_deleted: false })
+    .select(SAFE_VARIANT_FIELDS)
+    .limit(5)
+    .lean();
+
+  if (!variants.length) {
+    return { data: [], summary: {}, fallbackAnswer: `Could not find a variant matching "${name}".` };
+  }
+
+  const enriched = await enrichVariantRows(variants as unknown as Record<string, unknown>[]);
+  const v = variants[0] as unknown as { variant_id: string; name: string; is_published: boolean };
+  const targetState = action === 'publish';
+
+  if (v.is_published === targetState) {
+    return {
+      data: enriched,
+      summary: { total: variants.length },
+      fallbackAnswer: `"${v.name}" is already ${action === 'publish' ? 'published' : 'unpublished'}.`,
+    };
+  }
+
+  const proposal: ActionProposal = {
+    action,
+    entity_type: 'variant',
+    entity_id: v.variant_id,
+    entity_name: v.name,
+    label: `${action === 'publish' ? 'Publish' : 'Unpublish'} variant "${v.name}"`,
+    current_state: v.is_published,
+    warning: action === 'publish'
+      ? 'This variant will appear on the car page.'
+      : 'This variant will be hidden from the car page.',
+  };
+
+  return {
+    data: enriched,
+    summary: { total: variants.length },
+    fallbackAnswer: `Found variant "${v.name}". Ready to ${action}.`,
+    action_proposal: proposal,
+  };
+}
+
+export async function getCitySummary(page: number, limit: number): Promise<ToolResult> {
+  const total = await City.countDocuments({});
+  const cities = await City.find({})
+    .select('city_id name slug is_active')
+    .sort({ name: 1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+  const activeCount = await City.countDocuments({ is_active: true });
+
+  return {
+    data: cities as unknown as Record<string, unknown>[],
+    summary: { total, active: activeCount, inactive: total - activeCount },
+    fallbackAnswer: `${total} cities in the system. ${activeCount} active, ${total - activeCount} inactive.`,
+  };
+}
+
+export async function getRankingSummary(page: number, limit: number): Promise<ToolResult> {
+  const total = await RankingScore.countDocuments({});
+  const topRanked = await RankingScore.find({})
+    .select('car_id composite_score buyer_intent_score trending_score popular_score updatedAt')
+    .sort({ composite_score: -1 })
+    .limit(limit)
+    .lean();
+
+  const carIds = topRanked.map((r: any) => r.car_id).filter(Boolean);
+  const cars = await Car.find({ car_id: { $in: carIds }, is_deleted: false }).select('car_id name').lean();
+  const carMap: Record<string, string> = {};
+  (cars as { car_id: string; name: string }[]).forEach(c => { carMap[c.car_id] = c.name; });
+
+  const enriched = topRanked.map((r: any) => ({
+    car: carMap[r.car_id] ?? '—',
+    composite_score: r.composite_score != null ? Math.round(r.composite_score * 100) / 100 : '—',
+    buyer_intent: r.buyer_intent_score != null ? Math.round(r.buyer_intent_score * 100) / 100 : '—',
+    trending: r.trending_score != null ? Math.round(r.trending_score * 100) / 100 : '—',
+    popular: r.popular_score != null ? Math.round(r.popular_score * 100) / 100 : '—',
+    updated: r.updatedAt,
+  }));
+
+  return {
+    data: enriched,
+    summary: { total },
+    fallbackAnswer: `Top ${topRanked.length} ranked cars shown out of ${total} total ranking records.`,
+  };
+}
+
+export async function getSeoCollectionSummary(page: number, limit: number): Promise<ToolResult> {
+  const total = await SeoCollection.countDocuments({ is_deleted: false });
+  const published = await SeoCollection.countDocuments({ is_published: true, is_deleted: false });
+  const collections = await SeoCollection.find({ is_deleted: false })
+    .select('collection_id title slug is_published car_count createdAt')
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+  return {
+    data: collections as unknown as Record<string, unknown>[],
+    summary: { total, published, unpublished: total - published },
+    fallbackAnswer: `${total} SEO collections. ${published} published, ${total - published} unpublished.`,
+  };
+}
+
+export async function getPopularCollectionSummary(page: number, limit: number): Promise<ToolResult> {
+  const total = await PopularCollection.countDocuments({ is_deleted: false });
+  const published = await PopularCollection.countDocuments({ is_published: true, is_deleted: false });
+  const collections = await PopularCollection.find({ is_deleted: false })
+    .select('collection_id title slug is_published view_all_path createdAt')
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .lean();
+
+  return {
+    data: collections as unknown as Record<string, unknown>[],
+    summary: { total, published, unpublished: total - published },
+    fallbackAnswer: `${total} popular collections. ${published} published, ${total - published} unpublished.`,
+  };
+}
+
+export async function performWriteAction(
+  action: ChatbotWriteAction,
+  entity_type: 'car' | 'variant',
+  entity_id: string,
+): Promise<{ success: boolean; message: string; entity_name: string }> {
+  const newPublishedState = action === 'publish';
+
+  if (entity_type === 'car') {
+    const car = await Car.findOneAndUpdate(
+      { car_id: entity_id, is_deleted: false },
+      { is_published: newPublishedState },
+      { new: true },
+    ).select('name').lean();
+
+    if (!car) throw new Error('Car not found');
+    const name = (car as unknown as { name: string }).name;
+    return { success: true, message: `"${name}" has been ${action === 'publish' ? 'published' : 'unpublished'} successfully.`, entity_name: name };
+  }
+
+  if (entity_type === 'variant') {
+    const variant = await CarVariant.findOneAndUpdate(
+      { variant_id: entity_id, is_deleted: false },
+      { is_published: newPublishedState },
+      { new: true },
+    ).select('name').lean();
+
+    if (!variant) throw new Error('Variant not found');
+    const name = (variant as unknown as { name: string }).name;
+    return { success: true, message: `Variant "${name}" has been ${action === 'publish' ? 'published' : 'unpublished'} successfully.`, entity_name: name };
+  }
+
+  throw new Error('Unknown entity type');
 }

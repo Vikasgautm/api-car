@@ -43,7 +43,9 @@ exports.SPEC_LABEL_MAP = {
     'supercharger': norm('engine_performance', 'supercharger', 'engine_performance.supercharger', 'boolean'),
     'compression ratio': raw('engine_performance', 'compression_ratio', 'string'),
     'transmission type': { category: 'engine_performance', key: 'transmission_type', rootKey: 'transmission_type', type: 'transmission' },
-    'gearbox': raw('engine_performance', 'gearbox', 'string'),
+    'gearbox': norm('engine_performance', 'gearbox', 'engine_performance.gearbox', 'string'),
+    'gear box': norm('engine_performance', 'gearbox', 'engine_performance.gearbox', 'string'),
+    'number of gears': norm('engine_performance', 'gearbox', 'engine_performance.gearbox', 'string'),
     'drive type': { category: 'engine_performance', key: 'drivetrain', rootKey: 'drivetrain', type: 'string' },
     'fuel type': { category: 'engine_performance', key: 'fuel_type', rootKey: 'fuel_type', type: 'string' },
     'idle start stop system': norm('engine_performance', 'idle_start_stop', 'engine_performance.idle_start_stop', 'boolean'),
@@ -70,7 +72,25 @@ exports.SPEC_LABEL_MAP = {
     'range': norm('battery_charging', 'electric_range', 'battery_charging.electric_range', 'string'),
     'electric range': norm('battery_charging', 'electric_range', 'battery_charging.electric_range', 'string'),
     'motor type': norm('battery_charging', 'motor_type', 'battery_charging.motor_type', 'string'),
-    'motor power': raw('battery_charging', 'motor_power', 'string'),
+    'motor power': norm('battery_charging', 'motor_power_kw', 'battery_charging.motor_power_kw', 'string'),
+    'motor power kw': norm('battery_charging', 'motor_power_kw', 'battery_charging.motor_power_kw', 'string'),
+    'motor power bhp': norm('battery_charging', 'motor_power_bhp', 'battery_charging.motor_power_bhp', 'string'),
+    'peak motor power': norm('battery_charging', 'motor_power_kw', 'battery_charging.motor_power_kw', 'string'),
+    'peak power kw': norm('battery_charging', 'motor_power_kw', 'battery_charging.motor_power_kw', 'string'),
+    'peak power bhp': norm('battery_charging', 'motor_power_bhp', 'battery_charging.motor_power_bhp', 'string'),
+    'electric motor power': norm('battery_charging', 'motor_power_kw', 'battery_charging.motor_power_kw', 'string'),
+    // EV mode — true for mild/strong hybrids that have a dedicated EV-only driving mode
+    'ev mode': norm('battery_charging', 'ev_mode_available', 'battery_charging.ev_mode_available', 'boolean'),
+    'ev mode available': norm('battery_charging', 'ev_mode_available', 'battery_charging.ev_mode_available', 'boolean'),
+    'hybrid mode': norm('battery_charging', 'ev_mode_available', 'battery_charging.ev_mode_available', 'boolean'),
+    'electric mode': norm('battery_charging', 'ev_mode_available', 'battery_charging.ev_mode_available', 'boolean'),
+    // Alternate fuel type — secondary fuel for bi-fuel/hybrid vehicles; stores CNG or Electric
+    'alternate fuel type': norm('engine_performance', 'alternate_fuel_type', 'engine_performance.alternate_fuel_type', 'string'),
+    'alternative fuel type': norm('engine_performance', 'alternate_fuel_type', 'engine_performance.alternate_fuel_type', 'string'),
+    'bi fuel': norm('engine_performance', 'alternate_fuel_type', 'engine_performance.alternate_fuel_type', 'string'),
+    'bi fuel type': norm('engine_performance', 'alternate_fuel_type', 'engine_performance.alternate_fuel_type', 'string'),
+    'flex fuel': norm('engine_performance', 'alternate_fuel_type', 'engine_performance.alternate_fuel_type', 'string'),
+    'second fuel type': norm('engine_performance', 'alternate_fuel_type', 'engine_performance.alternate_fuel_type', 'string'),
     'charging time': norm('battery_charging', 'charging_time', 'battery_charging.charging_time', 'string'),
     'charging options': norm('battery_charging', 'charging_options', 'battery_charging.charging_options', 'array'),
     'charging time ac': raw('battery_charging', 'charging_time_ac', 'string'),
@@ -112,6 +132,9 @@ exports.SPEC_LABEL_MAP = {
     'ground clearance': norm('dimensions_practicality', 'ground_clearance', 'dimensions_practicality.ground_clearance', 'string'),
     'boot space': norm('dimensions_practicality', 'boot_space', 'dimensions_practicality.boot_space', 'string'),
     'boot space rear seat folding': norm('dimensions_practicality', 'boot_space_folded', 'dimensions_practicality.boot_space_folded', 'string'),
+    'boot space rear seat folded': norm('dimensions_practicality', 'boot_space_folded', 'dimensions_practicality.boot_space_folded', 'string'),
+    'boot space seats down': norm('dimensions_practicality', 'boot_space_folded', 'dimensions_practicality.boot_space_folded', 'string'),
+    'luggage space seats down': norm('dimensions_practicality', 'boot_space_folded', 'dimensions_practicality.boot_space_folded', 'string'),
     'frunk space': norm('dimensions_practicality', 'frunk_space', 'dimensions_practicality.frunk_space', 'string'),
     'kerb weight': norm('dimensions_practicality', 'kerb_weight', 'dimensions_practicality.kerb_weight', 'string'),
     'gross weight': norm('dimensions_practicality', 'gross_vehicle_weight', 'dimensions_practicality.gross_vehicle_weight', 'string'),
@@ -127,6 +150,21 @@ exports.SPEC_LABEL_MAP = {
     'number of doors': norm('dimensions_practicality', 'doors', 'dimensions_practicality.doors', 'number'),
     'no of rows': norm('dimensions_practicality', 'number_of_rows', 'dimensions_practicality.number_of_rows', 'number'),
     'number of rows': norm('dimensions_practicality', 'number_of_rows', 'dimensions_practicality.number_of_rows', 'number'),
+    'number of seating rows': norm('dimensions_practicality', 'number_of_rows', 'dimensions_practicality.number_of_rows', 'number'),
+    // ─── BASIC INFO (variant-level root fields) ────────────────────────────────
+    'body type': { category: 'basic_info', key: 'body_type', rootKey: 'body_type', type: 'string' },
+    'car type': { category: 'basic_info', key: 'body_type', rootKey: 'body_type', type: 'string' },
+    'trim name': { category: 'basic_info', key: 'trim_name', rootKey: 'trim_name', type: 'string' },
+    'trim level': { category: 'basic_info', key: 'trim_name', rootKey: 'trim_name', type: 'string' },
+    'trim': { category: 'basic_info', key: 'trim_name', rootKey: 'trim_name', type: 'string' },
+    'grade': { category: 'basic_info', key: 'trim_name', rootKey: 'trim_name', type: 'string' },
+    'variant trim': { category: 'basic_info', key: 'trim_name', rootKey: 'trim_name', type: 'string' },
+    'variant grade': { category: 'basic_info', key: 'trim_name', rootKey: 'trim_name', type: 'string' },
+    // ─── PRICING (variant-level root fields) ──────────────────────────────────
+    'ex showroom price': { category: 'pricing', key: 'ex_showroom_price', rootKey: 'ex_showroom_price', type: 'number' },
+    'ex showroom': { category: 'pricing', key: 'ex_showroom_price', rootKey: 'ex_showroom_price', type: 'number' },
+    'exshowroom price': { category: 'pricing', key: 'ex_showroom_price', rootKey: 'ex_showroom_price', type: 'number' },
+    'price ex showroom': { category: 'pricing', key: 'ex_showroom_price', rootKey: 'ex_showroom_price', type: 'number' },
     // ─── TYRES & WHEELS ───────────────────────────────────────────────────────
     'tyre size': norm('tyres_wheels', 'tyre_size', 'tyres_wheels.tyre_size', 'string'),
     'tyre type': norm('tyres_wheels', 'tyre_type', 'tyres_wheels.tyre_type', 'string'),
@@ -219,9 +257,10 @@ exports.SPEC_LABEL_MAP = {
     'safe exit warning': norm('adas', 'safe_exit_warning', 'adas.safe_exit_warning', 'boolean'),
     'safe exit assist': norm('adas', 'safe_exit_warning', 'adas.safe_exit_warning', 'boolean'),
     // ─── COMFORT & CONVENIENCE ────────────────────────────────────────────────
-    'power steering': raw('comfort_convenience', 'power_steering', 'boolean'),
-    'air conditioner': raw('comfort_convenience', 'air_conditioner', 'boolean'),
-    'heater': raw('comfort_convenience', 'heater', 'boolean'),
+    'power steering': norm('comfort_convenience', 'power_steering', 'comfort_convenience.power_steering', 'boolean'),
+    'air conditioner': norm('comfort_convenience', 'climate_control', 'comfort_convenience.climate_control', 'string'),
+    'ac': norm('comfort_convenience', 'climate_control', 'comfort_convenience.climate_control', 'string'),
+    'heater': norm('comfort_convenience', 'heater', 'comfort_convenience.heater', 'boolean'),
     'adjustable steering': norm('comfort_convenience', 'steering_adjustment', 'comfort_convenience.steering_adjustment', 'string'),
     'height adjustable driver seat': raw('comfort_convenience', 'height_adjustable_driver_seat', 'boolean'),
     'ventilated seats': norm('comfort_convenience', 'ventilated_seats', 'comfort_convenience.ventilated_seats', 'string'),
@@ -331,8 +370,10 @@ exports.SPEC_LABEL_MAP = {
     // ─── ENTERTAINMENT & COMMUNICATION ────────────────────────────────────────
     'radio': raw('infotainment_connectivity', 'radio', 'boolean'),
     'wireless phone charging': norm('infotainment_connectivity', 'wireless_charging', 'infotainment_connectivity.wireless_charging', 'boolean'),
-    'wireless charger': norm('infotainment_connectivity', 'wireless_charging', 'infotainment_connectivity.wireless_charging', 'boolean'),
-    'wireless charging': norm('infotainment_connectivity', 'wireless_charging', 'infotainment_connectivity.wireless_charging', 'boolean'),
+    // wireless_charger maps to comfort_convenience (form reads specs_normalized.comfort_convenience.wireless_charger)
+    'wireless charger': norm('comfort_convenience', 'wireless_charger', 'comfort_convenience.wireless_charger', 'boolean'),
+    'wireless charging': norm('comfort_convenience', 'wireless_charger', 'comfort_convenience.wireless_charger', 'boolean'),
+    'qi wireless charging': norm('comfort_convenience', 'wireless_charger', 'comfort_convenience.wireless_charger', 'boolean'),
     'bluetooth connectivity': norm('infotainment_connectivity', 'bluetooth', 'infotainment_connectivity.bluetooth', 'boolean'),
     'bluetooth': norm('infotainment_connectivity', 'bluetooth', 'infotainment_connectivity.bluetooth', 'boolean'),
     'touchscreen': norm('infotainment_connectivity', 'touchscreen', 'infotainment_connectivity.touchscreen', 'string'),
@@ -809,7 +850,7 @@ exports.SPEC_LABEL_MAP = {
     'driving efficiency': norm('driver_display_controls', 'driving_efficiency_display', 'driver_display_controls.driving_efficiency_display', 'boolean'),
     'efficiency display': norm('driver_display_controls', 'driving_efficiency_display', 'driver_display_controls.driving_efficiency_display', 'boolean'),
 };
-// Labels we never want to map — UI control text that leaks from extraction.
+// Labels we never want to map — UI control text, auto-calculated pricing, and noise from extraction.
 exports.INVALID_LABELS = [
     'report incorrect specs',
     'report incorrect',
@@ -819,6 +860,21 @@ exports.INVALID_LABELS = [
     'edit',
     'modify',
     'update specs',
+    // Auto-calculated pricing — varies by state/city; not a spec
+    'on road price',
+    'on-road price',
+    'total on road price',
+    'road price',
+    'on road',
+    'emi',
+    'emi estimate',
+    'estimated emi',
+    'monthly emi',
+    'emi starts at',
+    'emi starting from',
+    'insurance',
+    'rto',
+    'registration charges',
 ];
 // Value normalization — vocabularies for boolean-type fields.
 const POSITIVE_BOOLEAN_VALUES = new Set([
@@ -1147,7 +1203,8 @@ function deriveFeatureFlags(specs_normalized, specs_raw, rootFields) {
     if (specs_normalized.engine_performance?.turbocharger === true)
         derived.is_turbo = true;
     // ── Headliner comfort/safety toggles ────────────────────────────────────
-    if (specs_normalized.infotainment_connectivity?.wireless_charging === true) {
+    if (specs_normalized.infotainment_connectivity?.wireless_charging === true ||
+        specs_normalized.comfort_convenience?.wireless_charger === true) {
         derived.has_wireless_charging = true;
     }
     if (specs_normalized.safety?.camera_360 === true) {

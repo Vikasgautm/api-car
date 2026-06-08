@@ -15,6 +15,15 @@ exports.getFAQsSummary = getFAQsSummary;
 exports.getUsersSummary = getUsersSummary;
 exports.getRecentErrors = getRecentErrors;
 exports.getSystemHealth = getSystemHealth;
+exports.searchByCarName = searchByCarName;
+exports.searchByVariantName = searchByVariantName;
+exports.findCarForAction = findCarForAction;
+exports.findVariantForAction = findVariantForAction;
+exports.getCitySummary = getCitySummary;
+exports.getRankingSummary = getRankingSummary;
+exports.getSeoCollectionSummary = getSeoCollectionSummary;
+exports.getPopularCollectionSummary = getPopularCollectionSummary;
+exports.performWriteAction = performWriteAction;
 const car_model_1 = require("../../../models/car.model");
 const car_variant_model_1 = require("../../../models/car-variant.model");
 const brand_model_1 = require("../../../models/brand.model");
@@ -25,6 +34,10 @@ const faq_model_1 = require("../../../models/faq.model");
 const user_model_1 = require("../../../models/user.model");
 const import_log_model_1 = require("../../../models/import-log.model");
 const audit_log_model_1 = require("../../../models/audit-log.model");
+const city_model_1 = require("../../../models/city.model");
+const ranking_score_model_1 = require("../../../models/ranking-score.model");
+const seo_collection_model_1 = require("../../../models/seo-collection.model");
+const popular_collection_model_1 = require("../../../models/popular-collection.model");
 const MAX_ROWS = Number(process.env.ADMIN_CHATBOT_MAX_RESULTS) || 20;
 // Safe allowlist of fields returned for each entity type — never include sensitive fields
 const SAFE_CAR_FIELDS = 'car_id name slug brand_id is_published is_deleted status createdAt';
@@ -39,6 +52,68 @@ const SAFE_BODYTYPE_FIELDS = 'body_type_id name slug is_active';
 function paginate(arr, page, limit) {
     const start = (page - 1) * limit;
     return arr.slice(start, start + limit);
+}
+async function enrichCarRows(rows) {
+    const brandIds = [...new Set(rows.map(r => r.brand_id).filter(Boolean))];
+    const brandMap = {};
+    if (brandIds.length) {
+        const brands = await brand_model_1.Brand.find({ brand_id: { $in: brandIds } }).select('brand_id name').lean();
+        brands.forEach(b => { brandMap[b.brand_id] = b.name; });
+    }
+    return rows.map(r => {
+        if (!r.brand_id)
+            return r;
+        const { brand_id, ...rest } = r;
+        return { ...rest, brand: brandMap[brand_id] ?? '—' };
+    });
+}
+async function enrichVariantRows(rows) {
+    const carIds = [...new Set(rows.map(r => r.car_id).filter(Boolean))];
+    const fuelTypeIds = [...new Set(rows.map(r => r.fuel_type_id).filter(Boolean))];
+    const bodyTypeIds = [...new Set(rows.map(r => r.body_type_id).filter(Boolean))];
+    const [carDocs, fuelDocs, bodyDocs] = await Promise.all([
+        carIds.length ? car_model_1.Car.find({ car_id: { $in: carIds } }).select('car_id name').lean() : [],
+        fuelTypeIds.length ? fuel_type_model_1.FuelType.find({ fuel_type_id: { $in: fuelTypeIds } }).select('fuel_type_id name').lean() : [],
+        bodyTypeIds.length ? body_type_model_1.BodyType.find({ body_type_id: { $in: bodyTypeIds } }).select('body_type_id name').lean() : [],
+    ]);
+    const carMap = {};
+    const fuelMap = {};
+    const bodyMap = {};
+    carDocs.forEach(c => { carMap[c.car_id] = c.name; });
+    fuelDocs.forEach(f => { fuelMap[f.fuel_type_id] = f.name; });
+    bodyDocs.forEach(b => { bodyMap[b.body_type_id] = b.name; });
+    return rows.map(r => {
+        const result = {};
+        for (const [key, val] of Object.entries(r)) {
+            if (key === 'car_id') {
+                result.car = val ? (carMap[val] ?? 'NOT FOUND') : undefined;
+            }
+            else if (key === 'fuel_type_id') {
+                result.fuel_type = val ? (fuelMap[val] ?? '—') : undefined;
+            }
+            else if (key === 'body_type_id') {
+                result.body_type = val ? (bodyMap[val] ?? '—') : undefined;
+            }
+            else {
+                result[key] = val;
+            }
+        }
+        return result;
+    });
+}
+async function enrichFaqRows(rows) {
+    const carIds = [...new Set(rows.map(r => r.car_id).filter(Boolean))];
+    const carMap = {};
+    if (carIds.length) {
+        const cars = await car_model_1.Car.find({ car_id: { $in: carIds } }).select('car_id name').lean();
+        cars.forEach(c => { carMap[c.car_id] = c.name; });
+    }
+    return rows.map(r => {
+        if (!r.car_id)
+            return r;
+        const { car_id, ...rest } = r;
+        return { ...rest, car: carMap[car_id] ?? '—' };
+    });
 }
 async function getDashboardSummary(page, limit) {
     const [totalCars, publishedCars, unpublishedCars, deletedCars, totalVariants, publishedVariants, unpublishedVariants, totalBrands, totalBlogs, publishedBlogs, totalFaqs, publishedFaqs, totalUsers,] = await Promise.all([
@@ -89,9 +164,9 @@ async function searchCars(filters, page, limit) {
         .skip((page - 1) * limit)
         .limit(limit)
         .lean();
-    const rows = cars;
+    const enriched = await enrichCarRows(cars);
     return {
-        data: rows,
+        data: enriched,
         summary: { total, critical: filters.is_published === false ? total : 0 },
         fallbackAnswer: `Found ${total} cars matching your filter.`,
     };
@@ -141,7 +216,7 @@ async function getCarDataQualityReport(page, limit) {
             { $limit: MAX_ROWS },
         ]),
     ]);
-    const issues = [
+    const rawIssues = [
         ...noBrandCars.map(c => ({ ...c, issue: 'missing_brand' })),
         ...noVariantCars.map((c) => ({ ...c, issue: 'no_variants' })),
         ...duplicateSlugs.map((d) => ({ slug: d._id, count: d.count, car_ids: d.car_ids, issue: 'duplicate_slug' })),
@@ -149,6 +224,7 @@ async function getCarDataQualityReport(page, limit) {
         ...missingMetaDesc.map(c => ({ ...c, issue: 'missing_meta_description' })),
         ...publishedWithNoPublishedVariant.map((c) => ({ ...c, issue: 'published_no_published_variant' })),
     ];
+    const issues = await enrichCarRows(rawIssues);
     const paged = paginate(issues, page, limit);
     const total = issues.length;
     const critical = noVariantCars.length + duplicateSlugs.length + noBrandCars.length;
@@ -194,8 +270,9 @@ async function searchVariants(filters, page, limit) {
         .skip((page - 1) * limit)
         .limit(limit)
         .lean();
+    const enriched = await enrichVariantRows(variants);
     return {
-        data: variants,
+        data: enriched,
         summary: { total },
         fallbackAnswer: `Found ${total} variants matching your filter.`,
     };
@@ -245,13 +322,14 @@ async function getVariantDataQualityReport(page, limit) {
             { $limit: MAX_ROWS },
         ]),
     ]);
-    const issues = [
+    const rawIssues = [
         ...missingPrice.map(v => ({ ...v, issue: 'missing_price' })),
         ...missingFuelType.map(v => ({ ...v, issue: 'missing_fuel_type' })),
         ...missingBodyType.map(v => ({ ...v, issue: 'missing_body_type' })),
         ...orphanedVariants.map((v) => ({ ...v, issue: 'orphaned_variant' })),
         ...unpublishedUnderPublished.map((v) => ({ ...v, issue: 'unpublished_under_published_car' })),
     ];
+    const issues = await enrichVariantRows(rawIssues);
     const paged = paginate(issues, page, limit);
     const total = issues.length;
     const critical = orphanedVariants.length + missingPrice.length;
@@ -402,8 +480,9 @@ async function getFAQsSummary(page, limit) {
         .skip((page - 1) * limit)
         .limit(limit)
         .lean();
+    const enriched = await enrichFaqRows(faqs);
     return {
-        data: faqs,
+        data: enriched,
         summary: { total, no_answer: noAnswer, unpublished },
         fallbackAnswer: `${total} FAQs. ${noAnswer} missing answers. ${unpublished} unpublished.`,
     };
@@ -490,5 +569,204 @@ async function getSystemHealth(page, limit) {
         summary,
         fallbackAnswer: `System health score: ${healthScore}%. ${carsWithIssues} cars and ${variantsWithIssues} variants have issues. ${failedImports} failed imports.`,
     };
+}
+async function searchByCarName(name, page, limit) {
+    const query = { name: new RegExp(name, 'i'), is_deleted: false };
+    const total = await car_model_1.Car.countDocuments(query);
+    const cars = await car_model_1.Car.find(query)
+        .select(SAFE_CAR_FIELDS)
+        .sort({ name: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+    const enriched = await enrichCarRows(cars);
+    return {
+        data: enriched,
+        summary: { total },
+        fallbackAnswer: total === 0
+            ? `No cars found matching "${name}".`
+            : `Found ${total} car${total > 1 ? 's' : ''} matching "${name}".`,
+    };
+}
+async function searchByVariantName(name, carNameOrId, page, limit) {
+    const query = { name: new RegExp(name, 'i'), is_deleted: false };
+    if (carNameOrId) {
+        const car = await car_model_1.Car.findOne({ name: new RegExp(carNameOrId, 'i'), is_deleted: false }).select('car_id').lean();
+        if (car)
+            query.car_id = car.car_id;
+    }
+    const total = await car_variant_model_1.CarVariant.countDocuments(query);
+    const variants = await car_variant_model_1.CarVariant.find(query)
+        .select(SAFE_VARIANT_FIELDS)
+        .sort({ name: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+    const enriched = await enrichVariantRows(variants);
+    return {
+        data: enriched,
+        summary: { total },
+        fallbackAnswer: total === 0 ? `No variants found matching "${name}".` : `Found ${total} variants matching "${name}".`,
+    };
+}
+async function findCarForAction(name, action) {
+    const cars = await car_model_1.Car.find({ name: new RegExp(name, 'i'), is_deleted: false })
+        .select(SAFE_CAR_FIELDS)
+        .limit(5)
+        .lean();
+    if (!cars.length) {
+        return { data: [], summary: {}, fallbackAnswer: `Could not find a car matching "${name}". Try the exact car name.` };
+    }
+    const enriched = await enrichCarRows(cars);
+    const car = cars[0];
+    const targetState = action === 'publish';
+    if (car.is_published === targetState) {
+        return {
+            data: enriched,
+            summary: { total: cars.length },
+            fallbackAnswer: `"${car.name}" is already ${action === 'publish' ? 'published' : 'unpublished'}.`,
+        };
+    }
+    const proposal = {
+        action,
+        entity_type: 'car',
+        entity_id: car.car_id,
+        entity_name: car.name,
+        label: `${action === 'publish' ? 'Publish' : 'Unpublish'} "${car.name}"`,
+        current_state: car.is_published,
+        warning: action === 'publish'
+            ? 'This car will be visible to users on the public site.'
+            : 'This car will be hidden from the public site.',
+    };
+    return {
+        data: enriched,
+        summary: { total: cars.length },
+        fallbackAnswer: `Found "${car.name}". Ready to ${action}.`,
+        action_proposal: proposal,
+    };
+}
+async function findVariantForAction(name, action) {
+    const variants = await car_variant_model_1.CarVariant.find({ name: new RegExp(name, 'i'), is_deleted: false })
+        .select(SAFE_VARIANT_FIELDS)
+        .limit(5)
+        .lean();
+    if (!variants.length) {
+        return { data: [], summary: {}, fallbackAnswer: `Could not find a variant matching "${name}".` };
+    }
+    const enriched = await enrichVariantRows(variants);
+    const v = variants[0];
+    const targetState = action === 'publish';
+    if (v.is_published === targetState) {
+        return {
+            data: enriched,
+            summary: { total: variants.length },
+            fallbackAnswer: `"${v.name}" is already ${action === 'publish' ? 'published' : 'unpublished'}.`,
+        };
+    }
+    const proposal = {
+        action,
+        entity_type: 'variant',
+        entity_id: v.variant_id,
+        entity_name: v.name,
+        label: `${action === 'publish' ? 'Publish' : 'Unpublish'} variant "${v.name}"`,
+        current_state: v.is_published,
+        warning: action === 'publish'
+            ? 'This variant will appear on the car page.'
+            : 'This variant will be hidden from the car page.',
+    };
+    return {
+        data: enriched,
+        summary: { total: variants.length },
+        fallbackAnswer: `Found variant "${v.name}". Ready to ${action}.`,
+        action_proposal: proposal,
+    };
+}
+async function getCitySummary(page, limit) {
+    const total = await city_model_1.City.countDocuments({});
+    const cities = await city_model_1.City.find({})
+        .select('city_id name slug is_active')
+        .sort({ name: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+    const activeCount = await city_model_1.City.countDocuments({ is_active: true });
+    return {
+        data: cities,
+        summary: { total, active: activeCount, inactive: total - activeCount },
+        fallbackAnswer: `${total} cities in the system. ${activeCount} active, ${total - activeCount} inactive.`,
+    };
+}
+async function getRankingSummary(page, limit) {
+    const total = await ranking_score_model_1.RankingScore.countDocuments({});
+    const topRanked = await ranking_score_model_1.RankingScore.find({})
+        .select('car_id composite_score buyer_intent_score trending_score popular_score updatedAt')
+        .sort({ composite_score: -1 })
+        .limit(limit)
+        .lean();
+    const carIds = topRanked.map((r) => r.car_id).filter(Boolean);
+    const cars = await car_model_1.Car.find({ car_id: { $in: carIds }, is_deleted: false }).select('car_id name').lean();
+    const carMap = {};
+    cars.forEach(c => { carMap[c.car_id] = c.name; });
+    const enriched = topRanked.map((r) => ({
+        car: carMap[r.car_id] ?? '—',
+        composite_score: r.composite_score != null ? Math.round(r.composite_score * 100) / 100 : '—',
+        buyer_intent: r.buyer_intent_score != null ? Math.round(r.buyer_intent_score * 100) / 100 : '—',
+        trending: r.trending_score != null ? Math.round(r.trending_score * 100) / 100 : '—',
+        popular: r.popular_score != null ? Math.round(r.popular_score * 100) / 100 : '—',
+        updated: r.updatedAt,
+    }));
+    return {
+        data: enriched,
+        summary: { total },
+        fallbackAnswer: `Top ${topRanked.length} ranked cars shown out of ${total} total ranking records.`,
+    };
+}
+async function getSeoCollectionSummary(page, limit) {
+    const total = await seo_collection_model_1.SeoCollection.countDocuments({ is_deleted: false });
+    const published = await seo_collection_model_1.SeoCollection.countDocuments({ is_published: true, is_deleted: false });
+    const collections = await seo_collection_model_1.SeoCollection.find({ is_deleted: false })
+        .select('collection_id title slug is_published car_count createdAt')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+    return {
+        data: collections,
+        summary: { total, published, unpublished: total - published },
+        fallbackAnswer: `${total} SEO collections. ${published} published, ${total - published} unpublished.`,
+    };
+}
+async function getPopularCollectionSummary(page, limit) {
+    const total = await popular_collection_model_1.PopularCollection.countDocuments({ is_deleted: false });
+    const published = await popular_collection_model_1.PopularCollection.countDocuments({ is_published: true, is_deleted: false });
+    const collections = await popular_collection_model_1.PopularCollection.find({ is_deleted: false })
+        .select('collection_id title slug is_published view_all_path createdAt')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+    return {
+        data: collections,
+        summary: { total, published, unpublished: total - published },
+        fallbackAnswer: `${total} popular collections. ${published} published, ${total - published} unpublished.`,
+    };
+}
+async function performWriteAction(action, entity_type, entity_id) {
+    const newPublishedState = action === 'publish';
+    if (entity_type === 'car') {
+        const car = await car_model_1.Car.findOneAndUpdate({ car_id: entity_id, is_deleted: false }, { is_published: newPublishedState }, { new: true }).select('name').lean();
+        if (!car)
+            throw new Error('Car not found');
+        const name = car.name;
+        return { success: true, message: `"${name}" has been ${action === 'publish' ? 'published' : 'unpublished'} successfully.`, entity_name: name };
+    }
+    if (entity_type === 'variant') {
+        const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: entity_id, is_deleted: false }, { is_published: newPublishedState }, { new: true }).select('name').lean();
+        if (!variant)
+            throw new Error('Variant not found');
+        const name = variant.name;
+        return { success: true, message: `Variant "${name}" has been ${action === 'publish' ? 'published' : 'unpublished'} successfully.`, entity_name: name };
+    }
+    throw new Error('Unknown entity type');
 }
 //# sourceMappingURL=adminChatbot.tools.js.map

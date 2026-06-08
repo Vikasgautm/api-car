@@ -8,69 +8,71 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const city_model_1 = require("../models/city.model");
 const logger_1 = require("../utils/logger");
-const BATCH_SIZE = 500;
-const DEFAULT_CITIES = [
-    { city_id: 'delhi-001', name: 'New Delhi', slug: 'new-delhi', state: 'Delhi', country: 'India', pincode: 110001, latitude: 28.6139, longitude: 77.2090 },
-    { city_id: 'mumbai-001', name: 'Mumbai', slug: 'mumbai', state: 'Maharashtra', country: 'India', pincode: 400001, latitude: 19.0760, longitude: 72.8777 },
-    { city_id: 'bangalore-001', name: 'Bangalore', slug: 'bangalore', state: 'Karnataka', country: 'India', pincode: 560001, latitude: 12.9716, longitude: 77.5946 },
-    { city_id: 'chennai-001', name: 'Chennai', slug: 'chennai', state: 'Tamil Nadu', country: 'India', pincode: 600001, latitude: 13.0827, longitude: 80.2707 },
-    { city_id: 'hyderabad-001', name: 'Hyderabad', slug: 'hyderabad', state: 'Telangana', country: 'India', pincode: 500001, latitude: 17.3850, longitude: 78.4867 },
-    { city_id: 'pune-001', name: 'Pune', slug: 'pune', state: 'Maharashtra', country: 'India', pincode: 411001, latitude: 18.5204, longitude: 73.8567 },
-    { city_id: 'kolkata-001', name: 'Kolkata', slug: 'kolkata', state: 'West Bengal', country: 'India', pincode: 700001, latitude: 22.5726, longitude: 88.3639 },
-    { city_id: 'ahmedabad-001', name: 'Ahmedabad', slug: 'ahmedabad', state: 'Gujarat', country: 'India', pincode: 380001, latitude: 23.0225, longitude: 72.5714 },
-    { city_id: 'jaipur-001', name: 'Jaipur', slug: 'jaipur', state: 'Rajasthan', country: 'India', pincode: 302001, latitude: 26.9124, longitude: 75.7873 },
-    { city_id: 'lucknow-001', name: 'Lucknow', slug: 'lucknow', state: 'Uttar Pradesh', country: 'India', pincode: 226001, latitude: 26.8467, longitude: 80.9462 },
-];
+const BATCH_SIZE = 1000;
+function resolveDate(v) {
+    if (!v)
+        return undefined;
+    const raw = typeof v === 'object' ? v.$date : v;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? undefined : d;
+}
+function normalize(c) {
+    return {
+        city_id: c.city_id,
+        name: c.name,
+        slug: c.slug,
+        state: c.state,
+        country: c.country ?? 'India',
+        pincode: c.pincode != null ? String(c.pincode) : undefined,
+        longitude: c.longitude,
+        latitude: c.latitude,
+        is_published: c.is_published ?? false,
+        is_featured: c.is_featured ?? false,
+        noindex: c.noindex ?? false,
+        is_deleted: c.is_deleted ?? false,
+        deleted_at: resolveDate(c.deleted_at),
+        createdAt: resolveDate(c.createdAt),
+        updatedAt: resolveDate(c.updatedAt),
+    };
+}
+// JSON file lives at <project-root>/city data/ — one level above api-car/
+const JSON_PATH = path_1.default.resolve(__dirname, '../../../city data/prod_carsalahakar-updated.cities.json');
 const seedCities = async () => {
     try {
-        // Check if cities already exist
-        const existingCount = await city_model_1.City.countDocuments();
-        if (existingCount > 0) {
-            logger_1.logger.info(`Cities already exist in database (${existingCount} found). Skipping seed.`);
+        if (!fs_1.default.existsSync(JSON_PATH)) {
+            logger_1.logger.warn(`City seed: JSON file not found at ${JSON_PATH} — skipping`);
             return;
         }
-        const filePath = path_1.default.resolve(__dirname, 'prod_carsalahakar.cities.json');
-        let citiesToInsert = [];
-        if (fs_1.default.existsSync(filePath)) {
-            logger_1.logger.info('Reading city data file...');
-            const raw = fs_1.default.readFileSync(filePath, 'utf-8');
-            const rawCities = JSON.parse(raw);
-            logger_1.logger.info(`Found ${rawCities.length} cities in JSON file`);
-            // Map raw data to model shape
-            citiesToInsert = rawCities.map((c) => ({
-                city_id: c.city_uuid,
-                name: c.city_name,
-                slug: c.slug,
-                state: c.state,
-                country: 'India',
-                pincode: c.pincode ?? undefined,
-                longitude: c.longitude,
-                latitude: c.latitude,
-            }));
+        const rawCities = JSON.parse(fs_1.default.readFileSync(JSON_PATH, 'utf-8'));
+        const total = rawCities.length;
+        const existingCount = await city_model_1.City.countDocuments();
+        if (existingCount >= total) {
+            logger_1.logger.info(`City seed: ${existingCount} cities already in DB — skipping`);
+            return;
         }
-        else {
-            logger_1.logger.warn(`City data file not found at: ${filePath}. Using default cities.`);
-            citiesToInsert = DEFAULT_CITIES;
-        }
-        // Insert in batches
+        logger_1.logger.info(`City seed: found ${total} records in JSON, ${existingCount} in DB — upserting…`);
         let inserted = 0;
-        for (let i = 0; i < citiesToInsert.length; i += BATCH_SIZE) {
-            const batch = citiesToInsert.slice(i, i + BATCH_SIZE);
-            await city_model_1.City.insertMany(batch, { ordered: false });
-            inserted += batch.length;
-            logger_1.logger.info(`Inserted ${inserted}/${citiesToInsert.length} cities`);
+        let skipped = 0;
+        const totalBatches = Math.ceil(total / BATCH_SIZE);
+        for (let i = 0; i < total; i += BATCH_SIZE) {
+            const docs = rawCities.slice(i, i + BATCH_SIZE).map(normalize);
+            const ops = docs.map((doc) => ({
+                updateOne: {
+                    filter: { city_id: doc.city_id },
+                    update: { $setOnInsert: doc },
+                    upsert: true,
+                },
+            }));
+            const result = await city_model_1.City.bulkWrite(ops, { ordered: false });
+            inserted += result.upsertedCount;
+            skipped += docs.length - result.upsertedCount;
+            const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+            logger_1.logger.info(`City seed: batch ${batchNum}/${totalBatches} — inserted=${result.upsertedCount}`);
         }
-        logger_1.logger.info(`City seed completed. Total inserted: ${inserted}`);
+        logger_1.logger.info(`City seed complete — inserted: ${inserted}, skipped: ${skipped}`);
     }
     catch (error) {
-        if (error.writeErrors) {
-            // Partial success with ordered:false — some duplicates may exist
-            logger_1.logger.warn(`City seed completed with ${error.writeErrors.length} write errors (likely duplicates)`);
-            logger_1.logger.info(`Successfully inserted: ${error.insertedCount ?? 'unknown'}`);
-        }
-        else {
-            logger_1.logger.error('Error seeding cities:', error);
-        }
+        logger_1.logger.error('City seed error:', error);
     }
 };
 exports.seedCities = seedCities;

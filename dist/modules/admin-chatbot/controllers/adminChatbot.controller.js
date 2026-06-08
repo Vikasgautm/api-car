@@ -31,6 +31,23 @@ class AdminChatbotController {
             next(err);
         }
     }
+    static async performAction(req, res, next) {
+        try {
+            if (!req.user) {
+                return next(app_error_util_1.AppError.unauthorized('You are not authorized to use admin chatbot.'));
+            }
+            const parsed = adminChatbot_validation_1.chatbotActionSchema.safeParse(req.body);
+            if (!parsed.success) {
+                return next(app_error_util_1.AppError.validation(parsed.error.issues.map((e) => e.message).join(', ')));
+            }
+            const actionReq = parsed.data;
+            const result = await adminChatbot_service_1.AdminChatbotService.performAction(actionReq, req.user.user_id || req.user.id, req.user.role);
+            response_util_1.ResponseUtil.success(res, result, result.message);
+        }
+        catch (err) {
+            next(err);
+        }
+    }
 }
 exports.AdminChatbotController = AdminChatbotController;
 //# sourceMappingURL=adminChatbot.controller.js.map

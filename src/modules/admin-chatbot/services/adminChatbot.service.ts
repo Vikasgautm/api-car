@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getCerebrasClient, CHATBOT_MODEL } from '../../../shared/services/cerebras-client';
 import { AdminChatbotLog } from '../../../models/admin-chatbot-log.model';
-import { detectIntent } from '../intent/adminChatbot.intent';
+import { detectIntent, extractEntityName } from '../intent/adminChatbot.intent';
 import { buildChatbotUserMessage, buildConversationMessages } from '../prompt/adminChatbot.prompt';
 import {
   getDashboardSummary,
@@ -19,6 +19,15 @@ import {
   getUsersSummary,
   getRecentErrors,
   getSystemHealth,
+  searchByCarName,
+  searchByVariantName,
+  findCarForAction,
+  findVariantForAction,
+  getCitySummary,
+  getRankingSummary,
+  getSeoCollectionSummary,
+  getPopularCollectionSummary,
+  performWriteAction,
 } from './adminChatbot.tools';
 import type {
   ChatbotRequest,
@@ -26,6 +35,8 @@ import type {
   ChatbotIntent,
   ToolResult,
   ConversationTurn,
+  ChatbotActionRequest,
+  ChatbotActionResponse,
 } from '../types/adminChatbot.types';
 import { isIntentAllowedForRole } from '../types/adminChatbot.types';
 import { AppError } from '../../../shared/utils/app-error.util';
@@ -57,33 +68,46 @@ function buildSuggestions(intent: ChatbotIntent, summary: Record<string, number 
     case 'dashboard_summary':
       return ['Find cars with missing data', 'Find variants with missing price', 'Show unpublished cars'];
     case 'car_data_quality':
-      return ['Open cars page', 'Find variants with missing price', 'Show unmatched import keys'];
+      return ['Find variants with missing price', 'Show unmatched import keys', 'Show system health'];
     case 'car_search':
-      return ['Open cars page', 'Find cars with missing data', 'Find variants for these cars'];
+    case 'car_name_search':
+      return ['Find cars with missing data', 'Show unpublished cars', 'Find variants with missing price'];
     case 'variant_data_quality':
-      return ['Open variants page', 'Find cars with no variants', 'Export result'];
+      return ['Find cars with no variants', 'Show unmatched import keys', 'Export result'];
     case 'variant_search':
-      return ['Open variants page', 'Find variants with missing price'];
+    case 'variant_name_search':
+      return ['Find variants with missing price', 'Find variants missing fuel type'];
     case 'import_history':
-      return ['Show unmatched import keys', 'Open imports page', 'Show failed imports'];
+      return ['Show unmatched import keys', 'Show failed imports', 'Show system health'];
     case 'unmatched_keys':
-      return ['Open imports page', 'Show import history', 'Re-import affected records'];
+      return ['Show import history', 'Show system health', 'Find cars with missing data'];
     case 'brand_summary':
-      return ['Open brands page', 'Show cars without brand'];
+      return ['Show cars without brand', 'Show all brands', 'Find cars with missing data'];
     case 'fuel_type_summary':
-      return ['Open fuel types page', 'Find variants missing fuel type'];
+      return ['Find variants missing fuel type', 'Show variant data quality'];
     case 'body_type_summary':
-      return ['Open body types page', 'Find variants missing body type'];
+      return ['Find variants missing body type', 'Show variant data quality'];
     case 'blog_summary':
-      return ['Open blogs page', 'Find blogs with missing SEO title'];
+      return ['Find blogs with missing SEO title', 'Show unpublished blogs'];
     case 'faq_summary':
-      return ['Open FAQs page', 'Find FAQs with missing answers'];
+      return ['Find FAQs with missing answers', 'Show unpublished FAQs'];
     case 'user_summary':
-      return ['Open users page'];
+      return ['Show admin users', 'Show active users', 'Show system health'];
     case 'system_health':
       return ['Show recent errors', 'Find cars with missing data', 'Show unmatched import keys'];
     case 'error_logs':
-      return ['Open audit page', 'Show import history', 'Show system health'];
+      return ['Show import history', 'Show system health', 'Show dashboard summary'];
+    case 'city_summary':
+      return ['Show inactive cities', 'Show dashboard summary'];
+    case 'ranking_summary':
+      return ['Show popular collections', 'Show SEO collections', 'Find cars with missing data'];
+    case 'seo_collection_summary':
+      return ['Show popular collections', 'Show ranking summary', 'Find cars with missing data'];
+    case 'popular_collection_summary':
+      return ['Show SEO collections', 'Show ranking summary', 'Show dashboard summary'];
+    case 'action_publish':
+    case 'action_unpublish':
+      return ['Show dashboard summary', 'Find cars with missing data', 'Show system health'];
     default:
       return ['Show dashboard summary', 'Find cars with missing data', 'Show recent errors'];
   }
@@ -96,6 +120,7 @@ async function callTool(
   limit: number,
 ): Promise<ToolResult> {
   const filters = parseChatFilters(question);
+  const entityName = extractEntityName(question);
 
   switch (intent) {
     case 'dashboard_summary':
@@ -108,6 +133,11 @@ async function callTool(
     case 'car_search':
       return searchCars(filters as Parameters<typeof searchCars>[0], page, limit);
 
+    case 'car_name_search':
+      return entityName
+        ? searchByCarName(entityName, page, limit)
+        : searchCars(filters as Parameters<typeof searchCars>[0], page, limit);
+
     case 'variant_data_quality':
       return getVariantDataQualityReport(page, limit);
 
@@ -119,6 +149,32 @@ async function callTool(
         limit,
       );
     }
+
+    case 'variant_name_search':
+      return entityName
+        ? searchByVariantName(entityName, undefined, page, limit)
+        : searchVariants(filters as Parameters<typeof searchVariants>[0], page, limit);
+
+    case 'action_publish':
+      if (!entityName) {
+        return { data: [], summary: {}, fallbackAnswer: 'Please specify the car or variant name to publish.' };
+      }
+      // Try car first, then variant
+      {
+        const carResult = await findCarForAction(entityName, 'publish');
+        if (carResult.data.length > 0) return carResult;
+        return findVariantForAction(entityName, 'publish');
+      }
+
+    case 'action_unpublish':
+      if (!entityName) {
+        return { data: [], summary: {}, fallbackAnswer: 'Please specify the car or variant name to unpublish.' };
+      }
+      {
+        const carResult = await findCarForAction(entityName, 'unpublish');
+        if (carResult.data.length > 0) return carResult;
+        return findVariantForAction(entityName, 'unpublish');
+      }
 
     case 'brand_summary':
       return getBrandsSummary(page, limit);
@@ -150,11 +206,23 @@ async function callTool(
     case 'system_health':
       return getSystemHealth(page, limit);
 
+    case 'city_summary':
+      return getCitySummary(page, limit);
+
+    case 'ranking_summary':
+      return getRankingSummary(page, limit);
+
+    case 'seo_collection_summary':
+      return getSeoCollectionSummary(page, limit);
+
+    case 'popular_collection_summary':
+      return getPopularCollectionSummary(page, limit);
+
     default:
       return {
         data: [],
         summary: {},
-        fallbackAnswer: 'Unable to understand question. Please ask about cars, variants, imports, users, blogs, or FAQs.',
+        fallbackAnswer: 'Unable to understand question. Please ask about cars, variants, imports, users, blogs, rankings, cities, or collections.',
       };
   }
 }
@@ -267,9 +335,21 @@ export class AdminChatbotService {
         total,
         hasMore: page * limit < total,
       },
+      action_proposal: toolResult.action_proposal,
       cerebrasUsed,
       responseTimeMs,
     };
+  }
+
+  static async performAction(req: ChatbotActionRequest, userId: string, role: string): Promise<ChatbotActionResponse> {
+    if (!CHATBOT_ENABLED) throw new AppError('Admin chatbot is currently disabled.', 403);
+
+    if (!['admin', 'super_admin', 'editor'].includes(role)) {
+      throw new AppError('You do not have permission to perform write actions.', 403);
+    }
+
+    const result = await performWriteAction(req.action, req.entity_type, req.entity_id);
+    return result;
   }
 
   private static async logRequest(params: {

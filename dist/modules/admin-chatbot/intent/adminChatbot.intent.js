@@ -1,11 +1,44 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.detectIntent = detectIntent;
+exports.extractEntityName = extractEntityName;
 const INTENT_RULES = [
+    // Write actions — must be checked FIRST (higher specificity)
+    {
+        intent: 'action_publish',
+        keywords: [
+            'publish', 'make live', 'activate', 'go live', 'set live',
+            'make it live', 'make active', 'set active', 'enable car', 'enable variant',
+        ],
+    },
+    {
+        intent: 'action_unpublish',
+        keywords: [
+            'unpublish', 'hide car', 'hide variant', 'deactivate', 'take down',
+            'make inactive', 'remove from live', 'take offline', 'set inactive',
+        ],
+    },
+    // Name-specific searches
+    {
+        intent: 'car_name_search',
+        keywords: [
+            'show me', 'find me', 'look up', 'tell me about', 'details of',
+            'what is', 'info on', 'search for', 'get details',
+        ],
+    },
+    {
+        intent: 'variant_name_search',
+        keywords: [
+            'variants of', 'variants for', 'show variants', 'find variants',
+            'list variants for', 'what variants',
+        ],
+    },
+    // Dashboard
     {
         intent: 'dashboard_summary',
         keywords: ['dashboard', 'summary', 'overview', 'total count', 'how many', 'statistics', 'stats', 'today'],
     },
+    // Car data quality
     {
         intent: 'car_data_quality',
         keywords: [
@@ -13,6 +46,7 @@ const INTENT_RULES = [
             'missing data', 'car quality', 'invalid car', 'deleted car', 'published car', 'no published variant',
         ],
     },
+    // Car search (generic)
     {
         intent: 'car_search',
         keywords: [
@@ -24,6 +58,7 @@ const INTENT_RULES = [
         intent: 'car_count',
         keywords: ['how many cars', 'count cars', 'total cars', 'number of cars'],
     },
+    // Variant data quality
     {
         intent: 'variant_data_quality',
         keywords: [
@@ -32,13 +67,12 @@ const INTENT_RULES = [
             'variants without', 'variant missing',
         ],
     },
+    // Variant search (generic)
     {
         intent: 'variant_search',
-        keywords: [
-            'show variants', 'find variants', 'list variants', 'which variants', 'search variant',
-            'variants of', 'variants for',
-        ],
+        keywords: ['list all variants', 'all variants', 'search all variants', 'filter variants'],
     },
+    // Import
     {
         intent: 'unmatched_keys',
         keywords: [
@@ -53,6 +87,7 @@ const INTENT_RULES = [
             'recent import', 'import error', 'import fail',
         ],
     },
+    // Taxonomies
     {
         intent: 'brand_summary',
         keywords: ['brand', 'brands', 'no cars brand', 'unused brand', 'brand list'],
@@ -65,6 +100,7 @@ const INTENT_RULES = [
         intent: 'body_type_summary',
         keywords: ['body type', 'body types', 'unused body', 'suv', 'sedan', 'hatchback', 'mpv'],
     },
+    // Content
     {
         intent: 'blog_summary',
         keywords: ['blog', 'blogs', 'unpublished blog', 'missing seo', 'blog quality', 'blog content'],
@@ -73,10 +109,12 @@ const INTENT_RULES = [
         intent: 'faq_summary',
         keywords: ['faq', 'faqs', 'question', 'answer', 'missing answer', 'duplicate faq', 'unpublished faq'],
     },
+    // Users
     {
         intent: 'user_summary',
         keywords: ['user', 'users', 'admin user', 'editor user', 'viewer user', 'logged in', 'recent user', 'active user'],
     },
+    // System
     {
         intent: 'system_health',
         keywords: ['system health', 'health check', 'missing data collection', 'collection health', 'slow query', 'db health'],
@@ -85,18 +123,40 @@ const INTENT_RULES = [
         intent: 'error_logs',
         keywords: ['error log', 'api error', 'backend error', 'recent error', 'failure log', 'api fail'],
     },
+    // New coverage
+    {
+        intent: 'city_summary',
+        keywords: ['city', 'cities', 'location', 'city list', 'show cities'],
+    },
+    {
+        intent: 'ranking_summary',
+        keywords: ['ranking', 'rankings', 'rank score', 'popular cars', 'trending cars', 'top cars', 'ranked'],
+    },
+    {
+        intent: 'seo_collection_summary',
+        keywords: ['seo collection', 'seo collections', 'collection', 'seo group', 'car collection'],
+    },
+    {
+        intent: 'popular_collection_summary',
+        keywords: ['popular collection', 'popular collections', 'curated list', 'buyer guide', 'top picks'],
+    },
 ];
 const PAGE_INTENT_BOOST = {
-    '/variants': ['variant_search', 'variant_data_quality'],
-    '/cars': ['car_search', 'car_data_quality', 'car_count'],
-    '/imports': ['import_history', 'unmatched_keys'],
+    '/variants': ['variant_search', 'variant_data_quality', 'variant_name_search'],
+    '/cars': ['car_search', 'car_data_quality', 'car_count', 'car_name_search'],
+    '/import': ['import_history', 'unmatched_keys'],
+    '/variant-ingestion': ['import_history', 'unmatched_keys'],
     '/brands': ['brand_summary'],
     '/blogs': ['blog_summary'],
     '/faqs': ['faq_summary'],
     '/users': ['user_summary'],
     '/dashboard': ['dashboard_summary'],
-    '/fuel-types': ['fuel_type_summary'],
-    '/body-types': ['body_type_summary'],
+    '/fuel-intelligence': ['fuel_type_summary'],
+    '/bodytypes': ['body_type_summary'],
+    '/cities': ['city_summary'],
+    '/rankings': ['ranking_summary'],
+    '/seo-collections': ['seo_collection_summary'],
+    '/popular-collections': ['popular_collection_summary'],
 };
 function detectIntent(question, context) {
     const q = question.toLowerCase();
@@ -122,6 +182,11 @@ function detectIntent(question, context) {
             }
         }
     }
+    // Action intents always win if they score > 0 (avoid conflating with searches)
+    if ((scores['action_publish'] ?? 0) > 0)
+        return 'action_publish';
+    if ((scores['action_unpublish'] ?? 0) > 0)
+        return 'action_unpublish';
     let bestIntent = 'unknown';
     let bestScore = 0;
     for (const [intent, score] of Object.entries(scores)) {
@@ -131,5 +196,28 @@ function detectIntent(question, context) {
         }
     }
     return bestIntent;
+}
+// Extract a proper-noun entity name from a question
+// e.g. "show me Hyundai Creta" → "Hyundai Creta"
+// e.g. "publish car Tata Nexon" → "Tata Nexon"
+function extractEntityName(question) {
+    // Remove common lead-in phrases
+    const cleaned = question
+        .replace(/^(show me|find me|look up|tell me about|details of|what is|info on|search for|get details|publish|unpublish|hide|activate|deactivate|car|variant|the|a)\s+/gi, '')
+        .trim();
+    // Take first 1-3 words that look like a proper name (start with uppercase or are known car words)
+    const words = cleaned.split(/\s+/);
+    const nameParts = [];
+    for (const word of words) {
+        if (/^[A-Z]/.test(word) || /^[a-z]/i.test(word)) {
+            nameParts.push(word);
+            if (nameParts.length >= 3)
+                break;
+        }
+        else {
+            break;
+        }
+    }
+    return nameParts.length > 0 ? nameParts.join(' ') : cleaned.split(/\s+/).slice(0, 2).join(' ') || undefined;
 }
 //# sourceMappingURL=adminChatbot.intent.js.map

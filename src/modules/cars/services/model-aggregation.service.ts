@@ -155,7 +155,7 @@ export class ModelAggregationService {
       if (comfort?.ventilated_seats) featureFlags.has_ventilated_seats = true;
 
       const infotain = specs.infotainment_connectivity;
-      if (infotain?.wireless_charging === true) featureFlags.has_wireless_charger = true;
+      if (infotain?.wireless_charging === true || (comfort as any)?.wireless_charger === true) featureFlags.has_wireless_charger = true;
       if (infotain?.android_auto === true) featureFlags.has_android_auto = true;
       if (infotain?.apple_carplay === true) featureFlags.has_apple_carplay = true;
 
@@ -205,11 +205,13 @@ export class ModelAggregationService {
     // Resolve fuel_type_id UUIDs to human-readable names
     const fuelTypeIds = Array.from(fuelTypes);
     if (fuelTypeIds.length > 0) {
-      const fuelDocs = await FuelType.find({ fuel_type_id: { $in: fuelTypeIds }, is_deleted: false })
+      const fuelDocs = await FuelType.find({ fuel_type_id: { $in: fuelTypeIds } })
         .select('fuel_type_id name')
         .lean();
       const fuelNameMap = new Map(fuelDocs.map((f: any) => [f.fuel_type_id, f.name]));
-      aggregates.available_fuel_types = fuelTypeIds.map(id => fuelNameMap.get(id) || id);
+      aggregates.available_fuel_types = fuelTypeIds
+        .map(id => fuelNameMap.get(id) || id)
+        .filter(Boolean);
     } else {
       aggregates.available_fuel_types = [];
     }

@@ -1,9 +1,11 @@
 export type ChatbotIntent =
   | 'dashboard_summary'
   | 'car_search'
+  | 'car_name_search'
   | 'car_count'
   | 'car_data_quality'
   | 'variant_search'
+  | 'variant_name_search'
   | 'variant_data_quality'
   | 'brand_summary'
   | 'fuel_type_summary'
@@ -15,7 +17,38 @@ export type ChatbotIntent =
   | 'user_summary'
   | 'system_health'
   | 'error_logs'
+  | 'city_summary'
+  | 'ranking_summary'
+  | 'seo_collection_summary'
+  | 'popular_collection_summary'
+  | 'action_publish'
+  | 'action_unpublish'
   | 'unknown';
+
+export type ChatbotWriteAction = 'publish' | 'unpublish';
+export type ChatbotActionEntityType = 'car' | 'variant';
+
+export interface ActionProposal {
+  action: ChatbotWriteAction;
+  entity_type: ChatbotActionEntityType;
+  entity_id: string;
+  entity_name: string;
+  label: string;
+  current_state: boolean;
+  warning?: string;
+}
+
+export interface ChatbotActionRequest {
+  action: ChatbotWriteAction;
+  entity_type: ChatbotActionEntityType;
+  entity_id: string;
+}
+
+export interface ChatbotActionResponse {
+  success: boolean;
+  message: string;
+  entity_name: string;
+}
 
 export type UserRole = 'viewer' | 'editor' | 'admin' | 'super_admin';
 
@@ -60,6 +93,7 @@ export interface ChatbotResponse {
   summary: ChatbotSummary;
   suggestions: string[];
   pagination?: ChatbotPagination;
+  action_proposal?: ActionProposal;
   cerebrasUsed: boolean;
   responseTimeMs: number;
 }
@@ -68,6 +102,7 @@ export interface ToolResult {
   data: Record<string, unknown>[];
   summary: ChatbotSummary;
   fallbackAnswer: string;
+  action_proposal?: ActionProposal;
 }
 
 export const ROLE_TOOL_PERMISSIONS: Record<string, ChatbotIntent[]> = {
@@ -77,13 +112,16 @@ export const ROLE_TOOL_PERMISSIONS: Record<string, ChatbotIntent[]> = {
     'brand_summary',
     'fuel_type_summary',
     'body_type_summary',
+    'city_summary',
   ],
   editor: [
     'dashboard_summary',
     'car_search',
+    'car_name_search',
     'car_count',
     'car_data_quality',
     'variant_search',
+    'variant_name_search',
     'variant_data_quality',
     'brand_summary',
     'fuel_type_summary',
@@ -92,13 +130,21 @@ export const ROLE_TOOL_PERMISSIONS: Record<string, ChatbotIntent[]> = {
     'unmatched_keys',
     'blog_summary',
     'faq_summary',
+    'city_summary',
+    'ranking_summary',
+    'seo_collection_summary',
+    'popular_collection_summary',
+    'action_publish',
+    'action_unpublish',
   ],
   admin: [
     'dashboard_summary',
     'car_search',
+    'car_name_search',
     'car_count',
     'car_data_quality',
     'variant_search',
+    'variant_name_search',
     'variant_data_quality',
     'brand_summary',
     'fuel_type_summary',
@@ -110,13 +156,21 @@ export const ROLE_TOOL_PERMISSIONS: Record<string, ChatbotIntent[]> = {
     'user_summary',
     'system_health',
     'error_logs',
+    'city_summary',
+    'ranking_summary',
+    'seo_collection_summary',
+    'popular_collection_summary',
+    'action_publish',
+    'action_unpublish',
   ],
   super_admin: [
     'dashboard_summary',
     'car_search',
+    'car_name_search',
     'car_count',
     'car_data_quality',
     'variant_search',
+    'variant_name_search',
     'variant_data_quality',
     'brand_summary',
     'fuel_type_summary',
@@ -128,6 +182,12 @@ export const ROLE_TOOL_PERMISSIONS: Record<string, ChatbotIntent[]> = {
     'user_summary',
     'system_health',
     'error_logs',
+    'city_summary',
+    'ranking_summary',
+    'seo_collection_summary',
+    'popular_collection_summary',
+    'action_publish',
+    'action_unpublish',
   ],
 };
 

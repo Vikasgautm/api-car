@@ -678,6 +678,33 @@ export class UnifiedImportService {
         const mergedSpecsRaw = { ...finalSpecsRaw, _unmatched: unmatchedRaw };
         const enhanced = await this.enhanceWithNormalization({ specs_normalized: finalSpecsNormalized, specs_raw: mergedSpecsRaw }, resolvedFuelTypeId);
 
+        // ── Extract root-level fields from rootKey mappings ─────────────────
+        // Key-matcher places rootKey-mapped fields (trim_name, drivetrain, etc.)
+        // as top-level properties on specs_normalized. Lift them to root fields
+        // and strip them from specs_normalized before saving.
+        const sn = enhanced.specs_normalized as any;
+        const importedTrimName: string | undefined = sn.trim_name || undefined;
+        const importedDrivetrain: string | undefined = sn.drivetrain || undefined;
+        const importedSeatingCapacity: number | undefined =
+          sn.dimensions_practicality?.seating_capacity != null
+            ? Number(sn.dimensions_practicality.seating_capacity)
+            : sn.seating_capacity != null
+              ? Number(sn.seating_capacity)
+              : undefined;
+        // ex_showroom_price from spec row takes precedence only when payload price is missing
+        const importedExShowroomPrice: number | undefined =
+          exShowroomPrice ?? (typeof sn.ex_showroom_price === 'number' ? sn.ex_showroom_price : undefined);
+        // body_type: fall back to parent car's body_type_id resolved name
+        let importedBodyType: string | undefined = sn.body_type || undefined;
+        if (!importedBodyType && (car as any).body_type_id) {
+          const bt = await BodyType.findOne({ body_type_id: (car as any).body_type_id, is_deleted: false }).lean();
+          if ((bt as any)?.name) importedBodyType = (bt as any).name;
+        }
+
+        // Remove rootKey artefacts from specs_normalized so they don't double-save
+        const { trim_name: _tn, drivetrain: _dr, seating_capacity: _sc, ex_showroom_price: _ep, body_type: _bt, ...cleanSpecsNormalized } = sn;
+        enhanced.specs_normalized = cleanSpecsNormalized;
+
         const specValidation = validateVariantSpecs({ fuel_type_name: undefined, specs_normalized: enhanced.specs_normalized, specs_raw: enhanced.specs_raw });
         if (!specValidation.valid) {
           const msg = specValidation.errors.map((e: any) => e.message).join('; ');
@@ -698,7 +725,11 @@ export class UnifiedImportService {
             model_year: modelYear || new Date().getFullYear(),
             fuel_type_id: resolvedFuelTypeId,
             transmission_type: transmissionType as TransmissionType || undefined,
-            ex_showroom_price: exShowroomPrice,
+            ex_showroom_price: importedExShowroomPrice,
+            body_type: importedBodyType,
+            trim_name: importedTrimName,
+            seating_capacity: importedSeatingCapacity,
+            drivetrain: importedDrivetrain,
             specs_normalized: enhanced.specs_normalized, specs_raw: enhanced.specs_raw,
             best_for_tags: generatedTags,
             has_engine: enhanced.has_engine, has_battery: enhanced.has_battery,
@@ -733,11 +764,22 @@ export class UnifiedImportService {
             Object.assign(updateData, {
               variant_name: variantName, slug: slug.trim(), model_year: modelYear,
               fuel_type_id: resolvedFuelTypeId, transmission_type: transmissionType,
-              ex_showroom_price: exShowroomPrice,
+              ex_showroom_price: importedExShowroomPrice,
+              body_type: importedBodyType,
+              trim_name: importedTrimName,
+              ...(importedSeatingCapacity != null && { seating_capacity: importedSeatingCapacity }),
+              ...(importedDrivetrain && { drivetrain: importedDrivetrain }),
               best_for_tags: generatedTags,
               has_engine: enhanced.has_engine, has_battery: enhanced.has_battery,
               has_motor: enhanced.has_motor, has_external_charging: enhanced.has_external_charging,
             });
+          } else {
+            // merge mode: only fill root fields if currently empty
+            if (importedBodyType && !(existingVariant as any).body_type) updateData.body_type = importedBodyType;
+            if (importedTrimName && !(existingVariant as any).trim_name) updateData.trim_name = importedTrimName;
+            if (importedSeatingCapacity != null && !(existingVariant as any).seating_capacity) updateData.seating_capacity = importedSeatingCapacity;
+            if (importedDrivetrain && !(existingVariant as any).drivetrain) updateData.drivetrain = importedDrivetrain;
+            if (importedExShowroomPrice && !(existingVariant as any).ex_showroom_price) updateData.ex_showroom_price = importedExShowroomPrice;
           }
 
           await CarVariant.findOneAndUpdate({ variant_id, is_deleted: false }, updateData);
@@ -801,8 +843,20 @@ export class UnifiedImportService {
       const normReport = ImportNormalizerService.normalize(data.specs_raw);
       const powertrainFlags = PowertrainDetectorService.detect(normReport.specs_normalized, fuel_type_slug);
 
+      const mergedNormalized = { ...data.specs_normalized, ...normReport.specs_normalized };
+
+      // Normalize alternate_fuel_type: strip primary fuel prefix (e.g. "Petrol+CNG" → "CNG")
+      const ep = mergedNormalized.engine_performance;
+      if (ep?.alternate_fuel_type) {
+        const raw = String(ep.alternate_fuel_type).toLowerCase();
+        if (raw.includes('cng')) ep.alternate_fuel_type = 'CNG';
+        else if (raw.includes('electric') || raw.includes('ev') || raw.includes('hybrid')) ep.alternate_fuel_type = 'Electric';
+        else if (raw.includes('lpg')) ep.alternate_fuel_type = 'LPG';
+        else if (raw.includes('hydrogen')) ep.alternate_fuel_type = 'Hydrogen';
+      }
+
       return {
-        specs_normalized: { ...data.specs_normalized, ...normReport.specs_normalized },
+        specs_normalized: mergedNormalized,
         specs_raw: data.specs_raw,
         has_engine: powertrainFlags.has_engine,
         has_battery: powertrainFlags.has_battery,

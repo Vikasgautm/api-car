@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.chatbotAskSchema = void 0;
+exports.chatbotActionSchema = exports.chatbotAskSchema = void 0;
 const zod_1 = require("zod");
 const conversationTurnSchema = zod_1.z.object({
     role: zod_1.z.enum(['user', 'assistant']),
@@ -24,5 +24,10 @@ exports.chatbotAskSchema = zod_1.z.object({
         .optional(),
     page: zod_1.z.coerce.number().int().min(1).optional().default(1),
     limit: zod_1.z.coerce.number().int().min(1).max(50).optional().default(20),
+});
+exports.chatbotActionSchema = zod_1.z.object({
+    action: zod_1.z.enum(['publish', 'unpublish']),
+    entity_type: zod_1.z.enum(['car', 'variant']),
+    entity_id: zod_1.z.string().min(1).max(100),
 });
 //# sourceMappingURL=adminChatbot.validation.js.map

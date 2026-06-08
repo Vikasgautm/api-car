@@ -170,8 +170,11 @@ export class VariantIngestionService {
     }
 
     const skip = (page - 1) * limit;
+    const sortSpec: Record<string, 1 | -1> = filters.session_id
+      ? { price: 1, created_at: -1 }
+      : { created_at: -1 };
     const [docs, total] = await Promise.all([
-      VariantImportStaging.find(query).sort({ created_at: -1 }).skip(skip).limit(limit),
+      VariantImportStaging.find(query).sort(sortSpec).skip(skip).limit(limit),
       VariantImportStaging.countDocuments(query),
     ]);
 
