@@ -52,7 +52,7 @@ function normalizeRecord(raw) {
 async function run() {
     const jsonPath = process.argv[2]
         ? path_1.default.resolve(process.argv[2])
-        : path_1.default.resolve(__dirname, '../../../city data/prod_carsalahakar-updated.cities.json');
+        : path_1.default.resolve(__dirname, '../../prod_carsalahakar-updated.cities.json');
     if (!fs_1.default.existsSync(jsonPath)) {
         console.error(`❌  File not found: ${jsonPath}`);
         process.exit(1);

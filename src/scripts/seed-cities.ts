@@ -74,7 +74,7 @@ function normalizeRecord(raw: RawCity) {
 async function run() {
   const jsonPath = process.argv[2]
     ? path.resolve(process.argv[2])
-    : path.resolve(__dirname, '../../../city data/prod_carsalahakar-updated.cities.json');
+    : path.resolve(__dirname, '../../prod_carsalahakar-updated.cities.json');
 
   if (!fs.existsSync(jsonPath)) {
     console.error(`❌  File not found: ${jsonPath}`);
