@@ -8,14 +8,8 @@ const app_1 = __importDefault(require("./app"));
 const config_1 = require("./config");
 const updateUpcomingCars_job_1 = require("./jobs/updateUpcomingCars.job");
 const processScheduledLaunches_job_1 = require("./jobs/processScheduledLaunches.job");
-const admin_seed_1 = require("./seeds/admin.seed");
-const city_seed_1 = require("./seeds/city.seed");
 const logger_1 = require("./utils/logger");
 const compute_mileage_classes_seed_1 = require("./seeds/compute-mileage-classes.seed");
-const fuel_type_seed_1 = require("./seeds/fuel-type.seed");
-const intent_tags_seed_1 = require("./seeds/intent-tags.seed");
-const popular_collections_seed_1 = require("./seeds/popular-collections.seed");
-const master_data_seed_1 = require("./seeds/master-data.seed");
 const route_audit_util_1 = require("./shared/utils/route-audit.util");
 const startServer = async () => {
     if (!process.env.CEREBRAS_API_KEY) {
@@ -28,14 +22,14 @@ const startServer = async () => {
         console.log("MongoDB URI:", config_1.config.mongodb_uri);
         // Run lightweight idempotent seeds in parallel to minimise startup time.
         // Each seed is a no-op when data already exists, so ordering doesn't matter.
-        await Promise.all([
-            (0, admin_seed_1.createDefaultSuperAdmin)(),
-            (0, city_seed_1.seedCities)(),
-            (0, fuel_type_seed_1.seedFuelTypes)(),
-            (0, intent_tags_seed_1.seedIntentTags)(),
-            (0, popular_collections_seed_1.seedPopularCollections)(),
-            (0, master_data_seed_1.seedMasterData)(),
-        ]);
+        // await Promise.all([
+        //   createDefaultSuperAdmin(),
+        //   seedCities(),
+        //   seedFuelTypes(),
+        //   seedIntentTags(),
+        //   seedPopularCollections(),
+        //   seedMasterData(),
+        // ]);
         // Start cron jobs
         updateUpcomingCars_job_1.UpdateUpcomingCarsJob.start();
         processScheduledLaunches_job_1.ProcessScheduledLaunchesJob.start();

@@ -26,14 +26,14 @@ const startServer = async () => {
 
     // Run lightweight idempotent seeds in parallel to minimise startup time.
     // Each seed is a no-op when data already exists, so ordering doesn't matter.
-    await Promise.all([
-      createDefaultSuperAdmin(),
-      seedCities(),
-      seedFuelTypes(),
-      seedIntentTags(),
-      seedPopularCollections(),
-      seedMasterData(),
-    ]);
+    // await Promise.all([
+    //   createDefaultSuperAdmin(),
+    //   seedCities(),
+    //   seedFuelTypes(),
+    //   seedIntentTags(),
+    //   seedPopularCollections(),
+    //   seedMasterData(),
+    // ]);
 
     // Start cron jobs
     UpdateUpcomingCarsJob.start();
