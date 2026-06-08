@@ -467,7 +467,10 @@ class UnifiedImportService {
                 // and strip them from specs_normalized before saving.
                 const sn = enhanced.specs_normalized;
                 const importedTrimName = sn.trim_name || undefined;
-                const importedDrivetrain = sn.drivetrain || undefined;
+                const rawDrivetrain = sn.drivetrain || undefined;
+                const importedDrivetrain = rawDrivetrain
+                    ? ((0, car_variant_model_1.normalizeDriveType)(rawDrivetrain) ?? undefined)
+                    : undefined;
                 const importedSeatingCapacity = sn.dimensions_practicality?.seating_capacity != null
                     ? Number(sn.dimensions_practicality.seating_capacity)
                     : sn.seating_capacity != null

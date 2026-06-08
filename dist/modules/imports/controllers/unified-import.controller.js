@@ -40,6 +40,16 @@ class UnifiedImportController {
             throw new app_error_util_1.AppError('At least one of car or variants payload is required.', 400);
         }
         const result = await unified_import_service_1.UnifiedImportService.unifiedSave(payload, userId);
+        if (result.errors.length > 0) {
+            return res.status(422).json({
+                success: false,
+                message: `Import failed with ${result.errors.length} error(s). Fix the issues and try again.`,
+                data: result,
+                errors: result.errors,
+                statusCode: 422,
+                timestamp: new Date().toISOString(),
+            });
+        }
         return response_util_1.ResponseUtil.created(res, result, 'Import saved successfully');
     });
     /**

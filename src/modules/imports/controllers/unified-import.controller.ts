@@ -42,6 +42,18 @@ export class UnifiedImportController {
     }
 
     const result = await UnifiedImportService.unifiedSave(payload, userId);
+
+    if (result.errors.length > 0) {
+      return res.status(422).json({
+        success: false,
+        message: `Import failed with ${result.errors.length} error(s). Fix the issues and try again.`,
+        data: result,
+        errors: result.errors,
+        statusCode: 422,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     return ResponseUtil.created(res, result, 'Import saved successfully');
   });
 

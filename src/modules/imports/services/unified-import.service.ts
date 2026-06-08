@@ -3,7 +3,7 @@ import { Brand } from '../../../models/brand.model';
 import { BodyType } from '../../../models/body-type.model';
 import { FuelType } from '../../../models/fuel-type.model';
 import { Car } from '../../../models/car.model';
-import { CarVariant, SpecsNormalized, TransmissionType } from '../../../models/car-variant.model';
+import { CarVariant, SpecsNormalized, TransmissionType, normalizeDriveType } from '../../../models/car-variant.model';
 import { ImportLog } from '../../../models/import-log.model';
 import { ImportKeyMapping, IImportKeyMapping } from '../../../models/import-key-mapping.model';
 import { AppError } from '../../../shared/utils/app-error.util';
@@ -684,7 +684,10 @@ export class UnifiedImportService {
         // and strip them from specs_normalized before saving.
         const sn = enhanced.specs_normalized as any;
         const importedTrimName: string | undefined = sn.trim_name || undefined;
-        const importedDrivetrain: string | undefined = sn.drivetrain || undefined;
+        const rawDrivetrain: string | undefined = sn.drivetrain || undefined;
+        const importedDrivetrain: string | undefined = rawDrivetrain
+          ? (normalizeDriveType(rawDrivetrain) ?? undefined)
+          : undefined;
         const importedSeatingCapacity: number | undefined =
           sn.dimensions_practicality?.seating_capacity != null
             ? Number(sn.dimensions_practicality.seating_capacity)
