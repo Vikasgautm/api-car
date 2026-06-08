@@ -13,6 +13,7 @@ export declare class VariantPushService {
         existing: any;
         imported: any;
     }[]>;
+    private static extractRootFields;
     private static extractModelYear;
     private static buildSlug;
 }

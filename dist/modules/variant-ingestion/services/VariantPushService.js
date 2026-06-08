@@ -48,6 +48,8 @@ class VariantPushService {
             // and belongs in specs_raw. ImportNormalizerService maps flat raw → nested SpecsNormalized.
             const normReport = import_normalizer_service_1.ImportNormalizerService.normalize(staging.raw_specs || {});
             const powertrainFlags = powertrain_detector_service_1.PowertrainDetectorService.detect(normReport.specs_normalized, fuelTypeSlug);
+            // Extract root-level fields from raw_specs (these are not in specs_normalized)
+            const rootFields = this.extractRootFields(staging.raw_specs || {}, normReport.specs_normalized);
             const slug = this.buildSlug(staging);
             const existing = await car_variant_model_1.CarVariant.findOne({ slug });
             let variantId;
@@ -78,6 +80,15 @@ class VariantPushService {
                 update.has_battery = powertrainFlags.has_battery;
                 update.has_motor = powertrainFlags.has_motor;
                 update.has_external_charging = powertrainFlags.has_external_charging;
+                // Merge root-level fields (only overwrite if not already set)
+                if (rootFields.body_type && !existing.body_type)
+                    update.body_type = rootFields.body_type;
+                if (rootFields.trim_name && !existing.trim_name)
+                    update.trim_name = rootFields.trim_name;
+                if (rootFields.drivetrain && !existing.drivetrain)
+                    update.drivetrain = rootFields.drivetrain;
+                if (rootFields.seating_capacity && !existing.seating_capacity)
+                    update.seating_capacity = rootFields.seating_capacity;
                 await car_variant_model_1.CarVariant.updateOne({ _id: existing._id }, { $set: update });
                 variantId = existing.variant_id;
             }
@@ -101,6 +112,11 @@ class VariantPushService {
                     has_battery: powertrainFlags.has_battery,
                     has_motor: powertrainFlags.has_motor,
                     has_external_charging: powertrainFlags.has_external_charging,
+                    // Root-level fields extracted from raw_specs
+                    ...(rootFields.body_type ? { body_type: rootFields.body_type } : {}),
+                    ...(rootFields.trim_name ? { trim_name: rootFields.trim_name } : {}),
+                    ...(rootFields.drivetrain ? { drivetrain: rootFields.drivetrain } : {}),
+                    ...(rootFields.seating_capacity ? { seating_capacity: rootFields.seating_capacity } : {}),
                 };
                 const variant = new car_variant_model_1.CarVariant(variantData);
                 await variant.save();
@@ -167,6 +183,28 @@ class VariantPushService {
             }
         }
         return diffs;
+    }
+    static extractRootFields(rawSpecs, specsNormalized) {
+        const raw = rawSpecs;
+        const dims = (specsNormalized?.dimensions_practicality || {});
+        // Helper to try multiple key variants from raw_specs
+        const pick = (...keys) => {
+            for (const k of keys) {
+                const v = raw[k] ?? raw[k.toLowerCase()] ?? raw[k.replace(/_/g, ' ')];
+                if (v !== undefined && v !== null && String(v).trim() !== '')
+                    return String(v).trim();
+            }
+            return undefined;
+        };
+        const seatingRaw = pick('seating_capacity', 'seats', 'seating capacity', 'no of seats', 'number of seats')
+            ?? (dims.seating_capacity ? String(dims.seating_capacity) : undefined);
+        const seating = seatingRaw ? parseInt(seatingRaw, 10) : undefined;
+        return {
+            body_type: pick('body_type', 'body type', 'car body', 'car type'),
+            trim_name: pick('trim_name', 'trim name', 'trim', 'grade'),
+            drivetrain: pick('drivetrain', 'drive_type', 'drive type', '4wd', 'awd', 'fwd', 'rwd', 'drivewheel'),
+            seating_capacity: seating && !isNaN(seating) ? seating : undefined,
+        };
     }
     static extractModelYear(staging) {
         const specYear = staging.normalized_specs?.model_year ||
