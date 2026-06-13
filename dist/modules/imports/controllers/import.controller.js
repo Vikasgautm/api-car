@@ -9,7 +9,9 @@ class ImportController {
     static previewCarImport = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const { url } = req.body;
         const userId = req.user?.user_id || 'admin';
+        console.log(`[Car Import] Importing car data from URL: ${url} (requested by user: ${userId})`);
         const result = await import_service_1.ImportService.previewCarImport(url, userId);
+        console.log(`[Car Import] Successfully imported car data from URL: ${url}`);
         return response_util_1.ResponseUtil.created(res, result, 'Car import preview generated successfully');
     });
     static saveCarImport = (0, catchAsync_1.catchAsync)(async (req, res) => {

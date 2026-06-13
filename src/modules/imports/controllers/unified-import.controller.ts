@@ -24,7 +24,24 @@ export class UnifiedImportController {
       throw new AppError('At least one of carUrl or variantUrls is required.', 400);
     }
 
+    console.log(`[Unified Import] Fetching data from "${source}" — carUrl: ${carUrl || 'none'}, variantUrls: ${urls.length} (requested by user: ${userId})`);
+
     const result = await UnifiedImportService.unifiedPreview(source, carUrl, urls, userId);
+
+    // What was extracted FROM the source (e.g. cardekho) — the raw scraped data
+    console.log(`[Unified Import] Extracted from ${source} — car:`, JSON.stringify(result.car.extracted));
+    result.variants.forEach((v, i) => {
+      console.log(`[Unified Import] Extracted from ${source} — variant[${i}] "${v.fullName}":`, JSON.stringify(v.extracted));
+    });
+
+    // What we will SAVE into our schema — only the matched (mapped) fields
+    console.log(`[Unified Import] Mapped to save — car matched: ${result.car.matched.length}, unmatched: ${result.car.unmatched.length}`);
+    console.log(`[Unified Import] Car data to save:`, JSON.stringify(result.car.matched));
+    result.variants.forEach((v, i) => {
+      console.log(`[Unified Import] Variant[${i}] "${v.fullName}" to save — matched: ${v.matched.length}, unmatched: ${v.unmatched.length}`);
+      console.log(`[Unified Import] Variant[${i}] data to save:`, JSON.stringify(v.matched));
+    });
+
     return ResponseUtil.success(res, result, 'Import preview generated successfully');
   });
 

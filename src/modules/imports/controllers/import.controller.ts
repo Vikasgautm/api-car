@@ -9,7 +9,11 @@ export class ImportController {
     const { url } = req.body;
     const userId = (req as any).user?.user_id || 'admin';
 
+    console.log(`[Car Import] Importing car data from URL: ${url} (requested by user: ${userId})`);
+
     const result = await ImportService.previewCarImport(url, userId);
+
+    console.log(`[Car Import] Successfully imported car data from URL: ${url}`);
     return ResponseUtil.created(res, result, 'Car import preview generated successfully');
   });
 

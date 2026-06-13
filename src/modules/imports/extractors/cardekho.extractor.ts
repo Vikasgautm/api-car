@@ -49,22 +49,65 @@ export class CarDekhoExtractor {
       .trim();
   }
 
+  /**
+   * Derive the variant name by stripping the brand + model prefix.
+   *
+   * CarDekho URLs look like:
+   *   .../overview/MG_Majestor/MG_Majestor_Savvy_4x2_6STR.htm
+   * where the folder is "{Brand}_{Model}" and the file is
+   * "{Brand}_{Model}_{Variant}.htm". Removing the folder prefix from the
+   * filename yields the variant exactly: "Savvy_4x2_6STR" -> "Savvy 4x2 6STR".
+   *
+   * Falls back to stripping the brand/model words off the full title, and
+   * finally to the full title — so we never collapse a multi-word variant
+   * down to a single trailing token.
+   */
+  private static deriveVariantName(fullName: string, url: string): string {
+    const path = (url || '').split(/[?#]/)[0];
+    const segments = path.split('/').filter(Boolean);
+    const fileSeg = decodeURIComponent(segments[segments.length - 1] || '').replace(/\.html?$/i, '');
+    const folderSeg = decodeURIComponent(segments[segments.length - 2] || '');
+
+    // 1) Preferred: variant = filename with the "{Brand}_{Model}_" prefix removed.
+    if (fileSeg && folderSeg && fileSeg.toLowerCase().startsWith(`${folderSeg.toLowerCase()}_`)) {
+      const variant = fileSeg.slice(folderSeg.length + 1).replace(/[_-]+/g, ' ').trim();
+      if (variant) return variant;
+    }
+
+    // 2) Fallback: strip the brand/model word tokens (from the folder) off the full title.
+    if (fullName && folderSeg) {
+      const prefixTokens = folderSeg.toLowerCase().split(/[_-]+/).filter(Boolean);
+      const words = fullName.split(' ');
+      let start = 0;
+      for (const token of prefixTokens) {
+        if (start < words.length && words[start].toLowerCase() === token) start++;
+        else break;
+      }
+      const variant = words.slice(start).join(' ').trim();
+      if (variant) return variant;
+    }
+
+    // 3) Last resort.
+    return fullName;
+  }
+
   private static parsePrice(priceText: string): number | null {
     if (!priceText) return null;
 
     const cleaned = this.cleanText(priceText).toLowerCase();
     
-    // Handle Lakh
+    // Handle Lakh. Match must start on a digit to avoid capturing the '.' in
+    // "Rs." — e.g. "Rs.40.99 Lakh" with /[\d.]+/ matched ".40.99" → 0.4 → 40000.
     if (cleaned.includes('lakh')) {
-      const match = cleaned.match(/[\d.]+/);
+      const match = cleaned.match(/\d[\d.]*/);
       if (match) {
         return Math.round(parseFloat(match[0]) * 100000);
       }
     }
-    
+
     // Handle Crore
     if (cleaned.includes('cr') || cleaned.includes('crore')) {
-      const match = cleaned.match(/[\d.]+/);
+      const match = cleaned.match(/\d[\d.]*/);
       if (match) {
         return Math.round(parseFloat(match[0]) * 10000000);
       }
@@ -229,9 +272,9 @@ export class CarDekhoExtractor {
     // Extract variant name from h1 or title
     const nameText = $('h1').first().text() || $('title').text();
     extracted.full_name = this.cleanText(nameText).replace(/CarDekho|Price|Specs|Overview/gi, '').trim();
-    // Extract the last word as variant name or use full name
-    const nameParts = extracted.full_name.split(' ');
-    extracted.variant_name = nameParts[nameParts.length - 1] || extracted.full_name;
+    // Variant name = full name with the brand + model prefix removed.
+    // e.g. "Mahindra Majestor Savvy 4x2 6STR" -> "Savvy 4x2 6STR"
+    extracted.variant_name = this.deriveVariantName(extracted.full_name, url);
 
     // Extract price - try multiple selectors
     const priceSelectors = [
@@ -319,7 +362,28 @@ export class CarDekhoExtractor {
 
     // Extract specs from specification tables - try multiple selectors
     const specs: ExtractedSpec[] = [];
-    
+    const seen = new Set<string>();
+    // CarDekho UI rows that are not real specs (label === value buttons).
+    const NOISE_LABELS = new Set(['report incorrect specs']);
+
+    // Push a spec only if it is meaningful and not a duplicate.
+    // CarDekho repeats every spec under both a variant-named section and a generic
+    // "Engine & Transmission" section, and multiple row selectors can match the same
+    // row, so dedup on the label|||value pair (keeps distinct repeats like the two
+    // different "Additional Features" rows while collapsing exact duplicates).
+    const addSpec = (section: string, label: string, value: string) => {
+      const cleanLabel = this.cleanText(label);
+      const cleanValue = this.cleanText(value);
+      if (!cleanLabel || !cleanValue) return;
+      if (cleanLabel.length >= 100 || cleanValue.length >= 200) return;
+      if (cleanLabel.toLowerCase() === cleanValue.toLowerCase()) return;
+      if (NOISE_LABELS.has(cleanLabel.toLowerCase())) return;
+      const dedupKey = `${cleanLabel.toLowerCase()}|||${cleanValue.toLowerCase()}`;
+      if (seen.has(dedupKey)) return;
+      seen.add(dedupKey);
+      specs.push({ section, label: cleanLabel, value: cleanValue });
+    };
+
     // Try different table structures
     const tableSelectors = [
       '.spec-section',
@@ -351,16 +415,7 @@ export class CarDekhoExtractor {
               const label = $(rowEl).find('.spec-label, .label, td:first-child, .key, [class*="label"]').first().text();
               const value = $(rowEl).find('.spec-value, .value, td:last-child, .val, [class*="value"]').first().text();
 
-              const cleanLabel = this.cleanText(label);
-              const cleanValue = this.cleanText(value);
-
-              if (cleanLabel && cleanValue && cleanLabel.length < 100 && cleanValue.length < 200) {
-                specs.push({
-                  section: cleanSection,
-                  label: cleanLabel,
-                  value: cleanValue,
-                });
-              }
+              addSpec(cleanSection, label, value);
             });
           }
         });
@@ -374,20 +429,24 @@ export class CarDekhoExtractor {
         const text = $(el).text();
         const parts = text.split(':');
         if (parts.length === 2) {
-          const label = this.cleanText(parts[0]);
-          const value = this.cleanText(parts[1]);
-          if (label && value) {
-            specs.push({
-              section: 'Key Specs',
-              label: label,
-              value: value,
-            });
-          }
+          addSpec('Key Specs', parts[0], parts[1]);
         }
       });
     }
 
     extracted.specs = specs;
+
+    // The specs table is authoritative for fuel type and transmission. The body-text
+    // regex fallbacks above scan the whole page and can grab unrelated content (e.g. EV
+    // cross-sell hits "Electric" on a diesel car). Override with the real spec rows.
+    const fuelTypeSpec = specs.find(s => /^fuel type$/i.test(s.label));
+    if (fuelTypeSpec?.value) {
+      extracted.fuel_type = fuelTypeSpec.value;
+    }
+    const transmissionSpec = specs.find(s => /^transmission type$/i.test(s.label));
+    if (transmissionSpec?.value) {
+      extracted.transmission = transmissionSpec.value;
+    }
 
     // Write extracted data to file
     const logDir = path.resolve(process.cwd(), 'logs', 'imports');
