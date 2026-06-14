@@ -31,6 +31,9 @@ adminRouter.delete('/:id', validation_1.validateIdParam, faq_controller_1.FAQCon
 adminRouter.patch('/restore/:id', validation_1.validateIdParam, faq_controller_1.FAQController.restoreFAQ);
 // Duplicate report
 adminRouter.get('/reports/duplicates', faq_controller_1.FAQController.getDuplicatesReport);
+// Health scoring (recompute faq_health_score / freshness_score / needs_refresh)
+adminRouter.post('/health/bulk', faq_controller_1.FAQController.runBulkHealthCheck);
+adminRouter.post('/:id/health', validation_1.validateIdParam, faq_controller_1.FAQController.checkFaqHealth);
 // Bulk operations
 adminRouter.post('/bulk/publish', faq_controller_1.FAQController.bulkPublish);
 adminRouter.post('/bulk/archive', faq_controller_1.FAQController.bulkArchive);
@@ -47,8 +50,10 @@ const editorRouter = (0, express_1.Router)();
 editorRouter.use(auth_middleware_1.protect);
 editorRouter.use((0, auth_middleware_1.restrictToEditorOrAbove)());
 editorRouter.post('/', faq_controller_1.FAQController.createFAQ);
+editorRouter.post('/ai-draft', faq_controller_1.FAQController.draftFAQ);
 editorRouter.put('/:id', validation_1.validateIdParam, faq_controller_1.FAQController.updateFAQ);
 editorRouter.patch('/:id/toggle', validation_1.validateIdParam, faq_controller_1.FAQController.togglePublish);
+editorRouter.patch('/:id/reviewed', validation_1.validateIdParam, faq_controller_1.FAQController.markReviewed);
 router.use('/editor', editorRouter);
 exports.default = router;
 //# sourceMappingURL=faq.routes.js.map

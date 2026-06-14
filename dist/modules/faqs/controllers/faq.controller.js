@@ -10,6 +10,8 @@ const faq_service_1 = require("../services/faq.service");
 const faq_orchestrator_service_1 = require("../services/faq-orchestrator.service");
 const faq_template_engine_service_1 = require("../services/faq-template-engine.service");
 const faq_deduplication_service_1 = require("../services/faq-deduplication.service");
+const faq_ai_draft_service_1 = require("../services/faq-ai-draft.service");
+const faq_health_service_1 = require("../services/faq-health.service");
 class FAQController {
     // ---- Public routes ----
     static getAllPublicFAQs = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -150,6 +152,26 @@ class FAQController {
     static togglePublish = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const faq = await faq_service_1.FAQService.togglePublish(req.params.id);
         return response_util_1.ResponseUtil.success(res, faq, 'FAQ publish status toggled');
+    });
+    static markReviewed = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const faq = await faq_service_1.FAQService.markReviewed(req.params.id);
+        return response_util_1.ResponseUtil.success(res, faq, 'FAQ marked as reviewed');
+    });
+    // ---- Health scoring ----
+    static checkFaqHealth = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const result = await faq_health_service_1.FAQHealthService.checkFaq(req.params.id);
+        return response_util_1.ResponseUtil.success(res, result, 'FAQ health recomputed');
+    });
+    static runBulkHealthCheck = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const limit = req.body?.limit ? Number(req.body.limit) : undefined;
+        const result = await faq_health_service_1.FAQHealthService.runBulkHealthCheck(limit);
+        return response_util_1.ResponseUtil.success(res, result, 'FAQ health recomputed in bulk');
+    });
+    // ---- AI drafting ----
+    static draftFAQ = (0, catchAsync_1.catchAsync)(async (req, res) => {
+        const { entity_type, entity_id, topic, existing_question } = req.body;
+        const draft = await faq_ai_draft_service_1.FAQAIDraftService.draftFAQ({ entity_type, entity_id, topic, existing_question });
+        return response_util_1.ResponseUtil.success(res, draft, 'FAQ draft generated');
     });
     // ---- Templates ----
     static getTemplates = (0, catchAsync_1.catchAsync)(async (_req, res) => {

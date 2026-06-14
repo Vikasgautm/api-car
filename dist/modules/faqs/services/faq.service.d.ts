@@ -59,6 +59,13 @@ export declare class FAQService {
     } & {
         id: string;
     }>;
+    static markReviewed(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
     static createFAQ(faqData: any): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {

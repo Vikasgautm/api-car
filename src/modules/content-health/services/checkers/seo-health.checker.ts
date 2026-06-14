@@ -37,7 +37,7 @@ export async function runSeoHealthChecker(_params: IssuesQueryParams): Promise<C
     const issues: HealthIssue[] = [];
 
     const cars = await Car.find({ is_deleted: false })
-      .select('car_id name slug is_published meta_title meta_description canonical_url description noindex')
+      .select('car_id name slug is_published meta_title meta_description canonical_url description noindex thumbnail og_image images')
       .lean()
       .limit(SCAN_LIMIT);
 
@@ -81,6 +81,42 @@ export async function runSeoHealthChecker(_params: IssuesQueryParams): Promise<C
           `Car "${car.name}" description is only ${(car.description || '').trim().length} characters — below the 100-character minimum.`,
           'Expand the description to at least 200 words covering key specs, positioning, and USPs.',
           editUrl,
+        ));
+      }
+
+      // Missing Open Graph image — degrades social/search link previews.
+      if (car.is_published && (!car.og_image || car.og_image.trim() === '')) {
+        issues.push(issue(
+          'high', 'seo_health', car.car_id, car.name, 'car',
+          'SEO_NO_OG_IMAGE', 'Missing Open Graph Image',
+          `Published car "${car.name}" has no og:image, so shared links show no preview image.`,
+          'Set an og:image (1200×630 recommended) so social and search previews render a thumbnail.',
+          '/car-images',
+        ));
+      }
+
+      // Thumbnail present but missing alt text — hurts image SEO and accessibility.
+      if (car.thumbnail?.url && car.thumbnail.url.trim() !== '' && (!car.thumbnail.alt || car.thumbnail.alt.trim() === '')) {
+        issues.push(issue(
+          'medium', 'seo_health', car.car_id, car.name, 'car',
+          'SEO_THUMBNAIL_NO_ALT', 'Thumbnail Missing Alt Text',
+          `Car "${car.name}" has a thumbnail image with no alt text.`,
+          'Add descriptive alt text including the car name (e.g., "Hyundai Creta front three-quarter view").',
+          '/car-images',
+        ));
+      }
+
+      // Gallery images missing alt text — each missing alt is a lost image-SEO signal.
+      const galleryMissingAlt = (car.images ?? []).filter(
+        (img) => img?.url && img.url.trim() !== '' && (!img.alt || img.alt.trim() === ''),
+      ).length;
+      if (galleryMissingAlt > 0) {
+        issues.push(issue(
+          'medium', 'seo_health', car.car_id, car.name, 'car',
+          'SEO_GALLERY_NO_ALT', 'Gallery Images Missing Alt Text',
+          `Car "${car.name}" has ${galleryMissingAlt} gallery image(s) with no alt text.`,
+          'Add descriptive alt text to every gallery image (include the car name, colour, and angle) to improve image SEO.',
+          '/car-images',
         ));
       }
     }

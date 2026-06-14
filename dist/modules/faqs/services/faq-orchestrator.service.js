@@ -105,7 +105,11 @@ class FAQOrchestratorService {
             faq_type: { $in: context.applicable_faq_types },
         };
         const filters = [baseFilter];
-        // Entity-specific filter
+        // Entity-specific filter. Match an FAQ to the page's entity through ANY of the
+        // ways it can be linked: the primary entity_id, the generic related_entities[]
+        // array (covers brand / car / blog / body_type / fuel_type / variant), or the
+        // legacy per-type arrays. This is what lets a body_type / blog / brand page show
+        // every FAQ that references its id.
         if (context.entity_id) {
             filters.push({
                 is_deleted: false,
@@ -113,8 +117,10 @@ class FAQOrchestratorService {
                 visibility_status: { $ne: 'hidden' },
                 $or: [
                     { entity_id: context.entity_id },
+                    { 'related_entities.entity_id': context.entity_id },
                     { related_cars: context.entity_id },
                     { related_brands: context.entity_id },
+                    { related_blogs: context.entity_id },
                 ],
             });
         }

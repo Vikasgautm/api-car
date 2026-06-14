@@ -49,7 +49,6 @@ const faqSchema = new mongoose_1.Schema({
     template_key: { type: String },
     is_dynamic: { type: Boolean, default: false },
     is_editorial: { type: Boolean, default: true },
-    is_ai_generated: { type: Boolean, default: false },
     source_type: {
         type: String,
         enum: ['manual', 'template', 'ai', 'import'],
@@ -62,7 +61,6 @@ const faqSchema = new mongoose_1.Schema({
     schema_enabled: { type: Boolean, default: true },
     // Scoring
     priority_score: { type: Number, default: 50 },
-    relevance_score: { type: Number, default: 0 },
     freshness_score: { type: Number, default: 100 },
     faq_health_score: { type: Number, default: 100 },
     // Status

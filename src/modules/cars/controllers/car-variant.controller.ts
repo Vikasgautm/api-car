@@ -138,6 +138,7 @@ export class CarVariantController {
       specs_normalized: req.body.specs_normalized,
       hidden_spec_keys: req.body.hidden_spec_keys,
       hidden_sections: req.body.hidden_sections,
+      visibility_overrides: req.body.visibility_overrides,
       is_published: req.body.is_published,
     };
 
@@ -178,6 +179,7 @@ export class CarVariantController {
       specs_normalized: req.body.specs_normalized,
       hidden_spec_keys: req.body.hidden_spec_keys,
       hidden_sections: req.body.hidden_sections,
+      visibility_overrides: req.body.visibility_overrides,
       is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
       editor_user_id: req.body.editor_user_id,
       seo_owner_user_id: req.body.seo_owner_user_id,

@@ -25,6 +25,10 @@ export class FAQService {
       visibility_status,
       source_type,
       schema_enabled,
+      needs_refresh,
+      health_below,
+      stale_before,
+      review_queue,
       sortBy = 'order',
       sortOrder = 'asc',
       q,
@@ -50,28 +54,57 @@ export class FAQService {
     if (visibility_status !== undefined) filter.visibility_status = visibility_status;
     if (source_type !== undefined) filter.source_type = source_type;
     if (schema_enabled !== undefined) filter.schema_enabled = schema_enabled === 'true' || schema_enabled === true;
+    if (needs_refresh !== undefined) filter.needs_refresh = needs_refresh === 'true' || needs_refresh === true;
+    if (health_below !== undefined && health_below !== '') {
+      const threshold = Number(health_below);
+      if (!Number.isNaN(threshold)) filter.faq_health_score = { $lt: threshold };
+    }
+    if (stale_before !== undefined && stale_before !== '') {
+      const staleDate = new Date(stale_before);
+      if (!Number.isNaN(staleDate.getTime())) {
+        filter.$or = [
+          { last_reviewed_at: { $lt: staleDate } },
+          { last_reviewed_at: { $exists: false } },
+          { last_reviewed_at: null },
+        ];
+      }
+    }
+
+    // Review-queue convenience filter: surface FAQs needing attention via OR of
+    // (flagged for refresh) | (low health) | (never/long-ago reviewed).
+    if (review_queue === 'true' || review_queue === true) {
+      const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+      filter.$or = [
+        { needs_refresh: true },
+        { faq_health_score: { $lt: 70 } },
+        { last_reviewed_at: { $lt: ninetyDaysAgo } },
+        { last_reviewed_at: { $exists: false } },
+        { last_reviewed_at: null },
+      ];
+    }
 
     const { skip, limit: validatedLimit } = PaginationUtil.getPaginationParams(page, limit);
     const sortFilter = FilterUtil.buildSortFilter(sortBy, sortOrder);
 
-    let query = FAQ.find(filter);
-
-    if (q && typeof q === 'string' && q.trim()) {
-      query = FAQ.find({
-        $and: [
-          filter,
-          {
-            $or: [
-              { question: { $regex: q.trim(), $options: 'i' } },
-              { answer: { $regex: q.trim(), $options: 'i' } },
+    // Build the final filter once so the list query and the count stay in sync —
+    // otherwise a search term narrows the results but not the reported total.
+    const finalFilter: Record<string, unknown> =
+      q && typeof q === 'string' && q.trim()
+        ? {
+            $and: [
+              filter,
+              {
+                $or: [
+                  { question: { $regex: q.trim(), $options: 'i' } },
+                  { answer: { $regex: q.trim(), $options: 'i' } },
+                ],
+              },
             ],
-          },
-        ],
-      });
-    }
+          }
+        : filter;
 
-    const faqs = await query.sort(sortFilter).skip(skip).limit(validatedLimit);
-    const total = await FAQ.countDocuments(filter);
+    const faqs = await FAQ.find(finalFilter).sort(sortFilter).skip(skip).limit(validatedLimit);
+    const total = await FAQ.countDocuments(finalFilter);
     const paginationMeta = PaginationUtil.createPaginationMeta(page, validatedLimit, total);
 
     return { faqs, pagination: paginationMeta };
@@ -126,6 +159,17 @@ export class FAQService {
     return faq;
   }
 
+  static async markReviewed(faqId: string) {
+    const faq = await FAQ.findOne({ faq_id: faqId, is_deleted: false });
+    if (!faq) throw new AppError('FAQ not found', 404);
+    faq.last_reviewed_at = new Date();
+    faq.needs_refresh = false;
+    faq.freshness_score = 100;
+    await faq.save();
+    FAQOrchestratorService.invalidateCache();
+    return faq;
+  }
+
   static async createFAQ(faqData: any) {
     const faq_id = uuidv4();
     const normalizedQuestion = FAQDeduplicationService.normalizeQuestion(faqData.question);
@@ -171,14 +215,12 @@ export class FAQService {
       template_key: faqData.template_key,
       is_dynamic: faqData.is_dynamic ?? false,
       is_editorial: faqData.is_editorial ?? true,
-      is_ai_generated: faqData.is_ai_generated ?? false,
       source_type: faqData.source_type ?? 'manual',
       canonical_intent_key: faqData.canonical_intent_key,
       normalized_question: normalizedQuestion,
       indexable: faqData.indexable ?? true,
       schema_enabled: faqData.schema_enabled ?? true,
       priority_score: faqData.priority_score ?? 50,
-      relevance_score: faqData.relevance_score ?? 0,
       freshness_score: 100,
       faq_health_score: 100,
       visibility_status: faqData.visibility_status ?? 'visible',

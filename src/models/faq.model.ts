@@ -86,7 +86,6 @@ export interface IFAQ extends Document {
   template_key?: string;
   is_dynamic: boolean;
   is_editorial: boolean;
-  is_ai_generated: boolean;
   source_type: FAQSourceType;
 
   // SEO / deduplication
@@ -97,7 +96,6 @@ export interface IFAQ extends Document {
 
   // Scoring
   priority_score: number;
-  relevance_score: number;
   freshness_score: number;
   faq_health_score: number;
 
@@ -162,7 +160,6 @@ const faqSchema = new Schema<IFAQ>(
     template_key: { type: String },
     is_dynamic: { type: Boolean, default: false },
     is_editorial: { type: Boolean, default: true },
-    is_ai_generated: { type: Boolean, default: false },
     source_type: {
       type: String,
       enum: ['manual', 'template', 'ai', 'import'],
@@ -177,7 +174,6 @@ const faqSchema = new Schema<IFAQ>(
 
     // Scoring
     priority_score: { type: Number, default: 50 },
-    relevance_score: { type: Number, default: 0 },
     freshness_score: { type: Number, default: 100 },
     faq_health_score: { type: Number, default: 100 },
 

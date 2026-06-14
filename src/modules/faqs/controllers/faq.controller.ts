@@ -8,6 +8,8 @@ import { FAQService } from '../services/faq.service';
 import { FAQOrchestratorService } from '../services/faq-orchestrator.service';
 import { FAQTemplateEngineService } from '../services/faq-template-engine.service';
 import { FAQDeduplicationService } from '../services/faq-deduplication.service';
+import { FAQAIDraftService } from '../services/faq-ai-draft.service';
+import { FAQHealthService } from '../services/faq-health.service';
 import { FAQPageType } from '../../../models/faq.model';
 
 export class FAQController {
@@ -174,6 +176,37 @@ export class FAQController {
   static togglePublish = catchAsync(async (req: Request, res: Response) => {
     const faq = await FAQService.togglePublish(req.params.id as string);
     return ResponseUtil.success(res, faq, 'FAQ publish status toggled');
+  });
+
+  static markReviewed = catchAsync(async (req: Request, res: Response) => {
+    const faq = await FAQService.markReviewed(req.params.id as string);
+    return ResponseUtil.success(res, faq, 'FAQ marked as reviewed');
+  });
+
+  // ---- Health scoring ----
+
+  static checkFaqHealth = catchAsync(async (req: Request, res: Response) => {
+    const result = await FAQHealthService.checkFaq(req.params.id as string);
+    return ResponseUtil.success(res, result, 'FAQ health recomputed');
+  });
+
+  static runBulkHealthCheck = catchAsync(async (req: Request, res: Response) => {
+    const limit = req.body?.limit ? Number(req.body.limit) : undefined;
+    const result = await FAQHealthService.runBulkHealthCheck(limit);
+    return ResponseUtil.success(res, result, 'FAQ health recomputed in bulk');
+  });
+
+  // ---- AI drafting ----
+
+  static draftFAQ = catchAsync(async (req: Request, res: Response) => {
+    const { entity_type, entity_id, topic, existing_question } = req.body as {
+      entity_type?: string;
+      entity_id?: string;
+      topic?: string;
+      existing_question?: string;
+    };
+    const draft = await FAQAIDraftService.draftFAQ({ entity_type, entity_id, topic, existing_question });
+    return ResponseUtil.success(res, draft, 'FAQ draft generated');
   });
 
   // ---- Templates ----

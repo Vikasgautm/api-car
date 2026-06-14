@@ -35,14 +35,12 @@ export interface IFAQ extends Document {
     template_key?: string;
     is_dynamic: boolean;
     is_editorial: boolean;
-    is_ai_generated: boolean;
     source_type: FAQSourceType;
     canonical_intent_key?: string;
     normalized_question?: string;
     indexable: boolean;
     schema_enabled: boolean;
     priority_score: number;
-    relevance_score: number;
     freshness_score: number;
     faq_health_score: number;
     visibility_status: FAQVisibilityStatus;

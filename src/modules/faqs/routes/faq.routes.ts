@@ -38,6 +38,10 @@ adminRouter.patch('/restore/:id', validateIdParam, FAQController.restoreFAQ);
 // Duplicate report
 adminRouter.get('/reports/duplicates', FAQController.getDuplicatesReport);
 
+// Health scoring (recompute faq_health_score / freshness_score / needs_refresh)
+adminRouter.post('/health/bulk', FAQController.runBulkHealthCheck);
+adminRouter.post('/:id/health', validateIdParam, FAQController.checkFaqHealth);
+
 // Bulk operations
 adminRouter.post('/bulk/publish', FAQController.bulkPublish);
 adminRouter.post('/bulk/archive', FAQController.bulkArchive);
@@ -58,8 +62,10 @@ editorRouter.use(protect);
 editorRouter.use(restrictToEditorOrAbove());
 
 editorRouter.post('/', FAQController.createFAQ);
+editorRouter.post('/ai-draft', FAQController.draftFAQ);
 editorRouter.put('/:id', validateIdParam, FAQController.updateFAQ);
 editorRouter.patch('/:id/toggle', validateIdParam, FAQController.togglePublish);
+editorRouter.patch('/:id/reviewed', validateIdParam, FAQController.markReviewed);
 
 router.use('/editor', editorRouter);
 

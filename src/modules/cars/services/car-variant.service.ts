@@ -628,6 +628,7 @@ export class CarVariantService {
       specs_normalized: variantData.specs_normalized,
       hidden_spec_keys: variantData.hidden_spec_keys || [],
       hidden_sections: variantData.hidden_sections || [],
+      visibility_overrides: variantData.visibility_overrides || {},
       is_published: variantData.is_published || false,
       publish_status: variantData.is_published ? 'published' : 'draft',
       variant_status: variantData.variant_status || 'draft',
@@ -781,6 +782,7 @@ export class CarVariantService {
     if (variantData.specs_normalized !== undefined) updateData.specs_normalized = variantData.specs_normalized;
     if (variantData.hidden_spec_keys !== undefined) updateData.hidden_spec_keys = variantData.hidden_spec_keys;
     if (variantData.hidden_sections !== undefined) updateData.hidden_sections = variantData.hidden_sections;
+    if (variantData.visibility_overrides !== undefined) updateData.visibility_overrides = variantData.visibility_overrides;
     if (variantData.is_published !== undefined) updateData.is_published = variantData.is_published;
     if (variantData.editor_user_id !== undefined) updateData.editor_user_id = variantData.editor_user_id || null;
     if (variantData.seo_owner_user_id !== undefined) updateData.seo_owner_user_id = variantData.seo_owner_user_id || null;
