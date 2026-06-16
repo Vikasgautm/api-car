@@ -49,6 +49,7 @@ export declare class CarVariantService {
         }[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
+    private static buildUniqueVariantSlug;
     static createVariant(variantData: any, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
         _id: import("mongoose").Types.ObjectId;
     }> & {

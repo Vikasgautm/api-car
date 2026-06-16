@@ -15,6 +15,15 @@ const startServer = async () => {
     if (!process.env.CEREBRAS_API_KEY) {
         logger_1.logger.warn('CEREBRAS_API_KEY is not set — LLM intelligence flags and spec refinement will be disabled until the env var is configured');
     }
+    // Rate limiters use express-rate-limit's default in-memory store, which is
+    // per-process. That is accurate in fork mode (a single instance) but NOT in
+    // PM2 cluster mode, where each worker keeps its own counter and the effective
+    // limit multiplies by the worker count. Warn loudly so this isn't discovered
+    // in production. Fix when scaling out: back the limiters with a shared store
+    // (e.g. rate-limit-redis) gated behind a REDIS_URL env var.
+    if (process.env.exec_mode === 'cluster_mode' || Number(process.env.NODE_APP_INSTANCE) > 0) {
+        logger_1.logger.warn('Running under PM2 cluster mode with an in-memory rate-limit store — limits are enforced per-worker, not globally. Configure a shared store (rate-limit-redis) before relying on exact limits.');
+    }
     try {
         // MongoDB Connection
         await mongoose_1.default.connect(config_1.config.mongodb_uri);

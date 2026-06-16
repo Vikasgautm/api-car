@@ -19,6 +19,12 @@ import { adminRateLimiter, chatbotRateLimiter, discoverRateLimiter, globalRateLi
 
 const app: Application = express();
 
+// Behind a reverse proxy (PM2/nginx/Netlify): trust the first proxy hop so
+// express-rate-limit keys off the real client IP via X-Forwarded-For rather
+// than the proxy's IP. Keep this a specific hop count — never `true`, which
+// lets clients spoof X-Forwarded-For and defeat IP-based rate limiting.
+app.set("trust proxy", 1);
+
 // Middlewares
 app.use(
   helmet({

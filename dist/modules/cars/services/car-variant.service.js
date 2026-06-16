@@ -463,6 +463,28 @@ class CarVariantService {
         });
         return { groups, pagination: pagination_util_1.PaginationUtil.createPaginationMeta(page, validatedLimit, totalCars) };
     }
+    // Builds a car-scoped, globally-unique variant slug.
+    //
+    // The variant `slug` carries a unique index across ALL non-deleted variants, so
+    // two different cars (e.g. Honda Civic and Honda City) that both have a "HX" or
+    // "HX Turbo" variant would collide if the slug were derived from variant_name
+    // alone. Prefixing with the car's slug makes the slug naturally car-specific
+    // ("honda-civic-hx" vs "honda-city-hx") while still appending a numeric suffix
+    // if the same name is reused within the same car.
+    static async buildUniqueVariantSlug(carSlug, variantName, excludeVariantId) {
+        const namePart = slug_util_1.SlugUtil.generate(variantName);
+        const carPart = carSlug ? slug_util_1.SlugUtil.generate(carSlug) : '';
+        const baseSlug = carPart ? `${carPart}-${namePart}` : namePart;
+        const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
+        const query = { slug: pattern, is_deleted: false };
+        if (excludeVariantId) {
+            query.variant_id = { $ne: excludeVariantId };
+        }
+        const existingSlugs = (await car_variant_model_1.CarVariant.find(query).select('slug').lean()).map((v) => v.slug);
+        return existingSlugs.includes(baseSlug)
+            ? slug_util_1.SlugUtil.generateUnique(baseSlug, existingSlugs)
+            : baseSlug;
+    }
     static async createVariant(variantData, actor = null) {
         const car = await car_model_1.Car.findOne({ car_id: variantData.car_id, is_deleted: false }).lean();
         if (!car) {
@@ -492,18 +514,9 @@ class CarVariantService {
         // Phase 2: Enhance with normalization before creating
         variantData = await this.enhanceVariantWithNormalization(variantData, variantData.fuel_type_id);
         const variant_id = (0, uuid_1.v4)();
-        const slug = slug_util_1.SlugUtil.generate(variantData.variant_name);
-        const existingSlug = await car_variant_model_1.CarVariant.findOne({ slug, is_deleted: false });
-        if (existingSlug) {
-            const baseSlug = slug;
-            const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
-            const matchingSlugs = (await car_variant_model_1.CarVariant.find({ slug: pattern, is_deleted: false }).select('slug').lean()).map((v) => v.slug);
-            const uniqueSlug = slug_util_1.SlugUtil.generateUnique(variantData.variant_name, matchingSlugs);
-            variantData.slug = uniqueSlug;
-        }
-        else {
-            variantData.slug = slug;
-        }
+        // Scope the slug to the parent car so identically-named variants across
+        // different cars (e.g. "HX" on Honda Civic vs Honda City) don't collide.
+        variantData.slug = await this.buildUniqueVariantSlug(car.slug, variantData.variant_name);
         const variant = {
             variant_id,
             car_id: variantData.car_id,
@@ -571,12 +584,8 @@ class CarVariantService {
             });
         }
         const baseName = overrides.variant_name || `${source.variant_name} Copy`;
-        const baseSlug = slug_util_1.SlugUtil.generate(baseName);
-        const pattern = new RegExp(`^${baseSlug}(-\\d+)?$`);
-        const existingSlugs = (await car_variant_model_1.CarVariant.find({ slug: pattern, is_deleted: { $ne: true } }).select('slug').lean()).map((v) => v.slug);
-        const uniqueSlug = existingSlugs.length > 0
-            ? slug_util_1.SlugUtil.generateUnique(baseName, existingSlugs)
-            : baseSlug;
+        const car = await car_model_1.Car.findOne({ car_id: source.car_id, is_deleted: false }).select('slug').lean();
+        const uniqueSlug = await this.buildUniqueVariantSlug(car?.slug, baseName);
         const cloneData = {
             ...source,
             variant_id: (0, uuid_1.v4)(),
@@ -610,11 +619,6 @@ class CarVariantService {
         variantData = await this.enhanceVariantWithNormalization(variantData, variantData.fuel_type_id);
         if (variantData.variant_name !== undefined) {
             updateData.variant_name = variantData.variant_name;
-            const newSlug = slug_util_1.SlugUtil.generate(variantData.variant_name);
-            const existingSlug = await car_variant_model_1.CarVariant.findOne({ slug: newSlug, variant_id: { $ne: variantId }, is_deleted: false });
-            if (!existingSlug) {
-                updateData.slug = newSlug;
-            }
         }
         if (variantData.car_id !== undefined) {
             const car = await car_model_1.Car.findOne({ car_id: variantData.car_id, is_deleted: false }).lean();
@@ -629,6 +633,17 @@ class CarVariantService {
                 });
             }
             updateData.car_id = variantData.car_id;
+        }
+        // Regenerate the car-scoped slug when the name or the parent car changes.
+        // Using the (possibly new) car's slug keeps identically-named variants on
+        // different cars from colliding on the unique slug index.
+        if (variantData.variant_name !== undefined || variantData.car_id !== undefined) {
+            const effectiveCarId = updateData.car_id ?? before?.car_id;
+            const effectiveName = updateData.variant_name ?? before?.variant_name;
+            if (effectiveCarId && effectiveName) {
+                const car = await car_model_1.Car.findOne({ car_id: effectiveCarId, is_deleted: false }).select('slug').lean();
+                updateData.slug = await this.buildUniqueVariantSlug(car?.slug, effectiveName, variantId);
+            }
         }
         if (variantData.model_year !== undefined)
             updateData.model_year = variantData.model_year;

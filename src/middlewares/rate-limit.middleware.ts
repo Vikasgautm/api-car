@@ -1,9 +1,22 @@
 import rateLimit from 'express-rate-limit';
 import { Request } from 'express';
+import jwt from 'jsonwebtoken';
+import { config } from '../config';
 
-// Admin routes are JWT-protected — skip IP rate limiting for them.
-const isAdminRequest = (req: Request): boolean =>
-  req.path.includes('/admin') || !!req.headers.authorization;
+// Skip IP rate limiting only for requests carrying a *valid* admin JWT.
+// Checking merely for the presence of an Authorization header (or a "/admin"
+// substring in the path) let anyone bypass the global limiter by sending a
+// junk header — so we verify the token signature here instead.
+const isAdminRequest = (req: Request): boolean => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return false;
+  try {
+    jwt.verify(authHeader.substring(7), config.jwt_secret);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 export const globalRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

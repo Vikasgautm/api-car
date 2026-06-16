@@ -5,8 +5,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.chatbotRateLimiter = exports.publicCarsRateLimiter = exports.discoverRateLimiter = exports.uploadRateLimiter = exports.authRateLimiter = exports.adminRateLimiter = exports.globalRateLimiter = void 0;
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
-// Admin routes are JWT-protected — skip IP rate limiting for them.
-const isAdminRequest = (req) => req.path.includes('/admin') || !!req.headers.authorization;
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const config_1 = require("../config");
+// Skip IP rate limiting only for requests carrying a *valid* admin JWT.
+// Checking merely for the presence of an Authorization header (or a "/admin"
+// substring in the path) let anyone bypass the global limiter by sending a
+// junk header — so we verify the token signature here instead.
+const isAdminRequest = (req) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer '))
+        return false;
+    try {
+        jsonwebtoken_1.default.verify(authHeader.substring(7), config_1.config.jwt_secret);
+        return true;
+    }
+    catch {
+        return false;
+    }
+};
 exports.globalRateLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // Limit each IP to 100 requests per windowMs
