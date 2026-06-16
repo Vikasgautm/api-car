@@ -157,8 +157,17 @@ class CarDekhoExtractor {
         if (cleaned.includes('-')) {
             const parts = cleaned.split('-');
             if (parts.length === 2) {
-                const min = this.parsePrice(parts[0]);
-                const max = this.parsePrice(parts[1]);
+                // The unit (Lakh/Crore) is usually stated once, on the upper bound, but
+                // applies to both numbers. Carry it over to the lower bound — otherwise
+                // "15.99" in "Rs. 15.99 - 20.01 Lakh" parses as a bare ₹15 instead of
+                // ₹15.99 Lakh, corrupting the imported ex-showroom price.
+                const unitRe = /lakh|crore|\bcr\b/i;
+                const unitMatch = cleaned.match(unitRe);
+                const unit = unitMatch ? ` ${unitMatch[0]}` : '';
+                const lower = unitRe.test(parts[0]) ? parts[0] : parts[0] + unit;
+                const upper = unitRe.test(parts[1]) ? parts[1] : parts[1] + unit;
+                const min = this.parsePrice(lower);
+                const max = this.parsePrice(upper);
                 if (min !== null && max !== null) {
                     return { min, max, text: cleaned };
                 }
