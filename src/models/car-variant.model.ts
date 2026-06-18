@@ -341,7 +341,8 @@ export type TransmissionType =
   | 'imt'
   | 'torque_converter'
   | 'single_speed_ev'
-  | 'e_cvt';
+  | 'e_cvt'
+  | 'other';
 
 export type DriveType =
   | 'fwd'
@@ -353,10 +354,11 @@ export type DriveType =
   | '4x4'
   | 'e_awd'
   | 'i_awd'
-  | 'dual_motor_awd';
+  | 'dual_motor_awd'
+  | 'other';
 
 export const DRIVE_TYPE_VALUES: DriveType[] = [
-  'fwd', 'rwd', 'awd', '4wd', '2wd', '4x2', '4x4', 'e_awd', 'i_awd', 'dual_motor_awd',
+  'fwd', 'rwd', 'awd', '4wd', '2wd', '4x2', '4x4', 'e_awd', 'i_awd', 'dual_motor_awd', 'other',
 ];
 
 // Normalizes free-form drivetrain input (e.g. "FWD", "4WD", "AWD", "front", "e-AWD")
@@ -371,6 +373,7 @@ export function normalizeDriveType(raw: string | null | undefined): DriveType | 
     e_awd: 'e_awd', eawd: 'e_awd', electric_awd: 'e_awd',
     i_awd: 'i_awd', iawd: 'i_awd', intelligent_awd: 'i_awd',
     dual_motor_awd: 'dual_motor_awd', dual_motor: 'dual_motor_awd',
+    other: 'other',
   };
   return aliasMap[key] ?? null;
 }
@@ -501,6 +504,7 @@ const variantSchema = new Schema<ICarVariant>(
         'torque_converter',
         'single_speed_ev',
         'e_cvt',
+        'other',
       ],
     },
     drivetrain: { type: String, enum: [...DRIVE_TYPE_VALUES, null, undefined] },

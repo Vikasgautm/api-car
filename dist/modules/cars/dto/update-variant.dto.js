@@ -32,6 +32,15 @@ class UpdateVariantDto {
     og_image;
     canonical_url;
     noindex;
+    variant_rank;
+    trim_name;
+    edition_name;
+    value_for_money_tag;
+    best_for_tags;
+    variant_highlights;
+    market_status;
+    publish_status;
+    variant_status;
     static validate(dto) {
         const errors = [];
         if (dto.model_year !== undefined && (dto.model_year < 1900 || dto.model_year > 2100)) {

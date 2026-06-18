@@ -1,4 +1,4 @@
-import { SpecsNormalized, TransmissionType } from '../../../models/car-variant.model';
+import { SpecsNormalized, TransmissionType, VariantMarketStatus, PublishStatus, VariantLifecycleStatus } from '../../../models/car-variant.model';
 export declare class UpdateVariantDto {
     car_id?: string;
     variant_name?: string;
@@ -30,6 +30,15 @@ export declare class UpdateVariantDto {
     og_image?: string;
     canonical_url?: string;
     noindex?: boolean;
+    variant_rank?: number;
+    trim_name?: string;
+    edition_name?: string;
+    value_for_money_tag?: boolean;
+    best_for_tags?: string[];
+    variant_highlights?: string[];
+    market_status?: VariantMarketStatus;
+    publish_status?: PublishStatus;
+    variant_status?: VariantLifecycleStatus;
     static validate(dto: UpdateVariantDto): {
         valid: boolean;
         errors: string[];

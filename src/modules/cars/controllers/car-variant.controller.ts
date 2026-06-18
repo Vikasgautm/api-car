@@ -118,7 +118,7 @@ export class CarVariantController {
     const normalizedDrivetrain = normalizeDriveType(rawDrivetrain);
     if (rawDrivetrain && !normalizedDrivetrain) {
       throw new AppError(
-        `Unknown drivetrain value "${rawDrivetrain}". Valid values: fwd, rwd, awd, 4wd, 2wd, 4x2, 4x4, e_awd, i_awd, dual_motor_awd`,
+        `Unknown drivetrain value "${rawDrivetrain}". Valid values: fwd, rwd, awd, 4wd, 2wd, 4x2, 4x4, e_awd, i_awd, dual_motor_awd, other`,
         400
       );
     }
@@ -140,6 +140,15 @@ export class CarVariantController {
       hidden_sections: req.body.hidden_sections,
       visibility_overrides: req.body.visibility_overrides,
       is_published: req.body.is_published,
+      variant_rank: req.body.variant_rank,
+      trim_name: req.body.trim_name,
+      edition_name: req.body.edition_name,
+      value_for_money_tag: req.body.value_for_money_tag,
+      best_for_tags: req.body.best_for_tags,
+      variant_highlights: req.body.variant_highlights,
+      market_status: req.body.market_status,
+      publish_status: req.body.publish_status,
+      variant_status: req.body.variant_status,
     };
 
     const validation = CreateVariantDto.validate(createDto);
@@ -157,7 +166,7 @@ export class CarVariantController {
       const normalized = normalizeDriveType(drivetrain);
       if (drivetrain && !normalized) {
         throw new AppError(
-          `Unknown drivetrain value "${drivetrain}". Valid values: fwd, rwd, awd, 4wd, 2wd, 4x2, 4x4, e_awd, i_awd, dual_motor_awd`,
+          `Unknown drivetrain value "${drivetrain}". Valid values: fwd, rwd, awd, 4wd, 2wd, 4x2, 4x4, e_awd, i_awd, dual_motor_awd, other`,
           400
         );
       }
@@ -184,6 +193,15 @@ export class CarVariantController {
       editor_user_id: req.body.editor_user_id,
       seo_owner_user_id: req.body.seo_owner_user_id,
       reviewer_user_id: req.body.reviewer_user_id,
+      variant_rank: req.body.variant_rank,
+      trim_name: req.body.trim_name,
+      edition_name: req.body.edition_name,
+      value_for_money_tag: req.body.value_for_money_tag,
+      best_for_tags: req.body.best_for_tags,
+      variant_highlights: req.body.variant_highlights,
+      market_status: req.body.market_status,
+      publish_status: req.body.publish_status,
+      variant_status: req.body.variant_status,
     };
 
     const validation = UpdateVariantDto.validate(updateDto);

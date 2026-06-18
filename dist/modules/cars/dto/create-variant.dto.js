@@ -26,6 +26,15 @@ class CreateVariantDto {
     og_image;
     canonical_url;
     noindex;
+    variant_rank;
+    trim_name;
+    edition_name;
+    value_for_money_tag;
+    best_for_tags;
+    variant_highlights;
+    market_status;
+    publish_status;
+    variant_status;
     static validate(dto) {
         const errors = [];
         const carIdResult = validation_util_1.ValidationUtil.required(dto.car_id, 'car_id');

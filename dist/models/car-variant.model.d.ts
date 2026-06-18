@@ -309,8 +309,8 @@ export interface SpecsNormalized {
     storage_cabin_practicality?: StorageCabinPracticality;
     driver_display_controls?: DriverDisplayControls;
 }
-export type TransmissionType = 'manual' | 'automatic' | 'amt' | 'cvt' | 'dct' | 'dsg' | 'imt' | 'torque_converter' | 'single_speed_ev' | 'e_cvt';
-export type DriveType = 'fwd' | 'rwd' | 'awd' | '4wd' | '2wd' | '4x2' | '4x4' | 'e_awd' | 'i_awd' | 'dual_motor_awd';
+export type TransmissionType = 'manual' | 'automatic' | 'amt' | 'cvt' | 'dct' | 'dsg' | 'imt' | 'torque_converter' | 'single_speed_ev' | 'e_cvt' | 'other';
+export type DriveType = 'fwd' | 'rwd' | 'awd' | '4wd' | '2wd' | '4x2' | '4x4' | 'e_awd' | 'i_awd' | 'dual_motor_awd' | 'other';
 export declare const DRIVE_TYPE_VALUES: DriveType[];
 export declare function normalizeDriveType(raw: string | null | undefined): DriveType | null;
 export type VariantMarketStatus = 'available' | 'sold_out' | 'discontinued' | 'upcoming';

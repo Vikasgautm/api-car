@@ -1,4 +1,10 @@
-import { SpecsNormalized, TransmissionType } from '../../../models/car-variant.model';
+import {
+  SpecsNormalized,
+  TransmissionType,
+  VariantMarketStatus,
+  PublishStatus,
+  VariantLifecycleStatus,
+} from '../../../models/car-variant.model';
 import { ValidationUtil } from '../../../shared/utils/validation.util';
 
 export class CreateVariantDto {
@@ -25,6 +31,15 @@ export class CreateVariantDto {
   og_image?: string;
   canonical_url?: string;
   noindex?: boolean;
+  variant_rank?: number;
+  trim_name?: string;
+  edition_name?: string;
+  value_for_money_tag?: boolean;
+  best_for_tags?: string[];
+  variant_highlights?: string[];
+  market_status?: VariantMarketStatus;
+  publish_status?: PublishStatus;
+  variant_status?: VariantLifecycleStatus;
 
   static validate(dto: CreateVariantDto): { valid: boolean; errors: string[] } {
     const errors: string[] = [];

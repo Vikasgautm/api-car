@@ -688,6 +688,10 @@ class CarVariantService {
             updateData.visibility_overrides = variantData.visibility_overrides;
         if (variantData.is_published !== undefined)
             updateData.is_published = variantData.is_published;
+        if (variantData.variant_status !== undefined)
+            updateData.variant_status = variantData.variant_status;
+        if (variantData.publish_status !== undefined)
+            updateData.publish_status = variantData.publish_status;
         if (variantData.editor_user_id !== undefined)
             updateData.editor_user_id = variantData.editor_user_id || null;
         if (variantData.seo_owner_user_id !== undefined)
@@ -731,7 +735,7 @@ class CarVariantService {
         if (!validationResult.isValid) {
             throw new app_error_util_1.AppError(`Validation failed: ${validationResult.errors.map((e) => e.message).join('; ')}`, 400);
         }
-        const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false }, updateData, { returnDocument: 'after' });
+        const variant = await car_variant_model_1.CarVariant.findOneAndUpdate({ variant_id: variantId, is_deleted: false }, updateData, { returnDocument: 'after', runValidators: true });
         if (!variant) {
             throw new app_error_util_1.AppError(`Variant not found or deleted for variant_id: ${variantId}`, 404, {
                 userMessage: errorMessages_1.USER_MESSAGES.VARIANT_NOT_FOUND,

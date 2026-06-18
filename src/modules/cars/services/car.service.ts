@@ -462,7 +462,7 @@ export class CarService {
         url: carData.thumbnail_url,
         alt: carData.thumbnail_alt,
       } : undefined,
-      images: carData.images,
+      images: carData.gallery,
       gallery_summary: carData.gallery_summary,
       status: normalizedData.status || 'launched',
       is_upcoming: normalizedData.is_upcoming || false,
@@ -637,7 +637,7 @@ export class CarService {
         alt: carData.thumbnail_alt,
       };
     }
-    if (carData.images !== undefined) updateData.images = carData.images;
+    if (carData.gallery !== undefined) updateData.images = carData.gallery;
     if (carData.gallery_summary !== undefined) updateData.gallery_summary = carData.gallery_summary;
     
     // Handle launch status fields with normalization

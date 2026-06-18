@@ -805,6 +805,8 @@ export class CarVariantService {
     if (variantData.hidden_sections !== undefined) updateData.hidden_sections = variantData.hidden_sections;
     if (variantData.visibility_overrides !== undefined) updateData.visibility_overrides = variantData.visibility_overrides;
     if (variantData.is_published !== undefined) updateData.is_published = variantData.is_published;
+    if (variantData.variant_status !== undefined) updateData.variant_status = variantData.variant_status;
+    if (variantData.publish_status !== undefined) updateData.publish_status = variantData.publish_status;
     if (variantData.editor_user_id !== undefined) updateData.editor_user_id = variantData.editor_user_id || null;
     if (variantData.seo_owner_user_id !== undefined) updateData.seo_owner_user_id = variantData.seo_owner_user_id || null;
     if (variantData.reviewer_user_id !== undefined) updateData.reviewer_user_id = variantData.reviewer_user_id || null;
@@ -839,7 +841,7 @@ export class CarVariantService {
     const variant = await CarVariant.findOneAndUpdate(
       { variant_id: variantId, is_deleted: false },
       updateData,
-      { returnDocument: 'after' }
+      { returnDocument: 'after', runValidators: true }
     );
 
     if (!variant) {
