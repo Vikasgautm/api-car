@@ -42,7 +42,7 @@ class CityController {
         };
         const validation = validation_1.createCitySchema.safeParse(createDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map(e => e.message).join(', '), 400);
         }
         const city = await city_service_1.CityService.createCity(createDto);
         return response_util_1.ResponseUtil.created(res, city, "City created successfully");
@@ -58,7 +58,7 @@ class CityController {
         };
         const validation = validation_1.updateCitySchema.safeParse(updateDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map(e => e.message).join(', '), 400);
         }
         const city = await city_service_1.CityService.updateCity(req.params.id, updateDto);
         return response_util_1.ResponseUtil.success(res, city, "City updated successfully");

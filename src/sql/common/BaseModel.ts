@@ -449,7 +449,7 @@ export class BaseModel<T extends { [key: string]: any } = any> {
     const serializedData = this.serialize(data);
 
     const keys = Object.keys(serializedData).filter(
-      k => (k !== 'id' || serializedData[k] !== undefined) && typeof serializedData[k] !== 'function'
+      k => k !== '_id' && (k !== 'id' || serializedData[k] !== undefined) && typeof serializedData[k] !== 'function'
     );
 
     const cols = keys.map(k => `[${k}]`).join(', ');
@@ -503,7 +503,7 @@ export class BaseModel<T extends { [key: string]: any } = any> {
 
     const setClauses: string[] = [];
     const updateKeys = Object.keys(serializedData).filter(
-      k => k !== 'id' && k !== this.primaryKey && typeof serializedData[k] !== 'function'
+      k => k !== '_id' && k !== 'id' && k !== this.primaryKey && typeof serializedData[k] !== 'function'
     );
 
     for (const key of updateKeys) {

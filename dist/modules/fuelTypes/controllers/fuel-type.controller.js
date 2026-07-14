@@ -60,7 +60,7 @@ class FuelTypeController {
         };
         const validation = validation_1.createFuelTypeSchema.safeParse(createDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
         }
         const fuelType = await fuel_type_service_1.FuelTypeService.createFuelType(createDto);
         return response_util_1.ResponseUtil.created(res, fuelType, "Fuel type created successfully");
@@ -74,7 +74,7 @@ class FuelTypeController {
         };
         const validation = validation_1.updateFuelTypeSchema.safeParse(updateDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
         }
         const fuelType = await fuel_type_service_1.FuelTypeService.updateFuelType(req.params.id, updateDto);
         return response_util_1.ResponseUtil.success(res, fuelType, "Fuel type updated successfully");

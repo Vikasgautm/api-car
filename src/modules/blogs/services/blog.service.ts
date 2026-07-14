@@ -1,7 +1,4 @@
-const createDOMPurify = require('dompurify');
-const { JSDOM } = require('jsdom');
-const window = new JSDOM('').window;
-const DOMPurify = createDOMPurify(window);
+import { sanitizeHtml } from '../../../shared/utils/sanitize.util';
 import { v4 as uuidv4 } from "uuid";
 import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { Blog, IBlog } from "../../../models/blog.model";
@@ -106,7 +103,7 @@ export class BlogService {
     }
 
     // Sanitize HTML content
-    const sanitizedContent = blogData.content ? DOMPurify.sanitize(blogData.content) : '';
+    const sanitizedContent = blogData.content ? sanitizeHtml(blogData.content) : '';
 
     let excerpt = blogData.excerpt;
     if (!excerpt && sanitizedContent) {
@@ -169,7 +166,7 @@ export class BlogService {
 
     if (blogData.content !== undefined) {
       // Sanitize HTML content
-      const sanitizedContent = DOMPurify.sanitize(blogData.content);
+      const sanitizedContent = sanitizeHtml(blogData.content);
       updateData.content = sanitizedContent;
       if (!blogData.excerpt) {
         updateData.excerpt = sanitizedContent.replace(/<[^>]+>/g, "").substring(0, 150) + "...";

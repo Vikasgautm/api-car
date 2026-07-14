@@ -95,7 +95,7 @@ class FAQController {
         };
         const validation = validation_1.createFaqSchema.safeParse(createDto);
         if (!validation.success)
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
         const faq = await faq_service_1.FAQService.createFAQ(createDto);
         return response_util_1.ResponseUtil.created(res, faq, 'FAQ created successfully');
     });
@@ -136,7 +136,7 @@ class FAQController {
         };
         const validation = validation_1.updateFaqSchema.safeParse(updateDto);
         if (!validation.success)
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
         const faq = await faq_service_1.FAQService.updateFAQ(req.params.id, updateDto);
         return response_util_1.ResponseUtil.success(res, faq, 'FAQ updated successfully');
     });

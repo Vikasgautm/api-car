@@ -52,6 +52,14 @@ const helmet_1 = __importDefault(require("helmet"));
 const config_1 = require("./config");
 const logging_middleware_1 = require("./middlewares/logging.middleware");
 const rate_limit_middleware_1 = require("./middlewares/rate-limit.middleware");
+// Import routes
+const error_middleware_1 = require("./middlewares/error.middleware");
+const routes_1 = __importDefault(require("./shared/routes"));
+const app_error_util_1 = require("./shared/utils/app-error.util");
+const sitemap_controller_1 = require("./modules/sitemap/controllers/sitemap.controller");
+// Swagger Documentation Setup
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
+const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
 const app = (0, express_1.default)();
 // Behind a reverse proxy (PM2/nginx/Netlify): trust the first proxy hop so
 // express-rate-limit keys off the real client IP via X-Forwarded-For rather
@@ -87,11 +95,6 @@ app.get("/", (req, res) => {
         version: "1.0.0",
     });
 });
-// Import routes
-const error_middleware_1 = require("./middlewares/error.middleware");
-const routes_1 = __importDefault(require("./shared/routes"));
-const app_error_util_1 = require("./shared/utils/app-error.util");
-const sitemap_controller_1 = require("./modules/sitemap/controllers/sitemap.controller");
 app.use("/uploads", express_1.default.static("uploads"));
 app.use('/api/v1/discover', rate_limit_middleware_1.discoverRateLimiter);
 app.use('/api/v1/cars/public', rate_limit_middleware_1.publicCarsRateLimiter);
@@ -99,9 +102,6 @@ app.use('/api/v1/content-health/admin', rate_limit_middleware_1.adminRateLimiter
 app.use('/api/v1/chatbot', rate_limit_middleware_1.chatbotRateLimiter);
 app.get('/sitemap.xml', sitemap_controller_1.SitemapController.getXml);
 app.use("/api/v1", routes_1.default);
-// Swagger Documentation Setup
-const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
-const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
 const swaggerOptions = {
     definition: {
         openapi: "3.0.0",

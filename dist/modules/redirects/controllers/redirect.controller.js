@@ -38,7 +38,7 @@ class RedirectController {
         };
         const validation = validation_1.createRedirectSchema.safeParse(dto);
         if (!validation.success)
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
         const created = await redirect_service_1.RedirectService.create(dto, actorFrom(req));
         return response_util_1.ResponseUtil.created(res, created, 'Redirect created successfully');
     });
@@ -51,7 +51,7 @@ class RedirectController {
         };
         const validation = validation_1.updateRedirectSchema.safeParse(dto);
         if (!validation.success)
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
         const updated = await redirect_service_1.RedirectService.update(req.params.id, dto, actorFrom(req));
         return response_util_1.ResponseUtil.success(res, updated, 'Redirect updated successfully');
     });

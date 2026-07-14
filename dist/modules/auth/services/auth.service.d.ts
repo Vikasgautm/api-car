@@ -1,8 +1,6 @@
 export declare class AuthService {
     static register(registerDto: any): Promise<{
         user: any;
-        accessToken: string;
-        refreshToken: string;
     }>;
     static login(loginDto: any, req?: any): Promise<{
         user: any;
@@ -24,6 +22,7 @@ export declare class AuthService {
     private static generateTokens;
     private static saveRefreshToken;
     private static parseExpiresIn;
+    private static parseJsonFields;
     private static sanitizeUser;
     private static extractDeviceInfo;
     private static extractIpAddress;

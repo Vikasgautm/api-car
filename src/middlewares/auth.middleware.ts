@@ -4,6 +4,7 @@ import { config } from '../config';
 import { User } from '../models/user.model';
 import { AppError } from '../shared/utils/app-error.util';
 import { AuthRequest, JwtPayload } from '../types/auth';
+import { getPool } from '../sql/utils/dbConnection';
 
 export const protect: RequestHandler = async (
   req: AuthRequest,
@@ -35,10 +36,12 @@ export const protect: RequestHandler = async (
     req.user = decoded;
 
     // Check if user still exists and is not deleted
-    const currentUser = await User.findOne({
-      user_id: decoded.user_id || decoded.id,
-      is_deleted: false,
-    });
+    const pool = await getPool();
+    const [userRows]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1',
+      [decoded.user_id || decoded.id]
+    );
+    const currentUser = userRows[0];
 
     if (!currentUser) {
       return next(AppError.unauthorized('The user belonging to this token no longer exists or has been deleted.'));

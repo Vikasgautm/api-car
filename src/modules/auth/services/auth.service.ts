@@ -2,66 +2,83 @@ import { loginSchema, refreshTokenSchema, registerSchema } from '../../../shared
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcrypt';
 import { config } from '../../../config';
-import { UserSession } from '../../../models/user-session.model';
-import { IUser, User } from '../../../models/user.model';
 import { AppError } from '../../../shared/utils/app-error.util';
+import { getPool } from '../../../sql/utils/dbConnection';
 
 export class AuthService {
   static async register(registerDto: any) {
     const { user_name, email, password, phone, role } = registerDto;
 
+    const pool = await getPool();
     // Check if user already exists
-    const existingUser = await User.findOne({ email, is_deleted: false });
-    if (existingUser) {
+    const [existingUsers]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE email = ? AND is_deleted = 0 LIMIT 1',
+      [email]
+    );
+    if (existingUsers.length > 0) {
       throw new AppError('User with this email already exists', 400);
     }
 
     // Create new user
-    const user = User.createDraft({
-      user_id: uuidv4(),
-      user_name,
-      email,
-      password,
-      phone,
-      role: role || 'user',
-      is_email_verified: false,
-      is_deleted: false,
-    });
+    const userId = uuidv4();
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const userRole = role || 'user';
+    await pool.pool.execute(
+      `INSERT INTO Users (user_id, user_name, email, password, phone, role, is_email_verified, is_deleted, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?, 0, 0, NOW(), NOW())`,
+      [userId, user_name, email, hashedPassword, phone || null, userRole]
+    );
 
-    await user.save();
+    // Fetch the created user
+    const [userRows]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE user_id = ? LIMIT 1',
+      [userId]
+    );
+    const user = userRows[0];
+    this.parseJsonFields(user);
 
-    // Generate tokens
-    const { accessToken, refreshToken } = await this.generateTokens(user);
+    // // Generate tokens
+    // const { accessToken, refreshToken } = await this.generateTokens(user);
 
-    // Save refresh token session
-    await this.saveRefreshToken(user.user_id, refreshToken);
+    // // Save refresh token session
+    // await this.saveRefreshToken(user.user_id, refreshToken);
 
     return {
       user: this.sanitizeUser(user),
-      accessToken,
-      refreshToken,
+      // accessToken,
+      // refreshToken,
     };
   }
 
   static async login(loginDto: any, req?: any) {
     const { email, password } = loginDto;
 
+    const pool = await getPool();
     // Find user
-    const user = await User.findOne({ email, is_deleted: false }).select('+password');
+    const [userRows]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE email = ? AND is_deleted = 0 LIMIT 1',
+      [email]
+    );
+    const user = userRows[0];
     if (!user) {
       throw new AppError('Invalid credentials', 401);
     }
 
     // Verify password
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await bcrypt.compare(password, user.password || '');
     if (!isPasswordValid) {
       throw new AppError('Invalid credentials', 401);
     }
 
     // Update last login
+    await pool.pool.execute(
+      'UPDATE Users SET last_login_at = NOW(), updatedAt = NOW() WHERE user_id = ?',
+      [user.user_id]
+    );
     user.last_login_at = new Date();
-    await user.save();
+    this.parseJsonFields(user);
 
     // Generate tokens
     const { accessToken, refreshToken } = await this.generateTokens(user);
@@ -87,29 +104,42 @@ export class AuthService {
         user_id: string;
       };
 
+      const pool = await getPool();
       // Check if refresh token exists in database
-      const session = await UserSession.findOne({
-        user_id: decoded.user_id,
-        refresh_token: refresh_token,
-        is_revoked: false,
-      });
+      const [sessionRows]: any = await pool.pool.execute(
+        'SELECT * FROM UserSessions WHERE user_id = ? AND refresh_token = ? AND is_revoked = 0 LIMIT 1',
+        [decoded.user_id, refresh_token]
+      );
+      const session = sessionRows[0];
 
       if (!session) {
         throw new AppError('Invalid or revoked refresh token', 401);
       }
 
+      // Check if session has expired
+      if (new Date(session.expires_at) < new Date()) {
+        throw new AppError('Refresh token has expired. Please login again.', 401);
+      }
+
       // Find user
-      const user = await User.findOne({ user_id: decoded.user_id, is_deleted: false });
+      const [userRows]: any = await pool.pool.execute(
+        'SELECT * FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1',
+        [decoded.user_id]
+      );
+      const user = userRows[0];
       if (!user) {
         throw new AppError('User not found', 404);
       }
+      this.parseJsonFields(user);
 
       // Generate new tokens
       const { accessToken, refreshToken } = await this.generateTokens(user);
 
       // Revoke old refresh token
-      session.is_revoked = true;
-      await session.save();
+      await pool.pool.execute(
+        'UPDATE UserSessions SET is_revoked = 1, revoked_at = NOW(), updatedAt = NOW() WHERE session_id = ?',
+        [session.session_id]
+      );
 
       // Save new refresh token
       await this.saveRefreshToken(user.user_id, refreshToken);
@@ -133,27 +163,39 @@ export class AuthService {
   }
 
   static async logout(user_id: string) {
+    const pool = await getPool();
     // Revoke all refresh tokens for this user
-    await UserSession.updateMany(
-      { user_id, is_revoked: false },
-      { is_revoked: true }
+    await pool.pool.execute(
+      'UPDATE UserSessions SET is_revoked = 1, revoked_at = NOW(), updatedAt = NOW() WHERE user_id = ? AND is_revoked = 0',
+      [user_id]
     );
 
     return { message: 'Logged out successfully' };
   }
 
   static async getProfile(user_id: string) {
-    const user = await User.findOne({ user_id, is_deleted: false });
+    const pool = await getPool();
+    const [userRows]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1',
+      [user_id]
+    );
+    const user = userRows[0];
     if (!user) {
       throw new AppError('User not found', 404);
     }
+    this.parseJsonFields(user);
 
     return this.sanitizeUser(user);
   }
 
   static async resetPassword(token: string, user_id: string, password: string) {
+    const pool = await getPool();
     // Find user
-    const user = await User.findOne({ user_id, is_deleted: false }).select('+password_reset_token +password_reset_expires');
+    const [userRows]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1',
+      [user_id]
+    );
+    const user = userRows[0];
     if (!user) {
       throw new AppError('User not found', 404);
     }
@@ -165,32 +207,44 @@ export class AuthService {
     }
 
     // Check if token has expired
-    if (!user.password_reset_expires || user.password_reset_expires < new Date()) {
+    if (!user.password_reset_expires || new Date(user.password_reset_expires) < new Date()) {
       throw new AppError('Reset token has expired', 400);
     }
 
     // Update password and clear reset token
-    user.password = password;
-    user.password_reset_token = undefined;
-    user.password_reset_expires = undefined;
-    await user.save();
+    const hashedPassword = await bcrypt.hash(password, 12);
+    await pool.pool.execute(
+      'UPDATE Users SET password = ?, password_reset_token = NULL, password_reset_expires = NULL, updatedAt = NOW() WHERE user_id = ?',
+      [hashedPassword, user_id]
+    );
 
     return { message: 'Password reset successfully' };
   }
 
-  private static async generateTokens(user: IUser) {
+  private static async generateTokens(user: any) {
     const accessToken = jwt.sign(
       {
-        id: user.user_id,
+        id: user.id,
+        user_id: user.user_id,
         email: user.email,
         role: user.role,
+        phone: user.phone,
+        permissions: user.permissions,
+        is_email_verified : user.is_email_verified,
+        last_login_at : user.last_login_at,
+        theme : user.theme
       },
       config.jwt_secret,
       { expiresIn: config.jwt_expires_in as `${number}${'s' | 'm' | 'h' | 'd'}` }
     );
 
     const refreshToken = jwt.sign(
-      { user_id: user.user_id },
+      { 
+        id: user.id,
+        user_id: user.user_id,
+        email: user.email,
+        role: user.role
+       },
       config.jwt_refresh_secret,
       { expiresIn: config.jwt_refresh_expires_in as `${number}${'s' | 'm' | 'h' | 'd'}` }
     );
@@ -205,15 +259,14 @@ export class AuthService {
     ipAddress?: string
   ) {
     const expiresMs = this.parseExpiresIn(config.jwt_refresh_expires_in);
-    await UserSession.create({
-      session_id: uuidv4(),
-      user_id,
-      refresh_token: refreshToken,
-      is_revoked: false,
-      expires_at: new Date(Date.now() + expiresMs),
-      device_info: deviceInfo,
-      ip_address: ipAddress,
-    });
+    const expiresAt = new Date(Date.now() + expiresMs);
+    const sessionId = uuidv4();
+    const pool = await getPool();
+    await pool.pool.execute(
+      `INSERT INTO UserSessions (session_id, user_id, refresh_token, expires_at, is_revoked, device_info, ip_address, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, 0, ?, ?, NOW(), NOW())`,
+      [sessionId, user_id, refreshToken, expiresAt, deviceInfo || null, ipAddress || null]
+    );
   }
 
   private static parseExpiresIn(expiresIn: string): number {
@@ -233,9 +286,25 @@ export class AuthService {
     return value * (multipliers[unit] || multipliers['d']);
   }
 
+  private static parseJsonFields(user: any) {
+    if (!user) return;
+    const jsonFields = ['permissions', 'assigned_brands', 'assigned_domains', 'workflow_rights', 'security'];
+    for (const f of jsonFields) {
+      if (typeof user[f] === 'string') {
+        try {
+          user[f] = JSON.parse(user[f]);
+        } catch (e) {
+          // Keep as string
+        }
+      }
+    }
+  }
+
   private static sanitizeUser(user: any) {
-    const userObj = user.toObject ? user.toObject() : { ...user };
+    const userObj = { ...user };
     delete userObj.password;
+    delete userObj.password_reset_token;
+    delete userObj.password_reset_expires;
     delete userObj.__v;
     return userObj;
   }

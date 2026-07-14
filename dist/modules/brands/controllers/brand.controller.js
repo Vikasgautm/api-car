@@ -61,7 +61,7 @@ class BrandController {
         };
         const validation = validation_1.createBrandSchema.safeParse(createDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
         }
         const brand = await brand_service_1.BrandService.createBrand({ ...createDto, ...req.body });
         return response_util_1.ResponseUtil.created(res, brand, 'Brand created successfully');
@@ -89,10 +89,10 @@ class BrandController {
         };
         const validation = validation_1.updateBrandSchema.safeParse(updateDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400, {
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400, {
                 userMessage: errorMessages_1.USER_MESSAGES.VALIDATION_ERROR,
                 errorCode: errorMessages_1.ERROR_CODES.VALIDATION_ERROR,
-                details: { fields: validation.error.errors.map(e => e.message) },
+                details: { fields: validation.error.issues.map((e) => e.message) },
             });
         }
         const brand = await brand_service_1.BrandService.updateBrand(req.params.id, {

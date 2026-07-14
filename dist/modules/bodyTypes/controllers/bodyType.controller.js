@@ -99,7 +99,7 @@ class BodyTypeController {
         };
         const validation = validation_1.createBodyTypeSchema.safeParse(createDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
         }
         const bodyType = await bodyType_service_1.BodyTypeService.createBodyType(createDto);
         return response_util_1.ResponseUtil.created(res, bodyType, "Body type created successfully");
@@ -129,10 +129,10 @@ class BodyTypeController {
         };
         const validation = validation_1.updateBodyTypeSchema.safeParse(updateDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400, {
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400, {
                 userMessage: errorMessages_1.USER_MESSAGES.VALIDATION_ERROR,
                 errorCode: errorMessages_1.ERROR_CODES.VALIDATION_ERROR,
-                details: { fields: validation.error.errors.map(e => e.message) },
+                details: { fields: validation.error.issues.map((e) => e.message) },
             });
         }
         const bodyType = await bodyType_service_1.BodyTypeService.updateBodyType(req.params.id, updateDto);

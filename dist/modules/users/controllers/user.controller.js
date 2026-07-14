@@ -39,7 +39,7 @@ class UserController {
         const updateDto = { user_name, phone, profile_pic: updateData.profile_pic };
         const validation = validation_1.updateProfileSchema.safeParse(updateDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map(e => e.message).join(', '), 400);
         }
         const updatedUser = await user_model_1.User.findOneAndUpdate({ user_id: userId, is_deleted: false }, updateData, {
             returnDocument: 'after',
@@ -54,7 +54,7 @@ class UserController {
         const filterDto = req.query;
         const validation = validation_1.userFilterSchema.safeParse(filterDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map(e => e.message).join(', '), 400);
         }
         const includeDeleted = req.query.include_deleted === 'true';
         const result = await user_service_1.UserService.getAllUsers(filterDto, includeDeleted);
@@ -90,7 +90,7 @@ class UserController {
         const updateDto = req.body;
         const validation = validation_1.adminUpdateUserSchema.safeParse(updateDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map(e => e.message).join(', '), 400);
         }
         const user = await user_service_1.UserService.updateUser(userId, updateDto);
         return response_util_1.ResponseUtil.success(res, user, "User updated successfully");

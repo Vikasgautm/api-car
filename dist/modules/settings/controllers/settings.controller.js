@@ -37,7 +37,7 @@ class SettingsController {
         };
         const validation = validation_1.UpdateSEOSettingsDto.validate(updateDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
         }
         const seoSettings = await settings_service_1.SettingsService.updateSEOSettings(updateDto);
         return response_util_1.ResponseUtil.success(res, seoSettings, "SEO settings updated successfully");

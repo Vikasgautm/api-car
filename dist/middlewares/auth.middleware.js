@@ -6,8 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.optionalAuth = exports.restrictToEditorOrAbove = exports.restrictTo = exports.protect = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../config");
-const user_model_1 = require("../models/user.model");
 const app_error_util_1 = require("../shared/utils/app-error.util");
+const dbConnection_1 = require("../sql/utils/dbConnection");
 const protect = async (req, res, next) => {
     // Skip authentication in development mode
     // if (config.env === 'development') {
@@ -28,10 +28,9 @@ const protect = async (req, res, next) => {
         const decoded = jsonwebtoken_1.default.verify(token, config_1.config.jwt_secret);
         req.user = decoded;
         // Check if user still exists and is not deleted
-        const currentUser = await user_model_1.User.findOne({
-            user_id: decoded.user_id || decoded.id,
-            is_deleted: false,
-        });
+        const pool = await (0, dbConnection_1.getPool)();
+        const [userRows] = await pool.pool.execute('SELECT * FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1', [decoded.user_id || decoded.id]);
+        const currentUser = userRows[0];
         if (!currentUser) {
             return next(app_error_util_1.AppError.unauthorized('The user belonging to this token no longer exists or has been deleted.'));
         }

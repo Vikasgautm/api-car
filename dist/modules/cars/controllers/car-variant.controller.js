@@ -168,7 +168,7 @@ class CarVariantController {
         };
         const validation = validation_1.createVariantSchema.safeParse(createDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
         }
         const variant = await car_variant_service_1.CarVariantService.createVariant(createDto, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.created(res, variant, 'Variant created successfully');
@@ -214,7 +214,7 @@ class CarVariantController {
         };
         const validation = validation_1.updateVariantSchema.safeParse(updateDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
         }
         const variant = await car_variant_service_1.CarVariantService.updateVariant(req.params.id, updateDto, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, variant, 'Variant updated successfully');

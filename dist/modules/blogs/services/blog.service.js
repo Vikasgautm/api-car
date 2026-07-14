@@ -1,10 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BlogService = void 0;
-const createDOMPurify = require('dompurify');
-const { JSDOM } = require('jsdom');
-const window = new JSDOM('').window;
-const DOMPurify = createDOMPurify(window);
+const sanitize_util_1 = require("../../../shared/utils/sanitize.util");
 const uuid_1 = require("uuid");
 const errorMessages_1 = require("../../../constants/errorMessages");
 const blog_model_1 = require("../../../models/blog.model");
@@ -78,7 +75,7 @@ class BlogService {
             blogData.slug = slug;
         }
         // Sanitize HTML content
-        const sanitizedContent = blogData.content ? DOMPurify.sanitize(blogData.content) : '';
+        const sanitizedContent = blogData.content ? (0, sanitize_util_1.sanitizeHtml)(blogData.content) : '';
         let excerpt = blogData.excerpt;
         if (!excerpt && sanitizedContent) {
             excerpt = sanitizedContent.replace(/<[^>]+>/g, "").substring(0, 150) + "...";
@@ -135,7 +132,7 @@ class BlogService {
         }
         if (blogData.content !== undefined) {
             // Sanitize HTML content
-            const sanitizedContent = DOMPurify.sanitize(blogData.content);
+            const sanitizedContent = (0, sanitize_util_1.sanitizeHtml)(blogData.content);
             updateData.content = sanitizedContent;
             if (!blogData.excerpt) {
                 updateData.excerpt = sanitizedContent.replace(/<[^>]+>/g, "").substring(0, 150) + "...";

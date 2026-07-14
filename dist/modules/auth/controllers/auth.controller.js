@@ -12,7 +12,7 @@ class AuthController {
             // Validate DTO
             const validation = validation_1.registerSchema.safeParse(registerDto);
             if (!validation.success) {
-                throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+                throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
             }
             const result = await auth_service_1.AuthService.register(registerDto);
             return response_util_1.ResponseUtil.created(res, result, 'User registered successfully');
@@ -27,7 +27,7 @@ class AuthController {
             // Validate DTO
             const validation = validation_1.loginSchema.safeParse(loginDto);
             if (!validation.success) {
-                throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+                throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
             }
             const result = await auth_service_1.AuthService.login(loginDto, req);
             return response_util_1.ResponseUtil.success(res, result, 'Login successful');
@@ -42,7 +42,7 @@ class AuthController {
             // Validate DTO
             const validation = validation_1.refreshTokenSchema.safeParse(refreshTokenDto);
             if (!validation.success) {
-                throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+                throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
             }
             const result = await auth_service_1.AuthService.refreshToken(refreshTokenDto);
             return response_util_1.ResponseUtil.success(res, result, 'Token refreshed successfully');

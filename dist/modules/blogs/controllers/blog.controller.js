@@ -114,11 +114,11 @@ class BlogController {
         console.log(createDto, "hello");
         const validation = validation_1.createBlogSchema.safeParse(createDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400, {
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400, {
                 userMessage: errorMessages_1.USER_MESSAGES.VALIDATION_ERROR,
                 errorCode: errorMessages_1.ERROR_CODES.VALIDATION_ERROR,
                 details: {
-                    fields: validation.error.errors.map(e => e.message),
+                    fields: validation.error.issues.map((e) => e.message),
                 },
             });
         }
@@ -171,7 +171,7 @@ class BlogController {
         console.log(updateDto, "updatedto");
         const validation = validation_1.updateBlogSchema.safeParse(updateDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
         }
         const blog = await blog_service_1.BlogService.updateBlog(req.params.id, updateDto);
         return response_util_1.ResponseUtil.success(res, blog, "Blog updated successfully");

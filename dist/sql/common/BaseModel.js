@@ -420,7 +420,7 @@ class BaseModel {
         const pool = await (0, dbConnection_1.getPool)();
         const request = transaction ? transaction.request() : pool.request();
         const serializedData = this.serialize(data);
-        const keys = Object.keys(serializedData).filter(k => (k !== 'id' || serializedData[k] !== undefined) && typeof serializedData[k] !== 'function');
+        const keys = Object.keys(serializedData).filter(k => k !== '_id' && (k !== 'id' || serializedData[k] !== undefined) && typeof serializedData[k] !== 'function');
         const cols = keys.map(k => `[${k}]`).join(', ');
         const vals = keys.map(k => `@i_${k}`).join(', ');
         const query = `INSERT INTO [${this.tableName}] (${cols}) OUTPUT INSERTED.* VALUES (${vals})`;
@@ -460,7 +460,7 @@ class BaseModel {
             whereClause = clauses.join(' AND ');
         }
         const setClauses = [];
-        const updateKeys = Object.keys(serializedData).filter(k => k !== 'id' && k !== this.primaryKey && typeof serializedData[k] !== 'function');
+        const updateKeys = Object.keys(serializedData).filter(k => k !== '_id' && k !== 'id' && k !== this.primaryKey && typeof serializedData[k] !== 'function');
         for (const key of updateKeys) {
             setClauses.push(`[${key}] = @u_${key}`);
         }

@@ -5,11 +5,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
 const crypto_1 = __importDefault(require("crypto"));
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const user_model_1 = require("../../../models/user.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 const email_service_1 = require("../../../shared/services/email.service");
 const config_1 = require("../../../config");
+const dbConnection_1 = require("../../../sql/utils/dbConnection");
 class UserService {
     static async getAllUsers(filterDto, includeDeleted = false) {
         const { page = 1, limit = 10, role, is_email_verified, is_active, is_deleted, q, sortBy = 'createdAt', sortOrder = 'desc', } = filterDto;
@@ -57,38 +59,38 @@ class UserService {
         if (!user_name || !email || !role) {
             throw new app_error_util_1.AppError('Name, email, and role are required', 400);
         }
+        const pool = await (0, dbConnection_1.getPool)();
         // Check if email already exists
-        const existingUser = await user_model_1.User.findOne({ email: email, is_deleted: false });
-        if (existingUser) {
+        const [existingUsers] = await pool.pool.execute('SELECT * FROM Users WHERE email = ? AND is_deleted = 0 LIMIT 1', [email]);
+        if (existingUsers.length > 0) {
             throw new app_error_util_1.AppError('User with this email already exists', 409);
         }
         // Generate user_id from email (remove domain and special chars)
         const user_id = email.split('@')[0].replace(/[^a-z0-9]/gi, '_').toLowerCase();
         // Create user
-        const createData = {
-            user_id,
-            user_name,
-            email,
-            role,
-            is_active: is_active !== undefined ? is_active : true,
-            is_deleted: false,
-        };
-        // If password provided, use it; otherwise generate reset token for invite
-        let resetToken;
+        let hashedPassword = null;
+        let resetTokenHash = null;
+        let resetExpires = null;
+        let resetToken = undefined;
         if (password) {
-            createData.password = password;
+            hashedPassword = await bcrypt_1.default.hash(password, 12);
         }
         else {
             // Generate password reset token for invite link
             resetToken = crypto_1.default.randomBytes(32).toString('hex');
-            const resetHash = crypto_1.default.createHash('sha256').update(resetToken).digest('hex');
-            createData.password_reset_token = resetHash;
-            createData.password_reset_expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+            resetTokenHash = crypto_1.default.createHash('sha256').update(resetToken).digest('hex');
+            resetExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
         }
-        const user = await user_model_1.User.create(createData);
+        const isActiveVal = is_active !== undefined ? (is_active ? 1 : 0) : 1;
+        await pool.pool.execute(`INSERT INTO Users (user_id, user_name, email, role, password, password_reset_token, password_reset_expires, is_active, is_deleted, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NOW(), NOW())`, [user_id, user_name, email, role, hashedPassword, resetTokenHash, resetExpires, isActiveVal]);
+        // Retrieve user details
+        const [userRows] = await pool.pool.execute('SELECT * FROM Users WHERE user_id = ? LIMIT 1', [user_id]);
+        const userObj = userRows[0];
+        this.parseJsonFields(userObj);
         // Send invite email if no password was provided
         if (resetToken) {
-            const resetUrl = `${config_1.config.app.frontend_url}/auth/set-password?token=${resetToken}&user_id=${user.user_id}`;
+            const resetUrl = `${config_1.config.app.frontend_url}/auth/set-password?token=${resetToken}&user_id=${userObj.user_id}`;
             try {
                 await email_service_1.EmailService.sendInviteEmail(email, user_name, resetUrl);
             }
@@ -97,39 +99,87 @@ class UserService {
                 // Don't fail user creation if email sending fails
             }
         }
-        return user;
+        delete userObj.password;
+        return userObj;
     }
     static async deleteUser(userId) {
-        const user = await user_model_1.User.findOneAndUpdate({ user_id: userId }, { is_deleted: true }, { returnDocument: 'after' }).select("-password");
-        if (!user) {
+        const pool = await (0, dbConnection_1.getPool)();
+        // Check if user exists
+        const [userRows] = await pool.pool.execute('SELECT * FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1', [userId]);
+        if (userRows.length === 0) {
             throw new app_error_util_1.AppError('User not found', 404);
         }
-        return user;
+        await pool.pool.execute('UPDATE Users SET is_deleted = 1, updatedAt = NOW() WHERE user_id = ?', [userId]);
+        const [updatedRows] = await pool.pool.execute('SELECT * FROM Users WHERE user_id = ? LIMIT 1', [userId]);
+        const userObj = updatedRows[0];
+        this.parseJsonFields(userObj);
+        delete userObj.password;
+        return userObj;
     }
     static async restoreUser(userId) {
-        const user = await user_model_1.User.findOneAndUpdate({ user_id: userId, is_deleted: true }, { is_deleted: false }, { returnDocument: 'after' }).select("-password");
-        if (!user) {
+        const pool = await (0, dbConnection_1.getPool)();
+        // Check if user exists and is deleted
+        const [userRows] = await pool.pool.execute('SELECT * FROM Users WHERE user_id = ? AND is_deleted = 1 LIMIT 1', [userId]);
+        if (userRows.length === 0) {
             throw new app_error_util_1.AppError('User not found or not deleted', 404);
         }
-        return user;
+        await pool.pool.execute('UPDATE Users SET is_deleted = 0, updatedAt = NOW() WHERE user_id = ?', [userId]);
+        const [updatedRows] = await pool.pool.execute('SELECT * FROM Users WHERE user_id = ? LIMIT 1', [userId]);
+        const userObj = updatedRows[0];
+        this.parseJsonFields(userObj);
+        delete userObj.password;
+        return userObj;
     }
     static async updateUser(userId, updateData) {
+        const pool = await (0, dbConnection_1.getPool)();
+        // Check if user exists
+        const [userRows] = await pool.pool.execute('SELECT * FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1', [userId]);
+        if (userRows.length === 0) {
+            throw new app_error_util_1.AppError('User not found', 404);
+        }
         // Check if email is being updated and if it already exists
         if (updateData.email) {
-            const existingUser = await user_model_1.User.findOne({
-                email: updateData.email,
-                user_id: { $ne: userId },
-                is_deleted: false,
-            });
-            if (existingUser) {
+            const [existingUsers] = await pool.pool.execute('SELECT * FROM Users WHERE email = ? AND user_id <> ? AND is_deleted = 0 LIMIT 1', [updateData.email, userId]);
+            if (existingUsers.length > 0) {
                 throw new app_error_util_1.AppError('Email already in use', 409);
             }
         }
-        const user = await user_model_1.User.findOneAndUpdate({ user_id: userId, is_deleted: false }, updateData, { returnDocument: 'after', runValidators: true }).select("-password");
-        if (!user) {
-            throw new app_error_util_1.AppError('User not found', 404);
+        // Build dynamic UPDATE query
+        const setClauses = [];
+        const values = [];
+        const keysToUpdate = Object.keys(updateData).filter(k => k !== 'id' && k !== 'user_id' && typeof updateData[k] !== 'function');
+        for (const key of keysToUpdate) {
+            setClauses.push(`\`${key}\` = ?`);
+            let val = updateData[key];
+            if (val !== null && typeof val === 'object' && !(val instanceof Date)) {
+                val = JSON.stringify(val);
+            }
+            values.push(val);
         }
-        return user;
+        if (setClauses.length > 0) {
+            values.push(userId);
+            await pool.pool.execute(`UPDATE Users SET ${setClauses.join(', ')}, updatedAt = NOW() WHERE user_id = ?`, values);
+        }
+        const [updatedRows] = await pool.pool.execute('SELECT * FROM Users WHERE user_id = ? LIMIT 1', [userId]);
+        const userObj = updatedRows[0];
+        this.parseJsonFields(userObj);
+        delete userObj.password;
+        return userObj;
+    }
+    static parseJsonFields(user) {
+        if (!user)
+            return;
+        const jsonFields = ['permissions', 'assigned_brands', 'assigned_domains', 'workflow_rights', 'security'];
+        for (const f of jsonFields) {
+            if (typeof user[f] === 'string') {
+                try {
+                    user[f] = JSON.parse(user[f]);
+                }
+                catch (e) {
+                    // Keep as string
+                }
+            }
+        }
     }
 }
 exports.UserService = UserService;

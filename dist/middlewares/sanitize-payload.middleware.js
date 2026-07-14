@@ -1,16 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sanitizeHtmlFields = exports.stripBackendManagedCarFields = void 0;
-const dompurify_1 = __importDefault(require("dompurify"));
-const jsdom_1 = require("jsdom");
-// Initialise DOMPurify with a server-side DOM (jsdom).
-// Both packages are already present in package.json.
-const jsdomWindow = new jsdom_1.JSDOM('').window;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const DOMPurify = (0, dompurify_1.default)(jsdomWindow);
+const sanitize_util_1 = require("../shared/utils/sanitize.util");
 // Fields that are written by dedicated workflows (lifecycle transitions,
 // deletion-approval, audit, Mongoose internals) and must never accept inbound
 // values on generic update endpoints. Stripping them upstream of strict zod
@@ -56,11 +47,11 @@ const sanitizeHtmlFields = (req, _res, next) => {
     if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) {
         for (const field of HTML_SANITIZE_FIELDS) {
             if (typeof req.body[field] === 'string') {
-                req.body[field] = DOMPurify.sanitize(req.body[field]);
+                req.body[field] = (0, sanitize_util_1.sanitizeHtml)(req.body[field]);
             }
             // Handle array fields like variant_highlights (array of strings)
             if (Array.isArray(req.body[field])) {
-                req.body[field] = req.body[field].map((item) => typeof item === 'string' ? DOMPurify.sanitize(item) : item);
+                req.body[field] = req.body[field].map((item) => typeof item === 'string' ? (0, sanitize_util_1.sanitizeHtml)(item) : item);
             }
         }
     }

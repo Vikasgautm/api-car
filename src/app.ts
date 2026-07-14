@@ -16,6 +16,14 @@ import helmet from "helmet";
 import { config } from "./config";
 import { requestLogger } from "./middlewares/logging.middleware";
 import { adminRateLimiter, chatbotRateLimiter, discoverRateLimiter, globalRateLimiter, publicCarsRateLimiter } from "./middlewares/rate-limit.middleware";
+// Import routes
+import { errorMiddleware } from "./middlewares/error.middleware";
+import routes from "./shared/routes";
+import { AppError } from "./shared/utils/app-error.util";
+import { SitemapController } from "./modules/sitemap/controllers/sitemap.controller";
+// Swagger Documentation Setup
+import swaggerUi from "swagger-ui-express";
+import swaggerJSDoc from "swagger-jsdoc";
 
 const app: Application = express();
 
@@ -60,11 +68,7 @@ app.get("/", (req: Request, res: Response) => {
   });
 });
 
-// Import routes
-import { errorMiddleware } from "./middlewares/error.middleware";
-import routes from "./shared/routes";
-import { AppError } from "./shared/utils/app-error.util";
-import { SitemapController } from "./modules/sitemap/controllers/sitemap.controller";
+
 app.use("/uploads", express.static("uploads"));
 app.use('/api/v1/discover', discoverRateLimiter);
 app.use('/api/v1/cars/public', publicCarsRateLimiter);
@@ -73,9 +77,6 @@ app.use('/api/v1/chatbot', chatbotRateLimiter);
 app.get('/sitemap.xml', SitemapController.getXml);
 app.use("/api/v1", routes);
 
-// Swagger Documentation Setup
-import swaggerUi from "swagger-ui-express";
-import swaggerJSDoc from "swagger-jsdoc";
 
 const swaggerOptions = {
   definition: {

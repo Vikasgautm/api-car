@@ -227,7 +227,7 @@ class CarController {
         };
         const validation = validation_1.createCarSchema.safeParse(createDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map(e => e.message).join(', '), 400);
         }
         const car = await car_service_1.CarService.createCar(createDto, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.created(res, car, "Car created successfully");
@@ -311,7 +311,7 @@ class CarController {
         };
         const validation = validation_1.updateCarSchema.safeParse(updateDto);
         if (!validation.success) {
-            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
+            throw new app_error_util_1.AppError(validation.error.issues.map(e => e.message).join(', '), 400);
         }
         const car = await car_service_1.CarService.updateCar(req.params.id, updateDto, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, car, "Car updated successfully");

@@ -1,9 +1,11 @@
 import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 import { User } from "../../../models/user.model";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { PaginationUtil } from "../../../shared/utils/pagination.util";
 import { EmailService } from "../../../shared/services/email.service";
 import { config } from '../../../config';
+import { getPool } from '../../../sql/utils/dbConnection';
 
 export class UserService {
   static async getAllUsers(filterDto: any, includeDeleted: boolean = false) {
@@ -77,9 +79,13 @@ export class UserService {
       throw new AppError('Name, email, and role are required', 400);
     }
 
+    const pool = await getPool();
     // Check if email already exists
-    const existingUser = await User.findOne({ email: email as string, is_deleted: false });
-    if (existingUser) {
+    const [existingUsers]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE email = ? AND is_deleted = 0 LIMIT 1',
+      [email as any]
+    );
+    if (existingUsers.length > 0) {
       throw new AppError('User with this email already exists', 409);
     }
 
@@ -87,32 +93,39 @@ export class UserService {
     const user_id = (email as string).split('@')[0].replace(/[^a-z0-9]/gi, '_').toLowerCase();
 
     // Create user
-    const createData: Record<string, unknown> = {
-      user_id,
-      user_name,
-      email,
-      role,
-      is_active: is_active !== undefined ? is_active : true,
-      is_deleted: false,
-    };
+    let hashedPassword = null;
+    let resetTokenHash = null;
+    let resetExpires = null;
+    let resetToken = undefined;
 
-    // If password provided, use it; otherwise generate reset token for invite
-    let resetToken: string | undefined;
     if (password) {
-      createData.password = password;
+      hashedPassword = await bcrypt.hash(password as string, 12);
     } else {
       // Generate password reset token for invite link
       resetToken = crypto.randomBytes(32).toString('hex');
-      const resetHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-      createData.password_reset_token = resetHash;
-      createData.password_reset_expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+      resetExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
     }
 
-    const user = await User.create(createData);
+    const isActiveVal = is_active !== undefined ? (is_active ? 1 : 0) : 1;
+
+    await pool.pool.execute(
+      `INSERT INTO Users (user_id, user_name, email, role, password, password_reset_token, password_reset_expires, is_active, is_deleted, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NOW(), NOW())`,
+      [user_id, user_name, email, role, hashedPassword, resetTokenHash, resetExpires, isActiveVal] as any[]
+    );
+
+    // Retrieve user details
+    const [userRows]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE user_id = ? LIMIT 1',
+      [user_id]
+    );
+    const userObj = userRows[0];
+    this.parseJsonFields(userObj);
 
     // Send invite email if no password was provided
     if (resetToken) {
-      const resetUrl = `${config.app.frontend_url}/auth/set-password?token=${resetToken}&user_id=${user.user_id}`;
+      const resetUrl = `${config.app.frontend_url}/auth/set-password?token=${resetToken}&user_id=${userObj.user_id}`;
 
       try {
         await EmailService.sendInviteEmail(email as string, user_name as string, resetUrl);
@@ -122,60 +135,134 @@ export class UserService {
       }
     }
 
-    return user;
+    delete userObj.password;
+    return userObj;
   }
 
   static async deleteUser(userId: string) {
-    const user = await User.findOneAndUpdate(
-      { user_id: userId },
-      { is_deleted: true },
-      { returnDocument: 'after' }
-    ).select("-password");
-
-    if (!user) {
+    const pool = await getPool();
+    // Check if user exists
+    const [userRows]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1',
+      [userId]
+    );
+    if (userRows.length === 0) {
       throw new AppError('User not found', 404);
     }
 
-    return user;
+    await pool.pool.execute(
+      'UPDATE Users SET is_deleted = 1, updatedAt = NOW() WHERE user_id = ?',
+      [userId]
+    );
+
+    const [updatedRows]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE user_id = ? LIMIT 1',
+      [userId]
+    );
+    const userObj = updatedRows[0];
+    this.parseJsonFields(userObj);
+
+    delete userObj.password;
+    return userObj;
   }
 
   static async restoreUser(userId: string) {
-    const user = await User.findOneAndUpdate(
-      { user_id: userId, is_deleted: true },
-      { is_deleted: false },
-      { returnDocument: 'after' }
-    ).select("-password");
-
-    if (!user) {
+    const pool = await getPool();
+    // Check if user exists and is deleted
+    const [userRows]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE user_id = ? AND is_deleted = 1 LIMIT 1',
+      [userId]
+    );
+    if (userRows.length === 0) {
       throw new AppError('User not found or not deleted', 404);
     }
 
-    return user;
+    await pool.pool.execute(
+      'UPDATE Users SET is_deleted = 0, updatedAt = NOW() WHERE user_id = ?',
+      [userId]
+    );
+
+    const [updatedRows]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE user_id = ? LIMIT 1',
+      [userId]
+    );
+    const userObj = updatedRows[0];
+    this.parseJsonFields(userObj);
+
+    delete userObj.password;
+    return userObj;
   }
 
   static async updateUser(userId: string, updateData: Record<string, unknown>) {
+    const pool = await getPool();
+
+    // Check if user exists
+    const [userRows]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE user_id = ? AND is_deleted = 0 LIMIT 1',
+      [userId]
+    );
+    if (userRows.length === 0) {
+      throw new AppError('User not found', 404);
+    }
+
     // Check if email is being updated and if it already exists
     if (updateData.email) {
-      const existingUser = await User.findOne({
-        email: updateData.email,
-        user_id: { $ne: userId },
-        is_deleted: false,
-      });
-      if (existingUser) {
+      const [existingUsers]: any = await pool.pool.execute(
+        'SELECT * FROM Users WHERE email = ? AND user_id <> ? AND is_deleted = 0 LIMIT 1',
+        [updateData.email as any, userId]
+      );
+      if (existingUsers.length > 0) {
         throw new AppError('Email already in use', 409);
       }
     }
 
-    const user = await User.findOneAndUpdate(
-      { user_id: userId, is_deleted: false },
-      updateData,
-      { returnDocument: 'after', runValidators: true }
-    ).select("-password");
+    // Build dynamic UPDATE query
+    const setClauses: string[] = [];
+    const values: any[] = [];
 
-    if (!user) {
-      throw new AppError('User not found', 404);
+    const keysToUpdate = Object.keys(updateData).filter(
+      k => k !== 'id' && k !== 'user_id' && typeof updateData[k] !== 'function'
+    );
+
+    for (const key of keysToUpdate) {
+      setClauses.push(`\`${key}\` = ?`);
+      let val = updateData[key];
+      if (val !== null && typeof val === 'object' && !(val instanceof Date)) {
+        val = JSON.stringify(val);
+      }
+      values.push(val);
     }
 
-    return user;
+    if (setClauses.length > 0) {
+      values.push(userId);
+      await pool.pool.execute(
+        `UPDATE Users SET ${setClauses.join(', ')}, updatedAt = NOW() WHERE user_id = ?`,
+        values
+      );
+    }
+
+    const [updatedRows]: any = await pool.pool.execute(
+      'SELECT * FROM Users WHERE user_id = ? LIMIT 1',
+      [userId]
+    );
+    const userObj = updatedRows[0];
+    this.parseJsonFields(userObj);
+
+    delete userObj.password;
+    return userObj;
+  }
+
+  private static parseJsonFields(user: any) {
+    if (!user) return;
+    const jsonFields = ['permissions', 'assigned_brands', 'assigned_domains', 'workflow_rights', 'security'];
+    for (const f of jsonFields) {
+      if (typeof user[f] === 'string') {
+        try {
+          user[f] = JSON.parse(user[f]);
+        } catch (e) {
+          // Keep as string
+        }
+      }
+    }
   }
 }

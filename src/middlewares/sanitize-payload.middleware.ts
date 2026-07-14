@@ -1,12 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import createDOMPurify from 'dompurify';
-import { JSDOM } from 'jsdom';
-
-// Initialise DOMPurify with a server-side DOM (jsdom).
-// Both packages are already present in package.json.
-const jsdomWindow = new JSDOM('').window;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const DOMPurify = createDOMPurify(jsdomWindow as any);
+import { sanitizeHtml } from '../shared/utils/sanitize.util';
 
 // Fields that are written by dedicated workflows (lifecycle transitions,
 // deletion-approval, audit, Mongoose internals) and must never accept inbound
@@ -54,12 +47,12 @@ export const sanitizeHtmlFields = (req: Request, _res: Response, next: NextFunct
   if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) {
     for (const field of HTML_SANITIZE_FIELDS) {
       if (typeof req.body[field] === 'string') {
-        req.body[field] = DOMPurify.sanitize(req.body[field]);
+        req.body[field] = sanitizeHtml(req.body[field]);
       }
       // Handle array fields like variant_highlights (array of strings)
       if (Array.isArray(req.body[field])) {
         req.body[field] = (req.body[field] as unknown[]).map((item) =>
-          typeof item === 'string' ? DOMPurify.sanitize(item) : item
+          typeof item === 'string' ? sanitizeHtml(item) : item
         );
       }
     }
