@@ -16,4 +16,3 @@ export declare class CarImageController {
     static bulkAssignCategory: (req: any, res: Response, next: import("express").NextFunction) => void;
     static bulkDelete: (req: any, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=car-image.controller.d.ts.map

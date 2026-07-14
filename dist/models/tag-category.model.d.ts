@@ -1,5 +1,4 @@
-import { Document } from 'mongoose';
-export interface ITagCategory extends Document {
+export interface ITagCategory {
     tag_category_id: string;
     name: string;
     slug: string;
@@ -9,11 +8,5 @@ export interface ITagCategory extends Document {
     is_deleted: boolean;
     sort_order: number;
 }
-export declare const TagCategory: import("mongoose").Model<ITagCategory, {}, {}, {}, Document<unknown, {}, ITagCategory, {}, import("mongoose").DefaultSchemaOptions> & ITagCategory & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, ITagCategory>;
-//# sourceMappingURL=tag-category.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const TagCategory: BaseModel<ITagCategory>;

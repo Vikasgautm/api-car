@@ -37,4 +37,3 @@ export declare class SEOAutoWiringService {
      */
     static updateWiringForVariant(variant_id: string, car_id: string, specs_normalized: Record<string, any> | undefined): Promise<void>;
 }
-//# sourceMappingURL=seo-auto-wiring.service.d.ts.map

@@ -1,4 +1,3 @@
-import { Document } from "mongoose";
 import { MileageClass } from "../constants/mileage-benchmarks";
 export type CarStatus = 'upcoming' | 'launched' | 'discontinued' | 'archived' | 'disabled';
 export type EntityLifecycleState = 'upcoming' | 'launched' | 'facelift' | 'discontinued' | 'concept' | 'testing' | 'archived';
@@ -37,7 +36,7 @@ export interface ChangeHistoryEntry {
     change_source: 'manual_edit' | 'import' | 'bulk_operation' | 'system' | 'api';
     notes?: string;
 }
-export interface ICar extends Document {
+export interface ICar {
     car_id: string;
     name: string;
     slug: string;
@@ -174,11 +173,5 @@ export interface ICar extends Document {
     variant_history?: VariantHistoryEntry[];
     change_history?: ChangeHistoryEntry[];
 }
-export declare const Car: import("mongoose").Model<ICar, {}, {}, {}, Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, ICar>;
-//# sourceMappingURL=car.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const Car: BaseModel<ICar>;

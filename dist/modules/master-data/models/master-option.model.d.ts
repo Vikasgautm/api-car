@@ -1,5 +1,4 @@
-import { Document } from 'mongoose';
-export interface IMasterOption extends Document {
+export interface IMasterOption {
     option_id: string;
     category_key: string;
     label: string;
@@ -11,13 +10,6 @@ export interface IMasterOption extends Document {
     created_at: Date;
     updated_at: Date;
 }
-export declare const MasterOption: import("mongoose").Model<IMasterOption, {}, {}, {}, Document<unknown, {}, IMasterOption, {}, import("mongoose").DefaultSchemaOptions> & IMasterOption & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IMasterOption>;
 export interface MasterCategory {
     key: string;
     label: string;
@@ -29,4 +21,5 @@ export declare const MASTER_SEED_DATA: Record<string, {
     label: string;
     value: string;
 }[]>;
-//# sourceMappingURL=master-option.model.d.ts.map
+import { BaseModel } from '../../../sql/common/BaseModel';
+export declare const MasterOption: BaseModel<IMasterOption>;

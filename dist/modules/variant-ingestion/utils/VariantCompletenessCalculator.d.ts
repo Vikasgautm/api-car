@@ -29,4 +29,3 @@ export declare class VariantCompletenessCalculator {
     static calculate(input: CompletenessInput): CompletenessResult;
 }
 export {};
-//# sourceMappingURL=VariantCompletenessCalculator.d.ts.map

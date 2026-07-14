@@ -34,13 +34,12 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarVariantController = void 0;
+const validation_1 = require("../../../shared/validation");
 const errorMessages_1 = require("../../../constants/errorMessages");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const audit_util_1 = require("../../../shared/utils/audit.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const create_variant_dto_1 = require("../dto/create-variant.dto");
-const update_variant_dto_1 = require("../dto/update-variant.dto");
 const car_variant_service_1 = require("../services/car-variant.service");
 const variant_lifecycle_service_1 = require("../../variants/services/variant-lifecycle.service");
 const difference_engine_service_1 = require("../../variants/services/difference-engine.service");
@@ -167,9 +166,9 @@ class CarVariantController {
             publish_status: req.body.publish_status,
             variant_status: req.body.variant_status,
         };
-        const validation = create_variant_dto_1.CreateVariantDto.validate(createDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.createVariantSchema.safeParse(createDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const variant = await car_variant_service_1.CarVariantService.createVariant(createDto, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.created(res, variant, 'Variant created successfully');
@@ -213,9 +212,9 @@ class CarVariantController {
             publish_status: req.body.publish_status,
             variant_status: req.body.variant_status,
         };
-        const validation = update_variant_dto_1.UpdateVariantDto.validate(updateDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.updateVariantSchema.safeParse(updateDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const variant = await car_variant_service_1.CarVariantService.updateVariant(req.params.id, updateDto, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, variant, 'Variant updated successfully');
@@ -503,4 +502,3 @@ class CarVariantController {
     });
 }
 exports.CarVariantController = CarVariantController;
-//# sourceMappingURL=car-variant.controller.js.map

@@ -4,8 +4,8 @@ exports.IntelligenceController = void 0;
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const upsert_override_dto_1 = require("../dto/upsert-override.dto");
 const intelligence_service_1 = require("../services/intelligence.service");
+const upsert_override_dto_1 = require("../dto/upsert-override.dto");
 function parseFuelCategory(input) {
     if (input !== 'ice' && input !== 'ev') {
         throw new app_error_util_1.AppError(`fuel_category must be 'ice' or 'ev' (got: ${String(input)})`, 400);
@@ -25,8 +25,8 @@ class IntelligenceController {
             good_max: Number(req.body.good_max),
         };
         const validation = upsert_override_dto_1.UpsertBenchmarkOverrideDto.validate(dto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map((e) => e.message).join(', '), 400);
         }
         const updated = await intelligence_service_1.IntelligenceService.upsertOverride(req.params.body_type_id, fuel, {
             weak_max: dto.weak_max,
@@ -49,4 +49,3 @@ class IntelligenceController {
     });
 }
 exports.IntelligenceController = IntelligenceController;
-//# sourceMappingURL=intelligence.controller.js.map

@@ -41,4 +41,3 @@ export declare class ModelAggregationService {
      */
     static aggregateMultipleCars(carIds: string[]): Promise<ModelAggregates[]>;
 }
-//# sourceMappingURL=model-aggregation.service.d.ts.map

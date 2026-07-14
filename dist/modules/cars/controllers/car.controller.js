@@ -1,13 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarController = void 0;
+const validation_1 = require("../../../shared/validation");
 const errorMessages_1 = require("../../../constants/errorMessages");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const audit_util_1 = require("../../../shared/utils/audit.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const create_car_dto_1 = require("../dto/create-car.dto");
-const update_car_dto_1 = require("../dto/update-car.dto");
 const car_service_1 = require("../services/car.service");
 const car_lifecycle_service_1 = require("../services/car-lifecycle.service");
 const redirect_service_1 = require("../../redirects/services/redirect.service");
@@ -226,9 +225,9 @@ class CarController {
             predecessor_car_id: req.body.predecessor_car_id,
             successor_car_id: req.body.successor_car_id,
         };
-        const validation = create_car_dto_1.CreateCarDto.validate(createDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.createCarSchema.safeParse(createDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const car = await car_service_1.CarService.createCar(createDto, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.created(res, car, "Car created successfully");
@@ -310,9 +309,9 @@ class CarController {
             predecessor_car_id: req.body.predecessor_car_id,
             successor_car_id: req.body.successor_car_id,
         };
-        const validation = update_car_dto_1.UpdateCarDto.validate(updateDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.updateCarSchema.safeParse(updateDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const car = await car_service_1.CarService.updateCar(req.params.id, updateDto, audit_util_1.AuditUtil.actorFromRequest(req));
         return response_util_1.ResponseUtil.success(res, car, "Car updated successfully");
@@ -407,4 +406,3 @@ class CarController {
     });
 }
 exports.CarController = CarController;
-//# sourceMappingURL=car.controller.js.map

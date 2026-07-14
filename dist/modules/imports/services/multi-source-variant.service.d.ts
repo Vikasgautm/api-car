@@ -31,4 +31,3 @@ export declare class MultiSourceVariantService {
      */
     static getSourceHistory(variant_id: string): Promise<SourceType[]>;
 }
-//# sourceMappingURL=multi-source-variant.service.d.ts.map

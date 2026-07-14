@@ -68,4 +68,3 @@ class DiscoveryController {
     });
 }
 exports.DiscoveryController = DiscoveryController;
-//# sourceMappingURL=discovery.controller.js.map

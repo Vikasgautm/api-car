@@ -23,4 +23,3 @@ export declare class ResponseUtil {
     static updated<T>(res: Response, data: T, message?: string): Response;
     static deleted(res: Response, message?: string): Response;
 }
-//# sourceMappingURL=response.util.d.ts.map

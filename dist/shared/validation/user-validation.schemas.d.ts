@@ -42,8 +42,8 @@ export declare const userFilterSchema: z.ZodObject<{
     limit: z.ZodOptional<z.ZodDefault<z.ZodCoercedNumber<unknown>>>;
     sortBy: z.ZodOptional<z.ZodString>;
     sortOrder: z.ZodOptional<z.ZodEnum<{
-        asc: "asc";
         desc: "desc";
+        asc: "asc";
     }>>;
     q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
@@ -74,4 +74,4 @@ export declare const userFilterSchema: z.ZodObject<{
         false: "false";
     }>]>>;
 }, z.core.$strict>;
-//# sourceMappingURL=user-validation.schemas.d.ts.map
+export type UserFilterDto = z.infer<typeof userFilterSchema>;

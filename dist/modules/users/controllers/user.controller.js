@@ -1,13 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
+const validation_1 = require("../../../shared/validation");
 const user_model_1 = require("../../../models/user.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const admin_update_user_dto_1 = require("../dto/admin-update-user.dto");
-const update_profile_dto_1 = require("../dto/update-profile.dto");
-const user_filter_dto_1 = require("../dto/user-filter.dto");
 const user_service_1 = require("../services/user.service");
 class UserController {
     static getProfile = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -39,9 +37,9 @@ class UserController {
             updateData.profile_pic = cloudinaryFile.secure_url || req.file.path;
         }
         const updateDto = { user_name, phone, profile_pic: updateData.profile_pic };
-        const validation = update_profile_dto_1.UpdateProfileDto.validate(updateDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.updateProfileSchema.safeParse(updateDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const updatedUser = await user_model_1.User.findOneAndUpdate({ user_id: userId, is_deleted: false }, updateData, {
             returnDocument: 'after',
@@ -54,9 +52,9 @@ class UserController {
     // Admin endpoints
     static getAllAdminUsers = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const filterDto = req.query;
-        const validation = user_filter_dto_1.UserFilterDto.validate(filterDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.userFilterSchema.safeParse(filterDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const includeDeleted = req.query.include_deleted === 'true';
         const result = await user_service_1.UserService.getAllUsers(filterDto, includeDeleted);
@@ -90,13 +88,12 @@ class UserController {
     static updateUser = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const userId = req.params.id;
         const updateDto = req.body;
-        const validation = admin_update_user_dto_1.AdminUpdateUserDto.validate(updateDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.adminUpdateUserSchema.safeParse(updateDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const user = await user_service_1.UserService.updateUser(userId, updateDto);
         return response_util_1.ResponseUtil.success(res, user, "User updated successfully");
     });
 }
 exports.UserController = UserController;
-//# sourceMappingURL=user.controller.js.map

@@ -127,7 +127,7 @@ export class VariantPushService {
           ...(rootFields.seating_capacity ? { seating_capacity: rootFields.seating_capacity } : {}),
         };
 
-        const variant = new CarVariant(variantData);
+        const variant = CarVariant.createDraft(variantData);
         await variant.save();
         variantId = variant.variant_id;
       }

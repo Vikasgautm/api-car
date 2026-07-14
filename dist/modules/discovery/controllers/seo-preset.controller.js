@@ -4,8 +4,8 @@ exports.SeoPresetController = void 0;
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const seo_preset_dto_1 = require("../dto/seo-preset.dto");
 const seo_preset_service_1 = require("../services/seo-preset.service");
+const seo_preset_dto_1 = require("../dto/seo-preset.dto");
 class SeoPresetController {
     // ---- Public ----
     static getPublicBySlug = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -43,8 +43,8 @@ class SeoPresetController {
             sort_order: req.body.sort_order,
         };
         const validation = seo_preset_dto_1.CreateSeoPresetDto.validate(dto);
-        if (!validation.valid)
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        if (!validation.success)
+            throw new app_error_util_1.AppError(validation.error.errors.map((e) => e.message).join(', '), 400);
         const created = await seo_preset_service_1.SeoPresetService.create(dto);
         return response_util_1.ResponseUtil.created(res, created, 'SEO preset created');
     });
@@ -61,8 +61,8 @@ class SeoPresetController {
             sort_order: req.body.sort_order,
         };
         const validation = seo_preset_dto_1.UpdateSeoPresetDto.validate(dto);
-        if (!validation.valid)
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        if (!validation.success)
+            throw new app_error_util_1.AppError(validation.error.errors.map((e) => e.message).join(', '), 400);
         const updated = await seo_preset_service_1.SeoPresetService.update(req.params.id, dto);
         return response_util_1.ResponseUtil.success(res, updated, 'SEO preset updated');
     });
@@ -72,4 +72,3 @@ class SeoPresetController {
     });
 }
 exports.SeoPresetController = SeoPresetController;
-//# sourceMappingURL=seo-preset.controller.js.map

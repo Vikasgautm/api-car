@@ -121,4 +121,3 @@ function validateSettingsData(group, data) {
     const errors = validator(data);
     return { valid: errors.length === 0, errors };
 }
-//# sourceMappingURL=settings.validator.js.map

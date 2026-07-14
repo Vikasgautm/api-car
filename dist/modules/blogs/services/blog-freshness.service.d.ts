@@ -11,4 +11,3 @@ export declare class BlogFreshnessService {
         stale: number;
     }>;
 }
-//# sourceMappingURL=blog-freshness.service.d.ts.map

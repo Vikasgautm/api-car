@@ -1,6 +1,5 @@
-import { Document } from 'mongoose';
 export type RedirectType = '301' | '302';
-export interface IRedirect extends Document {
+export interface IRedirect {
     redirect_id: string;
     old_url: string;
     new_url: string;
@@ -11,11 +10,5 @@ export interface IRedirect extends Document {
     last_hit_at?: Date | null;
     is_deleted: boolean;
 }
-export declare const Redirect: import("mongoose").Model<IRedirect, {}, {}, {}, Document<unknown, {}, IRedirect, {}, import("mongoose").DefaultSchemaOptions> & IRedirect & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IRedirect>;
-//# sourceMappingURL=redirect.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const Redirect: BaseModel<IRedirect>;

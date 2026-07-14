@@ -67,4 +67,3 @@ class UpdateUpcomingCarsJob {
     }
 }
 exports.UpdateUpcomingCarsJob = UpdateUpcomingCarsJob;
-//# sourceMappingURL=updateUpcomingCars.job.js.map

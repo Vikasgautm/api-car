@@ -5,7 +5,6 @@ const import_log_model_1 = require("../../../models/import-log.model");
 class UnmatchedKeysAnalyticsService {
     static async getUnmatchedKeyFrequency(limit = 50) {
         const allLogs = await import_log_model_1.ImportLog.find({
-            is_deleted: false,
             'unmatched_data.unmatched': { $exists: true, $ne: [] },
         });
         const frequencyMap = new Map();
@@ -44,7 +43,7 @@ class UnmatchedKeysAnalyticsService {
             .sort((a, b) => b.count - a.count)
             .slice(0, limit);
         return {
-            total_imports: await import_log_model_1.ImportLog.countDocuments({ is_deleted: false }),
+            total_imports: await import_log_model_1.ImportLog.countDocuments({}),
             imports_with_unmatched: importsWithUnmatched,
             total_unique_unmatched_keys: frequencyMap.size,
             frequency_by_key: frequencyByKey,
@@ -52,8 +51,7 @@ class UnmatchedKeysAnalyticsService {
     }
     static async getFrequencyBySource(source, limit = 50) {
         const logs = await import_log_model_1.ImportLog.find({
-            is_deleted: false,
-            source,
+            source: source,
             'unmatched_data.unmatched': { $exists: true, $ne: [] },
         });
         const frequencyMap = new Map();
@@ -87,7 +85,6 @@ class UnmatchedKeysAnalyticsService {
     }
     static async getFrequencyByImportType(importType, limit = 50) {
         const logs = await import_log_model_1.ImportLog.find({
-            is_deleted: false,
             import_type: importType,
             'unmatched_data.unmatched': { $exists: true, $ne: [] },
         });
@@ -127,4 +124,3 @@ class UnmatchedKeysAnalyticsService {
     }
 }
 exports.UnmatchedKeysAnalyticsService = UnmatchedKeysAnalyticsService;
-//# sourceMappingURL=unmatched-keys-analytics.service.js.map

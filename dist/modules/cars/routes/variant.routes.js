@@ -72,4 +72,3 @@ router.use('/admin', adminRouter);
 router.get('/', validation_1.validatePaginationQuery, car_variant_controller_1.CarVariantController.getAllPublicVariants);
 router.get('/:slug', validation_1.validateSlugParam, car_variant_controller_1.CarVariantController.getPublicVariantBySlug);
 exports.default = router;
-//# sourceMappingURL=variant.routes.js.map

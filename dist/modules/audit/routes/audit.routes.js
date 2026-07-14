@@ -20,4 +20,3 @@ adminRouter.get('/entity/search', audit_controller_1.AuditController.entitySearc
 adminRouter.get('/entity/:entity_type/:entity_id/history', audit_controller_1.AuditController.entityHistory);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=audit.routes.js.map

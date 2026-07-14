@@ -1,5 +1,3 @@
-import { Document, Schema, model } from 'mongoose';
-
 export type SettingsGroup =
   | 'general'
   | 'seo'
@@ -25,26 +23,12 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   'audit_logs',
 ];
 
-export interface IPlatformSettings extends Document {
+export interface IPlatformSettings  {
   group: SettingsGroup;
   data: Record<string, any>;
   updated_by?: string;
   updated_at: Date;
 }
 
-const platformSettingsSchema = new Schema<IPlatformSettings>(
-  {
-    group: {
-      type: String,
-      required: true,
-      unique: true,
-      enum: SETTINGS_GROUPS,
-    },
-    data: { type: Schema.Types.Mixed, required: true, default: {} },
-    updated_by: { type: String },
-    updated_at: { type: Date, default: Date.now },
-  },
-  { timestamps: true }
-);
-
-export const PlatformSettings = model<IPlatformSettings>('PlatformSettings', platformSettingsSchema);
+import { BaseModel } from '../sql/common/BaseModel';
+export const PlatformSettings = new BaseModel<IPlatformSettings>('PlatformSettings', 'settings_id', ['settings_data']);

@@ -17,10 +17,10 @@ export declare const createCarImageSchema: z.ZodObject<{
     car_id: z.ZodString;
     variant_id: z.ZodOptional<z.ZodString>;
     main_category: z.ZodOptional<z.ZodEnum<{
-        interior: "interior";
-        exterior: "exterior";
-        colours: "colours";
         features: "features";
+        exterior: "exterior";
+        interior: "interior";
+        colours: "colours";
     }>>;
     sub_category: z.ZodOptional<z.ZodEnum<{
         [x: string]: string;
@@ -39,9 +39,9 @@ export declare const createCarImageSchema: z.ZodObject<{
     tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
     source: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodEnum<{
-        draft: "draft";
-        published: "published";
         archived: "archived";
+        published: "published";
+        draft: "draft";
         rejected: "rejected";
     }>>;
     is_primary: z.ZodOptional<z.ZodBoolean>;
@@ -53,10 +53,10 @@ export declare const updateCarImageSchema: z.ZodObject<{
     car_id: z.ZodOptional<z.ZodString>;
     variant_id: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     main_category: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
-        interior: "interior";
-        exterior: "exterior";
-        colours: "colours";
         features: "features";
+        exterior: "exterior";
+        interior: "interior";
+        colours: "colours";
     }>>>;
     sub_category: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
         [x: string]: string;
@@ -75,9 +75,9 @@ export declare const updateCarImageSchema: z.ZodObject<{
     tags: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString>>>;
     source: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     status: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
-        draft: "draft";
-        published: "published";
         archived: "archived";
+        published: "published";
+        draft: "draft";
         rejected: "rejected";
     }>>>;
     is_primary: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
@@ -90,8 +90,8 @@ export declare const carImageFilterSchema: z.ZodObject<{
     limit: z.ZodOptional<z.ZodDefault<z.ZodCoercedNumber<unknown>>>;
     sortBy: z.ZodOptional<z.ZodString>;
     sortOrder: z.ZodOptional<z.ZodEnum<{
-        asc: "asc";
         desc: "desc";
+        asc: "asc";
     }>>;
     q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
@@ -104,10 +104,10 @@ export declare const carImageFilterSchema: z.ZodObject<{
     car_id: z.ZodOptional<z.ZodString>;
     variant_id: z.ZodOptional<z.ZodString>;
     main_category: z.ZodOptional<z.ZodEnum<{
-        interior: "interior";
-        exterior: "exterior";
-        colours: "colours";
         features: "features";
+        exterior: "exterior";
+        interior: "interior";
+        colours: "colours";
     }>>;
     sub_category: z.ZodOptional<z.ZodEnum<{
         [x: string]: string;
@@ -117,9 +117,9 @@ export declare const carImageFilterSchema: z.ZodObject<{
         top_variant_showcase: "top_variant_showcase";
     }>>;
     status: z.ZodOptional<z.ZodEnum<{
-        draft: "draft";
-        published: "published";
         archived: "archived";
+        published: "published";
+        draft: "draft";
         rejected: "rejected";
     }>>;
     is_primary: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
@@ -138,19 +138,19 @@ export declare const carImageFilterSchema: z.ZodObject<{
 export declare const bulkStatusSchema: z.ZodObject<{
     image_ids: z.ZodArray<z.ZodString>;
     status: z.ZodEnum<{
-        draft: "draft";
-        published: "published";
         archived: "archived";
+        published: "published";
+        draft: "draft";
         rejected: "rejected";
     }>;
 }, z.core.$strip>;
 export declare const bulkCategorySchema: z.ZodObject<{
     image_ids: z.ZodArray<z.ZodString>;
     main_category: z.ZodEnum<{
-        interior: "interior";
-        exterior: "exterior";
-        colours: "colours";
         features: "features";
+        exterior: "exterior";
+        interior: "interior";
+        colours: "colours";
     }>;
     sub_category: z.ZodOptional<z.ZodEnum<{
         [x: string]: string;
@@ -164,8 +164,8 @@ export declare const imageFilterSchema: z.ZodObject<{
     limit: z.ZodOptional<z.ZodDefault<z.ZodCoercedNumber<unknown>>>;
     sortBy: z.ZodOptional<z.ZodString>;
     sortOrder: z.ZodOptional<z.ZodEnum<{
-        asc: "asc";
         desc: "desc";
+        asc: "asc";
     }>>;
     q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
@@ -187,4 +187,3 @@ export declare const imageFilterSchema: z.ZodObject<{
         false: "false";
     }>]>>;
 }, z.core.$strict>;
-//# sourceMappingURL=image-validation.schemas.d.ts.map

@@ -77,9 +77,9 @@ export declare const ComparisonQueryDTO: z.ZodObject<{
         published: "published";
         archived: "archived";
     }>>;
-    isPopular: z.ZodOptional<z.ZodPipe<z.ZodTransform<unknown, unknown>, z.ZodBoolean>>;
-    isTrending: z.ZodOptional<z.ZodPipe<z.ZodTransform<unknown, unknown>, z.ZodBoolean>>;
-    is_deleted: z.ZodDefault<z.ZodPipe<z.ZodTransform<unknown, unknown>, z.ZodBoolean>>;
+    isPopular: z.ZodOptional<z.ZodPreprocess<z.ZodBoolean>>;
+    isTrending: z.ZodOptional<z.ZodPreprocess<z.ZodBoolean>>;
+    is_deleted: z.ZodDefault<z.ZodPreprocess<z.ZodBoolean>>;
 }, z.core.$strip>;
 export declare const CreateRivalDTO: z.ZodObject<{
     primary_car_id: z.ZodString;

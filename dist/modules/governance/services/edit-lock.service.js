@@ -66,4 +66,3 @@ class EditLockService {
     }
 }
 exports.EditLockService = EditLockService;
-//# sourceMappingURL=edit-lock.service.js.map

@@ -17,4 +17,3 @@ export interface CarLaunchStatusPayload {
 export declare function normalizeCarLaunchStatus(payload: CarLaunchStatusPayload): CarLaunchStatusPayload;
 export declare function shouldAutoLaunch(car: any): boolean;
 export declare function getAutoLaunchUpdateData(): Partial<CarLaunchStatusPayload>;
-//# sourceMappingURL=car-launch-status.util.d.ts.map

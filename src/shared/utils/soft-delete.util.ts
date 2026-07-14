@@ -1,17 +1,11 @@
-import { Document, Model } from 'mongoose';
-
-export interface SoftDeleteDocument extends Document {
-  is_deleted?: boolean;
-  deleted_at?: Date;
-  deleted_by?: string;
-}
+import { BaseModel } from '../../sql/common/BaseModel';
 
 export class SoftDeleteUtil {
-  static async softDelete<T extends SoftDeleteDocument>(
-    model: Model<T>,
+  static async softDelete<T extends { [key: string]: any }>(
+    model: BaseModel<T>,
     id: string,
     deletedBy?: string
-  ): Promise<T | null> {
+  ): Promise<any | null> {
     const updateData: any = {
       is_deleted: true,
       deleted_at: new Date(),
@@ -21,40 +15,44 @@ export class SoftDeleteUtil {
       updateData.deleted_by = deletedBy;
     }
 
-    return await model.findByIdAndUpdate(
-      id,
-      updateData,
-      { returnDocument: 'after', runValidators: true }
-    );
+    const pk = (model as any).primaryKey || 'id';
+    await model.updateDirect({ [pk]: id }, updateData);
+    return await model.findOne({ [pk]: id });
   }
 
-  static async restore<T extends SoftDeleteDocument>(
-    model: Model<T>,
+  static async restore<T extends { [key: string]: any }>(
+    model: BaseModel<T>,
     id: string
-  ): Promise<T | null> {
-    return await model.findByIdAndUpdate(
-      id,
+  ): Promise<any | null> {
+    const pk = (model as any).primaryKey || 'id';
+    await model.updateDirect(
+      { [pk]: id },
       {
         is_deleted: false,
         deleted_at: null,
         deleted_by: null,
-      },
-      { returnDocument: 'after', runValidators: true }
+      }
     );
+    return await model.findOne({ [pk]: id });
   }
 
-  static async permanentDelete<T extends SoftDeleteDocument>(
-    model: Model<T>,
+  static async permanentDelete<T extends { [key: string]: any }>(
+    model: BaseModel<T>,
     id: string
-  ): Promise<T | null> {
-    return await model.findByIdAndDelete(id);
+  ): Promise<any | null> {
+    const pk = (model as any).primaryKey || 'id';
+    const document = await model.findOne({ [pk]: id });
+    if (!document) return null;
+    await model.deleteDirect({ [pk]: id });
+    return document;
   }
 
-  static async restoreMany<T extends SoftDeleteDocument>(
-    model: Model<T>,
+  static async restoreMany<T extends { [key: string]: any }>(
+    model: BaseModel<T>,
     filter: any
   ): Promise<{ modifiedCount: number }> {
-    const result = await model.updateMany(
+    const pk = (model as any).primaryKey || 'id';
+    const count = await model.updateDirect(
       { ...filter, is_deleted: true },
       {
         is_deleted: false,
@@ -62,11 +60,11 @@ export class SoftDeleteUtil {
         deleted_by: null,
       }
     );
-    return { modifiedCount: result.modifiedCount || 0 };
+    return { modifiedCount: count };
   }
 
-  static async softDeleteMany<T extends SoftDeleteDocument>(
-    model: Model<T>,
+  static async softDeleteMany<T extends { [key: string]: any }>(
+    model: BaseModel<T>,
     filter: any,
     deletedBy?: string
   ): Promise<{ modifiedCount: number }> {
@@ -79,14 +77,15 @@ export class SoftDeleteUtil {
       updateData.deleted_by = deletedBy;
     }
 
-    const result = await model.updateMany(
+    const pk = (model as any).primaryKey || 'id';
+    const count = await model.updateDirect(
       { ...filter, is_deleted: false },
       updateData
     );
-    return { modifiedCount: result.modifiedCount || 0 };
+    return { modifiedCount: count };
   }
 
-  static isDeleted(document: SoftDeleteDocument | null): boolean {
+  static isDeleted(document: any | null): boolean {
     return document?.is_deleted === true;
   }
 

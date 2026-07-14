@@ -84,13 +84,13 @@ export class ImageService {
       throw new AppError('Image not found', 404);
     }
 
-    // Delete from Cloudinary if public_id exists
+    // Delete from S3 if public_id exists
     if (image.public_id) {
       try {
-        await UploadService.deleteFromCloudinary(image.public_id);
+        await UploadService.deleteFromS3(image.public_id);
       } catch (error) {
-        logger.error('Error deleting from Cloudinary:', error);
-        // Continue with DB deletion even if Cloudinary fails
+        logger.error('Error deleting from S3:', error);
+        // Continue with DB deletion even if S3 fails
       }
     }
 
@@ -121,17 +121,17 @@ export class ImageService {
       throw new AppError('Image not found', 404);
     }
 
-    // Delete from Cloudinary if public_id exists
+    // Delete from S3 if public_id exists
     if (image.public_id) {
       try {
-        await UploadService.deleteFromCloudinary(image.public_id);
+        await UploadService.deleteFromS3(image.public_id);
       } catch (error) {
-        logger.error('Error deleting from Cloudinary:', error);
+        logger.error('Error deleting from S3:', error);
       }
     }
 
     // Hard delete from DB
-    await Image.findByIdAndDelete(imageId);
+    await Image.deleteOne({ image_id: imageId });
 
     return image;
   }
@@ -176,10 +176,10 @@ export class ImageService {
 
       return savedImage;
     } catch (error) {
-      // Cleanup: Delete from Cloudinary if DB save fails
+      // Cleanup: Delete from S3 if DB save fails
       if (uploadedFile.publicId) {
         try {
-          await UploadService.deleteFromCloudinary(uploadedFile.publicId);
+          await UploadService.deleteFromS3(uploadedFile.publicId);
         } catch (cleanupError) {
           logger.error('Error during cleanup after DB save failure:', cleanupError);
         }
@@ -224,10 +224,10 @@ export class ImageService {
       if (result.success && 'savedImage' in result) {
         savedImages.push((result as any).savedImage);
       } else {
-        // Cleanup failed file from Cloudinary
+        // Cleanup failed file from S3
         if (result.file.publicId) {
           try {
-            await UploadService.deleteFromCloudinary(result.file.publicId);
+            await UploadService.deleteFromS3(result.file.publicId);
           } catch (cleanupError) {
             logger.error('Error during cleanup after DB save failure:', cleanupError);
           }
@@ -238,21 +238,21 @@ export class ImageService {
 
     // If any files failed, rollback all successfully saved images in parallel
     if (failedFiles.length > 0 && savedImages.length > 0) {
-      // Parallelize Cloudinary deletions
+      // Parallelize S3 deletions
       await Promise.all(
         savedImages
           .filter(image => image.public_id)
           .map(image =>
-            UploadService.deleteFromCloudinary(image.public_id!).catch(cleanupError => {
+            UploadService.deleteFromS3(image.public_id!).catch(cleanupError => {
               logger.error('Error during rollback cleanup:', cleanupError);
             })
           )
       );
 
       // Batch delete images from DB instead of sequential deletes
-      const imageIds = savedImages.map(image => image._id);
+      const imageIds = savedImages.map(image => image.image_id);
       if (imageIds.length > 0) {
-        await Image.deleteMany({ _id: { $in: imageIds } });
+        await Image.deleteMany({ image_id: { $in: imageIds } });
       }
 
       throw new AppError(

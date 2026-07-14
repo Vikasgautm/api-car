@@ -23,4 +23,3 @@ export declare class QueryParserUtil {
         max?: number;
     } | undefined;
 }
-//# sourceMappingURL=query-parser.util.d.ts.map

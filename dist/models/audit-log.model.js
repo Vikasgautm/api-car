@@ -23,4 +23,3 @@ auditLogSchema.index({ timestamp: -1 });
 // TTL: automatically delete audit logs older than 90 days
 auditLogSchema.index({ timestamp: 1 }, { expireAfterSeconds: 90 * 24 * 3600 });
 exports.AuditLog = (0, mongoose_1.model)('AuditLog', auditLogSchema);
-//# sourceMappingURL=audit-log.model.js.map

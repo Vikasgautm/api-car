@@ -1,6 +1,4 @@
-import { Document, Schema, model } from 'mongoose';
-
-export interface IFuelType extends Document {
+export interface IFuelType  {
   fuel_type_id: string;
   name: string;
   slug: string;
@@ -14,24 +12,5 @@ export interface IFuelType extends Document {
   };
 }
 
-const fuelTypeSchema = new Schema<IFuelType>(
-  {
-    fuel_type_id: { type: String, required: true, unique: true },
-    name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true },
-    description: { type: String },
-    is_published: { type: Boolean, default: false },
-    is_deleted: { type: Boolean, default: false },
-    is_featured: { type: Boolean, default: false },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-// Consolidated index - compound index handles queries that would use single boolean indexes
-fuelTypeSchema.index({ is_published: 1, is_deleted: 1 });
-fuelTypeSchema.index({ name: 1 });
-fuelTypeSchema.index({ name: 'text' });
-
-export const FuelType = model<IFuelType>('FuelType', fuelTypeSchema);
+import { BaseModel } from '../sql/common/BaseModel';
+export const FuelType = new BaseModel<IFuelType>('FuelTypes', 'fuel_id');

@@ -58,4 +58,3 @@ export interface PaginatedIssuesResult {
     generated_at: string;
     cache_hit: boolean;
 }
-//# sourceMappingURL=content-health.dto.d.ts.map

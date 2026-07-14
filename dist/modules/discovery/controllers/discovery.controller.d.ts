@@ -22,4 +22,3 @@ export declare class DiscoveryController {
     /** Preview filter page with given filter combination. */
     static previewFilterPage: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=discovery.controller.d.ts.map

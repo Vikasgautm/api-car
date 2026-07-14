@@ -10,4 +10,3 @@ export declare class RedirectController {
     /** Public: resolve a path through the redirect table. Used by the frontend. */
     static resolvePublic: (req: AuthRequest, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=redirect.controller.d.ts.map

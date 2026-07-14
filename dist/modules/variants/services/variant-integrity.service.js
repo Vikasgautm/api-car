@@ -197,4 +197,3 @@ class VariantIntegrityService {
     }
 }
 exports.VariantIntegrityService = VariantIntegrityService;
-//# sourceMappingURL=variant-integrity.service.js.map

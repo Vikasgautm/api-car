@@ -7,56 +7,23 @@ export declare class SeoPresetService {
         is_published?: boolean;
         include_deleted?: boolean;
     }): Promise<{
-        presets: (ISeoPreset & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        presets: (ISeoPreset & import("../../../sql/common/BaseModel").SQLDocument)[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
-    static getById(presetId: string): Promise<(ISeoPreset & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    }) | null>;
-    static getBySlug(slug: string): Promise<(ISeoPreset & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    }) | null>;
+    static getById(presetId: string): Promise<(ISeoPreset & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static getBySlug(slug: string): Promise<(ISeoPreset & import("../../../sql/common/BaseModel").SQLDocument) | null>;
     static create(data: any): Promise<ISeoPreset>;
-    static update(presetId: string, data: any): Promise<import("mongoose").Document<unknown, {}, ISeoPreset, {}, import("mongoose").DefaultSchemaOptions> & ISeoPreset & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static softDelete(presetId: string): Promise<import("mongoose").Document<unknown, {}, ISeoPreset, {}, import("mongoose").DefaultSchemaOptions> & ISeoPreset & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static update(presetId: string, data: any): Promise<ISeoPreset & import("../../../sql/common/BaseModel").SQLDocument>;
+    static softDelete(presetId: string): Promise<ISeoPreset & import("../../../sql/common/BaseModel").SQLDocument>;
     /**
      * Hydrate a preset: return the preset itself plus the discovery results when
      * its query_params are applied. Used by the public landing page route.
      */
     static hydrate(slug: string, overridePage?: number | string): Promise<{
-        cars: (import("../../../models/car.model").ICar & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        cars: (import("../../../models/car.model").ICar & import("../../../sql/common/BaseModel").SQLDocument)[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
         facets: import("./discovery.service").DiscoveryFacets;
         applied: import("./discovery.service").ResolvedFilters;
-        preset: ISeoPreset & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        };
+        preset: ISeoPreset & import("../../../sql/common/BaseModel").SQLDocument;
     }>;
 }
-//# sourceMappingURL=seo-preset.service.d.ts.map

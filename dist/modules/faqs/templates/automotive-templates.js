@@ -299,4 +299,3 @@ function getTemplatesForFaqType(faqType) {
 function interpolate(template, variables) {
     return template.replace(/\{(\w+)\}/g, (_, key) => variables[key] ?? `{${key}}`);
 }
-//# sourceMappingURL=automotive-templates.js.map

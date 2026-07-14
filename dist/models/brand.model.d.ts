@@ -1,4 +1,3 @@
-import { Document } from 'mongoose';
 interface IMediaItem {
     url: string;
     alt?: string;
@@ -37,7 +36,7 @@ export interface IBrandAggregatesCache {
     has_cng: boolean;
     last_computed_at: Date;
 }
-export interface IBrand extends Document {
+export interface IBrand {
     brand_id: string;
     name: string;
     alias?: string;
@@ -76,12 +75,6 @@ export interface IBrand extends Document {
     canonical_url?: string;
     noindex?: boolean;
 }
-export declare const Brand: import("mongoose").Model<IBrand, {}, {}, {}, Document<unknown, {}, IBrand, {}, import("mongoose").DefaultSchemaOptions> & IBrand & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IBrand>;
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const Brand: BaseModel<IBrand>;
 export {};
-//# sourceMappingURL=brand.model.d.ts.map

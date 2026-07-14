@@ -138,4 +138,3 @@ exports.COLOUR_HEX_MAP = {
     orange: '#E67E22',
     dual_tone: '#808080',
 };
-//# sourceMappingURL=media-constants.js.map

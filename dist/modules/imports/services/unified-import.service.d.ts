@@ -143,19 +143,8 @@ export declare class UnifiedImportService {
     private static applyManualMappingsToSpecs;
     private static persistKeyMappings;
     static unifiedSave(payload: UnifiedSaveRequest, userId: string): Promise<UnifiedSaveResult>;
-    static getKeyMappings(source?: ImportSource, targetModel?: 'Car' | 'CarVariant'): Promise<(IImportKeyMapping & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    })[]>;
-    static deleteKeyMapping(mapping_id: string): Promise<(import("mongoose").Document<unknown, {}, IImportKeyMapping, {}, import("mongoose").DefaultSchemaOptions> & IImportKeyMapping & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
+    static getKeyMappings(source?: ImportSource, targetModel?: 'Car' | 'CarVariant'): Promise<(IImportKeyMapping & import("../../../sql/common/BaseModel").SQLDocument)[]>;
+    static deleteKeyMapping(mapping_id: string): Promise<(IImportKeyMapping & import("../../../sql/common/BaseModel").SQLDocument) | null>;
     private static enhanceWithNormalization;
     static normalizeTransmission(transmission: string): TransmissionType | null;
 }
-//# sourceMappingURL=unified-import.service.d.ts.map

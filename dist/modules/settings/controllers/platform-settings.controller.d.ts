@@ -10,4 +10,3 @@ export declare class PlatformSettingsController {
     static testSetting: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
     static getSystemStatus: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=platform-settings.controller.d.ts.map

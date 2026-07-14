@@ -16,4 +16,3 @@ router.post('/reset-password', rate_limit_middleware_1.authRateLimiter, auth_con
 router.post('/logout', jwt_auth_guard_1.jwtAuthGuard, auth_controller_1.AuthController.logout);
 router.get('/profile', jwt_auth_guard_1.jwtAuthGuard, auth_controller_1.AuthController.getProfile);
 exports.default = router;
-//# sourceMappingURL=auth.routes.js.map

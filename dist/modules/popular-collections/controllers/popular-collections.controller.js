@@ -139,4 +139,3 @@ class PopularCollectionsController {
     });
 }
 exports.PopularCollectionsController = PopularCollectionsController;
-//# sourceMappingURL=popular-collections.controller.js.map

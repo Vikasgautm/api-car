@@ -17,4 +17,3 @@ export declare class BrandController {
     static refreshAllAggregates: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
 }
 export {};
-//# sourceMappingURL=brand.controller.d.ts.map

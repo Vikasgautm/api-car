@@ -6,4 +6,3 @@ export declare class BrandAggregationService {
         errors: number;
     }>;
 }
-//# sourceMappingURL=brand-aggregation.service.d.ts.map

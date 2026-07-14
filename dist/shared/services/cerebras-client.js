@@ -19,4 +19,3 @@ function getCerebrasClient() {
 }
 exports.CHATBOT_MODEL = process.env.CEREBRAS_CHATBOT_MODEL || process.env.CEREBRAS_MODEL || 'llama-3.3-70b';
 exports.INTELLIGENCE_MODEL = process.env.CEREBRAS_INTELLIGENCE_MODEL || 'gpt-oss-120b';
-//# sourceMappingURL=cerebras-client.js.map

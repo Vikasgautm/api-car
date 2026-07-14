@@ -2,7 +2,7 @@ import { Document, model, Schema } from 'mongoose';
 
 export type ImportType = 'car' | 'variant';
 export type ImportStatus = 'previewed' | 'saved' | 'failed';
-export type ImportSource = 'cardekho';
+export type ImportSource = 'cardekho' | 'carwale';
 
 export interface IImportLog extends Omit<Document, 'errors'> {
   import_id: string;
@@ -25,7 +25,7 @@ export interface IImportLog extends Omit<Document, 'errors'> {
 const importLogSchema = new Schema<IImportLog>(
   {
     import_id: { type: String, required: true, unique: true },
-    source: { type: String, enum: ['cardekho'], required: true },
+    source: { type: String, enum: ['cardekho', 'carwale'], required: true },
     import_type: { type: String, enum: ['car', 'variant'], required: true },
     source_url: { type: String, required: true },
     car_id: { type: String },

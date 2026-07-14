@@ -52,4 +52,3 @@ class ImageCategoryController {
     });
 }
 exports.ImageCategoryController = ImageCategoryController;
-//# sourceMappingURL=image-category.controller.js.map

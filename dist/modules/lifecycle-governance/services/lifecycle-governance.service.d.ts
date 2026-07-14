@@ -56,19 +56,10 @@ export declare class LifecycleGovernanceService {
             user_id: string;
         };
     }): Promise<{
-        requests: (ILifecycleRequest & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        requests: (ILifecycleRequest & import("../../../sql/common/BaseModel").SQLDocument)[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
-    static getPendingForCar(carId: string): Promise<(ILifecycleRequest & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    }) | null>;
+    static getPendingForCar(carId: string): Promise<(ILifecycleRequest & import("../../../sql/common/BaseModel").SQLDocument) | null>;
     private static _sendOtpForRequest;
     private static _sendOtpForExistingRequest;
 }
-//# sourceMappingURL=lifecycle-governance.service.d.ts.map

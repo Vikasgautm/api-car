@@ -4,4 +4,3 @@ export declare class AdminChatbotService {
     static performAction(req: ChatbotActionRequest, userId: string, role: string): Promise<ChatbotActionResponse>;
     private static logRequest;
 }
-//# sourceMappingURL=adminChatbot.service.d.ts.map

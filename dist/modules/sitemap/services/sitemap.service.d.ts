@@ -10,4 +10,3 @@ export declare class SitemapService {
     static buildXml(): Promise<string>;
 }
 export {};
-//# sourceMappingURL=sitemap.service.d.ts.map

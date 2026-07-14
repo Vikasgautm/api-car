@@ -30,37 +30,15 @@ export declare class DeletionWorkflowService {
     static verify(requestId: string, otpInput: string, actor: AuditActor & {
         user_id: string;
     }): Promise<{
-        request: import("mongoose").Document<unknown, {}, IDeletionRequest, {}, import("mongoose").DefaultSchemaOptions> & IDeletionRequest & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        } & {
-            id: string;
-        };
-        applied: (import("mongoose").Document<unknown, {}, import("../../../models/car.model").ICar, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/car.model").ICar & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        } & {
-            id: string;
-        }) | (import("../../../models/car.model").ICar & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        }) | null;
+        request: IDeletionRequest & import("../../../sql/common/BaseModel").SQLDocument;
+        applied: (import("../../../models/car.model").ICar & import("../../../sql/common/BaseModel").SQLDocument) | null;
     }>;
     /**
      * Cancel a pending request without touching the entity.
      */
     static cancel(requestId: string, reason: string | undefined, actor: AuditActor & {
         user_id: string;
-    }): Promise<import("mongoose").Document<unknown, {}, IDeletionRequest, {}, import("mongoose").DefaultSchemaOptions> & IDeletionRequest & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    }): Promise<IDeletionRequest & import("../../../sql/common/BaseModel").SQLDocument>;
     /** List requests (admins see all; non-admins see only their own). */
     static list(params: {
         page?: number;
@@ -71,11 +49,7 @@ export declare class DeletionWorkflowService {
             user_id: string;
         };
     }): Promise<{
-        requests: (IDeletionRequest & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        requests: (IDeletionRequest & import("../../../sql/common/BaseModel").SQLDocument)[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
     /**
@@ -85,4 +59,3 @@ export declare class DeletionWorkflowService {
      */
     private static applyAction;
 }
-//# sourceMappingURL=deletion-workflow.service.d.ts.map

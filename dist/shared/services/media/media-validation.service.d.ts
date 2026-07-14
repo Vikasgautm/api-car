@@ -8,4 +8,3 @@ export declare class MediaValidationService {
     static validateBrandLogoFile(file: Express.Multer.File): FileValidationResult;
     static validateSubCategory(mainCategory: MainCategory, subCategory: string): FileValidationResult;
 }
-//# sourceMappingURL=media-validation.service.d.ts.map

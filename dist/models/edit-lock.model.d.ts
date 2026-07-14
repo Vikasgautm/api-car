@@ -1,5 +1,4 @@
-import { Document } from 'mongoose';
-export interface IEditLock extends Document {
+export interface IEditLock {
     lock_id: string;
     entity_type: string;
     entity_id: string;
@@ -8,11 +7,5 @@ export interface IEditLock extends Document {
     locked_by_email: string;
     expires_at: Date;
 }
-export declare const EditLock: import("mongoose").Model<IEditLock, {}, {}, {}, Document<unknown, {}, IEditLock, {}, import("mongoose").DefaultSchemaOptions> & IEditLock & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IEditLock>;
-//# sourceMappingURL=edit-lock.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const EditLock: BaseModel<IEditLock>;

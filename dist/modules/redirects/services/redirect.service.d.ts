@@ -33,46 +33,13 @@ export declare class RedirectService {
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
     }): Promise<{
-        redirects: (IRedirect & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        redirects: (IRedirect & import("../../../sql/common/BaseModel").SQLDocument)[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
-    static getById(redirect_id: string): Promise<(IRedirect & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    }) | null>;
-    static create(input: CreateRedirectInput, actor: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, IRedirect, {}, import("mongoose").DefaultSchemaOptions> & IRedirect & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static update(redirect_id: string, input: UpdateRedirectInput, actor: AuditActor | null): Promise<(import("mongoose").Document<unknown, {}, IRedirect, {}, import("mongoose").DefaultSchemaOptions> & IRedirect & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static softDelete(redirect_id: string, actor: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, IRedirect, {}, import("mongoose").DefaultSchemaOptions> & IRedirect & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static restore(redirect_id: string, actor: AuditActor | null): Promise<(import("mongoose").Document<unknown, {}, IRedirect, {}, import("mongoose").DefaultSchemaOptions> & IRedirect & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
+    static getById(redirect_id: string): Promise<(IRedirect & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static create(input: CreateRedirectInput, actor: AuditActor | null): Promise<any>;
+    static update(redirect_id: string, input: UpdateRedirectInput, actor: AuditActor | null): Promise<(IRedirect & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static softDelete(redirect_id: string, actor: AuditActor | null): Promise<IRedirect & import("../../../sql/common/BaseModel").SQLDocument>;
+    static restore(redirect_id: string, actor: AuditActor | null): Promise<(IRedirect & import("../../../sql/common/BaseModel").SQLDocument) | null>;
 }
 export type { IRedirect };
-//# sourceMappingURL=redirect.service.d.ts.map

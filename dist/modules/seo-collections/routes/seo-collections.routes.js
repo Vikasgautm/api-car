@@ -23,4 +23,3 @@ adminRouter.post('/:id/refresh', validation_1.validateUuidIdParam, seo_collectio
 adminRouter.post('/:id/generate-content', validation_1.validateUuidIdParam, seo_collections_controller_1.SeoCollectionsController.generateContent);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=seo-collections.routes.js.map

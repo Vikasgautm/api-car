@@ -4,9 +4,8 @@ exports.TagController = void 0;
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const create_tag_dto_1 = require("../dto/create-tag.dto");
-const update_tag_dto_1 = require("../dto/update-tag.dto");
 const tag_service_1 = require("../services/tag.service");
+const validation_1 = require("../../../shared/validation");
 class TagController {
     static getAllPublic = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const filterDto = { ...req.query, is_published: true };
@@ -41,9 +40,9 @@ class TagController {
             is_published: req.body.is_published,
             sort_order: req.body.sort_order,
         };
-        const validation = create_tag_dto_1.CreateTagDto.validate(dto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.CreateTagDto.validate(dto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const created = await tag_service_1.TagService.create(dto);
         return response_util_1.ResponseUtil.created(res, created, 'Tag created successfully');
@@ -57,9 +56,9 @@ class TagController {
             is_published: req.body.is_published,
             sort_order: req.body.sort_order,
         };
-        const validation = update_tag_dto_1.UpdateTagDto.validate(dto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.UpdateTagDto.validate(dto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const updated = await tag_service_1.TagService.update(req.params.id, dto);
         return response_util_1.ResponseUtil.success(res, updated, 'Tag updated successfully');
@@ -74,4 +73,3 @@ class TagController {
     });
 }
 exports.TagController = TagController;
-//# sourceMappingURL=tag.controller.js.map

@@ -20,4 +20,3 @@ export declare class CarWaleExtractor {
     static extractCarData(url: string): Promise<ExtractedCarData>;
     static extractVariantData(url: string): Promise<ExtractedVariantData>;
 }
-//# sourceMappingURL=carwale.extractor.d.ts.map

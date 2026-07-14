@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ComparisonController = void 0;
 const comparison_service_1 = require("../services/comparison.service");
-const comparison_dto_1 = require("../../../shared/dto/comparison.dto");
+const comparison_validation_schemas_1 = require("../../../shared/validation/comparison-validation.schemas");
 function getQueryString(value) {
     if (Array.isArray(value))
         return value[0];
@@ -18,7 +18,7 @@ function getQueryValue(value) {
 class ComparisonController {
     static async createComparison(req, res, next) {
         try {
-            const data = comparison_dto_1.CreateComparisonDTO.parse(req.body);
+            const data = comparison_validation_schemas_1.CreateComparisonDTO.parse(req.body);
             const userId = req.user?.id || req.user?.user_id || '';
             const comparison = await comparison_service_1.ComparisonService.createComparison(data, userId);
             res.status(201).json({
@@ -33,7 +33,7 @@ class ComparisonController {
     static async updateComparison(req, res, next) {
         try {
             const id = getQueryString(req.params.id) || '';
-            const data = comparison_dto_1.UpdateComparisonDTO.parse(req.body);
+            const data = comparison_validation_schemas_1.UpdateComparisonDTO.parse(req.body);
             const userId = req.user?.id || req.user?.user_id || '';
             const comparison = await comparison_service_1.ComparisonService.updateComparison(id, data, userId);
             res.json({
@@ -91,7 +91,7 @@ class ComparisonController {
                 queryObj.status = 'published';
                 queryObj.is_deleted = false;
             }
-            const query = comparison_dto_1.ComparisonQueryDTO.parse(queryObj);
+            const query = comparison_validation_schemas_1.ComparisonQueryDTO.parse(queryObj);
             const { page, limit, ...filters } = query;
             const result = await comparison_service_1.ComparisonService.getComparisons(page, limit, filters);
             res.json({
@@ -137,7 +137,7 @@ class ComparisonController {
     }
     static async addRival(req, res, next) {
         try {
-            const data = comparison_dto_1.CreateRivalDTO.parse(req.body);
+            const data = comparison_validation_schemas_1.CreateRivalDTO.parse(req.body);
             const userId = req.user?.id || req.user?.user_id || '';
             const strength = req.body.relationship_strength || 50;
             await comparison_service_1.ComparisonService.addRival(data.primary_car_id, data.rival_car_id, userId, strength);
@@ -228,4 +228,3 @@ class ComparisonController {
     }
 }
 exports.ComparisonController = ComparisonController;
-//# sourceMappingURL=comparison.controller.js.map

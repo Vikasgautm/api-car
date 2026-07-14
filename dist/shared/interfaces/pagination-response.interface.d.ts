@@ -13,4 +13,3 @@ export interface PaginationMeta {
     hasNext: boolean;
     hasPrev: boolean;
 }
-//# sourceMappingURL=pagination-response.interface.d.ts.map

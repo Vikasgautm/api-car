@@ -1,18 +1,5 @@
-import { UpdateSEOSettingsDto } from '../dto/update-seo-settings.dto';
+import { UpdateSEOSettingsDto } from '../../../shared/validation';
 export declare class SettingsService {
-    static getSEOSettings(): Promise<import("mongoose").Document<unknown, {}, import("../../../models/seo-settings.model").ISEOSettings, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/seo-settings.model").ISEOSettings & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static updateSEOSettings(updateDto: UpdateSEOSettingsDto): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/seo-settings.model").ISEOSettings, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/seo-settings.model").ISEOSettings & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
+    static getSEOSettings(): Promise<(import("../../../models/seo-settings.model").ISEOSettings & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static updateSEOSettings(updateDto: UpdateSEOSettingsDto): Promise<(import("../../../models/seo-settings.model").ISEOSettings & import("../../../sql/common/BaseModel").SQLDocument) | null>;
 }
-//# sourceMappingURL=settings.service.d.ts.map

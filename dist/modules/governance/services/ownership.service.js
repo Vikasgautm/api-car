@@ -81,4 +81,3 @@ class OwnershipService {
     }
 }
 exports.OwnershipService = OwnershipService;
-//# sourceMappingURL=ownership.service.js.map

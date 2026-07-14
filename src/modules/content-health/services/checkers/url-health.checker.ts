@@ -1,7 +1,7 @@
+import { CheckerResult, HealthIssue, IssueCategory, IssueSeverity, IssuesQueryParams } from "../../dto/content-health.dto";
 import { Car } from '../../../../models/car.model';
 import { CarVariant } from '../../../../models/car-variant.model';
 import { Redirect } from '../../../../models/redirect.model';
-import { CheckerResult, HealthIssue, IssueCategory, IssueSeverity, IssuesQueryParams } from '../../dto/content-health.dto';
 
 const CHECKER_NAME = 'url_health';
 

@@ -35,4 +35,3 @@ router.post('/seo/filter-pages/refresh-all', (req, res) => {
     res.json({ updated: 0 });
 });
 exports.default = router;
-//# sourceMappingURL=discovery.routes.js.map

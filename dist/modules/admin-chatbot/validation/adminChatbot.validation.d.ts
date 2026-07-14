@@ -29,4 +29,3 @@ export declare const chatbotActionSchema: z.ZodObject<{
     entity_id: z.ZodString;
 }, z.core.$strip>;
 export type ChatbotActionInput = z.infer<typeof chatbotActionSchema>;
-//# sourceMappingURL=adminChatbot.validation.d.ts.map

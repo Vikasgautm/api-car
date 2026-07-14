@@ -14,4 +14,3 @@ export declare class SEOTagGeneratorService {
      */
     static mergeTags(existingTags: string[] | undefined, generatedTags: string[]): string[];
 }
-//# sourceMappingURL=seo-tag-generator.service.d.ts.map

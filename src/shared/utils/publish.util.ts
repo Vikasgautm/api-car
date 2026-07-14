@@ -1,19 +1,11 @@
-import { Document, Model } from 'mongoose';
-
-export interface PublishDocument extends Document {
-  is_published?: boolean;
-  published_at?: Date;
-  published_by?: string;
-  unpublished_at?: Date;
-  unpublished_by?: string;
-}
+import { BaseModel } from '../../sql/common/BaseModel';
 
 export class PublishUtil {
-  static async publish<T extends PublishDocument>(
-    model: Model<T>,
+  static async publish<T extends { [key: string]: any }>(
+    model: BaseModel<T>,
     id: string,
     publishedBy?: string
-  ): Promise<T | null> {
+  ): Promise<any | null> {
     const updateData: any = {
       is_published: true,
       published_at: new Date(),
@@ -25,18 +17,16 @@ export class PublishUtil {
       updateData.published_by = publishedBy;
     }
 
-    return await model.findByIdAndUpdate(
-      id,
-      updateData,
-      { returnDocument: 'after', runValidators: true }
-    );
+    const pk = (model as any).primaryKey || 'id';
+    await model.updateDirect({ [pk]: id }, updateData);
+    return await model.findOne({ [pk]: id });
   }
 
-  static async unpublish<T extends PublishDocument>(
-    model: Model<T>,
+  static async unpublish<T extends { [key: string]: any }>(
+    model: BaseModel<T>,
     id: string,
     unpublishedBy?: string
-  ): Promise<T | null> {
+  ): Promise<any | null> {
     const updateData: any = {
       is_published: false,
       unpublished_at: new Date(),
@@ -46,33 +36,32 @@ export class PublishUtil {
       updateData.unpublished_by = unpublishedBy;
     }
 
-    return await model.findByIdAndUpdate(
-      id,
-      updateData,
-      { returnDocument: 'after', runValidators: true }
-    );
+    const pk = (model as any).primaryKey || 'id';
+    await model.updateDirect({ [pk]: id }, updateData);
+    return await model.findOne({ [pk]: id });
   }
 
-  static async togglePublish<T extends PublishDocument>(
-    model: Model<T>,
+  static async togglePublish<T extends { [key: string]: any }>(
+    model: BaseModel<T>,
     id: string,
     userId?: string
-  ): Promise<T | null> {
-    const document = await model.findById(id);
+  ): Promise<any | null> {
+    const pk = (model as any).primaryKey || 'id';
+    const document = await model.findOne({ [pk]: id });
     
     if (!document) {
       return null;
     }
 
     if (document.is_published) {
-      return (await this.unpublish(model, id, userId)) as T | null;
+      return await this.unpublish(model, id, userId);
     } else {
-      return (await this.publish(model, id, userId)) as T | null;
+      return await this.publish(model, id, userId);
     }
   }
 
-  static async publishMany<T extends PublishDocument>(
-    model: Model<T>,
+  static async publishMany<T extends { [key: string]: any }>(
+    model: BaseModel<T>,
     filter: any,
     publishedBy?: string
   ): Promise<{ modifiedCount: number }> {
@@ -87,15 +76,13 @@ export class PublishUtil {
       updateData.published_by = publishedBy;
     }
 
-    const result = await model.updateMany(
-      { ...filter, is_published: false },
-      updateData
-    );
-    return { modifiedCount: result.modifiedCount || 0 };
+    const pk = (model as any).primaryKey || 'id';
+    const count = await model.updateDirect({ ...filter, is_published: false }, updateData);
+    return { modifiedCount: count };
   }
 
-  static async unpublishMany<T extends PublishDocument>(
-    model: Model<T>,
+  static async unpublishMany<T extends { [key: string]: any }>(
+    model: BaseModel<T>,
     filter: any,
     unpublishedBy?: string
   ): Promise<{ modifiedCount: number }> {
@@ -108,14 +95,12 @@ export class PublishUtil {
       updateData.unpublished_by = unpublishedBy;
     }
 
-    const result = await model.updateMany(
-      { ...filter, is_published: true },
-      updateData
-    );
-    return { modifiedCount: result.modifiedCount || 0 };
+    const pk = (model as any).primaryKey || 'id';
+    const count = await model.updateDirect({ ...filter, is_published: true }, updateData);
+    return { modifiedCount: count };
   }
 
-  static isPublished(document: PublishDocument | null): boolean {
+  static isPublished(document: any | null): boolean {
     return document?.is_published === true;
   }
 
@@ -142,7 +127,7 @@ export class PublishUtil {
     return rest as T;
   }
 
-  static getPublishStatus(document: PublishDocument | null): {
+  static getPublishStatus(document: any | null): {
     isPublished: boolean;
     publishedAt?: Date;
     publishedBy?: string;

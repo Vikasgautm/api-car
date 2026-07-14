@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { ResponseUtil } from '../../../shared/utils/response.util';
 import { catchAsync } from '../../../utils/catchAsync';
-import { CreateSeoPresetDto, UpdateSeoPresetDto } from '../dto/seo-preset.dto';
 import { SeoPresetService } from '../services/seo-preset.service';
+import { CreateSeoPresetDto, UpdateSeoPresetDto } from '../dto/seo-preset.dto';
 
 export class SeoPresetController {
   // ---- Public ----
@@ -46,7 +46,7 @@ export class SeoPresetController {
       sort_order: req.body.sort_order,
     };
     const validation = CreateSeoPresetDto.validate(dto);
-    if (!validation.valid) throw new AppError(validation.errors.join(', '), 400);
+    if (!validation.success) throw new AppError(validation.error.errors.map((e: any) => e.message).join(', '), 400);
 
     const created = await SeoPresetService.create(dto);
     return ResponseUtil.created(res, created, 'SEO preset created');
@@ -65,7 +65,7 @@ export class SeoPresetController {
       sort_order: req.body.sort_order,
     };
     const validation = UpdateSeoPresetDto.validate(dto);
-    if (!validation.valid) throw new AppError(validation.errors.join(', '), 400);
+    if (!validation.success) throw new AppError(validation.error.errors.map((e: any) => e.message).join(', '), 400);
 
     const updated = await SeoPresetService.update(req.params.id as string, dto);
     return ResponseUtil.success(res, updated, 'SEO preset updated');

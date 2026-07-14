@@ -1,60 +1,17 @@
 import { ICity } from "../../../models/city.model";
 export declare class CityService {
     static getAllCities(filterDto: any, includeDeleted?: boolean): Promise<{
-        cities: (import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        } & {
-            id: string;
-        })[];
+        cities: (ICity & import("../../../sql/common/BaseModel").SQLDocument)[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
-    static getCityById(cityId: string): Promise<(import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static getCityBySlug(slug: string): Promise<(import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static createCity(cityData: any): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static updateCity(cityId: string, cityData: any): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static deleteCity(cityId: string): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static getCityById(cityId: string): Promise<(ICity & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static getCityBySlug(slug: string): Promise<(ICity & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static createCity(cityData: any): Promise<any>;
+    static updateCity(cityId: string, cityData: any): Promise<ICity & import("../../../sql/common/BaseModel").SQLDocument>;
+    static deleteCity(cityId: string): Promise<ICity & import("../../../sql/common/BaseModel").SQLDocument>;
     static bulkSeedCities(): Promise<{
         inserted: number;
         skipped: number;
     }>;
-    static restoreCity(cityId: string): Promise<import("mongoose").Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static restoreCity(cityId: string): Promise<ICity & import("../../../sql/common/BaseModel").SQLDocument>;
 }
-//# sourceMappingURL=city.service.d.ts.map

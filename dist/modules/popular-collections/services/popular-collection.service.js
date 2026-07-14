@@ -29,13 +29,12 @@ class PopularCollectionService {
         const existing = await popular_collection_model_1.PopularCollection.findOne({ slug: data.slug });
         if (existing)
             throw new app_error_util_1.AppError(`Slug already exists: ${data.slug}`, 400);
-        const collection = new popular_collection_model_1.PopularCollection({
+        return popular_collection_model_1.PopularCollection.create({
             ...data,
             collection_id: (0, uuid_1.v4)(),
             created_by: userId,
             updated_by: userId,
         });
-        return collection.save();
     }
     static async update(collection_id, data, userId) {
         if (data.slug) {
@@ -94,4 +93,3 @@ class PopularCollectionService {
     }
 }
 exports.PopularCollectionService = PopularCollectionService;
-//# sourceMappingURL=popular-collection.service.js.map

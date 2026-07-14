@@ -1,4 +1,3 @@
-import { Document } from 'mongoose';
 export type RenderingMode = 'manual' | 'hybrid' | 'behavioral' | 'observe_only';
 export type ScoreType = 'popularity' | 'trending' | 'engagement' | 'buyer_intent' | 'comparison_pressure' | 'retention';
 export interface EditorialBoost {
@@ -7,7 +6,7 @@ export interface EditorialBoost {
     expires_at?: Date;
     reason?: string;
 }
-export interface IRankingCollectionConfig extends Document {
+export interface IRankingCollectionConfig {
     config_id: string;
     collection_key: string;
     collection_label: string;
@@ -24,11 +23,5 @@ export interface IRankingCollectionConfig extends Document {
     is_active: boolean;
     notes?: string;
 }
-export declare const RankingCollectionConfig: import("mongoose").Model<IRankingCollectionConfig, {}, {}, {}, Document<unknown, {}, IRankingCollectionConfig, {}, import("mongoose").DefaultSchemaOptions> & IRankingCollectionConfig & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IRankingCollectionConfig>;
-//# sourceMappingURL=ranking-collection-config.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const RankingCollectionConfig: BaseModel<IRankingCollectionConfig>;

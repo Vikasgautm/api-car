@@ -6,4 +6,3 @@ export declare class IntelligenceController {
     static deleteOverride: (req: AuthRequest, res: Response, next: import("express").NextFunction) => void;
     static reclassifyAll: (req: AuthRequest, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=intelligence.controller.d.ts.map

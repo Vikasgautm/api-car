@@ -1,58 +1,17 @@
 import { ITag } from '../../../models/tag.model';
 export declare class TagService {
     static getAll(filterDto: any, includeDeleted?: boolean): Promise<{
-        tags: (ITag & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        tags: (ITag & import("../../../sql/common/BaseModel").SQLDocument)[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
-    static getById(tagId: string): Promise<(import("mongoose").Document<unknown, {}, ITag, {}, import("mongoose").DefaultSchemaOptions> & ITag & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static getBySlug(slug: string): Promise<(import("mongoose").Document<unknown, {}, ITag, {}, import("mongoose").DefaultSchemaOptions> & ITag & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static create(data: any): Promise<import("mongoose").Document<unknown, {}, ITag, {}, import("mongoose").DefaultSchemaOptions> & ITag & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static update(tagId: string, data: any): Promise<import("mongoose").Document<unknown, {}, ITag, {}, import("mongoose").DefaultSchemaOptions> & ITag & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static softDelete(tagId: string): Promise<import("mongoose").Document<unknown, {}, ITag, {}, import("mongoose").DefaultSchemaOptions> & ITag & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static restore(tagId: string): Promise<import("mongoose").Document<unknown, {}, ITag, {}, import("mongoose").DefaultSchemaOptions> & ITag & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static getById(tagId: string): Promise<(ITag & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static getBySlug(slug: string): Promise<(ITag & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static create(data: any): Promise<any>;
+    static update(tagId: string, data: any): Promise<ITag & import("../../../sql/common/BaseModel").SQLDocument>;
+    static softDelete(tagId: string): Promise<ITag & import("../../../sql/common/BaseModel").SQLDocument>;
+    static restore(tagId: string): Promise<ITag & import("../../../sql/common/BaseModel").SQLDocument>;
     static validateTagIds(tagIds: string[]): Promise<{
         valid: string[];
         invalid: string[];
     }>;
 }
-//# sourceMappingURL=tag.service.d.ts.map

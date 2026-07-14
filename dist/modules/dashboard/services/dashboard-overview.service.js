@@ -1,40 +1,43 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardOverviewService = void 0;
-const car_model_1 = require("../../../models/car.model");
-const car_variant_model_1 = require("../../../models/car-variant.model");
 const import_log_model_1 = require("../../../models/import-log.model");
-const seo_collection_model_1 = require("../../../models/seo-collection.model");
+const dbConnection_1 = require("../../../sql/utils/dbConnection");
 class DashboardOverviewService {
     static async getOverview() {
-        const [carStats, totalVariants, totalSeoCollections, failedImports] = await Promise.all([
-            car_model_1.Car.aggregate([
-                { $match: { is_deleted: false } },
-                {
-                    $group: {
-                        _id: null,
-                        total: { $sum: 1 },
-                        published: { $sum: { $cond: [{ $eq: ['$is_published', true] }, 1, 0] } },
-                        upcoming: { $sum: { $cond: [{ $eq: ['$is_upcoming', true] }, 1, 0] } },
-                        archived: { $sum: { $cond: [{ $eq: ['$status', 'archived'] }, 1, 0] } },
-                        discontinued: { $sum: { $cond: [{ $eq: ['$status', 'discontinued'] }, 1, 0] } },
-                    },
-                },
-            ]),
-            car_variant_model_1.CarVariant.countDocuments({ is_deleted: false }),
-            seo_collection_model_1.SeoCollection.countDocuments({ is_deleted: false }),
+        const pool = await (0, dbConnection_1.getPool)();
+        const [carStatsResult, totalVariantsResult, totalSeoCollectionsResult, failedImports] = await Promise.all([
+            pool.request().query(`
+        SELECT 
+          COUNT(*) as total,
+          SUM(CASE WHEN is_published = 1 THEN 1 ELSE 0 END) as published,
+          SUM(CASE WHEN is_upcoming = 1 THEN 1 ELSE 0 END) as upcoming,
+          SUM(CASE WHEN status = 'archived' THEN 1 ELSE 0 END) as archived,
+          SUM(CASE WHEN status = 'discontinued' THEN 1 ELSE 0 END) as discontinued
+        FROM Cars
+        WHERE is_deleted = 0
+      `),
+            pool.request().query('SELECT COUNT(*) as cnt FROM CarVariants WHERE is_deleted = 0'),
+            pool.request().query('SELECT COUNT(*) as cnt FROM SeoCollections WHERE is_deleted = 0'),
             import_log_model_1.ImportLog.countDocuments({ status: 'failed' }),
         ]);
-        const cars = carStats[0] ?? { total: 0, published: 0, upcoming: 0, archived: 0, discontinued: 0 };
-        const draft = (cars.total || 0) - (cars.published || 0) - (cars.upcoming || 0) - (cars.archived || 0) - (cars.discontinued || 0);
+        const stats = carStatsResult.recordset[0] ?? { total: 0, published: 0, upcoming: 0, archived: 0, discontinued: 0 };
+        const total = stats.total || 0;
+        const published = stats.published || 0;
+        const upcoming = stats.upcoming || 0;
+        const archived = stats.archived || 0;
+        const discontinued = stats.discontinued || 0;
+        const draft = total - published - upcoming - archived - discontinued;
+        const totalVariants = totalVariantsResult.recordset[0].cnt || 0;
+        const totalSeoCollections = totalSeoCollectionsResult.recordset[0].cnt || 0;
         return {
             cars: {
-                total: cars.total || 0,
-                published: cars.published || 0,
+                total,
+                published,
                 draft: Math.max(0, draft),
-                upcoming: cars.upcoming || 0,
-                archived: cars.archived || 0,
-                discontinued: cars.discontinued || 0,
+                upcoming,
+                archived,
+                discontinued,
             },
             total_variants: totalVariants,
             total_seo_collections: totalSeoCollections,
@@ -45,4 +48,3 @@ class DashboardOverviewService {
     }
 }
 exports.DashboardOverviewService = DashboardOverviewService;
-//# sourceMappingURL=dashboard-overview.service.js.map

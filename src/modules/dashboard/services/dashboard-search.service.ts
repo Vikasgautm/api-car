@@ -1,11 +1,21 @@
-import { Blog } from '../../../models/blog.model';
-import { Brand } from '../../../models/brand.model';
-import { Car } from '../../../models/car.model';
-import { CarVariant } from '../../../models/car-variant.model';
-import { Comparison } from '../../../models/comparison.model';
-import { FuelType } from '../../../models/fuel-type.model';
-import { SeoCollection } from '../../../models/seo-collection.model';
-import { GlobalSearchResponse, GlobalSearchResult } from '../dtos/dashboard.dto';
+import { getPool, mssql } from '../../../sql/utils/dbConnection';
+
+export interface GlobalSearchResult {
+  type: 'car' | 'variant' | 'seo_collection' | 'comparison' | 'blog';
+  id: string;
+  title: string;
+  subtitle?: string;
+  link: string;
+}
+
+export interface GlobalSearchResponse {
+  cars: GlobalSearchResult[];
+  variants: GlobalSearchResult[];
+  seo_collections: GlobalSearchResult[];
+  comparisons: GlobalSearchResult[];
+  blogs: GlobalSearchResult[];
+  total: number;
+}
 
 export class DashboardSearchService {
   static async search(query: string, limit = 5): Promise<GlobalSearchResponse> {
@@ -14,53 +24,121 @@ export class DashboardSearchService {
     }
 
     const q = query.trim();
-    const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const likeVal = `%${q}%`;
 
-    // Resolve brand IDs matching the query so "Honda" finds Honda City, etc.
-    const matchedBrands = await Brand.find({ name: regex, is_deleted: false }).select('brand_id').lean();
-    const matchedBrandIds = (matchedBrands as any[]).map((b: any) => b.brand_id);
+    const pool = await getPool();
 
-    const carOrClauses: any[] = [{ name: regex }, { slug: regex }, { body_type_name: regex }];
-    if (matchedBrandIds.length > 0) carOrClauses.push({ brand_id: { $in: matchedBrandIds } });
+    // 1. Resolve brand IDs matching the query
+    const brandMatchRes = await pool.request()
+      .input('likeVal', mssql.NVarChar, likeVal)
+      .query('SELECT brand_id FROM Brands WHERE name LIKE @likeVal AND is_deleted = 0');
+    const matchedBrandIds: string[] = brandMatchRes.recordset.map((b: any) => b.brand_id);
+
+    // 2. Fetch cars matching query or brand IDs
+    const fetchCars = async (): Promise<any[]> => {
+      const request = pool.request()
+        .input('likeVal', mssql.NVarChar, likeVal)
+        .input('lim', mssql.Int, limit);
+      
+      let brandFilter = '';
+      if (matchedBrandIds.length > 0) {
+        const inParams = matchedBrandIds.map((id, index) => {
+          const pName = `brand_${index}`;
+          request.input(pName, mssql.NVarChar, id);
+          return `@${pName}`;
+        });
+        brandFilter = ` OR brand_id IN (${inParams.join(', ')})`;
+      }
+
+      const queryStr = `
+        SELECT TOP (@lim) car_id, name, slug, brand_id, body_type_name, status 
+        FROM Cars 
+        WHERE is_deleted = 0 
+        AND (name LIKE @likeVal OR slug LIKE @likeVal OR body_type_name LIKE @likeVal${brandFilter})
+      `;
+      const res = await request.query(queryStr);
+      return res.recordset;
+    };
+
+    // 3. Fetch variants
+    const fetchVariants = async (): Promise<any[]> => {
+      return (await pool.request()
+        .input('likeVal', mssql.NVarChar, likeVal)
+        .input('lim', mssql.Int, limit)
+        .query('SELECT TOP (@lim) variant_id, variant_name, car_id, fuel_type_id FROM CarVariants WHERE is_deleted = 0 AND (variant_name LIKE @likeVal OR slug LIKE @likeVal)')
+      ).recordset;
+    };
+
+    // 4. Fetch SEO collections
+    const fetchCollections = async (): Promise<any[]> => {
+      return (await pool.request()
+        .input('likeVal', mssql.NVarChar, likeVal)
+        .input('lim', mssql.Int, limit)
+        .query('SELECT TOP (@lim) collection_id, title, slug, status FROM SeoCollections WHERE is_deleted = 0 AND (title LIKE @likeVal OR slug LIKE @likeVal)')
+      ).recordset;
+    };
+
+    // 5. Fetch Comparisons
+    const fetchComparisons = async (): Promise<any[]> => {
+      return (await pool.request()
+        .input('likeVal', mssql.NVarChar, likeVal)
+        .input('lim', mssql.Int, limit)
+        .query('SELECT TOP (@lim) comparison_id, title, slug, status FROM Comparisons WHERE is_deleted = 0 AND (title LIKE @likeVal OR slug LIKE @likeVal)')
+      ).recordset;
+    };
+
+    // 6. Fetch Blogs
+    const fetchBlogs = async (): Promise<any[]> => {
+      return (await pool.request()
+        .input('likeVal', mssql.NVarChar, likeVal)
+        .input('lim', mssql.Int, limit)
+        .query('SELECT TOP (@lim) blog_id, title, slug FROM Blogs WHERE is_deleted = 0 AND (title LIKE @likeVal OR slug LIKE @likeVal)')
+      ).recordset;
+    };
 
     const [cars, variants, collections, comparisons, blogs] = await Promise.all([
-      Car.find({ is_deleted: false, $or: carOrClauses })
-        .limit(limit)
-        .select('car_id name slug brand_id body_type_name status')
-        .lean(),
-      CarVariant.find({ is_deleted: false, $or: [{ variant_name: regex }, { slug: regex }] })
-        .limit(limit)
-        .select('variant_id variant_name car_id fuel_type_id')
-        .lean(),
-      SeoCollection.find({ is_deleted: false, $or: [{ title: regex }, { slug: regex }] })
-        .limit(limit)
-        .select('collection_id title slug status')
-        .lean(),
-      Comparison.find({ is_deleted: false, $or: [{ title: regex }, { slug: regex }] })
-        .limit(limit)
-        .select('comparison_id title slug status')
-        .lean(),
-      Blog.find({ is_deleted: false, $or: [{ title: regex }, { slug: regex }] })
-        .limit(limit)
-        .select('blog_id title slug')
-        .lean(),
+      fetchCars(),
+      fetchVariants(),
+      fetchCollections(),
+      fetchComparisons(),
+      fetchBlogs(),
     ]);
 
     // Enrich car results with brand name
-    const brandIds = [...new Set((cars as any[]).map((c: any) => c.brand_id).filter(Boolean))];
-    const [brandDocs, fuelTypeDocs] = await Promise.all([
-      brandIds.length > 0
-        ? Brand.find({ brand_id: { $in: brandIds }, is_deleted: false }).select('brand_id name').lean()
-        : Promise.resolve([]),
-      variants.length > 0
-        ? FuelType.find({ fuel_type_id: { $in: (variants as any[]).map((v: any) => v.fuel_type_id).filter(Boolean) }, is_deleted: false })
-            .select('fuel_type_id name').lean()
-        : Promise.resolve([]),
-    ]);
-    const brandNameMap = new Map((brandDocs as any[]).map((b: any) => [b.brand_id, b.name]));
-    const fuelNameMap = new Map((fuelTypeDocs as any[]).map((f: any) => [f.fuel_type_id, f.name]));
+    const brandIds = [...new Set(cars.map((c: any) => c.brand_id).filter(Boolean))];
+    const fuelTypeIds = [...new Set(variants.map((v: any) => v.fuel_type_id).filter(Boolean))];
 
-    const carResults: GlobalSearchResult[] = (cars as any[]).map((c: any) => ({
+    const fetchBrandDocs = async (): Promise<any[]> => {
+      if (!brandIds.length) return [];
+      const request = pool.request();
+      const inParams = brandIds.map((id, index) => {
+        const pName = `brnd_${index}`;
+        request.input(pName, mssql.NVarChar, id);
+        return `@${pName}`;
+      });
+      return (await request.query(`SELECT brand_id, name FROM Brands WHERE brand_id IN (${inParams.join(', ')}) AND is_deleted = 0`)).recordset;
+    };
+
+    const fetchFuelDocs = async (): Promise<any[]> => {
+      if (!fuelTypeIds.length) return [];
+      const request = pool.request();
+      const inParams = fuelTypeIds.map((id, index) => {
+        const pName = `fuel_${index}`;
+        request.input(pName, mssql.NVarChar, id);
+        return `@${pName}`;
+      });
+      return (await request.query(`SELECT fuel_type_id, name FROM FuelTypes WHERE fuel_type_id IN (${inParams.join(', ')}) AND is_deleted = 0`)).recordset;
+    };
+
+    const [brandDocs, fuelTypeDocs] = await Promise.all([
+      fetchBrandDocs(),
+      fetchFuelDocs(),
+    ]);
+
+    const brandNameMap = new Map(brandDocs.map((b: any) => [b.brand_id, b.name]));
+    const fuelNameMap = new Map(fuelTypeDocs.map((f: any) => [f.fuel_type_id, f.name]));
+
+    const carResults: GlobalSearchResult[] = cars.map((c: any) => ({
       type: 'car',
       id: c.car_id,
       title: c.name,
@@ -68,7 +146,7 @@ export class DashboardSearchService {
       link: `/cars?editId=${c.car_id}`,
     }));
 
-    const variantResults: GlobalSearchResult[] = (variants as any[]).map((v: any) => ({
+    const variantResults: GlobalSearchResult[] = variants.map((v: any) => ({
       type: 'variant',
       id: v.variant_id,
       title: v.variant_name,

@@ -13,4 +13,3 @@ adminRouter.get('/issues/:category', content_health_controller_1.ContentHealthCo
 adminRouter.get('/entity/:type/:id', content_health_controller_1.ContentHealthController.getEntityIssues);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=content-health.routes.js.map

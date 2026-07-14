@@ -12,4 +12,3 @@ export declare function validateVariantSpecs(params: {
     specs_normalized?: Record<string, any>;
     specs_raw?: Record<string, any>;
 }): SpecValidationResult;
-//# sourceMappingURL=spec-validator.d.ts.map

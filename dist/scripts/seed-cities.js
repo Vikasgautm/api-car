@@ -107,4 +107,3 @@ run().catch((err) => {
     console.error('Fatal error:', err);
     process.exit(1);
 });
-//# sourceMappingURL=seed-cities.js.map

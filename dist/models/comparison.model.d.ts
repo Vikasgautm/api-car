@@ -1,5 +1,4 @@
-import mongoose, { Document } from 'mongoose';
-export interface IComparison extends Document {
+export interface IComparison {
     comparison_id: string;
     car1_id: string;
     car2_id: string;
@@ -26,11 +25,5 @@ export interface IComparison extends Document {
     deleted_at?: Date;
     is_deleted: boolean;
 }
-export declare const Comparison: mongoose.Model<IComparison, {}, {}, {}, mongoose.Document<unknown, {}, IComparison, {}, mongoose.DefaultSchemaOptions> & IComparison & Required<{
-    _id: mongoose.Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IComparison>;
-//# sourceMappingURL=comparison.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const Comparison: BaseModel<IComparison>;

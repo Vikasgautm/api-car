@@ -64,7 +64,7 @@ class PartialImportService {
             return await this.updatePartialVariant(existingVariant, variantData, actor);
         }
         // Create new variant with teaser/partial mode
-        const variant = new car_variant_model_1.CarVariant({
+        const variant = car_variant_model_1.CarVariant.createDraft({
             variant_id: `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             car_id: carId,
             variant_name: variantData.variant_name || 'TBD',
@@ -234,4 +234,3 @@ class PartialImportService {
     }
 }
 exports.PartialImportService = PartialImportService;
-//# sourceMappingURL=partial-import.service.js.map

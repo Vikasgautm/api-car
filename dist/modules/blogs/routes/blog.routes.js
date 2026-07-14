@@ -77,4 +77,3 @@ router.use('/editor', editorRouter);
 router.get('/', validation_1.validatePaginationQuery, blog_controller_1.BlogController.getAllPublicBlogs);
 router.get('/:slug', validation_1.validateSlugParam, blog_controller_1.BlogController.getPublicBlogBySlug);
 exports.default = router;
-//# sourceMappingURL=blog.routes.js.map

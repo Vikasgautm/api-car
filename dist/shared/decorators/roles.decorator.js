@@ -10,4 +10,3 @@ const Roles = (...roles) => {
     };
 };
 exports.Roles = Roles;
-//# sourceMappingURL=roles.decorator.js.map

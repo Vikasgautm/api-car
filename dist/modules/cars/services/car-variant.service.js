@@ -371,14 +371,17 @@ class CarVariantService {
         const hasVariantLevelFilters = Boolean(fuel_type_id || transmission_type || min_price !== undefined || max_price !== undefined ||
             is_archived === true || is_archived === 'true' ||
             is_deleted === true || is_deleted === 'true');
-        let restrictToCarIds = null;
+        let restrictToCarIds = [];
+        let hasRestriction = false;
         if (hasVariantLevelFilters) {
+            hasRestriction = true;
             restrictToCarIds = await car_variant_model_1.CarVariant.distinct('car_id', variantMatchFilter);
             if (restrictToCarIds.length === 0) {
                 return { groups: [], pagination: pagination_util_1.PaginationUtil.createPaginationMeta(page, limit, 0) };
             }
         }
         else if (q) {
+            hasRestriction = true;
             // For text search without other variant filters, INNER JOIN so cars
             // unrelated to the query don't pollute results.
             restrictToCarIds = await car_variant_model_1.CarVariant.distinct('car_id', variantMatchFilter);
@@ -388,7 +391,7 @@ class CarVariantService {
                 is_deleted: { $ne: true },
             }).select('car_id').lean();
             const nameMatchIds = carNameMatches.map((c) => c.car_id);
-            restrictToCarIds = Array.from(new Set([...(restrictToCarIds || []), ...nameMatchIds]));
+            restrictToCarIds = Array.from(new Set([...restrictToCarIds, ...nameMatchIds]));
             if (restrictToCarIds.length === 0) {
                 return { groups: [], pagination: pagination_util_1.PaginationUtil.createPaginationMeta(page, limit, 0) };
             }
@@ -396,7 +399,7 @@ class CarVariantService {
         const carFilter = { is_deleted: { $ne: true } };
         if (car_id)
             carFilter.car_id = car_id;
-        if (restrictToCarIds) {
+        if (hasRestriction) {
             carFilter.car_id = car_id
                 ? { $in: restrictToCarIds.includes(car_id) ? [car_id] : [] }
                 : { $in: restrictToCarIds };
@@ -1009,4 +1012,3 @@ class CarVariantService {
     }
 }
 exports.CarVariantService = CarVariantService;
-//# sourceMappingURL=car-variant.service.js.map

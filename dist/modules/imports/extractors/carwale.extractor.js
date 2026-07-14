@@ -437,4 +437,3 @@ class CarWaleExtractor {
     }
 }
 exports.CarWaleExtractor = CarWaleExtractor;
-//# sourceMappingURL=carwale.extractor.js.map

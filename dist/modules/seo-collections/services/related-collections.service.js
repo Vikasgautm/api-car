@@ -42,4 +42,3 @@ class RelatedCollectionsService {
     }
 }
 exports.RelatedCollectionsService = RelatedCollectionsService;
-//# sourceMappingURL=related-collections.service.js.map

@@ -11,4 +11,3 @@ adminRouter.post('/ask', adminChatbot_controller_1.AdminChatbotController.ask);
 adminRouter.post('/action', adminChatbot_controller_1.AdminChatbotController.performAction);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=adminChatbot.routes.js.map

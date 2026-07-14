@@ -28,4 +28,3 @@ export declare function getSemanticMapping(key: string): SemanticMapping | undef
  * Get all mappings for a category
  */
 export declare function getSemanticMappingsByCategory(category: string): SemanticMapping[];
-//# sourceMappingURL=semantic-mappings.d.ts.map

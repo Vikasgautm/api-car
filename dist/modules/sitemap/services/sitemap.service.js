@@ -80,4 +80,3 @@ class SitemapService {
     }
 }
 exports.SitemapService = SitemapService;
-//# sourceMappingURL=sitemap.service.js.map

@@ -1,8 +1,32 @@
-import mongoose from 'mongoose';
-import { Car, EntityLifecycleState, EntityStatusHistoryEntry } from '../../../models/car.model';
-import { CarVariant } from '../../../models/car-variant.model';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { AuditActor } from '../../../shared/utils/audit.util';
+import { getPool, mssql } from '../../../sql/utils/dbConnection';
+
+export type EntityLifecycleState = 'upcoming' | 'launched' | 'facelift' | 'discontinued' | 'concept' | 'testing' | 'archived';
+
+export interface EntityStatusHistoryEntry {
+  previous_state?: EntityLifecycleState | null;
+  state: EntityLifecycleState;
+  changed_at: Date;
+  changed_by: string;
+  reason?: string;
+}
+
+export interface SEOHistoryEntry {
+  field: string;
+  old_value: any;
+  new_value: any;
+  timestamp: Date;
+  changed_by: string;
+}
+
+export interface VariantHistoryEntry {
+  variant_id: string;
+  action: 'added' | 'removed' | 'visibility_changed' | 'specs_updated';
+  timestamp: Date;
+  changed_by: string;
+  details?: Record<string, any>;
+}
 
 export const VALID_TRANSITIONS: Record<string, string[]> = {
   concept: ['testing'],
@@ -38,144 +62,191 @@ export class CarLifecycleService {
     actor: AuditActor,
     reason?: string
   ) {
-    const session = await mongoose.startSession();
-    let savedCar: any;
+    const pool = await getPool();
+    const transaction = new mssql.Transaction(pool);
+    await transaction.begin();
+
     try {
-      await session.withTransaction(async () => {
-        const car = await Car.findOne({ car_id: carId, is_deleted: false }).session(session);
-        if (!car) throw new AppError('Car not found', 404);
+      const carResult = await transaction.request()
+        .input('cid', mssql.NVarChar, carId)
+        .query('SELECT TOP 1 entity_lifecycle_state, entity_created_at, entity_status_history, createdAt FROM Cars WHERE car_id = @cid AND is_deleted = 0');
 
-        const currentState = car.entity_lifecycle_state || 'launched';
-        if (currentState === newState) {
-          throw new AppError(`Car is already in ${newState} state`, 400);
-        }
+      if (carResult.recordset.length === 0) throw new AppError('Car not found', 404);
+      const car = carResult.recordset[0];
 
-        const allowed = VALID_TRANSITIONS[currentState] ?? [];
-        if (!allowed.includes(newState)) {
-          throw new AppError(
-            `Invalid transition: ${currentState} → ${newState}. Allowed: ${allowed.join(', ') || 'none'}`,
-            400
-          );
-        }
+      const currentState = car.entity_lifecycle_state || 'launched';
+      if (currentState === newState) {
+        throw new AppError(`Car is already in ${newState} state`, 400);
+      }
 
-        // Build history entry with previous_state for full lineage tracing
-        const historyEntry: EntityStatusHistoryEntry = {
-          previous_state: currentState,
-          state: newState,
-          changed_at: new Date(),
-          changed_by: actor.user_id || 'system',
-          reason: reason || `Transitioned from ${currentState} to ${newState}`,
-        };
-
-        // Build scalar field updates
-        const setFields: Record<string, any> = {
-          entity_lifecycle_state: newState,
-        };
-
-        if (!car.entity_created_at) {
-          setFields.entity_created_at = (car as any).createdAt || new Date();
-        }
-
-        if (newState === 'launched') {
-          setFields.entity_launch_date = new Date();
-          setFields.is_upcoming = false;
-          setFields.is_launched = true;
-          setFields.status = 'launched';
-        } else if (newState === 'upcoming') {
-          setFields.is_upcoming = true;
-          setFields.is_launched = false;
-          setFields.status = 'upcoming';
-        } else if (newState === 'discontinued') {
-          setFields.status = 'discontinued';
-          setFields.discontinued_at = new Date();
-          setFields.discontinued_by = actor.user_id || 'system';
-        } else if (newState === 'facelift') {
-          setFields.is_facelift = true;
-          setFields.status = 'launched';
-        } else if (newState === 'archived') {
-          setFields.status = 'archived';
-          setFields.archived_at = new Date();
-          setFields.archived_by = actor.user_id || 'system';
-        } else if (newState === 'concept' || newState === 'testing') {
-          setFields.status = 'upcoming';
-        }
-
-        // Atomic $push + $set — history is append-only, never overwritten
-        savedCar = await Car.findOneAndUpdate(
-          { car_id: carId, is_deleted: false },
-          {
-            $push: { entity_status_history: historyEntry },
-            $set: setFields,
-          },
-          { returnDocument: 'after', session }
+      const allowed = VALID_TRANSITIONS[currentState] ?? [];
+      if (!allowed.includes(newState)) {
+        throw new AppError(
+          `Invalid transition: ${currentState} → ${newState}. Allowed: ${allowed.join(', ') || 'none'}`,
+          400
         );
+      }
 
-        if (!savedCar) throw new AppError('Car not found during update', 404);
+      // Build history entry with previous_state for full lineage tracing
+      const historyEntry: EntityStatusHistoryEntry = {
+        previous_state: currentState,
+        state: newState,
+        changed_at: new Date(),
+        changed_by: actor.user_id || 'system',
+        reason: reason || `Transitioned from ${currentState} to ${newState}`,
+      };
 
-        if (newState === 'launched') {
-          await this.unHideCategoryOnLaunch(carId, session);
-        }
-      });
-    } finally {
-      session.endSession();
+      const entity_status_history = car.entity_status_history ? JSON.parse(car.entity_status_history) : [];
+      entity_status_history.push(historyEntry);
+
+      let entity_created_at = car.entity_created_at;
+      if (!entity_created_at) {
+        entity_created_at = car.createdAt || new Date();
+      }
+
+      let entity_launch_date = car.entity_launch_date;
+      let is_upcoming = car.is_upcoming === 1 || car.is_upcoming === true;
+      let is_launched = car.is_launched === 1 || car.is_launched === true;
+      let status = car.status;
+      let discontinued_at = car.discontinued_at;
+      let discontinued_by = car.discontinued_by;
+      let is_facelift = car.is_facelift === 1 || car.is_facelift === true;
+      let archived_at = car.archived_at;
+      let archived_by = car.archived_by;
+
+      if (newState === 'launched') {
+        entity_launch_date = new Date();
+        is_upcoming = false;
+        is_launched = true;
+        status = 'launched';
+      } else if (newState === 'upcoming') {
+        is_upcoming = true;
+        is_launched = false;
+        status = 'upcoming';
+      } else if (newState === 'discontinued') {
+        status = 'discontinued';
+        discontinued_at = new Date();
+        discontinued_by = actor.user_id || 'system';
+      } else if (newState === 'facelift') {
+        is_facelift = true;
+        status = 'launched';
+      } else if (newState === 'archived') {
+        status = 'archived';
+        archived_at = new Date();
+        archived_by = actor.user_id || 'system';
+      } else if (newState === 'concept' || newState === 'testing') {
+        status = 'upcoming';
+      }
+
+      await transaction.request()
+        .input('cid', mssql.NVarChar, carId)
+        .input('lifecycle', mssql.NVarChar, newState)
+        .input('created', mssql.DateTime, entity_created_at)
+        .input('launch', mssql.DateTime, entity_launch_date)
+        .input('up', mssql.Bit, is_upcoming ? 1 : 0)
+        .input('ln', mssql.Bit, is_launched ? 1 : 0)
+        .input('st', mssql.NVarChar, status)
+        .input('disc_at', mssql.DateTime, discontinued_at)
+        .input('disc_by', mssql.NVarChar, discontinued_by)
+        .input('face', mssql.Bit, is_facelift ? 1 : 0)
+        .input('arch_at', mssql.DateTime, archived_at)
+        .input('arch_by', mssql.NVarChar, archived_by)
+        .input('history', mssql.NVarChar, JSON.stringify(entity_status_history))
+        .query(`UPDATE Cars SET 
+          entity_lifecycle_state = @lifecycle,
+          entity_created_at = @created,
+          entity_launch_date = @launch,
+          is_upcoming = @up,
+          is_launched = @ln,
+          status = @st,
+          discontinued_at = @disc_at,
+          discontinued_by = @disc_by,
+          is_facelift = @face,
+          archived_at = @arch_at,
+          archived_by = @arch_by,
+          entity_status_history = @history,
+          updatedAt = GETDATE()
+          WHERE car_id = @cid AND is_deleted = 0`);
+
+      if (newState === 'launched') {
+        await this.unHideCategoryOnLaunchTx(carId, transaction);
+      }
+
+      await transaction.commit();
+
+      const updatedResult = await pool.request()
+        .input('cid', mssql.NVarChar, carId)
+        .query('SELECT TOP 1 * FROM Cars WHERE car_id = @cid AND is_deleted = 0');
+      
+      const updatedRow = updatedResult.recordset[0];
+      return {
+        ...updatedRow,
+        is_upcoming: updatedRow.is_upcoming === 1 || updatedRow.is_upcoming === true,
+        is_launched: updatedRow.is_launched === 1 || updatedRow.is_launched === true,
+        is_facelift: updatedRow.is_facelift === 1 || updatedRow.is_facelift === true,
+        entity_status_history: updatedRow.entity_status_history ? JSON.parse(updatedRow.entity_status_history) : [],
+      };
+
+    } catch (err) {
+      await transaction.rollback();
+      throw err;
     }
-    return savedCar;
   }
 
   /**
-   * Auto-unhide categories and sections when car launches
+   * Auto-unhide categories and sections when car launches (transactional helper)
    */
-  static async unHideCategoryOnLaunch(carId: string, session?: mongoose.ClientSession) {
-    const variants = await CarVariant.find({ car_id: carId, is_deleted: false }).session(session ?? null);
+  private static async unHideCategoryOnLaunchTx(carId: string, transaction: any) {
+    const variantsResult = await transaction.request()
+      .input('cid', mssql.NVarChar, carId)
+      .query('SELECT variant_id, hidden_sections, section_visibility, field_visibility FROM CarVariants WHERE car_id = @cid AND is_deleted = 0');
 
-    const bulkOps: any[] = [];
-
-    for (const variant of variants) {
+    for (const variant of variantsResult.recordset) {
       let modified = false;
-      const updateData: any = {};
+      const updateFields: string[] = [];
+      const req = transaction.request().input('vid', mssql.NVarChar, variant.variant_id);
 
-      if (variant.hidden_sections && variant.hidden_sections.length > 0) {
-        // Clear hidden sections on launch
-        updateData.hidden_sections = [];
+      const hidden_sections = variant.hidden_sections ? JSON.parse(variant.hidden_sections) : [];
+      let newHiddenSections = hidden_sections;
+      if (hidden_sections && hidden_sections.length > 0) {
+        newHiddenSections = [];
         modified = true;
       }
 
-      if (variant.section_visibility && variant.section_visibility.length > 0) {
-        // Unhide teaser-only and partial sections
-        const updatedVisibility = variant.section_visibility.map((section) => {
+      const section_visibility = variant.section_visibility ? JSON.parse(variant.section_visibility) : [];
+      let newSectionVisibility = section_visibility;
+      if (section_visibility && section_visibility.length > 0) {
+        newSectionVisibility = section_visibility.map((section: any) => {
           if (section.visibility === 'teaser_only' || section.visibility === 'partial') {
-            return { ...section, visibility: 'visible' as const, hidden_fields: [] };
+            modified = true;
+            return { ...section, visibility: 'visible', hidden_fields: [] };
           }
           return section;
         });
-        updateData.section_visibility = updatedVisibility;
-        modified = true;
       }
 
-      if (variant.field_visibility) {
-        // Unhide teaser_only and partial fields
-        const updatedFieldVisibility = { ...variant.field_visibility };
-        for (const [fieldKey, visibility] of Object.entries(variant.field_visibility)) {
+      const field_visibility = variant.field_visibility ? JSON.parse(variant.field_visibility) : {};
+      let newFieldVisibility = field_visibility;
+      if (field_visibility) {
+        const updatedFieldVisibility = { ...field_visibility };
+        for (const [fieldKey, visibility] of Object.entries(field_visibility)) {
           if (visibility === 'teaser_only' || visibility === 'partial') {
             updatedFieldVisibility[fieldKey] = 'visible';
             modified = true;
           }
         }
-        if (modified) updateData.field_visibility = updatedFieldVisibility;
+        if (modified) {
+          newFieldVisibility = updatedFieldVisibility;
+        }
       }
 
       if (modified) {
-        bulkOps.push({
-          updateOne: {
-            filter: { _id: variant._id },
-            update: { $set: updateData }
-          }
-        });
+        await req
+          .input('hidden', mssql.NVarChar, JSON.stringify(newHiddenSections))
+          .input('sec', mssql.NVarChar, JSON.stringify(newSectionVisibility))
+          .input('field', mssql.NVarChar, JSON.stringify(newFieldVisibility))
+          .query('UPDATE CarVariants SET hidden_sections = @hidden, section_visibility = @sec, field_visibility = @field, updatedAt = GETDATE() WHERE variant_id = @vid');
       }
-    }
-
-    if (bulkOps.length > 0) {
-      await CarVariant.bulkWrite(bulkOps, { session });
     }
   }
 
@@ -183,13 +254,18 @@ export class CarLifecycleService {
    * Get lifecycle history for a car
    */
   static async getHistory(carId: string) {
-    const car = await Car.findOne({ car_id: carId, is_deleted: false });
-    if (!car) {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input('cid', mssql.NVarChar, carId)
+      .query('SELECT car_id, name, entity_lifecycle_state, entity_created_at, entity_launch_date, entity_status_history FROM Cars WHERE car_id = @cid AND is_deleted = 0');
+
+    if (result.recordset.length === 0) {
       throw new AppError('Car not found', 404);
     }
-    const allHistory = car.entity_status_history || [];
-    // Newest-first — reverse without mutating the Mongoose DocumentArray
+    const car = result.recordset[0];
+    const allHistory = car.entity_status_history ? JSON.parse(car.entity_status_history) : [];
     const history = [...allHistory].reverse();
+
     return {
       car_id: car.car_id,
       name: car.name,
@@ -211,15 +287,16 @@ export class CarLifecycleService {
     actor: AuditActor,
     reason?: string
   ) {
-    const car = await Car.findOne({ car_id: carId, is_deleted: false });
-    if (!car) {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input('cid', mssql.NVarChar, carId)
+      .query('SELECT car_id, entity_status_history FROM Cars WHERE car_id = @cid AND is_deleted = 0');
+
+    if (result.recordset.length === 0) {
       throw new AppError('Car not found', 404);
     }
-
-    // Store scheduled transition in a metadata field
-    if (!car.entity_status_history) {
-      car.entity_status_history = [];
-    }
+    const car = result.recordset[0];
+    const history = car.entity_status_history ? JSON.parse(car.entity_status_history) : [];
 
     const scheduledEntry: EntityStatusHistoryEntry = {
       state: newState,
@@ -228,8 +305,12 @@ export class CarLifecycleService {
       reason: `[SCHEDULED] ${reason || `Scheduled for ${newState}`}`,
     };
 
-    car.entity_status_history.push(scheduledEntry);
-    await car.save();
+    history.push(scheduledEntry);
+
+    await pool.request()
+      .input('cid', mssql.NVarChar, carId)
+      .input('history', mssql.NVarChar, JSON.stringify(history))
+      .query('UPDATE Cars SET entity_status_history = @history, updatedAt = GETDATE() WHERE car_id = @cid AND is_deleted = 0');
 
     return {
       car_id: car.car_id,
@@ -243,19 +324,21 @@ export class CarLifecycleService {
    * Get all upcoming cars scheduled to launch
    */
   static async getUpcomingLaunches(days: number = 30) {
+    const pool = await getPool();
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days);
 
-    return await Car.find({
-      is_deleted: false,
-      entity_lifecycle_state: 'upcoming',
-      entity_launch_date: {
-        $gte: new Date(),
-        $lte: futureDate,
-      },
-    })
-      .select('car_id name brand_id entity_launch_date')
-      .sort({ entity_launch_date: 1 });
+    const result = await pool.request()
+      .input('now', mssql.DateTime, new Date())
+      .input('future', mssql.DateTime, futureDate)
+      .query(`SELECT car_id, name, brand_id, entity_launch_date FROM Cars 
+        WHERE is_deleted = 0 
+        AND entity_lifecycle_state = 'upcoming' 
+        AND entity_launch_date >= @now 
+        AND entity_launch_date <= @future 
+        ORDER BY entity_launch_date ASC`);
+
+    return result.recordset;
   }
 
   /**
@@ -268,16 +351,17 @@ export class CarLifecycleService {
     newValue: any,
     actor: AuditActor
   ) {
-    const car = await Car.findOne({ car_id: carId, is_deleted: false });
-    if (!car) {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input('cid', mssql.NVarChar, carId)
+      .query('SELECT seo_history FROM Cars WHERE car_id = @cid AND is_deleted = 0');
+
+    if (result.recordset.length === 0) {
       throw new AppError('Car not found', 404);
     }
 
-    if (!car.seo_history) {
-      car.seo_history = [];
-    }
-
-    car.seo_history.push({
+    const seo_history = result.recordset[0].seo_history ? JSON.parse(result.recordset[0].seo_history) : [];
+    seo_history.push({
       field,
       old_value: oldValue,
       new_value: newValue,
@@ -285,7 +369,10 @@ export class CarLifecycleService {
       changed_by: actor.user_id || 'system',
     });
 
-    await car.save();
+    await pool.request()
+      .input('cid', mssql.NVarChar, carId)
+      .input('seo', mssql.NVarChar, JSON.stringify(seo_history))
+      .query('UPDATE Cars SET seo_history = @seo, updatedAt = GETDATE() WHERE car_id = @cid AND is_deleted = 0');
   }
 
   /**
@@ -298,16 +385,17 @@ export class CarLifecycleService {
     actor: AuditActor,
     details?: Record<string, any>
   ) {
-    const car = await Car.findOne({ car_id: carId, is_deleted: false });
-    if (!car) {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input('cid', mssql.NVarChar, carId)
+      .query('SELECT variant_history FROM Cars WHERE car_id = @cid AND is_deleted = 0');
+
+    if (result.recordset.length === 0) {
       throw new AppError('Car not found', 404);
     }
 
-    if (!car.variant_history) {
-      car.variant_history = [];
-    }
-
-    car.variant_history.push({
+    const variant_history = result.recordset[0].variant_history ? JSON.parse(result.recordset[0].variant_history) : [];
+    variant_history.push({
       variant_id: variantId,
       action,
       timestamp: new Date(),
@@ -315,36 +403,44 @@ export class CarLifecycleService {
       details: details || {},
     });
 
-    await car.save();
+    await pool.request()
+      .input('cid', mssql.NVarChar, carId)
+      .input('var', mssql.NVarChar, JSON.stringify(variant_history))
+      .query('UPDATE Cars SET variant_history = @var, updatedAt = GETDATE() WHERE car_id = @cid AND is_deleted = 0');
   }
 
   /**
    * Get SEO continuity report for a car (rankings, metadata evolution)
    */
   static async getSEOContinuityReport(carId: string) {
-    const car = await Car.findOne({ car_id: carId, is_deleted: false });
-    if (!car) {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input('cid', mssql.NVarChar, carId)
+      .query('SELECT car_id, name, slug, entity_lifecycle_state, canonical_url, noindex, meta_title, meta_description, seo_history, entity_status_history, variant_history FROM Cars WHERE car_id = @cid AND is_deleted = 0');
+
+    if (result.recordset.length === 0) {
       throw new AppError('Car not found', 404);
     }
+    const car = result.recordset[0];
 
     return {
       car_id: car.car_id,
       name: car.name,
-      slug: car.slug, // Permanent and unchanging
+      slug: car.slug,
       entity_lifecycle_state: car.entity_lifecycle_state || 'launched',
-      canonical_url: car.canonical_url, // Permanent canonical
+      canonical_url: car.canonical_url,
       url_permanence: {
         is_permanent: true,
         reason: 'URL structure remains unchanged through lifecycle transitions',
       },
-      seo_metadata_evolution: car.seo_history || [],
-      status_history: car.entity_status_history || [],
-      variant_history: car.variant_history || [],
+      seo_metadata_evolution: car.seo_history ? JSON.parse(car.seo_history) : [],
+      status_history: car.entity_status_history ? JSON.parse(car.entity_status_history) : [],
+      variant_history: car.variant_history ? JSON.parse(car.variant_history) : [],
       seo_health: {
         meta_title_present: !!car.meta_title,
         meta_description_present: !!car.meta_description,
         canonical_url_present: !!car.canonical_url,
-        noindex: car.noindex || false,
+        noindex: car.noindex === 1 || car.noindex === true,
       },
     };
   }

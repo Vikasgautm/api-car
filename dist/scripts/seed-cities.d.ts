@@ -11,4 +11,3 @@
  *   MONGODB_URI  — connection string (falls back to config default)
  */
 export {};
-//# sourceMappingURL=seed-cities.d.ts.map

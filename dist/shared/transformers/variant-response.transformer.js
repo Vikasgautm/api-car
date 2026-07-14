@@ -184,4 +184,3 @@ class VariantResponseTransformer {
     }
 }
 exports.VariantResponseTransformer = VariantResponseTransformer;
-//# sourceMappingURL=variant-response.transformer.js.map

@@ -220,4 +220,3 @@ function extractEntityName(question) {
     }
     return nameParts.length > 0 ? nameParts.join(' ') : cleaned.split(/\s+/).slice(0, 2).join(' ') || undefined;
 }
-//# sourceMappingURL=adminChatbot.intent.js.map

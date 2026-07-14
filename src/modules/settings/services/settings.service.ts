@@ -1,5 +1,5 @@
 import { SEOSettings } from '../../../models/seo-settings.model';
-import { UpdateSEOSettingsDto } from '../dto/update-seo-settings.dto';
+import { UpdateSEOSettingsDto } from '../../../shared/validation';
 
 export class SettingsService {
   static async getSEOSettings() {

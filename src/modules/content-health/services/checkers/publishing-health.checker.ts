@@ -1,7 +1,7 @@
+import { CheckerResult, HealthIssue, IssueCategory, IssueSeverity, IssuesQueryParams } from "../../dto/content-health.dto";
 import { Car } from '../../../../models/car.model';
 import { CarImage } from '../../../../models/car-image.model';
 import { Redirect } from '../../../../models/redirect.model';
-import { CheckerResult, HealthIssue, IssueCategory, IssueSeverity, IssuesQueryParams } from '../../dto/content-health.dto';
 
 const CHECKER_NAME = 'publishing_health';
 const SCAN_LIMIT = 500;

@@ -19,4 +19,3 @@ adminRouter.delete('/:id', validation_1.validateUuidIdParam, redirect_controller
 adminRouter.patch('/restore/:id', validation_1.validateUuidIdParam, redirect_controller_1.RedirectController.restore);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=redirect.routes.js.map

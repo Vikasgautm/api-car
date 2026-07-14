@@ -1,4 +1,4 @@
-import { Document, Schema, model } from 'mongoose';
+import { Schema } from 'mongoose';
 
 export type RenderingMode = 'manual' | 'hybrid' | 'behavioral' | 'observe_only';
 
@@ -11,7 +11,7 @@ export interface EditorialBoost {
   reason?: string;
 }
 
-export interface IRankingCollectionConfig extends Document {
+export interface IRankingCollectionConfig  {
   config_id: string;
   collection_key: string;
   collection_label: string;
@@ -60,4 +60,5 @@ const schema = new Schema<IRankingCollectionConfig>(
 schema.index({ rendering_mode: 1 });
 schema.index({ is_active: 1 });
 
-export const RankingCollectionConfig = model<IRankingCollectionConfig>('RankingCollectionConfig', schema);
+import { BaseModel } from '../sql/common/BaseModel';
+export const RankingCollectionConfig = new BaseModel<IRankingCollectionConfig>('RankingCollectionConfigs', 'config_id', ['score_weights', 'signal_parameters']);

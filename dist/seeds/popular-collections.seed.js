@@ -185,4 +185,3 @@ async function seedPopularCollections() {
     }));
     await popular_collection_model_1.PopularCollection.insertMany(docs);
 }
-//# sourceMappingURL=popular-collections.seed.js.map

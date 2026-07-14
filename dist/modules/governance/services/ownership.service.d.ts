@@ -21,30 +21,11 @@ export interface UserWorkloadSummary {
     is_overloaded: boolean;
 }
 export declare class OwnershipService {
-    static getUserBrands(userId: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/brand.model").IBrand, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/brand.model").IBrand & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    })[]>;
-    static getBrandOwners(brandId: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/user.model").IUser, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/user.model").IUser & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    })[]>;
+    static getUserBrands(userId: string): Promise<(import("../../../models/brand.model").IBrand & import("../../../sql/common/BaseModel").SQLDocument)[]>;
+    static getBrandOwners(brandId: string): Promise<(import("../../../models/user.model").IUser & import("../../../sql/common/BaseModel").SQLDocument)[]>;
     static assignBrand(userId: string, brandId: string): Promise<void>;
     static unassignBrand(userId: string, brandId: string): Promise<void>;
     static getOwnershipGrid(): Promise<BrandOwnershipEntry[]>;
-    static getUnassignedBrands(): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/brand.model").IBrand, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/brand.model").IBrand & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    })[]>;
+    static getUnassignedBrands(): Promise<(import("../../../models/brand.model").IBrand & import("../../../sql/common/BaseModel").SQLDocument)[]>;
     static getWorkloadSummaries(): Promise<UserWorkloadSummary[]>;
 }
-//# sourceMappingURL=ownership.service.d.ts.map

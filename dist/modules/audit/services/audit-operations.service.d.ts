@@ -79,7 +79,7 @@ export declare class AuditOperationsService {
         };
         logs: {
             import_id: string;
-            source: "cardekho";
+            source: import("../../../models/import-log.model").ImportSource;
             import_type: import("../../../models/import-log.model").ImportType;
             source_url: string;
             car_id: string | null;
@@ -141,4 +141,3 @@ export declare class AuditOperationsService {
     }>;
 }
 export {};
-//# sourceMappingURL=audit-operations.service.d.ts.map

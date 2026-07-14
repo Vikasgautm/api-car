@@ -1,3 +1,4 @@
+import { createVariantSchema, updateVariantSchema } from '../../../shared/validation';
 import { Request, Response } from 'express';
 import { ERROR_CODES, USER_MESSAGES } from '../../../constants/errorMessages';
 import { AuthRequest } from '../../../types/auth';
@@ -5,8 +6,6 @@ import { AppError } from '../../../shared/utils/app-error.util';
 import { AuditUtil } from '../../../shared/utils/audit.util';
 import { ResponseUtil } from '../../../shared/utils/response.util';
 import { catchAsync } from '../../../utils/catchAsync';
-import { CreateVariantDto } from '../dto/create-variant.dto';
-import { UpdateVariantDto } from '../dto/update-variant.dto';
 import { CarVariantService } from '../services/car-variant.service';
 import { VariantLifecycleService } from '../../variants/services/variant-lifecycle.service';
 import { DifferenceEngineService } from '../../variants/services/difference-engine.service';
@@ -123,7 +122,7 @@ export class CarVariantController {
       );
     }
 
-    const createDto: CreateVariantDto = {
+    const createDto: any = {
       car_id: req.body.car_id,
       variant_name: req.body.variant_name,
       model_year: req.body.model_year,
@@ -151,9 +150,9 @@ export class CarVariantController {
       variant_status: req.body.variant_status,
     };
 
-    const validation = CreateVariantDto.validate(createDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const validation = createVariantSchema.safeParse(createDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
     }
 
     const variant = await CarVariantService.createVariant(createDto, AuditUtil.actorFromRequest(req as AuthRequest));
@@ -173,7 +172,7 @@ export class CarVariantController {
       drivetrain = normalized ?? undefined;
     }
 
-    const updateDto: UpdateVariantDto = {
+    const updateDto: any = {
       car_id: req.body.car_id,
       variant_name: req.body.variant_name,
       model_year: req.body.model_year,
@@ -204,9 +203,9 @@ export class CarVariantController {
       variant_status: req.body.variant_status,
     };
 
-    const validation = UpdateVariantDto.validate(updateDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const validation = updateVariantSchema.safeParse(updateDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
     }
 
     const variant = await CarVariantService.updateVariant(req.params.id as string, updateDto, AuditUtil.actorFromRequest(req as AuthRequest));

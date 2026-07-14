@@ -50,4 +50,3 @@ class AdminChatbotController {
     }
 }
 exports.AdminChatbotController = AdminChatbotController;
-//# sourceMappingURL=adminChatbot.controller.js.map

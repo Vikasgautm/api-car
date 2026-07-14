@@ -28,8 +28,15 @@ class UpsertBenchmarkOverrideDto {
                 errors.push('Thresholds must be strictly increasing: weak_max < average_max < good_max');
             }
         }
-        return { valid: errors.length === 0, errors };
+        if (errors.length > 0) {
+            return {
+                success: false,
+                error: {
+                    errors: errors.map(msg => ({ message: msg }))
+                }
+            };
+        }
+        return { success: true };
     }
 }
 exports.UpsertBenchmarkOverrideDto = UpsertBenchmarkOverrideDto;
-//# sourceMappingURL=upsert-override.dto.js.map

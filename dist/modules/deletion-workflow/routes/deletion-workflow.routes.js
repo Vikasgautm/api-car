@@ -13,4 +13,3 @@ adminRouter.post('/:id/verify', deletion_workflow_controller_1.DeletionWorkflowC
 adminRouter.post('/:id/cancel', deletion_workflow_controller_1.DeletionWorkflowController.cancel);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=deletion-workflow.routes.js.map

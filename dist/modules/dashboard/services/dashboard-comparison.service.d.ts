@@ -1,5 +1,10 @@
-import { ComparisonSummary } from '../dtos/dashboard.dto';
+export interface ComparisonSummary {
+    total: number;
+    published: number;
+    draft: number;
+    cars_without_comparisons: number;
+    recent_updated: number;
+}
 export declare class DashboardComparisonService {
     static getSummary(): Promise<ComparisonSummary>;
 }
-//# sourceMappingURL=dashboard-comparison.service.d.ts.map

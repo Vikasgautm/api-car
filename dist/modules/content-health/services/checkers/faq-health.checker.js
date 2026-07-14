@@ -151,4 +151,3 @@ async function runFaqHealthChecker(_params) {
         return { checker: CHECKER_NAME, issues: [], total: 0, error: err?.message || 'FAQ health checker failed' };
     }
 }
-//# sourceMappingURL=faq-health.checker.js.map

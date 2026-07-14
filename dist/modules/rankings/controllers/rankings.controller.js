@@ -181,4 +181,3 @@ class RankingsController {
     }
 }
 exports.RankingsController = RankingsController;
-//# sourceMappingURL=rankings.controller.js.map

@@ -788,4 +788,3 @@ function getSemanticMapping(key) {
 function getSemanticMappingsByCategory(category) {
     return exports.SEMANTIC_MAPPINGS.filter(m => m.category === category);
 }
-//# sourceMappingURL=semantic-mappings.js.map

@@ -27,4 +27,3 @@ adminChatbotLogSchema.index({ intent: 1 });
 adminChatbotLogSchema.index({ status: 1 });
 adminChatbotLogSchema.index({ createdAt: -1 });
 exports.AdminChatbotLog = (0, mongoose_1.model)('AdminChatbotLog', adminChatbotLogSchema);
-//# sourceMappingURL=admin-chatbot-log.model.js.map

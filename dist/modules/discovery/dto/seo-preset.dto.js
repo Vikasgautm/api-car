@@ -38,7 +38,10 @@ class CreateSeoPresetDto {
         if (dto.query_params !== undefined && (typeof dto.query_params !== 'object' || Array.isArray(dto.query_params))) {
             errors.push('query_params must be an object of csv strings');
         }
-        return { valid: errors.length === 0, errors };
+        return {
+            success: errors.length === 0,
+            error: { errors: errors.map(e => ({ message: e })) }
+        };
     }
 }
 exports.CreateSeoPresetDto = CreateSeoPresetDto;
@@ -72,8 +75,10 @@ class UpdateSeoPresetDto {
         if (dto.query_params !== undefined && (typeof dto.query_params !== 'object' || Array.isArray(dto.query_params))) {
             errors.push('query_params must be an object of csv strings');
         }
-        return { valid: errors.length === 0, errors };
+        return {
+            success: errors.length === 0,
+            error: { errors: errors.map(e => ({ message: e })) }
+        };
     }
 }
 exports.UpdateSeoPresetDto = UpdateSeoPresetDto;
-//# sourceMappingURL=seo-preset.dto.js.map

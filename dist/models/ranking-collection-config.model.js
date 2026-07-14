@@ -28,5 +28,5 @@ const schema = new mongoose_1.Schema({
 }, { timestamps: true });
 schema.index({ rendering_mode: 1 });
 schema.index({ is_active: 1 });
-exports.RankingCollectionConfig = (0, mongoose_1.model)('RankingCollectionConfig', schema);
-//# sourceMappingURL=ranking-collection-config.model.js.map
+const BaseModel_1 = require("../sql/common/BaseModel");
+exports.RankingCollectionConfig = new BaseModel_1.BaseModel('RankingCollectionConfigs', 'config_id', ['score_weights', 'signal_parameters']);

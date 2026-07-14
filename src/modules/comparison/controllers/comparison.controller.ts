@@ -6,7 +6,7 @@ import {
   UpdateComparisonDTO,
   ComparisonQueryDTO,
   CreateRivalDTO,
-} from '../../../shared/dto/comparison.dto';
+} from '../../../shared/validation/comparison-validation.schemas';
 import { AppError } from '../../../shared/utils/app-error.util';
 
 function getQueryString(value: any): string | undefined {

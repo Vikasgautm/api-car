@@ -12,4 +12,3 @@
  *   npx ts-node src/scripts/unset-faq-dead-fields.ts --dry          (report only, no write)
  */
 export {};
-//# sourceMappingURL=unset-faq-dead-fields.d.ts.map

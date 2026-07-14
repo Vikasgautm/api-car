@@ -24,4 +24,3 @@ router.post('/bulk-push', ImportStagingController_1.ImportStagingController.bulk
 router.patch('/:id/link-car', ImportStagingController_1.ImportStagingController.linkCar);
 router.patch('/:id/reject', ImportStagingController_1.ImportStagingController.rejectVariant);
 exports.default = router;
-//# sourceMappingURL=import-staging.routes.js.map

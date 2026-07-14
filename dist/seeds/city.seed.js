@@ -76,4 +76,3 @@ const seedCities = async () => {
     }
 };
 exports.seedCities = seedCities;
-//# sourceMappingURL=city.seed.js.map

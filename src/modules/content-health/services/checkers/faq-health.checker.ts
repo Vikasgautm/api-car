@@ -1,5 +1,5 @@
+import { CheckerResult, HealthIssue, IssueCategory, IssueSeverity, IssuesQueryParams } from "../../dto/content-health.dto";
 import { FAQ } from '../../../../models/faq.model';
-import { CheckerResult, HealthIssue, IssueCategory, IssueSeverity, IssuesQueryParams } from '../../dto/content-health.dto';
 import { FAQDeduplicationService } from '../../../faqs/services/faq-deduplication.service';
 
 const CHECKER_NAME = 'faq_health';

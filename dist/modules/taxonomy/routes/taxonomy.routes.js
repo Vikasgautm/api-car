@@ -31,4 +31,3 @@ adminRouter.delete('/tags/:id', validation_1.validateUuidIdParam, tag_controller
 adminRouter.patch('/tags/restore/:id', validation_1.validateUuidIdParam, tag_controller_1.TagController.restore);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=taxonomy.routes.js.map

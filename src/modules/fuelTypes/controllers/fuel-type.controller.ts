@@ -1,10 +1,9 @@
+import { createFuelTypeSchema, updateFuelTypeSchema } from '../../../shared/validation';
 import { Request, Response } from "express";
 import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { ResponseUtil } from "../../../shared/utils/response.util";
 import { catchAsync } from "../../../utils/catchAsync";
-import { CreateFuelTypeDto } from "../dto/create-fuel-type.dto";
-import { UpdateFuelTypeDto } from "../dto/update-fuel-type.dto";
 import { FuelTypeService } from "../services/fuel-type.service";
 
 export class FuelTypeController {
@@ -64,16 +63,16 @@ export class FuelTypeController {
   });
 
   static createFuelType = catchAsync(async (req: Request, res: Response) => {
-    const createDto: CreateFuelTypeDto = {
+    const createDto: any = {
       name: req.body.name,
       description: req.body.description,
       is_published: req.body.is_published,
       is_featured: req.body.is_featured,
     };
 
-    const validation = CreateFuelTypeDto.validate(createDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const validation = createFuelTypeSchema.safeParse(createDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
     }
 
     const fuelType = await FuelTypeService.createFuelType(createDto);
@@ -81,16 +80,16 @@ export class FuelTypeController {
   });
 
   static updateFuelType = catchAsync(async (req: Request, res: Response) => {
-    const updateDto: UpdateFuelTypeDto = {
+    const updateDto: any = {
       name: req.body.name,
       description: req.body.description,
       is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
       is_featured: req.body.is_featured !== undefined ? req.body.is_featured === 'true' || req.body.is_featured === true : undefined,
     };
 
-    const validation = UpdateFuelTypeDto.validate(updateDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const validation = updateFuelTypeSchema.safeParse(updateDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
     }
 
     const fuelType = await FuelTypeService.updateFuelType(req.params.id as string, updateDto);

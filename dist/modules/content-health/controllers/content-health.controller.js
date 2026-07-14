@@ -59,4 +59,3 @@ class ContentHealthController {
     });
 }
 exports.ContentHealthController = ContentHealthController;
-//# sourceMappingURL=content-health.controller.js.map

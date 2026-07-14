@@ -18,4 +18,3 @@ adminRouter.get('/health', fuel_types_intelligence_controller_1.FuelTypesIntelli
 adminRouter.get('/multi-fuel', fuel_types_intelligence_controller_1.FuelTypesIntelligenceController.getMultiFuel);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=fuel-types-intelligence.routes.js.map

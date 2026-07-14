@@ -98,4 +98,3 @@ class SourcePriorityEngine {
     }
 }
 exports.SourcePriorityEngine = SourcePriorityEngine;
-//# sourceMappingURL=source-priority-config.js.map

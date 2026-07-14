@@ -41,4 +41,3 @@ export declare class MetadataBuilder {
     static fromManualEdit(value: any, editedBy: string, timestamp?: Date): FieldMetadata;
     static fromEstimate(value: any, confidence?: number, timestamp?: Date): FieldMetadata;
 }
-//# sourceMappingURL=field-source-metadata.d.ts.map

@@ -1,5 +1,4 @@
-import { Document } from 'mongoose';
-export interface IUnknownValue extends Document {
+export interface IUnknownValue {
     unknown_id: string;
     category_key: string;
     raw_value: string;
@@ -11,11 +10,5 @@ export interface IUnknownValue extends Document {
     created_at: Date;
     updated_at: Date;
 }
-export declare const UnknownValue: import("mongoose").Model<IUnknownValue, {}, {}, {}, Document<unknown, {}, IUnknownValue, {}, import("mongoose").DefaultSchemaOptions> & IUnknownValue & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IUnknownValue>;
-//# sourceMappingURL=unknown-value.model.d.ts.map
+import { BaseModel } from '../../../sql/common/BaseModel';
+export declare const UnknownValue: BaseModel<IUnknownValue>;

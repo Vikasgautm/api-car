@@ -21,4 +21,3 @@ export declare class SearchSortPaginationUtil {
     static buildAggregatePipeline(query: Record<string, unknown>, options?: SearchSortPaginationOptions): any[];
     static buildAggregatePipelineWithCount(query: Record<string, unknown>, options?: SearchSortPaginationOptions): any[];
 }
-//# sourceMappingURL=search-sort-pagination.util.d.ts.map

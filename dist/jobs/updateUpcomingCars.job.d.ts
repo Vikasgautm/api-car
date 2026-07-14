@@ -9,4 +9,3 @@ export declare class UpdateUpcomingCarsJob {
     static stop(): void;
     static execute(): Promise<void>;
 }
-//# sourceMappingURL=updateUpcomingCars.job.d.ts.map

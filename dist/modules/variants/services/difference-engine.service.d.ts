@@ -29,4 +29,3 @@ export declare class DifferenceEngineService {
      */
     static calculateCarVariantDifferences(carId: string): Promise<VariantDifference[]>;
 }
-//# sourceMappingURL=difference-engine.service.d.ts.map

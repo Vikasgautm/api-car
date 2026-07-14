@@ -1,6 +1,4 @@
-import { Document, Schema, model } from 'mongoose';
-
-export interface IBodyType extends Document {
+export interface IBodyType  {
   body_type_id: string;
   name: string;
   slug: string;
@@ -25,43 +23,5 @@ export interface IBodyType extends Document {
   published_at?: Date;
 }
 
-const bodyTypeSchema = new Schema<IBodyType>(
-  {
-    body_type_id: { type: String, required: true, unique: true },
-    name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true },
-    description: { type: String },
-    seo_title: { type: String },
-    meta_description: { type: String },
-    intro_content: { type: String },
-    short_description: { type: String },
-    hero_image: {
-      url: { type: String },
-      alt: { type: String },
-    },
-    is_published: { type: Boolean, default: false },
-    is_deleted: { type: Boolean, default: false },
-    is_featured: { type: Boolean, default: false },
-    sort_order: { type: Number, default: 0 },
-    parent_id: { type: String, default: null },
-    related_body_types: [{ type: String }],
-    logo: {
-      title: { type: String },
-      url: { type: String },
-    },
-    created_by: { type: String },
-    updated_by: { type: String },
-    published_at: { type: Date },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-// Consolidated index - compound index handles queries that would use single boolean indexes
-bodyTypeSchema.index({ is_published: 1, is_deleted: 1 });
-bodyTypeSchema.index({ sort_order: 1 });
-bodyTypeSchema.index({ parent_id: 1 });
-bodyTypeSchema.index({ name: 'text', seo_title: 'text', meta_description: 'text' });
-
-export const BodyType = model<IBodyType>('BodyType', bodyTypeSchema);
+import { BaseModel } from '../sql/common/BaseModel';
+export const BodyType = new BaseModel<IBodyType>('BodyTypes', 'body_type_id');

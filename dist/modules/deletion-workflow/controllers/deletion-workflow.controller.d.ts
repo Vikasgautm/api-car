@@ -6,4 +6,3 @@ export declare class DeletionWorkflowController {
     static cancel: (req: AuthRequest, res: Response, next: import("express").NextFunction) => void;
     static list: (req: AuthRequest, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=deletion-workflow.controller.d.ts.map

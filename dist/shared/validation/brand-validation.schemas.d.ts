@@ -32,8 +32,8 @@ export declare const brandFilterSchema: z.ZodObject<{
     limit: z.ZodOptional<z.ZodDefault<z.ZodCoercedNumber<unknown>>>;
     sortBy: z.ZodOptional<z.ZodString>;
     sortOrder: z.ZodOptional<z.ZodEnum<{
-        asc: "asc";
         desc: "desc";
+        asc: "asc";
     }>>;
     q: z.ZodOptional<z.ZodString>;
     is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
@@ -45,4 +45,3 @@ export declare const brandFilterSchema: z.ZodObject<{
         false: "false";
     }>]>>;
 }, z.core.$strict>;
-//# sourceMappingURL=brand-validation.schemas.d.ts.map

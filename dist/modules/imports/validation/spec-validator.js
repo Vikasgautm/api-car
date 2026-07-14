@@ -53,4 +53,3 @@ function validateVariantSpecs(params) {
     }
     return { valid: errors.length === 0, errors, warnings };
 }
-//# sourceMappingURL=spec-validator.js.map

@@ -95,4 +95,3 @@ export declare class AppError extends Error {
     static internal(message?: string, userMessage?: string): AppError;
     static serviceUnavailable(message?: string, userMessage?: string): AppError;
 }
-//# sourceMappingURL=app-error.util.d.ts.map

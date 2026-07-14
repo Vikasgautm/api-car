@@ -43,4 +43,3 @@ export declare class CarIntegrityService {
         affectedAggregates: string[];
     };
 }
-//# sourceMappingURL=car-integrity.service.d.ts.map

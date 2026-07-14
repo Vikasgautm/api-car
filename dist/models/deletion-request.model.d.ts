@@ -1,9 +1,8 @@
-import { Document } from 'mongoose';
 export type DeletionEntityType = 'car';
 export type DeletionAction = 'archive' | 'disable' | 'discontinue' | 'hard_delete';
 export type DeletionStatus = 'pending' | 'approved' | 'rejected' | 'expired' | 'cancelled';
 export type OtpDeliveryChannel = 'email' | 'console';
-export interface IDeletionRequest extends Document {
+export interface IDeletionRequest {
     request_id: string;
     entity_type: DeletionEntityType;
     entity_id: string;
@@ -25,11 +24,5 @@ export interface IDeletionRequest extends Document {
     cancelled_at?: Date | null;
     cancellation_reason?: string | null;
 }
-export declare const DeletionRequest: import("mongoose").Model<IDeletionRequest, {}, {}, {}, Document<unknown, {}, IDeletionRequest, {}, import("mongoose").DefaultSchemaOptions> & IDeletionRequest & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IDeletionRequest>;
-//# sourceMappingURL=deletion-request.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const DeletionRequest: BaseModel<IDeletionRequest>;

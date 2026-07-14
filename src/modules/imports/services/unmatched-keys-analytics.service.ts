@@ -17,7 +17,6 @@ export interface UnmatchedKeysAnalyticsResult {
 export class UnmatchedKeysAnalyticsService {
   static async getUnmatchedKeyFrequency(limit: number = 50): Promise<UnmatchedKeysAnalyticsResult> {
     const allLogs = await ImportLog.find({
-      is_deleted: false,
       'unmatched_data.unmatched': { $exists: true, $ne: [] },
     });
 
@@ -62,7 +61,7 @@ export class UnmatchedKeysAnalyticsService {
       .slice(0, limit);
 
     return {
-      total_imports: await ImportLog.countDocuments({ is_deleted: false }),
+      total_imports: await ImportLog.countDocuments({}),
       imports_with_unmatched: importsWithUnmatched,
       total_unique_unmatched_keys: frequencyMap.size,
       frequency_by_key: frequencyByKey,
@@ -71,8 +70,7 @@ export class UnmatchedKeysAnalyticsService {
 
   static async getFrequencyBySource(source: string, limit: number = 50): Promise<UnmatchedKeyFrequency[]> {
     const logs = await ImportLog.find({
-      is_deleted: false,
-      source,
+      source: source as any,
       'unmatched_data.unmatched': { $exists: true, $ne: [] },
     });
 
@@ -115,7 +113,6 @@ export class UnmatchedKeysAnalyticsService {
     limit: number = 50
   ): Promise<UnmatchedKeyFrequency[]> {
     const logs = await ImportLog.find({
-      is_deleted: false,
       import_type: importType,
       'unmatched_data.unmatched': { $exists: true, $ne: [] },
     });

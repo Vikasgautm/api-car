@@ -46,4 +46,3 @@ function buildConversationMessages(history, newUserMessage) {
     messages.push({ role: 'user', content: newUserMessage });
     return messages;
 }
-//# sourceMappingURL=adminChatbot.prompt.js.map

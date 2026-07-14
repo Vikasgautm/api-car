@@ -769,4 +769,3 @@ async function performWriteAction(action, entity_type, entity_id) {
     }
     throw new Error('Unknown entity type');
 }
-//# sourceMappingURL=adminChatbot.tools.js.map

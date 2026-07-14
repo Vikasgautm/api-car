@@ -982,16 +982,19 @@ class CarService {
         catch (err) {
             // Rollback step 1.
             if (outgoing && original_outgoing_slug) {
-                await car_model_1.Car.findOneAndUpdate({ car_id: outgoing.car_id }, {
-                    slug: original_outgoing_slug,
-                    status: outgoing.status,
-                    is_current: true,
-                    archived_at: outgoing.archived_at ?? null,
-                    archived_by: outgoing.archived_by ?? null,
-                    generation_end_year: outgoing.generation_end_year ?? null,
-                    successor_car_id: outgoing.successor_car_id ?? null,
-                    redirect_to_slug: outgoing.redirect_to_slug ?? null,
-                }).catch(() => { });
+                try {
+                    await car_model_1.Car.findOneAndUpdate({ car_id: outgoing.car_id }, {
+                        slug: original_outgoing_slug,
+                        status: outgoing.status,
+                        is_current: true,
+                        archived_at: outgoing.archived_at ?? null,
+                        archived_by: outgoing.archived_by ?? null,
+                        generation_end_year: outgoing.generation_end_year ?? null,
+                        successor_car_id: outgoing.successor_car_id ?? null,
+                        redirect_to_slug: outgoing.redirect_to_slug ?? null,
+                    });
+                }
+                catch { /* best-effort rollback */ }
             }
             if (err?.code === 11000) {
                 throw new app_error_util_1.AppError(`Cannot promote: "${base_slug}" collides with an existing row. Resolve manually.`, 409);
@@ -1208,4 +1211,3 @@ class CarService {
     }
 }
 exports.CarService = CarService;
-//# sourceMappingURL=car.service.js.map

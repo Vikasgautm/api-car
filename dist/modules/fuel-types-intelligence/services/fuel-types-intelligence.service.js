@@ -629,4 +629,3 @@ class FuelTypesIntelligenceService {
     }
 }
 exports.FuelTypesIntelligenceService = FuelTypesIntelligenceService;
-//# sourceMappingURL=fuel-types-intelligence.service.js.map

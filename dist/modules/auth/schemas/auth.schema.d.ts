@@ -13,4 +13,3 @@ export declare const signupSchema: z.ZodObject<{
         phone: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
 }, z.core.$strip>;
-//# sourceMappingURL=auth.schema.d.ts.map

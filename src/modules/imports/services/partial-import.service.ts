@@ -48,7 +48,7 @@ export class PartialImportService {
     }
 
     // Create new variant with teaser/partial mode
-    const variant = new CarVariant({
+    const variant = CarVariant.createDraft({
       variant_id: `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       car_id: carId,
       variant_name: variantData.variant_name || 'TBD',

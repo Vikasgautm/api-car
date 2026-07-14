@@ -14,4 +14,3 @@ const settingsHistorySchema = new mongoose_1.Schema({
 }, { timestamps: true });
 settingsHistorySchema.index({ group: 1, updated_at: -1 });
 exports.SettingsHistory = (0, mongoose_1.model)('SettingsHistory', settingsHistorySchema);
-//# sourceMappingURL=settings-history.model.js.map

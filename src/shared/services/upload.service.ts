@@ -1,16 +1,19 @@
-import { v2 as cloudinary } from 'cloudinary';
 import { Request } from 'express';
 import fs from 'fs';
 import multer, { FileFilterCallback, StorageEngine } from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import multerS3 from 'multer-s3';
 import path from 'path';
 import { config } from '../../config';
 import { AppError } from '../utils/app-error.util';
 
-cloudinary.config({
-  cloud_name: config.cloudinary_cloud_name,
-  api_key: config.cloudinary_api_key,
-  api_secret: config.cloudinary_api_secret,
+// Initialize S3 Client
+const s3 = new S3Client({
+  credentials: {
+    accessKeyId: config.aws_access_key_id || '',
+    secretAccessKey: config.aws_secret_access_key || '',
+  },
+  region: config.aws_region || 'us-east-1',
 });
 
 export interface UploadConfig {
@@ -18,7 +21,7 @@ export interface UploadConfig {
   maxFileSize?: number;
   allowedMimeTypes?: string[];
   maxFiles?: number;
-  useCloudinary?: boolean;
+  useCloudinary?: boolean; // Kept for interface compatibility
   folder?: string;
   fields?: Array<{ name: string; maxCount: number }>;
 }
@@ -29,6 +32,95 @@ export interface UploadedFile {
   originalName: string;
   mimeType: string;
   size: number;
+}
+
+async function determineS3Folder(req: Request, configObj: UploadConfig): Promise<string> {
+  const folderType = configObj.folder || 'general';
+
+  if (folderType === 'brands') {
+    let brandSlug = 'unknown-brand';
+    const brandId = req.params?.id || req.body?.brand_id;
+    if (brandId) {
+      try {
+        const { Brand } = require('../../../models/brand.model');
+        const brand = await Brand.findOne({ brand_id: brandId });
+        if (brand && brand.slug) {
+          brandSlug = brand.slug;
+        }
+      } catch (err) {
+        console.error('S3 folder brand resolution error:', err);
+      }
+    } else if (req.body) {
+      const slugify = require('slugify');
+      const nameOrSlug = req.body.slug || req.body.name;
+      if (nameOrSlug) {
+        brandSlug = slugify(nameOrSlug, { lower: true, strict: true });
+      }
+    }
+    return `brands/${brandSlug}`;
+  }
+
+  if (folderType === 'cars' || folderType === 'car-images') {
+    let brandSlug = 'unknown-brand';
+    let carSlug = 'unknown-car';
+
+    let carId = req.body?.car_id || req.params?.carId;
+    if (!carId && req.params?.id && folderType === 'car-images') {
+      try {
+        const { getPool } = require('../../../sql/utils/dbConnection');
+        const pool = await getPool();
+        const res = await pool.request()
+          .input('image_id', 'NVarChar', req.params.id)
+          .query('SELECT car_id FROM CarImages WHERE image_id = @image_id');
+        if (res.recordset && res.recordset[0]) {
+          carId = res.recordset[0].car_id;
+        }
+      } catch (err) {
+        console.error('S3 folder car-image resolution error:', err);
+      }
+    }
+
+    if (!carId && req.params?.id && folderType === 'cars') {
+      carId = req.params.id;
+    }
+
+    if (carId) {
+      try {
+        const { getPool } = require('../../../sql/utils/dbConnection');
+        const pool = await getPool();
+        const res = await pool.request()
+          .input('car_id', 'NVarChar', carId)
+          .query('SELECT c.slug as car_slug, b.slug as brand_slug FROM Cars c JOIN Brands b ON c.brand_id = b.brand_id WHERE c.car_id = @car_id');
+        if (res.recordset && res.recordset[0]) {
+          carSlug = res.recordset[0].car_slug || 'unknown-car';
+          brandSlug = res.recordset[0].brand_slug || 'unknown-brand';
+        }
+      } catch (err) {
+        console.error('S3 folder join query resolution error:', err);
+      }
+    } else if (req.body) {
+      const slugify = require('slugify');
+      if (req.body.name || req.body.slug) {
+        carSlug = req.body.slug || slugify(req.body.name, { lower: true, strict: true });
+      }
+      const brandId = req.body.brand_id;
+      if (brandId) {
+        try {
+          const { Brand } = require('../../../models/brand.model');
+          const brand = await Brand.findOne({ brand_id: brandId });
+          if (brand && brand.slug) {
+            brandSlug = brand.slug;
+          }
+        } catch (err) {
+          console.error('S3 folder brand resolution from body brand_id error:', err);
+        }
+      }
+    }
+
+    return `brands/${brandSlug}/cars/${carSlug}`;
+  }
+
+  return folderType;
 }
 
 export class UploadService {
@@ -53,15 +145,22 @@ export class UploadService {
     return this.MIME_TYPE_MAP[mimeType] || 'png';
   }
 
-  static createCloudinaryStorage(config: UploadConfig): StorageEngine {
-    return new CloudinaryStorage({
-      cloudinary,
-      params: async (req: Request, file: Express.Multer.File) => {
-        return {
-          folder: config.folder || 'CarSalahakar',
-          format: this.getMimeType(file.mimetype),
-          public_id: `${Date.now()}-${path.parse(file.originalname).name}`,
-        };
+  static createS3Storage(configObj: UploadConfig): StorageEngine {
+    return multerS3({
+      s3: s3,
+      bucket: config.aws_bucket_name || '',
+      metadata: (req, file, cb) => {
+        cb(null, { fieldName: file.fieldname });
+      },
+      key: (req, file, cb) => {
+        const uniqueName = `${Date.now()}-${path.parse(file.originalname).name}${path.extname(file.originalname)}`;
+        determineS3Folder(req as Request, configObj)
+          .then(folderPath => {
+            cb(null, `${folderPath}/${uniqueName}`);
+          })
+          .catch(err => {
+            cb(err);
+          });
       },
     });
   }
@@ -101,40 +200,76 @@ export class UploadService {
     };
   }
 
-  static createUploadMiddleware(config: UploadConfig) {
-    const storage = config.useCloudinary !== false
-      ? this.createCloudinaryStorage(config)
-      : this.createLocalStorage();
+  static createUploadMiddleware(configObj: UploadConfig) {
+    let storage: StorageEngine;
 
-    const fileFilter = this.createFileFilter(config);
+    if (config.aws_access_key_id && config.aws_bucket_name) {
+      storage = this.createS3Storage(configObj);
+    } else {
+      storage = this.createLocalStorage();
+    }
+
+    const fileFilter = this.createFileFilter(configObj);
 
     const limits = {
-      fileSize: config.maxFileSize || this.DEFAULT_MAX_FILE_SIZE,
+      fileSize: configObj.maxFileSize || this.DEFAULT_MAX_FILE_SIZE,
     };
 
-    // Handle multiple file fields (e.g., thumbnail, linkImage, images)
-    if (config.fields && config.fields.length > 0) {
-      return multer({ storage, fileFilter, limits }).fields(config.fields);
+    let upload: any;
+    if (configObj.fields && configObj.fields.length > 0) {
+      upload = multer({ storage, fileFilter, limits }).fields(configObj.fields);
+    } else if (configObj.maxFiles && configObj.maxFiles > 1) {
+      upload = multer({ storage, fileFilter, limits }).array(configObj.fieldName, configObj.maxFiles);
+    } else {
+      upload = multer({ storage, fileFilter, limits }).single(configObj.fieldName);
     }
 
-    // Handle array of files for a single field
-    if (config.maxFiles && config.maxFiles > 1) {
-      return multer({ storage, fileFilter, limits }).array(config.fieldName, config.maxFiles);
-    }
+    return (req: Request, res: any, next: any) => {
+      upload(req, res, (err: any) => {
+        if (err) {
+          return next(err);
+        }
 
-    // Handle single file upload
-    return multer({ storage, fileFilter, limits }).single(config.fieldName);
+        // Post-process S3 files to populate secure_url and public_id
+        const patchFile = (file: any) => {
+          if (file && file.location) {
+            file.secure_url = file.location;
+            file.public_id = file.key;
+          }
+        };
+
+        if (req.file) {
+          patchFile(req.file);
+        }
+
+        if (req.files) {
+          if (Array.isArray(req.files)) {
+            req.files.forEach(patchFile);
+          } else if (typeof req.files === 'object') {
+            for (const key of Object.keys(req.files)) {
+              const filesArray = req.files[key];
+              if (Array.isArray(filesArray)) {
+                filesArray.forEach(patchFile);
+              }
+            }
+          }
+        }
+
+        next();
+      });
+    };
   }
 
-  static async deleteFromCloudinary(publicId: string): Promise<{ success: boolean; error?: string }> {
+  static async deleteFromS3(key: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const result = await cloudinary.uploader.destroy(publicId);
-      if (result.result === 'ok' || result.result === 'not found') {
-        return { success: true };
-      }
-      return { success: false, error: result.result };
+      const command = new DeleteObjectCommand({
+        Bucket: config.aws_bucket_name || '',
+        Key: key,
+      });
+      await s3.send(command);
+      return { success: true };
     } catch (error) {
-      console.error('Error deleting from Cloudinary:', error);
+      console.error('Error deleting from S3:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
@@ -154,12 +289,12 @@ export class UploadService {
 
   static formatUploadedFile(file: Express.Multer.File): UploadedFile {
     const localFile = file as Express.Multer.File & { path?: string };
-    const cloudinaryFile = file as Express.Multer.File & { secure_url?: string; public_id?: string };
+    const s3File = file as any;
 
-    if (cloudinaryFile.secure_url) {
+    if (s3File.location) {
       return {
-        url: cloudinaryFile.secure_url,
-        publicId: cloudinaryFile.public_id,
+        url: s3File.location,
+        publicId: s3File.key,
         originalName: file.originalname,
         mimeType: file.mimetype,
         size: file.size,
@@ -183,22 +318,18 @@ export class UploadService {
     };
   }
 
-  /**
-   * Cleanup uploaded files if database operation fails
-   * This should be called in a catch block after failed DB operations
-   */
   static async cleanupFailedUpload(uploadedFile: UploadedFile): Promise<void> {
     if (uploadedFile.publicId) {
-      await this.deleteFromCloudinary(uploadedFile.publicId);
+      if (uploadedFile.url.includes('.amazonaws.com') || uploadedFile.url.includes('s3.amazonaws.com') || uploadedFile.publicId.includes('/')) {
+        await this.deleteFromS3(uploadedFile.publicId);
+      } else {
+        await this.deleteLocalFile(uploadedFile.publicId);
+      }
     } else if (uploadedFile.url && !uploadedFile.url.startsWith('http')) {
-      // Local file path
       await this.deleteLocalFile(uploadedFile.url);
     }
   }
 
-  /**
-   * Cleanup multiple uploaded files if database operation fails
-   */
   static async cleanupFailedUploads(uploadedFiles: UploadedFile[]): Promise<void> {
     await Promise.all(
       uploadedFiles.map(file => this.cleanupFailedUpload(file))

@@ -17,4 +17,3 @@ export declare class VariantPushService {
     private static extractModelYear;
     private static buildSlug;
 }
-//# sourceMappingURL=VariantPushService.d.ts.map

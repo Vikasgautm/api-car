@@ -2,9 +2,8 @@ import { Request, Response } from 'express';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { ResponseUtil } from '../../../shared/utils/response.util';
 import { catchAsync } from '../../../utils/catchAsync';
-import { CreateTagCategoryDto } from '../dto/create-tag-category.dto';
-import { UpdateTagCategoryDto } from '../dto/update-tag-category.dto';
 import { TagCategoryService } from '../services/tag-category.service';
+import { CreateTagCategoryDto, UpdateTagCategoryDto } from '../../../shared/validation';
 
 export class TagCategoryController {
   static getAllPublic = catchAsync(async (req: Request, res: Response) => {
@@ -45,8 +44,8 @@ export class TagCategoryController {
     };
 
     const validation = CreateTagCategoryDto.validate(dto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
     }
 
     const created = await TagCategoryService.create(dto);
@@ -63,8 +62,8 @@ export class TagCategoryController {
     };
 
     const validation = UpdateTagCategoryDto.validate(dto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
     }
 
     const updated = await TagCategoryService.update(req.params.id as string, dto);

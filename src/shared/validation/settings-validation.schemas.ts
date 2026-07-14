@@ -15,3 +15,18 @@ export const updateSEOSettingsSchema = z.object({
 export const updateThemeSchema = z.object({
   theme: z.string().min(1, 'Theme is required'),
 }).strict();
+
+export class UpdateSEOSettingsDto {
+  site_title?: string;
+  site_description?: string;
+  site_keywords?: string;
+  og_default_image?: string;
+  twitter_handle?: string;
+  google_analytics_id?: string;
+  google_tag_manager_id?: string;
+  facebook_pixel_id?: string;
+
+  static validate(dto: any) {
+    return updateSEOSettingsSchema.safeParse(dto);
+  }
+}

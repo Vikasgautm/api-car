@@ -12,7 +12,9 @@ class PublishUtil {
         if (publishedBy) {
             updateData.published_by = publishedBy;
         }
-        return await model.findByIdAndUpdate(id, updateData, { returnDocument: 'after', runValidators: true });
+        const pk = model.primaryKey || 'id';
+        await model.updateDirect({ [pk]: id }, updateData);
+        return await model.findOne({ [pk]: id });
     }
     static async unpublish(model, id, unpublishedBy) {
         const updateData = {
@@ -22,18 +24,21 @@ class PublishUtil {
         if (unpublishedBy) {
             updateData.unpublished_by = unpublishedBy;
         }
-        return await model.findByIdAndUpdate(id, updateData, { returnDocument: 'after', runValidators: true });
+        const pk = model.primaryKey || 'id';
+        await model.updateDirect({ [pk]: id }, updateData);
+        return await model.findOne({ [pk]: id });
     }
     static async togglePublish(model, id, userId) {
-        const document = await model.findById(id);
+        const pk = model.primaryKey || 'id';
+        const document = await model.findOne({ [pk]: id });
         if (!document) {
             return null;
         }
         if (document.is_published) {
-            return (await this.unpublish(model, id, userId));
+            return await this.unpublish(model, id, userId);
         }
         else {
-            return (await this.publish(model, id, userId));
+            return await this.publish(model, id, userId);
         }
     }
     static async publishMany(model, filter, publishedBy) {
@@ -46,8 +51,9 @@ class PublishUtil {
         if (publishedBy) {
             updateData.published_by = publishedBy;
         }
-        const result = await model.updateMany({ ...filter, is_published: false }, updateData);
-        return { modifiedCount: result.modifiedCount || 0 };
+        const pk = model.primaryKey || 'id';
+        const count = await model.updateDirect({ ...filter, is_published: false }, updateData);
+        return { modifiedCount: count };
     }
     static async unpublishMany(model, filter, unpublishedBy) {
         const updateData = {
@@ -57,8 +63,9 @@ class PublishUtil {
         if (unpublishedBy) {
             updateData.unpublished_by = unpublishedBy;
         }
-        const result = await model.updateMany({ ...filter, is_published: true }, updateData);
-        return { modifiedCount: result.modifiedCount || 0 };
+        const pk = model.primaryKey || 'id';
+        const count = await model.updateDirect({ ...filter, is_published: true }, updateData);
+        return { modifiedCount: count };
     }
     static isPublished(document) {
         return document?.is_published === true;
@@ -89,4 +96,3 @@ class PublishUtil {
     }
 }
 exports.PublishUtil = PublishUtil;
-//# sourceMappingURL=publish.util.js.map

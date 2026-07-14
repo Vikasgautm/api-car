@@ -35,4 +35,3 @@ export declare class SemanticNormalizer {
      */
     static getUnmappedFeature(value: any): string | null;
 }
-//# sourceMappingURL=semantic-normalizer.d.ts.map

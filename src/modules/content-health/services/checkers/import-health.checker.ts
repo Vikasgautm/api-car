@@ -1,5 +1,5 @@
+import { CheckerResult, HealthIssue, IssueCategory, IssueSeverity, IssuesQueryParams } from "../../dto/content-health.dto";
 import { ImportLog } from '../../../../models/import-log.model';
-import { CheckerResult, HealthIssue, IssueCategory, IssueSeverity, IssuesQueryParams } from '../../dto/content-health.dto';
 
 const CHECKER_NAME = 'import_health';
 const SCAN_LIMIT = 300;

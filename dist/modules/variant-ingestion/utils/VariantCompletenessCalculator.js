@@ -54,4 +54,3 @@ class VariantCompletenessCalculator {
     }
 }
 exports.VariantCompletenessCalculator = VariantCompletenessCalculator;
-//# sourceMappingURL=VariantCompletenessCalculator.js.map

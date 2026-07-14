@@ -10,25 +10,35 @@ class SoftDeleteUtil {
         if (deletedBy) {
             updateData.deleted_by = deletedBy;
         }
-        return await model.findByIdAndUpdate(id, updateData, { returnDocument: 'after', runValidators: true });
+        const pk = model.primaryKey || 'id';
+        await model.updateDirect({ [pk]: id }, updateData);
+        return await model.findOne({ [pk]: id });
     }
     static async restore(model, id) {
-        return await model.findByIdAndUpdate(id, {
-            is_deleted: false,
-            deleted_at: null,
-            deleted_by: null,
-        }, { returnDocument: 'after', runValidators: true });
-    }
-    static async permanentDelete(model, id) {
-        return await model.findByIdAndDelete(id);
-    }
-    static async restoreMany(model, filter) {
-        const result = await model.updateMany({ ...filter, is_deleted: true }, {
+        const pk = model.primaryKey || 'id';
+        await model.updateDirect({ [pk]: id }, {
             is_deleted: false,
             deleted_at: null,
             deleted_by: null,
         });
-        return { modifiedCount: result.modifiedCount || 0 };
+        return await model.findOne({ [pk]: id });
+    }
+    static async permanentDelete(model, id) {
+        const pk = model.primaryKey || 'id';
+        const document = await model.findOne({ [pk]: id });
+        if (!document)
+            return null;
+        await model.deleteDirect({ [pk]: id });
+        return document;
+    }
+    static async restoreMany(model, filter) {
+        const pk = model.primaryKey || 'id';
+        const count = await model.updateDirect({ ...filter, is_deleted: true }, {
+            is_deleted: false,
+            deleted_at: null,
+            deleted_by: null,
+        });
+        return { modifiedCount: count };
     }
     static async softDeleteMany(model, filter, deletedBy) {
         const updateData = {
@@ -38,8 +48,9 @@ class SoftDeleteUtil {
         if (deletedBy) {
             updateData.deleted_by = deletedBy;
         }
-        const result = await model.updateMany({ ...filter, is_deleted: false }, updateData);
-        return { modifiedCount: result.modifiedCount || 0 };
+        const pk = model.primaryKey || 'id';
+        const count = await model.updateDirect({ ...filter, is_deleted: false }, updateData);
+        return { modifiedCount: count };
     }
     static isDeleted(document) {
         return document?.is_deleted === true;
@@ -55,4 +66,3 @@ class SoftDeleteUtil {
     }
 }
 exports.SoftDeleteUtil = SoftDeleteUtil;
-//# sourceMappingURL=soft-delete.util.js.map

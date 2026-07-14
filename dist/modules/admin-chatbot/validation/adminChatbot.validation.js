@@ -30,4 +30,3 @@ exports.chatbotActionSchema = zod_1.z.object({
     entity_type: zod_1.z.enum(['car', 'variant']),
     entity_id: zod_1.z.string().min(1).max(100),
 });
-//# sourceMappingURL=adminChatbot.validation.js.map

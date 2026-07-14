@@ -25,13 +25,7 @@ export declare class SEOContinuityService {
      * Create protective redirects for URL permanence
      * When a car transitions, ensure old variants/URLs still resolve
      */
-    static createProtectiveRedirects(carId: string, actor: any): Promise<import("mongoose").Document<unknown, {}, import("../../models/redirect.model").IRedirect, {}, import("mongoose").DefaultSchemaOptions> & import("../../models/redirect.model").IRedirect & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static createProtectiveRedirects(carId: string, actor: any): Promise<any>;
     /**
      * Track metadata changes for SEO history
      */
@@ -52,4 +46,3 @@ export declare class SEOContinuityService {
         issues: string[];
     }>;
 }
-//# sourceMappingURL=seo-continuity.service.d.ts.map

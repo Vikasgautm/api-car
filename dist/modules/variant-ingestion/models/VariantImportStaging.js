@@ -45,4 +45,3 @@ VariantImportStagingSchema.index({ linked_car_id: 1 });
 VariantImportStagingSchema.index({ source_car_name: 1 });
 VariantImportStagingSchema.index({ normalized_car_name: 1 });
 exports.VariantImportStaging = (0, mongoose_1.model)('VariantImportStaging', VariantImportStagingSchema);
-//# sourceMappingURL=VariantImportStaging.js.map

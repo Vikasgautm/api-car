@@ -14,4 +14,3 @@ export declare function getTemplatesForEntityType(entityType: string): FAQTempla
 export declare function getTemplatesForPageType(pageType: string): FAQTemplate[];
 export declare function getTemplatesForFaqType(faqType: string): FAQTemplate[];
 export declare function interpolate(template: string, variables: Record<string, string>): string;
-//# sourceMappingURL=automotive-templates.d.ts.map

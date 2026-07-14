@@ -408,4 +408,3 @@ class BodyTypeService {
     }
 }
 exports.BodyTypeService = BodyTypeService;
-//# sourceMappingURL=bodyType.service.js.map

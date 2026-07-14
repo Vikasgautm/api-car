@@ -9,13 +9,7 @@ export interface WorkflowQueueFilters {
 }
 export declare class WorkflowService {
     static getQueue(filters?: WorkflowQueueFilters): Promise<{
-        items: (import("mongoose").Document<unknown, {}, IWorkflowItem, {}, import("mongoose").DefaultSchemaOptions> & IWorkflowItem & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        } & {
-            id: string;
-        })[];
+        items: (IWorkflowItem & import("../../../sql/common/BaseModel").SQLDocument)[];
         total: number;
         page: number;
         limit: number;
@@ -40,4 +34,3 @@ export declare class WorkflowService {
         rejected: number;
     }>;
 }
-//# sourceMappingURL=workflow.service.d.ts.map

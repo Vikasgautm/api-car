@@ -5,4 +5,3 @@ interface ValidationResult {
 }
 export declare function validateSettingsData(group: SettingsGroup, data: any): ValidationResult;
 export {};
-//# sourceMappingURL=settings.validator.d.ts.map

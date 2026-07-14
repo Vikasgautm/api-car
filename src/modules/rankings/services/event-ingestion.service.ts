@@ -52,7 +52,7 @@ export class EventIngestionService {
 
     const event = await RankingRawEvent.create({
       event_id: uuidv4(),
-      event_type: dto.event_type,
+      event_type: dto.event_type as RankingEventType,
       entity_type: dto.entity_type,
       entity_id: dto.entity_id,
       variant_id: dto.variant_id ?? undefined,

@@ -19,4 +19,3 @@ exports.logger = winston_1.default.createLogger({
         new winston_1.default.transports.File({ filename: 'logs/combined.log' }),
     ],
 });
-//# sourceMappingURL=logger.js.map

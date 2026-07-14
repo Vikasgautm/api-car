@@ -54,4 +54,3 @@ class SeoCollectionsController {
     });
 }
 exports.SeoCollectionsController = SeoCollectionsController;
-//# sourceMappingURL=seo-collections.controller.js.map

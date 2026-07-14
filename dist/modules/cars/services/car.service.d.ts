@@ -5,48 +5,14 @@ export declare class CarService {
         cars: any[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
-    static getCarById(carId: string): Promise<(import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
+    static getCarById(carId: string): Promise<(ICar & import("../../../sql/common/BaseModel").SQLDocument) | null>;
     static getCarBySlug(slug: string): Promise<{
-        car: import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        } & {
-            id: string;
-        };
-        variants: (import("mongoose").Document<unknown, {}, import("../../../models/car-variant.model").ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/car-variant.model").ICarVariant & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        } & {
-            id: string;
-        })[];
-        tags: never[] | (import("../../../models/tag.model").ITag & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        car: ICar & import("../../../sql/common/BaseModel").SQLDocument;
+        variants: (import("../../../models/car-variant.model").ICarVariant & import("../../../sql/common/BaseModel").SQLDocument)[];
+        tags: never[] | (import("../../../models/tag.model").ITag & import("../../../sql/common/BaseModel").SQLDocument)[];
     } | null>;
-    static createCar(carData: any, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static updateCar(carId: string, carData: any, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static createCar(carData: any, actor?: AuditActor | null): Promise<any>;
+    static updateCar(carId: string, carData: any, actor?: AuditActor | null): Promise<ICar & import("../../../sql/common/BaseModel").SQLDocument>;
     /**
      * Aggregate the set of related records / SEO surface area for a car.
      * Surfaced in the deletion dialog so an admin sees what they're about to
@@ -107,13 +73,7 @@ export declare class CarService {
         base_slug?: string;
         reason?: string;
     }, actor?: AuditActor | null): Promise<{
-        promoted: (import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        } & {
-            id: string;
-        }) | null;
+        promoted: (ICar & import("../../../sql/common/BaseModel").SQLDocument) | null;
         outgoing: {
             car_id: string;
             previous_slug: string | null;
@@ -122,43 +82,12 @@ export declare class CarService {
         base_slug: string;
         redirect_created: boolean;
     }>;
-    static deleteCar(carId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static restoreCar(carId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static togglePublish(carId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static markLaunched(carId: string, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static deleteCar(carId: string, actor?: AuditActor | null): Promise<ICar & import("../../../sql/common/BaseModel").SQLDocument>;
+    static restoreCar(carId: string, actor?: AuditActor | null): Promise<ICar & import("../../../sql/common/BaseModel").SQLDocument>;
+    static togglePublish(carId: string, actor?: AuditActor | null): Promise<ICar & import("../../../sql/common/BaseModel").SQLDocument>;
+    static markLaunched(carId: string, actor?: AuditActor | null): Promise<ICar & import("../../../sql/common/BaseModel").SQLDocument>;
     static markUpcoming(carId: string, data: {
         expected_exshowroom_price?: number;
         expected_launch_date?: string;
-    }, actor?: AuditActor | null): Promise<import("mongoose").Document<unknown, {}, ICar, {}, import("mongoose").DefaultSchemaOptions> & ICar & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    }, actor?: AuditActor | null): Promise<ICar & import("../../../sql/common/BaseModel").SQLDocument>;
 }
-//# sourceMappingURL=car.service.d.ts.map

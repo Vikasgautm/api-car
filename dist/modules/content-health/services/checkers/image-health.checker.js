@@ -76,4 +76,3 @@ async function runImageHealthChecker(_params) {
         return { checker: CHECKER_NAME, issues: [], total: 0, error: err?.message || 'Image health checker failed' };
     }
 }
-//# sourceMappingURL=image-health.checker.js.map

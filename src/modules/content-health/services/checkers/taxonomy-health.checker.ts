@@ -1,7 +1,7 @@
+import { CheckerResult, HealthIssue, IssueCategory, IssueSeverity, IssuesQueryParams } from "../../dto/content-health.dto";
 import { BodyType } from '../../../../models/body-type.model';
 import { Car } from '../../../../models/car.model';
 import { FuelType } from '../../../../models/fuel-type.model';
-import { CheckerResult, HealthIssue, IssueCategory, IssueSeverity, IssuesQueryParams } from '../../dto/content-health.dto';
 
 const CHECKER_NAME = 'taxonomy_health';
 const SCAN_LIMIT = 500;

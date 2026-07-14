@@ -5,7 +5,7 @@ export class UpsertBenchmarkOverrideDto {
   average_max!: number;
   good_max!: number;
 
-  static validate(dto: UpsertBenchmarkOverrideDto): { valid: boolean; errors: string[] } {
+  static validate(dto: UpsertBenchmarkOverrideDto): { success: boolean; error?: { errors: { message: string }[] } } {
     const errors: string[] = [];
 
     const fields: Array<['weak_max' | 'average_max' | 'good_max']> = [['weak_max'], ['average_max'], ['good_max']];
@@ -29,6 +29,14 @@ export class UpsertBenchmarkOverrideDto {
       }
     }
 
-    return { valid: errors.length === 0, errors };
+    if (errors.length > 0) {
+      return {
+        success: false,
+        error: {
+          errors: errors.map(msg => ({ message: msg }))
+        }
+      };
+    }
+    return { success: true };
   }
 }

@@ -40,4 +40,3 @@ export declare const VariantImportStaging: import("mongoose").Model<IVariantImpo
 } & {
     id: string;
 }, any, IVariantImportStaging>;
-//# sourceMappingURL=VariantImportStaging.d.ts.map

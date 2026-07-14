@@ -1,11 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RedirectController = void 0;
+const validation_1 = require("../../../shared/validation");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const create_redirect_dto_1 = require("../dto/create-redirect.dto");
-const update_redirect_dto_1 = require("../dto/update-redirect.dto");
 const redirect_service_1 = require("../services/redirect.service");
 function actorFrom(req) {
     if (!req.user)
@@ -37,9 +36,9 @@ class RedirectController {
             type: req.body.type,
             reason: req.body.reason,
         };
-        const validation = create_redirect_dto_1.CreateRedirectDto.validate(dto);
-        if (!validation.valid)
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.createRedirectSchema.safeParse(dto);
+        if (!validation.success)
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         const created = await redirect_service_1.RedirectService.create(dto, actorFrom(req));
         return response_util_1.ResponseUtil.created(res, created, 'Redirect created successfully');
     });
@@ -50,9 +49,9 @@ class RedirectController {
             type: req.body.type,
             reason: req.body.reason,
         };
-        const validation = update_redirect_dto_1.UpdateRedirectDto.validate(dto);
-        if (!validation.valid)
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.updateRedirectSchema.safeParse(dto);
+        if (!validation.success)
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         const updated = await redirect_service_1.RedirectService.update(req.params.id, dto, actorFrom(req));
         return response_util_1.ResponseUtil.success(res, updated, 'Redirect updated successfully');
     });
@@ -77,4 +76,3 @@ class RedirectController {
     });
 }
 exports.RedirectController = RedirectController;
-//# sourceMappingURL=redirect.controller.js.map

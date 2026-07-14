@@ -1,5 +1,4 @@
-import { Document } from 'mongoose';
-export interface IImage extends Document {
+export interface IImage {
     image_id: string;
     url: string;
     public_id?: string;
@@ -15,11 +14,5 @@ export interface IImage extends Document {
     is_deleted: boolean;
     metadata?: Record<string, any>;
 }
-export declare const Image: import("mongoose").Model<IImage, {}, {}, {}, Document<unknown, {}, IImage, {}, import("mongoose").DefaultSchemaOptions> & IImage & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IImage>;
-//# sourceMappingURL=image.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const Image: BaseModel<IImage>;

@@ -57,32 +57,14 @@ export declare class RankingEngineService {
         behavioral_confidence: number;
     }>;
     static getEngineStatus(): Promise<EngineStatus>;
-    static listCollectionConfigs(): Promise<(IRankingCollectionConfig & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    })[]>;
-    static getCollectionConfig(collectionKey: string): Promise<(IRankingCollectionConfig & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    }) | null>;
+    static listCollectionConfigs(): Promise<(IRankingCollectionConfig & import("../../../sql/common/BaseModel").SQLDocument)[]>;
+    static getCollectionConfig(collectionKey: string): Promise<(IRankingCollectionConfig & import("../../../sql/common/BaseModel").SQLDocument) | null>;
     static upsertCollectionConfig(data: Partial<IRankingCollectionConfig> & {
         collection_key: string;
         collection_label: string;
-    }): Promise<import("mongoose").Document<unknown, {}, IRankingCollectionConfig, {}, import("mongoose").DefaultSchemaOptions> & IRankingCollectionConfig & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    }): Promise<(IRankingCollectionConfig & import("../../../sql/common/BaseModel").SQLDocument) | null>;
     static getScoreInspector(entityId: string): Promise<{
-        score: IRankingScore & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        };
+        score: IRankingScore & import("../../../sql/common/BaseModel").SQLDocument;
         top_sessions: (import("../../../models/ranking-session.model").IRankingSession & Required<{
             _id: import("mongoose").Types.ObjectId;
         }> & {
@@ -97,4 +79,3 @@ export declare class RankingEngineService {
     private static scoreTypeToField;
 }
 export {};
-//# sourceMappingURL=ranking-engine.service.d.ts.map

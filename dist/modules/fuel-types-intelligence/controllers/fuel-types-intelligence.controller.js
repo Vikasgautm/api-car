@@ -43,4 +43,3 @@ class FuelTypesIntelligenceController {
     });
 }
 exports.FuelTypesIntelligenceController = FuelTypesIntelligenceController;
-//# sourceMappingURL=fuel-types-intelligence.controller.js.map

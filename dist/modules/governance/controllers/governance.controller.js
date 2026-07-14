@@ -274,4 +274,3 @@ class GovernanceController {
     });
 }
 exports.GovernanceController = GovernanceController;
-//# sourceMappingURL=governance.controller.js.map

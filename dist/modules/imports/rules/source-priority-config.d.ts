@@ -18,4 +18,3 @@ export declare class SourcePriorityEngine {
     static mergeSpecsFromMultipleSources(specsBySource: Map<SourceType, Record<string, any>>): Record<string, any>;
     private static deepMergeSpecs;
 }
-//# sourceMappingURL=source-priority-config.d.ts.map

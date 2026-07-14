@@ -22,4 +22,3 @@ router.patch('/unknown-values/:unknownId/resolve', master_data_controller_1.Mast
 router.patch('/unknown-values/:unknownId/dismiss', master_data_controller_1.MasterDataController.dismissUnknownValue);
 router.post('/unknown-values/:unknownId/promote', master_data_controller_1.MasterDataController.promoteUnknownToMaster);
 exports.default = router;
-//# sourceMappingURL=master-data.routes.js.map

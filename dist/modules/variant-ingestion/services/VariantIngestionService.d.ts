@@ -95,4 +95,3 @@ export declare class VariantIngestionService {
     }[]>;
 }
 export {};
-//# sourceMappingURL=VariantIngestionService.d.ts.map

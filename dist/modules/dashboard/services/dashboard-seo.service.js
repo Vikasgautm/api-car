@@ -1,45 +1,32 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardSeoService = void 0;
-const seo_collection_model_1 = require("../../../models/seo-collection.model");
+const dbConnection_1 = require("../../../sql/utils/dbConnection");
 class DashboardSeoService {
     static async getSummary() {
-        const [statusCounts, weak, empty] = await Promise.all([
-            seo_collection_model_1.SeoCollection.aggregate([
-                { $match: { is_deleted: false } },
-                {
-                    $group: {
-                        _id: '$status',
-                        count: { $sum: 1 },
-                    },
-                },
-            ]),
-            seo_collection_model_1.SeoCollection.countDocuments({
-                is_deleted: false,
-                matched_car_count: { $gt: 0, $lt: 3 },
-            }),
-            seo_collection_model_1.SeoCollection.countDocuments({
-                is_deleted: false,
-                matched_car_count: 0,
-            }),
+        const pool = await (0, dbConnection_1.getPool)();
+        const [statusCountsRes, weakRes, emptyRes] = await Promise.all([
+            pool.request().query('SELECT status, COUNT(*) as count FROM SeoCollections WHERE is_deleted = 0 GROUP BY status'),
+            pool.request().query('SELECT COUNT(*) as count FROM SeoCollections WHERE is_deleted = 0 AND matched_car_count > 0 AND matched_car_count < 3'),
+            pool.request().query('SELECT COUNT(*) as count FROM SeoCollections WHERE is_deleted = 0 AND matched_car_count = 0'),
         ]);
         const counts = { published: 0, draft: 0, archived: 0 };
         let total = 0;
-        for (const entry of statusCounts) {
-            const key = entry._id;
+        for (const row of statusCountsRes.recordset) {
+            const key = row.status;
+            const count = row.count || 0;
             if (key in counts)
-                counts[key] = entry.count;
-            total += entry.count;
+                counts[key] = count;
+            total += count;
         }
         return {
             total,
             published: counts.published,
             draft: counts.draft,
             archived: counts.archived,
-            weak,
-            empty,
+            weak: weakRes.recordset[0].count || 0,
+            empty: emptyRes.recordset[0].count || 0,
         };
     }
 }
 exports.DashboardSeoService = DashboardSeoService;
-//# sourceMappingURL=dashboard-seo.service.js.map

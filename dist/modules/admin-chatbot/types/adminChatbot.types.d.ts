@@ -69,4 +69,3 @@ export interface ToolResult {
 }
 export declare const ROLE_TOOL_PERMISSIONS: Record<string, ChatbotIntent[]>;
 export declare function isIntentAllowedForRole(intent: ChatbotIntent, role: string): boolean;
-//# sourceMappingURL=adminChatbot.types.d.ts.map

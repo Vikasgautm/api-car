@@ -58,4 +58,3 @@ class SeoSlugService {
     }
 }
 exports.SeoSlugService = SeoSlugService;
-//# sourceMappingURL=seo-slug.service.js.map

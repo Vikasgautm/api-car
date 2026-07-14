@@ -99,4 +99,3 @@ class IntelligenceService {
     }
 }
 exports.IntelligenceService = IntelligenceService;
-//# sourceMappingURL=intelligence.service.js.map

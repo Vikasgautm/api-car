@@ -37,4 +37,3 @@ const createDefaultSuperAdmin = async () => {
     }
 };
 exports.createDefaultSuperAdmin = createDefaultSuperAdmin;
-//# sourceMappingURL=admin.seed.js.map

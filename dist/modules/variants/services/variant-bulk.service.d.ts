@@ -37,4 +37,3 @@ export declare class VariantBulkService {
     }>;
     static bulkExportCsv(variantIds: string[]): Promise<string>;
 }
-//# sourceMappingURL=variant-bulk.service.d.ts.map

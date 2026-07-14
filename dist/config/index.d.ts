@@ -10,9 +10,10 @@ export declare const config: {
     app: {
         frontend_url: string;
     };
-    cloudinary_cloud_name: string | undefined;
-    cloudinary_api_key: string | undefined;
-    cloudinary_api_secret: string | undefined;
+    aws_access_key_id: string | undefined;
+    aws_secret_access_key: string | undefined;
+    aws_region: string;
+    aws_bucket_name: string | undefined;
     super_admin: {
         email: string;
         password: string;
@@ -44,4 +45,3 @@ export declare const config: {
         otp_email_recipient: string;
     };
 };
-//# sourceMappingURL=index.d.ts.map

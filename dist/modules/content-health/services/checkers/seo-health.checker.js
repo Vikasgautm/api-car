@@ -76,4 +76,3 @@ async function runSeoHealthChecker(_params) {
         return { checker: CHECKER_NAME, issues: [], total: 0, error: err?.message || 'SEO health checker failed' };
     }
 }
-//# sourceMappingURL=seo-health.checker.js.map

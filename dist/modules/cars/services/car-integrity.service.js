@@ -1,36 +1,47 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarIntegrityService = void 0;
-const car_model_1 = require("../../../models/car.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const change_history_1 = require("../../../shared/utils/change-history");
+const dbConnection_1 = require("../../../sql/utils/dbConnection");
 class CarIntegrityService {
     /**
      * Track changes to car (Batch 6 Feature 2)
      * Records what changed, who changed it, when, and why
      */
     static async recordCarChanges(carId, oldData, newData, changedBy, changeSource = 'manual_edit') {
-        const car = await car_model_1.Car.findOne({ car_id: carId });
-        if (!car) {
+        const pool = await (0, dbConnection_1.getPool)();
+        const result = await pool.request()
+            .input('cid', dbConnection_1.mssql.NVarChar, carId)
+            .query('SELECT change_history FROM Cars WHERE car_id = @cid');
+        if (result.recordset.length === 0) {
             throw new app_error_util_1.AppError('Car not found', 404);
         }
         const changes = change_history_1.ChangeHistoryTracker.detectChanges(oldData, newData);
         if (changes.length === 0)
             return;
         const historyEntries = changes.map((c) => change_history_1.ChangeHistoryTracker.createEntry(c.field, c.oldValue, c.newValue, changedBy, changeSource));
-        car.change_history = car.change_history || [];
-        car.change_history.push(...historyEntries);
-        await car.save();
+        const oldHistoryStr = result.recordset[0].change_history;
+        const oldHistory = oldHistoryStr ? JSON.parse(oldHistoryStr) : [];
+        const newHistory = [...oldHistory, ...historyEntries];
+        await pool.request()
+            .input('cid', dbConnection_1.mssql.NVarChar, carId)
+            .input('history', dbConnection_1.mssql.NVarChar, JSON.stringify(newHistory))
+            .query('UPDATE Cars SET change_history = @history, updatedAt = GETDATE() WHERE car_id = @cid');
     }
     /**
      * Get car change history with optional filtering
      */
     static async getChangeHistory(carId, options) {
-        const car = await car_model_1.Car.findOne({ car_id: carId }).select('change_history');
-        if (!car) {
+        const pool = await (0, dbConnection_1.getPool)();
+        const result = await pool.request()
+            .input('cid', dbConnection_1.mssql.NVarChar, carId)
+            .query('SELECT change_history FROM Cars WHERE car_id = @cid');
+        if (result.recordset.length === 0) {
             throw new app_error_util_1.AppError('Car not found', 404);
         }
-        let history = car.change_history || [];
+        const historyStr = result.recordset[0].change_history;
+        let history = historyStr ? JSON.parse(historyStr) : [];
         if (options?.field) {
             history = change_history_1.ChangeHistoryTracker.filterChangesByField(history, options.field);
         }
@@ -49,22 +60,14 @@ class CarIntegrityService {
      * Get audit trail for car as formatted string
      */
     static async getAuditTrail(carId) {
-        const car = await car_model_1.Car.findOne({ car_id: carId }).select('change_history');
-        if (!car) {
-            throw new app_error_util_1.AppError('Car not found', 404);
-        }
-        const history = car.change_history || [];
+        const history = await this.getChangeHistory(carId);
         return change_history_1.ChangeHistoryTracker.auditTrail(history);
     }
     /**
      * Get comprehensive change summary
      */
     static async getChangeSummary(carId) {
-        const car = await car_model_1.Car.findOne({ car_id: carId }).select('change_history');
-        if (!car) {
-            throw new app_error_util_1.AppError('Car not found', 404);
-        }
-        const history = car.change_history || [];
+        const history = await this.getChangeHistory(carId);
         const summary = change_history_1.ChangeHistoryTracker.summarizeChanges(history);
         return {
             totalChanges: summary.totalChanges,
@@ -110,4 +113,3 @@ class CarIntegrityService {
     }
 }
 exports.CarIntegrityService = CarIntegrityService;
-//# sourceMappingURL=car-integrity.service.js.map

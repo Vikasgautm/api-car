@@ -1,11 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CityController = void 0;
+const validation_1 = require("../../../shared/validation");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const create_city_dto_1 = require("../dto/create-city.dto");
-const update_city_dto_1 = require("../dto/update-city.dto");
 const city_service_1 = require("../services/city.service");
 class CityController {
     // Public routes
@@ -41,9 +40,9 @@ class CityController {
             longitude: req.body.longitude,
             latitude: req.body.latitude,
         };
-        const validation = create_city_dto_1.CreateCityDto.validate(createDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.createCitySchema.safeParse(createDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const city = await city_service_1.CityService.createCity(createDto);
         return response_util_1.ResponseUtil.created(res, city, "City created successfully");
@@ -57,9 +56,9 @@ class CityController {
             longitude: req.body.longitude,
             latitude: req.body.latitude,
         };
-        const validation = update_city_dto_1.UpdateCityDto.validate(updateDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.updateCitySchema.safeParse(updateDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const city = await city_service_1.CityService.updateCity(req.params.id, updateDto);
         return response_util_1.ResponseUtil.success(res, city, "City updated successfully");
@@ -78,4 +77,3 @@ class CityController {
     });
 }
 exports.CityController = CityController;
-//# sourceMappingURL=city.controller.js.map

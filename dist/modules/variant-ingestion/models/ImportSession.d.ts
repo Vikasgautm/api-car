@@ -21,4 +21,3 @@ export declare const ImportSession: import("mongoose").Model<IImportSession, {},
 } & {
     id: string;
 }, any, IImportSession>;
-//# sourceMappingURL=ImportSession.d.ts.map

@@ -4,54 +4,11 @@ export declare class FuelTypeService {
         fuelTypes: any[];
         pagination: any;
     }>;
-    static getFuelTypeById(fuelTypeId: string): Promise<(import("mongoose").Document<unknown, {}, IFuelType, {}, import("mongoose").DefaultSchemaOptions> & IFuelType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static getFuelTypeBySlug(slug: string): Promise<(import("mongoose").Document<unknown, {}, IFuelType, {}, import("mongoose").DefaultSchemaOptions> & IFuelType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static createFuelType(fuelTypeData: any): Promise<import("mongoose").Document<unknown, {}, IFuelType, {}, import("mongoose").DefaultSchemaOptions> & IFuelType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static updateFuelType(fuelTypeId: string, fuelTypeData: any): Promise<import("mongoose").Document<unknown, {}, IFuelType, {}, import("mongoose").DefaultSchemaOptions> & IFuelType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static deleteFuelType(fuelTypeId: string): Promise<import("mongoose").Document<unknown, {}, IFuelType, {}, import("mongoose").DefaultSchemaOptions> & IFuelType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static restoreFuelType(fuelTypeId: string): Promise<import("mongoose").Document<unknown, {}, IFuelType, {}, import("mongoose").DefaultSchemaOptions> & IFuelType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static togglePublish(fuelTypeId: string): Promise<import("mongoose").Document<unknown, {}, IFuelType, {}, import("mongoose").DefaultSchemaOptions> & IFuelType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static getFuelTypeById(fuelTypeId: string): Promise<(IFuelType & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static getFuelTypeBySlug(slug: string): Promise<(IFuelType & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static createFuelType(fuelTypeData: any): Promise<any>;
+    static updateFuelType(fuelTypeId: string, fuelTypeData: any): Promise<IFuelType & import("../../../sql/common/BaseModel").SQLDocument>;
+    static deleteFuelType(fuelTypeId: string): Promise<IFuelType & import("../../../sql/common/BaseModel").SQLDocument>;
+    static restoreFuelType(fuelTypeId: string): Promise<IFuelType & import("../../../sql/common/BaseModel").SQLDocument>;
+    static togglePublish(fuelTypeId: string): Promise<IFuelType & import("../../../sql/common/BaseModel").SQLDocument>;
 }
-//# sourceMappingURL=fuel-type.service.d.ts.map

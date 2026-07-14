@@ -14,4 +14,3 @@ export declare const ICE_ONLY_NORMALIZED_PATHS: Array<{
 }>;
 export declare function isElectricFuelType(name: string): boolean;
 export declare function isHybridFuelType(name: string): boolean;
-//# sourceMappingURL=fuel-type-field-groups.d.ts.map

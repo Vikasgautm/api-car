@@ -1,4 +1,3 @@
-import { Document } from 'mongoose';
 export type AnswerFormat = 'text' | 'html' | 'markdown';
 export type FAQType = 'editorial' | 'specification' | 'feature' | 'performance' | 'safety' | 'dimensions' | 'comparison' | 'ownership' | 'upcoming' | 'collection' | 'aggregation';
 export type FAQEntityType = 'car' | 'variant' | 'brand' | 'body_type' | 'fuel_type' | 'comparison' | 'seo_collection' | 'global';
@@ -9,7 +8,7 @@ export interface FAQRelatedEntity {
     entity_type: FAQEntityType;
     entity_id: string;
 }
-export interface IFAQ extends Document {
+export interface IFAQ {
     faq_id: string;
     question: string;
     answer: string;
@@ -48,11 +47,5 @@ export interface IFAQ extends Document {
     last_reviewed_at?: Date;
     click_count?: number;
 }
-export declare const FAQ: import("mongoose").Model<IFAQ, {}, {}, {}, Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IFAQ>;
-//# sourceMappingURL=faq.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const FAQ: BaseModel<IFAQ>;

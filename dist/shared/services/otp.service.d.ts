@@ -7,4 +7,3 @@ export declare class OtpService {
     static hash(otp: string): Promise<string>;
     static verify(otp: string, hash: string): Promise<boolean>;
 }
-//# sourceMappingURL=otp.service.d.ts.map

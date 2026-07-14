@@ -10,4 +10,3 @@ export declare class CityController {
     static restoreCity: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
     static bulkSeedCities: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=city.controller.d.ts.map

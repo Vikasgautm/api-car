@@ -1,3 +1,4 @@
+import { loginSchema, refreshTokenSchema, registerSchema } from '../../../shared/validation';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
@@ -5,12 +6,9 @@ import { config } from '../../../config';
 import { UserSession } from '../../../models/user-session.model';
 import { IUser, User } from '../../../models/user.model';
 import { AppError } from '../../../shared/utils/app-error.util';
-import { LoginDto } from '../dto/login.dto';
-import { RefreshTokenDto } from '../dto/refresh-token.dto';
-import { RegisterDto } from '../dto/register.dto';
 
 export class AuthService {
-  static async register(registerDto: RegisterDto) {
+  static async register(registerDto: any) {
     const { user_name, email, password, phone, role } = registerDto;
 
     // Check if user already exists
@@ -20,7 +18,7 @@ export class AuthService {
     }
 
     // Create new user
-    const user = new User({
+    const user = User.createDraft({
       user_id: uuidv4(),
       user_name,
       email,
@@ -46,7 +44,7 @@ export class AuthService {
     };
   }
 
-  static async login(loginDto: LoginDto, req?: any) {
+  static async login(loginDto: any, req?: any) {
     const { email, password } = loginDto;
 
     // Find user
@@ -80,7 +78,7 @@ export class AuthService {
     };
   }
 
-  static async refreshToken(refreshTokenDto: RefreshTokenDto) {
+  static async refreshToken(refreshTokenDto: any) {
     const { refreshToken: refresh_token } = refreshTokenDto;
 
     try {
@@ -207,7 +205,7 @@ export class AuthService {
     ipAddress?: string
   ) {
     const expiresMs = this.parseExpiresIn(config.jwt_refresh_expires_in);
-    const session = new UserSession({
+    await UserSession.create({
       session_id: uuidv4(),
       user_id,
       refresh_token: refreshToken,
@@ -216,7 +214,6 @@ export class AuthService {
       device_info: deviceInfo,
       ip_address: ipAddress,
     });
-    await session.save();
   }
 
   private static parseExpiresIn(expiresIn: string): number {
@@ -236,8 +233,8 @@ export class AuthService {
     return value * (multipliers[unit] || multipliers['d']);
   }
 
-  private static sanitizeUser(user: IUser) {
-    const userObj = user.toObject();
+  private static sanitizeUser(user: any) {
+    const userObj = user.toObject ? user.toObject() : { ...user };
     delete userObj.password;
     delete userObj.__v;
     return userObj;

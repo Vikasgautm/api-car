@@ -50,4 +50,3 @@ export declare const RankingSession: import("mongoose").Model<IRankingSession, {
 } & {
     id: string;
 }, any, IRankingSession>;
-//# sourceMappingURL=ranking-session.model.d.ts.map

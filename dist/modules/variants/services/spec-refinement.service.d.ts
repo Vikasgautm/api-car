@@ -56,4 +56,3 @@ export declare class SpecRefinementService {
     private static setNestedValue;
     static refineMultipleVariants(variantIds: string[]): Promise<SpecRefinementResult[]>;
 }
-//# sourceMappingURL=spec-refinement.service.d.ts.map

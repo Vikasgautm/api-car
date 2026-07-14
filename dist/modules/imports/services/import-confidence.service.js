@@ -6,7 +6,7 @@ const source_priority_config_1 = require("../rules/source-priority-config");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 class ImportConfidenceService {
     static async scoreImport(import_id) {
-        const log = await import_log_model_1.ImportLog.findOne({ import_id, is_deleted: false });
+        const log = await import_log_model_1.ImportLog.findOne({ import_id });
         if (!log) {
             throw app_error_util_1.AppError.notFound('Import', 'import_id', import_id);
         }
@@ -64,7 +64,6 @@ class ImportConfidenceService {
         const logs = await import_log_model_1.ImportLog.find({
             variant_id,
             import_type: 'variant',
-            is_deleted: false,
         });
         const scores = await Promise.all(logs.map(log => this.scoreImport(log.import_id)));
         return scores.sort((a, b) => b.overall_score - a.overall_score);
@@ -72,13 +71,12 @@ class ImportConfidenceService {
     static async scoreCarImports(car_id) {
         const logs = await import_log_model_1.ImportLog.find({
             car_id,
-            is_deleted: false,
         });
         const scores = await Promise.all(logs.map(log => this.scoreImport(log.import_id)));
         return scores.sort((a, b) => b.overall_score - a.overall_score);
     }
     static async getBatchQualityReport(limit = 100) {
-        const recentLogs = await import_log_model_1.ImportLog.find({ is_deleted: false })
+        const recentLogs = await import_log_model_1.ImportLog.find({})
             .sort({ createdAt: -1 })
             .limit(limit);
         const scores = await Promise.all(recentLogs.map(log => this.scoreImport(log.import_id)));
@@ -105,4 +103,3 @@ class ImportConfidenceService {
     }
 }
 exports.ImportConfidenceService = ImportConfidenceService;
-//# sourceMappingURL=import-confidence.service.js.map

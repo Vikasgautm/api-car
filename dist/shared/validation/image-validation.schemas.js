@@ -65,4 +65,3 @@ exports.imageFilterSchema = common_validation_schemas_1.paginationSchema.extend(
     folder: zod_1.z.string().optional(),
     is_published: zod_1.z.union([zod_1.z.boolean(), zod_1.z.enum(['true', 'false'])]).optional(),
 }).strict();
-//# sourceMappingURL=image-validation.schemas.js.map

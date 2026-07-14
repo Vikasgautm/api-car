@@ -1,99 +1,21 @@
 import { IFAQ } from '../../../models/faq.model';
 export declare class FAQService {
     static getAllFAQs(filterDto: any, includeDeleted?: boolean): Promise<{
-        faqs: (import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        } & {
-            id: string;
-        })[];
+        faqs: (IFAQ & import("../../../sql/common/BaseModel").SQLDocument)[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
-    static getFAQById(faqId: string): Promise<(import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static getFAQsByGroup(groupName: string): Promise<(import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    })[]>;
-    static getFeaturedFAQs(): Promise<(import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    })[]>;
-    static getFAQsByTag(tag: string): Promise<(import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    })[]>;
-    static incrementViewCount(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static incrementClickCount(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static togglePublish(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static markReviewed(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static createFAQ(faqData: any): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static updateFAQ(faqId: string, faqData: any): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static deleteFAQ(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static restoreFAQ(faqId: string): Promise<import("mongoose").Document<unknown, {}, IFAQ, {}, import("mongoose").DefaultSchemaOptions> & IFAQ & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static getFAQById(faqId: string): Promise<(IFAQ & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static getFAQsByGroup(groupName: string): Promise<(IFAQ & import("../../../sql/common/BaseModel").SQLDocument)[]>;
+    static getFeaturedFAQs(): Promise<(IFAQ & import("../../../sql/common/BaseModel").SQLDocument)[]>;
+    static getFAQsByTag(tag: string): Promise<(IFAQ & import("../../../sql/common/BaseModel").SQLDocument)[]>;
+    static incrementViewCount(faqId: string): Promise<IFAQ & import("../../../sql/common/BaseModel").SQLDocument>;
+    static incrementClickCount(faqId: string): Promise<IFAQ & import("../../../sql/common/BaseModel").SQLDocument>;
+    static togglePublish(faqId: string): Promise<IFAQ & import("../../../sql/common/BaseModel").SQLDocument>;
+    static markReviewed(faqId: string): Promise<IFAQ & import("../../../sql/common/BaseModel").SQLDocument>;
+    static createFAQ(faqData: any): Promise<any>;
+    static updateFAQ(faqId: string, faqData: any): Promise<IFAQ & import("../../../sql/common/BaseModel").SQLDocument>;
+    static deleteFAQ(faqId: string): Promise<IFAQ & import("../../../sql/common/BaseModel").SQLDocument>;
+    static restoreFAQ(faqId: string): Promise<IFAQ & import("../../../sql/common/BaseModel").SQLDocument>;
     static bulkPublish(faqIds: string[]): Promise<{
         modified: number;
     }>;
@@ -122,4 +44,3 @@ export declare class FAQService {
         similarity?: number;
     }>;
 }
-//# sourceMappingURL=faq.service.d.ts.map

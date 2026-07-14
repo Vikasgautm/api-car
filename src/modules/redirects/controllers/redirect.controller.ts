@@ -1,10 +1,9 @@
+import { createRedirectSchema, updateRedirectSchema } from '../../../shared/validation';
 import { Response } from 'express';
 import { AuthRequest } from '../../../types/auth';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { ResponseUtil } from '../../../shared/utils/response.util';
 import { catchAsync } from '../../../utils/catchAsync';
-import { CreateRedirectDto } from '../dto/create-redirect.dto';
-import { UpdateRedirectDto } from '../dto/update-redirect.dto';
 import { RedirectService } from '../services/redirect.service';
 
 function actorFrom(req: AuthRequest) {
@@ -32,28 +31,28 @@ export class RedirectController {
   });
 
   static create = catchAsync(async (req: AuthRequest, res: Response) => {
-    const dto: CreateRedirectDto = {
+    const dto: any = {
       old_url: req.body.old_url,
       new_url: req.body.new_url,
       type: req.body.type,
       reason: req.body.reason,
     };
-    const validation = CreateRedirectDto.validate(dto);
-    if (!validation.valid) throw new AppError(validation.errors.join(', '), 400);
+    const validation = createRedirectSchema.safeParse(dto);
+    if (!validation.success) throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
 
     const created = await RedirectService.create(dto, actorFrom(req));
     return ResponseUtil.created(res, created, 'Redirect created successfully');
   });
 
   static update = catchAsync(async (req: AuthRequest, res: Response) => {
-    const dto: UpdateRedirectDto = {
+    const dto: any = {
       old_url: req.body.old_url,
       new_url: req.body.new_url,
       type: req.body.type,
       reason: req.body.reason,
     };
-    const validation = UpdateRedirectDto.validate(dto);
-    if (!validation.valid) throw new AppError(validation.errors.join(', '), 400);
+    const validation = updateRedirectSchema.safeParse(dto);
+    if (!validation.success) throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
 
     const updated = await RedirectService.update(req.params.id as string, dto, actorFrom(req));
     return ResponseUtil.success(res, updated, 'Redirect updated successfully');

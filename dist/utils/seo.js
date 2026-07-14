@@ -21,4 +21,3 @@ const generateBlogMetadata = (blog) => {
     };
 };
 exports.generateBlogMetadata = generateBlogMetadata;
-//# sourceMappingURL=seo.js.map

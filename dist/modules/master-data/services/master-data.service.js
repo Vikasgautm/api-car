@@ -3,9 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MasterDataService = void 0;
 const uuid_1 = require("uuid");
 const master_option_model_1 = require("../models/master-option.model");
-const unknown_value_model_1 = require("../models/unknown-value.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const cache_util_1 = require("../../../utils/cache.util");
+const dbConnection_1 = require("../../../sql/utils/dbConnection");
 const CACHE_KEY = 'master_data:all_active';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 class MasterDataService {
@@ -14,23 +14,53 @@ class MasterDataService {
         return master_option_model_1.MASTER_CATEGORIES;
     }
     static async getOptions(categoryKey, includeInactive = false) {
-        const filter = { category_key: categoryKey };
-        if (!includeInactive)
-            filter.is_active = true;
-        return master_option_model_1.MasterOption.find(filter).sort({ sort_order: 1, label: 1 }).lean();
+        const pool = await (0, dbConnection_1.getPool)();
+        let query = 'SELECT * FROM MasterOptions WHERE category_key = @cat';
+        if (!includeInactive) {
+            query += ' AND is_active = 1';
+        }
+        query += ' ORDER BY sort_order ASC, label ASC';
+        const result = await pool.request()
+            .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
+            .query(query);
+        return result.recordset.map(row => ({
+            ...row,
+            is_active: row.is_active === true || row.is_active === 1,
+            is_system: row.is_system === true || row.is_system === 1,
+            metadata: row.metadata ? JSON.parse(row.metadata) : {},
+        }));
     }
     static async getOptionByValue(categoryKey, value) {
-        return master_option_model_1.MasterOption.findOne({ category_key: categoryKey, value }).lean();
+        const pool = await (0, dbConnection_1.getPool)();
+        const result = await pool.request()
+            .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
+            .input('val', dbConnection_1.mssql.NVarChar, value)
+            .query('SELECT TOP 1 * FROM MasterOptions WHERE category_key = @cat AND value = @val');
+        if (result.recordset.length === 0)
+            return null;
+        const row = result.recordset[0];
+        return {
+            ...row,
+            is_active: row.is_active === true || row.is_active === 1,
+            is_system: row.is_system === true || row.is_system === 1,
+            metadata: row.metadata ? JSON.parse(row.metadata) : {},
+        };
     }
-    // Returns all active options for every category in one round-trip.
-    // Result is cached for 5 minutes; invalidated by any mutation.
     static async getAllActiveOptions() {
         const cached = cache_util_1.cache.get(CACHE_KEY);
         if (cached)
             return cached;
-        const all = await master_option_model_1.MasterOption.find({ is_active: true }).sort({ category_key: 1, sort_order: 1 }).lean();
+        const pool = await (0, dbConnection_1.getPool)();
+        const result = await pool.request()
+            .query('SELECT * FROM MasterOptions WHERE is_active = 1 ORDER BY category_key ASC, sort_order ASC');
         const map = {};
-        for (const opt of all) {
+        for (const row of result.recordset) {
+            const opt = {
+                ...row,
+                is_active: row.is_active === true || row.is_active === 1,
+                is_system: row.is_system === true || row.is_system === 1,
+                metadata: row.metadata ? JSON.parse(row.metadata) : {},
+            };
             if (!map[opt.category_key])
                 map[opt.category_key] = [];
             map[opt.category_key].push(opt);
@@ -41,100 +71,164 @@ class MasterDataService {
     // ── Mutations ─────────────────────────────────────────────────────────────────
     static async createOption(categoryKey, data) {
         this.assertValidCategory(categoryKey);
-        const existing = await master_option_model_1.MasterOption.findOne({ category_key: categoryKey, value: data.value });
-        if (existing)
+        const pool = await (0, dbConnection_1.getPool)();
+        const existing = await pool.request()
+            .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
+            .input('val', dbConnection_1.mssql.NVarChar, data.value)
+            .query('SELECT 1 FROM MasterOptions WHERE category_key = @cat AND value = @val');
+        if (existing.recordset.length > 0) {
             throw new app_error_util_1.AppError(`Option with value "${data.value}" already exists in category "${categoryKey}"`, 409);
-        const maxOrder = await master_option_model_1.MasterOption.findOne({ category_key: categoryKey }).sort({ sort_order: -1 }).lean();
-        const nextOrder = data.sort_order ?? ((maxOrder?.sort_order ?? -1) + 1);
-        const opt = new master_option_model_1.MasterOption({
-            option_id: (0, uuid_1.v4)(),
+        }
+        const maxOrderResult = await pool.request()
+            .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
+            .query('SELECT MAX(sort_order) as max_order FROM MasterOptions WHERE category_key = @cat');
+        const maxOrder = maxOrderResult.recordset[0]?.max_order;
+        const nextOrder = data.sort_order ?? ((maxOrder !== null && maxOrder !== undefined ? maxOrder : -1) + 1);
+        const option_id = (0, uuid_1.v4)();
+        const label = data.label.trim();
+        const value = data.value.trim().toLowerCase().replace(/\s+/g, '_');
+        const metadata = data.metadata ? JSON.stringify(data.metadata) : '{}';
+        await pool.request()
+            .input('oid', dbConnection_1.mssql.NVarChar, option_id)
+            .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
+            .input('lbl', dbConnection_1.mssql.NVarChar, label)
+            .input('val', dbConnection_1.mssql.NVarChar, value)
+            .input('ord', dbConnection_1.mssql.Int, nextOrder)
+            .input('meta', dbConnection_1.mssql.NVarChar, metadata)
+            .query('INSERT INTO MasterOptions (option_id, category_key, label, value, sort_order, is_active, is_system, metadata, createdAt, updatedAt) VALUES (@oid, @cat, @lbl, @val, @ord, 1, 0, @meta, GETDATE(), GETDATE())');
+        cache_util_1.cache.delete(CACHE_KEY);
+        return {
+            option_id,
             category_key: categoryKey,
-            label: data.label.trim(),
-            value: data.value.trim().toLowerCase().replace(/\s+/g, '_'),
+            label,
+            value,
             sort_order: nextOrder,
             is_active: true,
             is_system: false,
             metadata: data.metadata ?? {},
-        });
-        const saved = await opt.save();
-        cache_util_1.cache.delete(CACHE_KEY);
-        return saved;
+            created_at: new Date(),
+            updated_at: new Date(),
+        };
     }
     static async updateOption(optionId, data) {
-        const opt = await master_option_model_1.MasterOption.findOne({ option_id: optionId });
-        if (!opt)
+        const pool = await (0, dbConnection_1.getPool)();
+        const existingResult = await pool.request()
+            .input('oid', dbConnection_1.mssql.NVarChar, optionId)
+            .query('SELECT TOP 1 * FROM MasterOptions WHERE option_id = @oid');
+        if (existingResult.recordset.length === 0)
             throw new app_error_util_1.AppError('Option not found', 404);
-        if (data.label !== undefined)
-            opt.label = data.label.trim();
-        if (data.value !== undefined)
-            opt.value = data.value.trim().toLowerCase().replace(/\s+/g, '_');
-        if (data.sort_order !== undefined)
-            opt.sort_order = data.sort_order;
-        if (data.is_active !== undefined)
-            opt.is_active = data.is_active;
-        if (data.metadata !== undefined)
-            opt.metadata = data.metadata;
-        const saved = await opt.save();
+        const opt = existingResult.recordset[0];
+        const label = data.label !== undefined ? data.label.trim() : opt.label;
+        const value = data.value !== undefined ? data.value.trim().toLowerCase().replace(/\s+/g, '_') : opt.value;
+        const sort_order = data.sort_order !== undefined ? data.sort_order : opt.sort_order;
+        const is_active = data.is_active !== undefined ? (data.is_active ? 1 : 0) : opt.is_active;
+        const metadata = data.metadata !== undefined ? JSON.stringify(data.metadata) : opt.metadata;
+        await pool.request()
+            .input('oid', dbConnection_1.mssql.NVarChar, optionId)
+            .input('lbl', dbConnection_1.mssql.NVarChar, label)
+            .input('val', dbConnection_1.mssql.NVarChar, value)
+            .input('ord', dbConnection_1.mssql.Int, sort_order)
+            .input('act', dbConnection_1.mssql.Bit, is_active)
+            .input('meta', dbConnection_1.mssql.NVarChar, metadata)
+            .query('UPDATE MasterOptions SET label = @lbl, value = @val, sort_order = @ord, is_active = @act, metadata = @meta, updatedAt = GETDATE() WHERE option_id = @oid');
         cache_util_1.cache.delete(CACHE_KEY);
-        return saved;
+        return {
+            option_id: optionId,
+            category_key: opt.category_key,
+            label,
+            value,
+            sort_order,
+            is_active: is_active === 1 || is_active === true,
+            is_system: opt.is_system === 1 || opt.is_system === true,
+            metadata: data.metadata !== undefined ? data.metadata : (opt.metadata ? JSON.parse(opt.metadata) : {}),
+            created_at: opt.createdAt,
+            updated_at: new Date(),
+        };
     }
     static async deleteOption(optionId) {
-        const opt = await master_option_model_1.MasterOption.findOne({ option_id: optionId });
-        if (!opt)
+        const pool = await (0, dbConnection_1.getPool)();
+        const existingResult = await pool.request()
+            .input('oid', dbConnection_1.mssql.NVarChar, optionId)
+            .query('SELECT TOP 1 is_system FROM MasterOptions WHERE option_id = @oid');
+        if (existingResult.recordset.length === 0)
             throw new app_error_util_1.AppError('Option not found', 404);
-        if (opt.is_system)
+        if (existingResult.recordset[0].is_system === 1 || existingResult.recordset[0].is_system === true) {
             throw new app_error_util_1.AppError('System options cannot be deleted. Deactivate instead.', 400);
-        await opt.deleteOne();
+        }
+        await pool.request()
+            .input('oid', dbConnection_1.mssql.NVarChar, optionId)
+            .query('DELETE FROM MasterOptions WHERE option_id = @oid');
         cache_util_1.cache.delete(CACHE_KEY);
     }
     static async toggleActive(optionId) {
-        const opt = await master_option_model_1.MasterOption.findOne({ option_id: optionId });
-        if (!opt)
+        const pool = await (0, dbConnection_1.getPool)();
+        const existingResult = await pool.request()
+            .input('oid', dbConnection_1.mssql.NVarChar, optionId)
+            .query('SELECT TOP 1 * FROM MasterOptions WHERE option_id = @oid');
+        if (existingResult.recordset.length === 0)
             throw new app_error_util_1.AppError('Option not found', 404);
-        opt.is_active = !opt.is_active;
-        const saved = await opt.save();
+        const opt = existingResult.recordset[0];
+        const newActive = opt.is_active === 1 || opt.is_active === true ? 0 : 1;
+        await pool.request()
+            .input('oid', dbConnection_1.mssql.NVarChar, optionId)
+            .input('act', dbConnection_1.mssql.Bit, newActive)
+            .query('UPDATE MasterOptions SET is_active = @act, updatedAt = GETDATE() WHERE option_id = @oid');
         cache_util_1.cache.delete(CACHE_KEY);
-        return saved;
+        return {
+            ...opt,
+            is_active: newActive === 1,
+            is_system: opt.is_system === 1 || opt.is_system === true,
+            metadata: opt.metadata ? JSON.parse(opt.metadata) : {},
+            created_at: opt.createdAt,
+            updated_at: new Date(),
+        };
     }
     static async reorderOptions(categoryKey, orderedIds) {
-        const updates = orderedIds.map((id, index) => master_option_model_1.MasterOption.updateOne({ option_id: id, category_key: categoryKey }, { $set: { sort_order: index } }));
-        await Promise.all(updates);
+        const pool = await (0, dbConnection_1.getPool)();
+        const transaction = new dbConnection_1.mssql.Transaction(pool);
+        await transaction.begin();
+        try {
+            for (let i = 0; i < orderedIds.length; i++) {
+                await transaction.request()
+                    .input('oid', dbConnection_1.mssql.NVarChar, orderedIds[i])
+                    .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
+                    .input('ord', dbConnection_1.mssql.Int, i)
+                    .query('UPDATE MasterOptions SET sort_order = @ord, updatedAt = GETDATE() WHERE option_id = @oid AND category_key = @cat');
+            }
+            await transaction.commit();
+        }
+        catch (err) {
+            await transaction.rollback();
+            throw err;
+        }
         cache_util_1.cache.delete(CACHE_KEY);
     }
     // ── Seed ─────────────────────────────────────────────────────────────────────
-    // One bulkWrite with upsert — 132 items in a single round-trip.
-    // The unique (category_key, value) index causes duplicates to be silently skipped.
     static async seedDefaults() {
-        const ops = [];
+        const pool = await (0, dbConnection_1.getPool)();
+        let created = 0;
         let total = 0;
         for (const [categoryKey, items] of Object.entries(master_option_model_1.MASTER_SEED_DATA)) {
-            items.forEach(({ label, value }, i) => {
+            for (let i = 0; i < items.length; i++) {
+                const { label, value } = items[i];
                 total++;
-                ops.push({
-                    updateOne: {
-                        filter: { category_key: categoryKey, value },
-                        update: {
-                            $setOnInsert: {
-                                option_id: (0, uuid_1.v4)(),
-                                category_key: categoryKey,
-                                label,
-                                value,
-                                sort_order: i,
-                                is_active: true,
-                                is_system: true,
-                                metadata: {},
-                            },
-                        },
-                        upsert: true,
-                    },
-                });
-            });
+                const check = await pool.request()
+                    .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
+                    .input('val', dbConnection_1.mssql.NVarChar, value)
+                    .query('SELECT 1 FROM MasterOptions WHERE category_key = @cat AND value = @val');
+                if (check.recordset.length === 0) {
+                    await pool.request()
+                        .input('oid', dbConnection_1.mssql.NVarChar, (0, uuid_1.v4)())
+                        .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
+                        .input('lbl', dbConnection_1.mssql.NVarChar, label)
+                        .input('val', dbConnection_1.mssql.NVarChar, value)
+                        .input('ord', dbConnection_1.mssql.Int, i)
+                        .query('INSERT INTO MasterOptions (option_id, category_key, label, value, sort_order, is_active, is_system, metadata, createdAt, updatedAt) VALUES (@oid, @cat, @lbl, @val, @ord, 1, 1, \'{}\', GETDATE(), GETDATE())');
+                    created++;
+                }
+            }
         }
-        if (ops.length === 0)
-            return { created: 0, skipped: 0 };
-        const result = await master_option_model_1.MasterOption.bulkWrite(ops, { ordered: false });
         cache_util_1.cache.delete(CACHE_KEY);
-        const created = result.upsertedCount ?? 0;
         return { created, skipped: total - created };
     }
     // ── Toggle/Dropdown import mapping ────────────────────────────────────────────
@@ -159,9 +253,6 @@ class MasterDataService {
             return raw.map((s) => String(s).trim()).filter(Boolean);
         return String(raw).split(/[,;/|]+/).map((s) => s.trim()).filter(Boolean);
     }
-    // Resolves a raw imported value to the closest master option value.
-    // Uses the shared 5-minute cache — a bulk import of N variants makes 1 DB round-trip
-    // instead of N×categories queries.
     static async resolveDropdownImport(categoryKey, raw) {
         if (!raw)
             return '';
@@ -178,59 +269,92 @@ class MasterDataService {
     // ── Unknown Value Queue ───────────────────────────────────────────────────────
     static async logUnknownValue(categoryKey, rawValue, context) {
         try {
-            await unknown_value_model_1.UnknownValue.findOneAndUpdate({ category_key: categoryKey, raw_value: rawValue }, {
-                $inc: { occurrence_count: 1 },
-                $setOnInsert: {
-                    unknown_id: (0, uuid_1.v4)(),
-                    category_key: categoryKey,
-                    raw_value: rawValue,
-                    context: context ?? '',
-                    is_resolved: false,
-                },
-            }, { upsert: true, new: true });
+            const pool = await (0, dbConnection_1.getPool)();
+            const check = await pool.request()
+                .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
+                .input('val', dbConnection_1.mssql.NVarChar, rawValue)
+                .query('SELECT unknown_id FROM UnknownValues WHERE category_key = @cat AND raw_value = @val');
+            if (check.recordset.length > 0) {
+                const record = check.recordset[0];
+                await pool.request()
+                    .input('uid', dbConnection_1.mssql.NVarChar, record.unknown_id)
+                    .query('UPDATE UnknownValues SET occurrence_count = occurrence_count + 1, updatedAt = GETDATE() WHERE unknown_id = @uid');
+            }
+            else {
+                await pool.request()
+                    .input('uid', dbConnection_1.mssql.NVarChar, (0, uuid_1.v4)())
+                    .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
+                    .input('val', dbConnection_1.mssql.NVarChar, rawValue)
+                    .input('ctx', dbConnection_1.mssql.NVarChar, context ?? '')
+                    .query('INSERT INTO UnknownValues (unknown_id, category_key, raw_value, context, occurrence_count, is_resolved, createdAt, updatedAt) VALUES (@uid, @cat, @val, @ctx, 1, 0, GETDATE(), GETDATE())');
+            }
         }
         catch {
             // Non-fatal — never break imports due to logging failures
         }
     }
     static async getUnknownValues(resolvedFilter) {
-        const filter = {};
-        if (resolvedFilter !== undefined)
-            filter.is_resolved = resolvedFilter;
-        return unknown_value_model_1.UnknownValue.find(filter).sort({ occurrence_count: -1, created_at: -1 }).lean();
+        const pool = await (0, dbConnection_1.getPool)();
+        let query = 'SELECT * FROM UnknownValues';
+        const request = pool.request();
+        if (resolvedFilter !== undefined) {
+            query += ' WHERE is_resolved = @res';
+            request.input('res', dbConnection_1.mssql.Bit, resolvedFilter ? 1 : 0);
+        }
+        query += ' ORDER BY occurrence_count DESC, createdAt DESC';
+        const result = await request.query(query);
+        return result.recordset.map(row => ({
+            ...row,
+            is_resolved: row.is_resolved === true || row.is_resolved === 1,
+        }));
     }
     static async resolveUnknownValue(unknownId, targetOptionValue) {
-        const record = await unknown_value_model_1.UnknownValue.findOne({ unknown_id: unknownId });
-        if (!record)
+        const pool = await (0, dbConnection_1.getPool)();
+        const existing = await pool.request()
+            .input('uid', dbConnection_1.mssql.NVarChar, unknownId)
+            .query('SELECT TOP 1 * FROM UnknownValues WHERE unknown_id = @uid');
+        if (existing.recordset.length === 0)
             throw new app_error_util_1.AppError('Unknown value record not found', 404);
-        record.is_resolved = true;
-        record.resolved_to = targetOptionValue;
-        record.resolved_at = new Date();
-        return record.save();
+        await pool.request()
+            .input('uid', dbConnection_1.mssql.NVarChar, unknownId)
+            .input('to', dbConnection_1.mssql.NVarChar, targetOptionValue)
+            .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = @to, resolved_at = GETDATE(), updatedAt = GETDATE() WHERE unknown_id = @uid');
+        return {
+            ...existing.recordset[0],
+            is_resolved: true,
+            resolved_to: targetOptionValue,
+            resolved_at: new Date(),
+            updated_at: new Date(),
+        };
     }
     static async dismissUnknownValue(unknownId) {
-        const record = await unknown_value_model_1.UnknownValue.findOne({ unknown_id: unknownId });
-        if (!record)
+        const pool = await (0, dbConnection_1.getPool)();
+        const check = await pool.request()
+            .input('uid', dbConnection_1.mssql.NVarChar, unknownId)
+            .query('SELECT 1 FROM UnknownValues WHERE unknown_id = @uid');
+        if (check.recordset.length === 0)
             throw new app_error_util_1.AppError('Unknown value record not found', 404);
-        record.is_resolved = true;
-        record.resolved_to = 'dismissed';
-        record.resolved_at = new Date();
-        await record.save();
+        await pool.request()
+            .input('uid', dbConnection_1.mssql.NVarChar, unknownId)
+            .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = \'dismissed\', resolved_at = GETDATE(), updatedAt = GETDATE() WHERE unknown_id = @uid');
     }
     static async promoteUnknownToMaster(unknownId) {
-        const record = await unknown_value_model_1.UnknownValue.findOne({ unknown_id: unknownId });
-        if (!record)
+        const pool = await (0, dbConnection_1.getPool)();
+        const existing = await pool.request()
+            .input('uid', dbConnection_1.mssql.NVarChar, unknownId)
+            .query('SELECT TOP 1 * FROM UnknownValues WHERE unknown_id = @uid');
+        if (existing.recordset.length === 0)
             throw new app_error_util_1.AppError('Unknown value record not found', 404);
+        const record = existing.recordset[0];
         const label = record.raw_value;
         const value = label.trim().toLowerCase().replace(/[\s-]+/g, '_').replace(/[^a-z0-9_]/g, '');
         const created = await this.createOption(record.category_key, { label, value });
-        record.is_resolved = true;
-        record.resolved_to = created.value;
-        record.resolved_at = new Date();
-        await record.save();
+        await pool.request()
+            .input('uid', unknownId)
+            .input('to', created.value)
+            .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = @to, resolved_at = GETDATE(), updatedAt = GETDATE() WHERE unknown_id = @uid');
         return created;
     }
-    // Public label map: { category_key: { value: label, … }, … }
     static async getPublicLabelMap() {
         const allOptions = await this.getAllActiveOptions();
         const labelMap = {};
@@ -242,7 +366,6 @@ class MasterDataService {
         }
         return labelMap;
     }
-    // ── Private helpers ───────────────────────────────────────────────────────────
     static assertValidCategory(categoryKey) {
         const valid = master_option_model_1.MASTER_CATEGORIES.some((c) => c.key === categoryKey);
         if (!valid)
@@ -250,4 +373,3 @@ class MasterDataService {
     }
 }
 exports.MasterDataService = MasterDataService;
-//# sourceMappingURL=master-data.service.js.map

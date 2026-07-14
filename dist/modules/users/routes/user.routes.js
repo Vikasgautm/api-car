@@ -28,4 +28,3 @@ adminRouter.delete('/:id', validation_1.validateIdParam, user_controller_1.UserC
 adminRouter.patch('/restore/:id', validation_1.validateIdParam, user_controller_1.UserController.restoreUser);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=user.routes.js.map

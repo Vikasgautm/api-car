@@ -1,5 +1,4 @@
-import { Document } from 'mongoose';
-export interface ICity extends Document {
+export interface ICity {
     city_id: string;
     name: string;
     slug: string;
@@ -14,11 +13,5 @@ export interface ICity extends Document {
     is_deleted?: boolean;
     deleted_at?: Date;
 }
-export declare const City: import("mongoose").Model<ICity, {}, {}, {}, Document<unknown, {}, ICity, {}, import("mongoose").DefaultSchemaOptions> & ICity & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, ICity>;
-//# sourceMappingURL=city.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const City: BaseModel<ICity>;

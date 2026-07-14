@@ -10,4 +10,3 @@ export declare class FuelTypesIntelligenceService {
     static getHealth(): Promise<HealthResponse>;
     static getMultiFuel(): Promise<MultiFuelResponse>;
 }
-//# sourceMappingURL=fuel-types-intelligence.service.d.ts.map

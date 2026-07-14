@@ -24,4 +24,3 @@ export declare class CarDekhoExtractor {
     static extractCarData(url: string): Promise<ExtractedCarData>;
     static extractVariantData(url: string): Promise<ExtractedVariantData>;
 }
-//# sourceMappingURL=cardekho.extractor.d.ts.map

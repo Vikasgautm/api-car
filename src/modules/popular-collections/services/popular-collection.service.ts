@@ -30,13 +30,12 @@ export class PopularCollectionService {
     const existing = await PopularCollection.findOne({ slug: data.slug });
     if (existing) throw new AppError(`Slug already exists: ${data.slug}`, 400);
 
-    const collection = new PopularCollection({
+    return PopularCollection.create({
       ...data,
       collection_id: uuidv4(),
       created_by: userId,
       updated_by: userId,
     });
-    return collection.save();
   }
 
   static async update(

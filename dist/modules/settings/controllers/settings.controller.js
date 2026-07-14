@@ -5,8 +5,8 @@ const user_model_1 = require("../../../models/user.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const update_seo_settings_dto_1 = require("../dto/update-seo-settings.dto");
 const settings_service_1 = require("../services/settings.service");
+const validation_1 = require("../../../shared/validation");
 class SettingsController {
     static updateTheme = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const userId = req.user?.id || req.user?.user_id;
@@ -35,13 +35,12 @@ class SettingsController {
             google_tag_manager_id: req.body.google_tag_manager_id,
             facebook_pixel_id: req.body.facebook_pixel_id,
         };
-        const validation = update_seo_settings_dto_1.UpdateSEOSettingsDto.validate(updateDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.UpdateSEOSettingsDto.validate(updateDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const seoSettings = await settings_service_1.SettingsService.updateSEOSettings(updateDto);
         return response_util_1.ResponseUtil.success(res, seoSettings, "SEO settings updated successfully");
     });
 }
 exports.SettingsController = SettingsController;
-//# sourceMappingURL=settings.controller.js.map

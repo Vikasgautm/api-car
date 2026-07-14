@@ -1,11 +1,10 @@
+import { createBlogSchema, updateBlogSchema } from '../../../shared/validation';
 import { Request, Response } from "express";
 import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { UploadService } from "../../../shared/services/upload.service";
 import { AppError } from '../../../shared/utils/app-error.util';
 import { ResponseUtil } from "../../../shared/utils/response.util";
 import { catchAsync } from "../../../utils/catchAsync";
-import { CreateBlogDto } from "../dto/create-blog.dto";
-import { UpdateBlogDto } from "../dto/update-blog.dto";
 import { BlogService } from "../services/blog.service";
 import { BlogRelationshipService } from "../services/blog-relationship.service";
 import { BlogQueryService } from "../services/blog-query.service";
@@ -115,7 +114,7 @@ export class BlogController {
       }
     }
 
-    const createDto: CreateBlogDto = {
+    const createDto: any = {
       title: req.body.title,
       content: req.body.content,
       excerpt: req.body.excerpt,
@@ -138,16 +137,16 @@ export class BlogController {
     };
     console.log(createDto, "hello");
     
-    const validation = CreateBlogDto.validate(createDto);
-    if (!validation.valid) {
+    const validation = createBlogSchema.safeParse(createDto);
+    if (!validation.success) {
       throw new AppError(
-        validation.errors.join(', '),
+        validation.error.issues.map((e: any) => e.message).join(', '),
         400,
         {
           userMessage: USER_MESSAGES.VALIDATION_ERROR,
           errorCode: ERROR_CODES.VALIDATION_ERROR,
           details: {
-            fields: validation.errors,
+            fields: validation.error.issues.map((e: any) => e.message),
           },
         }
       );
@@ -183,7 +182,7 @@ export class BlogController {
       images = [...images, ...newImages];
     }
 
-    const updateDto: UpdateBlogDto = {
+    const updateDto: any = {
       title: req.body.title,
       content: req.body.content,
       excerpt: req.body.excerpt,
@@ -206,9 +205,9 @@ export class BlogController {
     };
     console.log(updateDto, "updatedto");
     
-    const validation = UpdateBlogDto.validate(updateDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const validation = updateBlogSchema.safeParse(updateDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
     }
 
     const blog = await BlogService.updateBlog(req.params.id as string, updateDto);

@@ -81,4 +81,3 @@ class SeoCollectionHealthService {
     }
 }
 exports.SeoCollectionHealthService = SeoCollectionHealthService;
-//# sourceMappingURL=seo-collection-health.service.js.map

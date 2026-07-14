@@ -32,4 +32,3 @@ export declare class FAQController {
     static bulkRetag: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
     static getDuplicatesReport: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=faq.controller.d.ts.map

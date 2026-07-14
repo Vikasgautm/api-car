@@ -15,4 +15,3 @@ const requestLogger = (req, res, next) => {
     next();
 };
 exports.requestLogger = requestLogger;
-//# sourceMappingURL=logging.middleware.js.map

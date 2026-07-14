@@ -80,4 +80,3 @@ async function runTaxonomyHealthChecker(_params) {
         return { checker: CHECKER_NAME, issues: [], total: 0, error: err?.message || 'Taxonomy health checker failed' };
     }
 }
-//# sourceMappingURL=taxonomy-health.checker.js.map

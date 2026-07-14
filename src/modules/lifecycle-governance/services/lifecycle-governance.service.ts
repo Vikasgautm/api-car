@@ -543,7 +543,7 @@ export class LifecycleGovernanceService {
   }
 
   private static async _sendOtpForExistingRequest(
-    request: ILifecycleRequest,
+    request: any,
     actor: AuditActor & { user_id: string }
   ): Promise<CreateLifecycleRequestResult> {
     const recipient = config.lifecycle_governance.otp_email_recipient;

@@ -1,7 +1,6 @@
-import { Document } from 'mongoose';
 import { EntityLifecycleState } from './car.model';
 export type LifecycleRequestStatus = 'pending' | 'otp_pending' | 'approved' | 'rejected' | 'cancelled' | 'expired';
-export interface ILifecycleRequest extends Document {
+export interface ILifecycleRequest {
     request_id: string;
     car_id: string;
     car_name: string;
@@ -32,11 +31,5 @@ export interface ILifecycleRequest extends Document {
     override_reason: string | null;
     is_direct: boolean;
 }
-export declare const LifecycleRequest: import("mongoose").Model<ILifecycleRequest, {}, {}, {}, Document<unknown, {}, ILifecycleRequest, {}, import("mongoose").DefaultSchemaOptions> & ILifecycleRequest & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, ILifecycleRequest>;
-//# sourceMappingURL=lifecycle-request.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const LifecycleRequest: BaseModel<ILifecycleRequest>;

@@ -33,13 +33,7 @@ export declare class ScheduledLaunchService {
     /**
      * Get all scheduled launches for a date range
      */
-    static getScheduledLaunchesInRange(startDate: Date, endDate: Date): Promise<(import("mongoose").Document<unknown, {}, import("../../models/car.model").ICar, {}, import("mongoose").DefaultSchemaOptions> & import("../../models/car.model").ICar & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    })[]>;
+    static getScheduledLaunchesInRange(startDate: Date, endDate: Date): Promise<(import("../../models/car.model").ICar & import("../../sql/common/BaseModel").SQLDocument)[]>;
     /**
      * Cancel a scheduled launch
      */
@@ -59,4 +53,3 @@ export declare class ScheduledLaunchService {
     }[]>;
 }
 export {};
-//# sourceMappingURL=scheduled-launch.service.d.ts.map

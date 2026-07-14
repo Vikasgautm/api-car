@@ -31,13 +31,7 @@ export declare class PartialImportService {
      * Convert partial variant to full variant on launch
      * Unhide all sections and update market status
      */
-    static promotePartialToLaunched(variantId: string, actor: AuditActor): Promise<import("mongoose").Document<unknown, {}, import("../../../models/car-variant.model").ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/car-variant.model").ICarVariant & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static promotePartialToLaunched(variantId: string, actor: AuditActor): Promise<import("../../../models/car-variant.model").ICarVariant & import("../../../sql/common/BaseModel").SQLDocument>;
     /**
      * Validate that partial import has minimum required data
      */
@@ -47,4 +41,3 @@ export declare class PartialImportService {
     };
 }
 export {};
-//# sourceMappingURL=partial-import.service.d.ts.map

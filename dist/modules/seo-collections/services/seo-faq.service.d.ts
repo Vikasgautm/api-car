@@ -8,4 +8,3 @@ export declare class SeoFaqService {
         mileage_classes?: string[];
     }): Promise<ISeoFaqItem[]>;
 }
-//# sourceMappingURL=seo-faq.service.d.ts.map

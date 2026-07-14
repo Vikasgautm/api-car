@@ -37,47 +37,10 @@ export declare class BodyTypeService {
         updated: number;
     }>;
     static getBodyTypeById(bodyTypeId: string): Promise<any>;
-    static getBodyTypeBySlug(slug: string): Promise<(import("mongoose").Document<unknown, {}, IBodyType, {}, import("mongoose").DefaultSchemaOptions> & IBodyType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static createBodyType(bodyTypeData: any): Promise<import("mongoose").Document<unknown, {}, IBodyType, {}, import("mongoose").DefaultSchemaOptions> & IBodyType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static updateBodyType(bodyTypeId: string, bodyTypeData: any): Promise<import("mongoose").Document<unknown, {}, IBodyType, {}, import("mongoose").DefaultSchemaOptions> & IBodyType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static deleteBodyType(bodyTypeId: string): Promise<(import("mongoose").Document<unknown, {}, IBodyType, {}, import("mongoose").DefaultSchemaOptions> & IBodyType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static restoreBodyType(bodyTypeId: string): Promise<import("mongoose").Document<unknown, {}, IBodyType, {}, import("mongoose").DefaultSchemaOptions> & IBodyType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static togglePublish(bodyTypeId: string): Promise<import("mongoose").Document<unknown, {}, IBodyType, {}, import("mongoose").DefaultSchemaOptions> & IBodyType & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static getBodyTypeBySlug(slug: string): Promise<(IBodyType & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static createBodyType(bodyTypeData: any): Promise<any>;
+    static updateBodyType(bodyTypeId: string, bodyTypeData: any): Promise<IBodyType & import("../../../sql/common/BaseModel").SQLDocument>;
+    static deleteBodyType(bodyTypeId: string): Promise<(IBodyType & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static restoreBodyType(bodyTypeId: string): Promise<IBodyType & import("../../../sql/common/BaseModel").SQLDocument>;
+    static togglePublish(bodyTypeId: string): Promise<IBodyType & import("../../../sql/common/BaseModel").SQLDocument>;
 }
-//# sourceMappingURL=bodyType.service.d.ts.map

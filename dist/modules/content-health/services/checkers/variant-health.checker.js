@@ -65,4 +65,3 @@ async function runVariantHealthChecker(_params) {
         return { checker: CHECKER_NAME, issues: [], total: 0, error: err?.message || 'Variant health checker failed' };
     }
 }
-//# sourceMappingURL=variant-health.checker.js.map

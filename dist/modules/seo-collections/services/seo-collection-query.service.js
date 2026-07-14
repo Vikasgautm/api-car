@@ -77,4 +77,3 @@ class SeoCollectionQueryService {
     }
 }
 exports.SeoCollectionQueryService = SeoCollectionQueryService;
-//# sourceMappingURL=seo-collection-query.service.js.map

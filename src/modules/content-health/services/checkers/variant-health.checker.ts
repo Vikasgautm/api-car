@@ -1,5 +1,5 @@
+import { CheckerResult, HealthIssue, IssueCategory, IssueSeverity, IssuesQueryParams } from "../../dto/content-health.dto";
 import { CarVariant } from '../../../../models/car-variant.model';
-import { CheckerResult, HealthIssue, IssueCategory, IssueSeverity, IssuesQueryParams } from '../../dto/content-health.dto';
 
 const CHECKER_NAME = 'variant_health';
 const SCAN_LIMIT = 1000;

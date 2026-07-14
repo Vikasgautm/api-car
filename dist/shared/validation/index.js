@@ -20,13 +20,16 @@ __exportStar(require("./body-type-validation.schemas"), exports);
 __exportStar(require("./brand-validation.schemas"), exports);
 __exportStar(require("./car-validation.schemas"), exports);
 __exportStar(require("./city-validation.schemas"), exports);
+__exportStar(require("./comparison-validation.schemas"), exports);
 __exportStar(require("./common-validation.schemas"), exports);
 __exportStar(require("./faq-validation.schemas"), exports);
 __exportStar(require("./fuel-type-validation.schemas"), exports);
 __exportStar(require("./image-validation.schemas"), exports);
+__exportStar(require("./redirect-validation.schemas"), exports);
 __exportStar(require("./settings-validation.schemas"), exports);
 __exportStar(require("./user-validation.schemas"), exports);
+__exportStar(require("./deletion-workflow-validation.schemas"), exports);
+__exportStar(require("./taxonomy-validation.schemas"), exports);
 // Export validation middleware
 __exportStar(require("./params-validation.middleware"), exports);
 __exportStar(require("./query-validation.middleware"), exports);
-//# sourceMappingURL=index.js.map

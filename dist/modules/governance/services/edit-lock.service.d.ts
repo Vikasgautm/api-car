@@ -8,13 +8,6 @@ export declare class EditLockService {
     static releaseLock(entityType: string, entityId: string, userId: string): Promise<void>;
     static forceRelease(entityType: string, entityId: string): Promise<void>;
     static checkLock(entityType: string, entityId: string): Promise<LockInfo>;
-    static getUserActiveLocks(userId: string): Promise<(import("mongoose").Document<unknown, {}, IEditLock, {}, import("mongoose").DefaultSchemaOptions> & IEditLock & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    })[]>;
+    static getUserActiveLocks(userId: string): Promise<(IEditLock & import("../../../sql/common/BaseModel").SQLDocument)[]>;
     static releaseExpiredLocks(): Promise<number>;
 }
-//# sourceMappingURL=edit-lock.service.d.ts.map

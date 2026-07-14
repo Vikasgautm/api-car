@@ -11,4 +11,3 @@ export declare class AnalyticsController {
     static getBatchQualityReport: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
     static getStandardizationReport: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=analytics.controller.d.ts.map

@@ -68,4 +68,3 @@ export declare class MileageClassifierService {
     static classifyVariant(variant: Pick<ICarVariant, 'fuel_type_id' | 'specs_normalized'>, parentCar: Pick<ICar, 'is_electric' | 'fuel_type_id' | 'body_type_id'> | null): Promise<ClassificationResult>;
 }
 export {};
-//# sourceMappingURL=mileage-classifier.service.d.ts.map

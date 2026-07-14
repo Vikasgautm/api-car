@@ -1,55 +1,81 @@
-import { Car } from '../../../models/car.model';
-import { CarVariant } from '../../../models/car-variant.model';
 import { ImportLog } from '../../../models/import-log.model';
-import { SeoCollection } from '../../../models/seo-collection.model';
-import { DashboardPriorities, PriorityItem } from '../dtos/dashboard.dto';
+import { getPool, mssql } from '../../../sql/utils/dbConnection';
+
+export interface PriorityItem {
+  id: string;
+  title: string;
+  description: string;
+  count: number;
+  severity: 'critical' | 'warning' | 'info';
+  redirect_link: string;
+  action_label: string;
+}
+
+export interface DashboardPriorities {
+  items: PriorityItem[];
+  total_issues: number;
+  critical_count: number;
+  warning_count: number;
+}
 
 export class DashboardPriorityService {
   static async getPriorities(): Promise<DashboardPriorities> {
+    const pool = await getPool();
+
     const [
       failedImports,
-      missingSeo,
-      missingImages,
-      weakCollections,
-      emptyCollections,
-      staleUpcoming,
+      missingSeoRes,
+      missingImagesRes,
+      weakCollectionsRes,
+      emptyCollectionsRes,
+      staleUpcomingRes,
+      duplicateSlugsRes,
     ] = await Promise.all([
       ImportLog.countDocuments({ status: 'failed' }),
-      Car.countDocuments({
-        is_deleted: false,
-        is_published: true,
-        $or: [
-          { 'seo.meta_title': { $in: [null, ''] } },
-          { 'seo.meta_description': { $in: [null, ''] } },
-        ],
-      }),
-      Car.countDocuments({
-        is_deleted: false,
-        is_published: true,
-        $or: [{ thumbnail: null }, { thumbnail: { $exists: false } }, { 'thumbnail.url': '' }],
-      }),
-      SeoCollection.countDocuments({
-        is_deleted: false,
-        matched_car_count: { $gt: 0, $lt: 3 },
-      }),
-      SeoCollection.countDocuments({
-        is_deleted: false,
-        matched_car_count: 0,
-      }),
-      Car.countDocuments({
-        is_deleted: false,
-        is_upcoming: true,
-        expected_launch_date: { $lt: new Date() },
-      }),
+      pool.request().query(`
+        SELECT COUNT(*) as cnt FROM Cars 
+        WHERE is_deleted = 0 
+        AND is_published = 1 
+        AND (meta_title IS NULL OR meta_title = '' OR meta_description IS NULL OR meta_description = '')
+      `),
+      pool.request().query(`
+        SELECT COUNT(*) as cnt FROM Cars 
+        WHERE is_deleted = 0 
+        AND is_published = 1 
+        AND (thumbnail IS NULL OR JSON_VALUE(thumbnail, '$.url') IS NULL OR JSON_VALUE(thumbnail, '$.url') = '')
+      `),
+      pool.request().query(`
+        SELECT COUNT(*) as cnt FROM SeoCollections 
+        WHERE is_deleted = 0 
+        AND matched_car_count > 0 AND matched_car_count < 3
+      `),
+      pool.request().query(`
+        SELECT COUNT(*) as cnt FROM SeoCollections 
+        WHERE is_deleted = 0 
+        AND matched_car_count = 0
+      `),
+      pool.request().query(`
+        SELECT COUNT(*) as cnt FROM Cars 
+        WHERE is_deleted = 0 
+        AND is_upcoming = 1 
+        AND expected_launch_date < GETDATE()
+      `),
+      pool.request().query(`
+        SELECT COUNT(*) as cnt FROM (
+          SELECT slug FROM Cars 
+          WHERE is_deleted = 0 
+          GROUP BY slug 
+          HAVING COUNT(*) > 1
+        ) as t
+      `),
     ]);
 
-    const duplicateSlugsAgg = await Car.aggregate([
-      { $match: { is_deleted: false } },
-      { $group: { _id: '$slug', count: { $sum: 1 } } },
-      { $match: { count: { $gt: 1 } } },
-      { $count: 'total' },
-    ]);
-    const duplicateSlugs = duplicateSlugsAgg[0]?.total ?? 0;
+    const missingSeo = missingSeoRes.recordset[0].cnt || 0;
+    const missingImages = missingImagesRes.recordset[0].cnt || 0;
+    const weakCollections = weakCollectionsRes.recordset[0].cnt || 0;
+    const emptyCollections = emptyCollectionsRes.recordset[0].cnt || 0;
+    const staleUpcoming = staleUpcomingRes.recordset[0].cnt || 0;
+    const duplicateSlugs = duplicateSlugsRes.recordset[0].cnt || 0;
 
     const items: PriorityItem[] = [];
 

@@ -6,7 +6,13 @@ export type AuditEntityType =
   | 'tag'
   | 'tag_category'
   | 'benchmark_override'
-  | 'blog';
+  | 'blog'
+  | 'comparison'
+  | 'seo_collection'
+  | 'import'
+  | 'brand'
+  | 'user'
+  | 'setting';
 
 export type AuditAction =
   | 'create'

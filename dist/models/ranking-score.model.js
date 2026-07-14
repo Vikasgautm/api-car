@@ -41,5 +41,5 @@ schema.index({ entity_type: 1, comparison_pressure_score: -1 });
 schema.index({ entity_type: 1, retention_score: -1 });
 schema.index({ behavioral_confidence: -1 });
 schema.index({ computed_at: -1 });
-exports.RankingScore = (0, mongoose_1.model)('RankingScore', schema);
-//# sourceMappingURL=ranking-score.model.js.map
+const BaseModel_1 = require("../sql/common/BaseModel");
+exports.RankingScore = new BaseModel_1.BaseModel('RankingScores', 'score_id', ['raw_signals']);

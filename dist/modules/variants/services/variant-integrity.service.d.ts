@@ -72,4 +72,3 @@ export declare class VariantIntegrityService {
     private static flattenSpecsToObject;
     private static unflattenSpecs;
 }
-//# sourceMappingURL=variant-integrity.service.d.ts.map

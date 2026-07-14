@@ -14,4 +14,3 @@ adminRouter.delete('/mileage-benchmarks/:body_type_id/:fuel_category', intellige
 adminRouter.post('/reclassify', intelligence_controller_1.IntelligenceController.reclassifyAll);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=intelligence.routes.js.map

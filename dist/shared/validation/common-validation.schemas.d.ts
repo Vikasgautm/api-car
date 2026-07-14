@@ -15,8 +15,8 @@ export declare const paginationSchema: z.ZodObject<{
     limit: z.ZodOptional<z.ZodDefault<z.ZodCoercedNumber<unknown>>>;
     sortBy: z.ZodOptional<z.ZodString>;
     sortOrder: z.ZodOptional<z.ZodEnum<{
-        asc: "asc";
         desc: "desc";
+        asc: "asc";
     }>>;
     q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
@@ -41,8 +41,8 @@ export declare const paginationSchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const publishStatusSchema: z.ZodOptional<z.ZodEnum<{
     archived: "archived";
-    upcoming: "upcoming";
     launched: "launched";
+    upcoming: "upcoming";
     discontinued: "discontinued";
     disabled: "disabled";
 }>>;
@@ -95,4 +95,3 @@ export declare const carIdParamSchema: z.ZodObject<{
 export declare const uuidIdParamSchema: z.ZodObject<{
     id: z.ZodString;
 }, z.core.$strip>;
-//# sourceMappingURL=common-validation.schemas.d.ts.map

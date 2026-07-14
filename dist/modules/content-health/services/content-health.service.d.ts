@@ -9,4 +9,3 @@ export declare class ContentHealthService {
         generated_at: string;
     }>;
 }
-//# sourceMappingURL=content-health.service.d.ts.map

@@ -52,4 +52,3 @@ const uploadMultiple = (fieldName, maxCount = 5, config) => (0, exports.createUp
 exports.uploadMultiple = uploadMultiple;
 const uploadFields = (fields, config) => (0, exports.createUploadMiddleware)(config).fields(fields);
 exports.uploadFields = uploadFields;
-//# sourceMappingURL=upload.middleware.js.map

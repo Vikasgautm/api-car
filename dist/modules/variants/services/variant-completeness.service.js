@@ -251,4 +251,3 @@ class VariantCompletenessService {
     }
 }
 exports.VariantCompletenessService = VariantCompletenessService;
-//# sourceMappingURL=variant-completeness.service.js.map

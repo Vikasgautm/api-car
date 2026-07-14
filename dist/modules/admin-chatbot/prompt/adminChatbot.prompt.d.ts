@@ -5,4 +5,3 @@ export declare function buildConversationMessages(history: ConversationTurn[], n
     role: 'system' | 'user' | 'assistant';
     content: string;
 }>;
-//# sourceMappingURL=adminChatbot.prompt.d.ts.map

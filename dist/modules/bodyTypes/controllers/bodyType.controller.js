@@ -1,12 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BodyTypeController = void 0;
+const validation_1 = require("../../../shared/validation");
 const errorMessages_1 = require("../../../constants/errorMessages");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const create_body_type_dto_1 = require("../dto/create-body-type.dto");
-const update_body_type_dto_1 = require("../dto/update-body-type.dto");
 const bodyType_service_1 = require("../services/bodyType.service");
 class BodyTypeController {
     // ─── Public ──────────────────────────────────────────────────────────────────
@@ -98,9 +97,9 @@ class BodyTypeController {
             related_body_types: req.body.related_body_types,
             created_by: req.user?.user_id,
         };
-        const validation = create_body_type_dto_1.CreateBodyTypeDto.validate(createDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.createBodyTypeSchema.safeParse(createDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const bodyType = await bodyType_service_1.BodyTypeService.createBodyType(createDto);
         return response_util_1.ResponseUtil.created(res, bodyType, "Body type created successfully");
@@ -128,12 +127,12 @@ class BodyTypeController {
             related_body_types: req.body.related_body_types,
             updated_by: req.user?.user_id,
         };
-        const validation = update_body_type_dto_1.UpdateBodyTypeDto.validate(updateDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400, {
+        const validation = validation_1.updateBodyTypeSchema.safeParse(updateDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400, {
                 userMessage: errorMessages_1.USER_MESSAGES.VALIDATION_ERROR,
                 errorCode: errorMessages_1.ERROR_CODES.VALIDATION_ERROR,
-                details: { fields: validation.errors },
+                details: { fields: validation.error.errors.map(e => e.message) },
             });
         }
         const bodyType = await bodyType_service_1.BodyTypeService.updateBodyType(req.params.id, updateDto);
@@ -153,4 +152,3 @@ class BodyTypeController {
     });
 }
 exports.BodyTypeController = BodyTypeController;
-//# sourceMappingURL=bodyType.controller.js.map

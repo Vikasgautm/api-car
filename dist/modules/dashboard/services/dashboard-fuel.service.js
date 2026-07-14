@@ -1,20 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardFuelService = void 0;
-const car_variant_model_1 = require("../../../models/car-variant.model");
-const fuel_type_model_1 = require("../../../models/fuel-type.model");
+const dbConnection_1 = require("../../../sql/utils/dbConnection");
 class DashboardFuelService {
     static async getSnapshot() {
-        const [fuelGroups, fuelTypes] = await Promise.all([
-            car_variant_model_1.CarVariant.aggregate([
-                { $match: { is_deleted: false } },
-                { $group: { _id: '$fuel_type_id', count: { $sum: 1 } } },
-                { $sort: { count: -1 } },
-            ]),
-            fuel_type_model_1.FuelType.find({ is_deleted: false }).select('fuel_type_id name').lean(),
+        const pool = await (0, dbConnection_1.getPool)();
+        const [fuelGroupsResult, fuelTypesResult] = await Promise.all([
+            pool.request().query('SELECT fuel_type_id, COUNT(*) as count FROM CarVariants WHERE is_deleted = 0 GROUP BY fuel_type_id'),
+            pool.request().query('SELECT fuel_type_id, name FROM FuelTypes WHERE is_deleted = 0'),
         ]);
         const fuelMap = {};
-        for (const ft of fuelTypes) {
+        for (const ft of fuelTypesResult.recordset) {
             fuelMap[ft.fuel_type_id] = (ft.name || '').toLowerCase();
         }
         const counts = {
@@ -26,22 +22,23 @@ class DashboardFuelService {
         };
         let strongestId = '';
         let strongestCount = 0;
-        for (const g of fuelGroups) {
-            const name = fuelMap[g._id] ?? '';
-            if (g.count > strongestCount) {
-                strongestCount = g.count;
+        for (const g of fuelGroupsResult.recordset) {
+            const name = fuelMap[g.fuel_type_id] ?? '';
+            const count = g.count || 0;
+            if (count > strongestCount) {
+                strongestCount = count;
                 strongestId = name;
             }
             if (name.includes('petrol'))
-                counts.petrol += g.count;
+                counts.petrol += count;
             else if (name.includes('diesel'))
-                counts.diesel += g.count;
+                counts.diesel += count;
             else if (name.includes('electric') || name.includes('ev'))
-                counts.electric += g.count;
+                counts.electric += count;
             else if (name.includes('hybrid'))
-                counts.hybrid += g.count;
+                counts.hybrid += count;
             else if (name.includes('cng'))
-                counts.cng += g.count;
+                counts.cng += count;
         }
         const total = Object.values(counts).reduce((a, b) => a + b, 0);
         return {
@@ -56,4 +53,3 @@ class DashboardFuelService {
     }
 }
 exports.DashboardFuelService = DashboardFuelService;
-//# sourceMappingURL=dashboard-fuel.service.js.map

@@ -59,4 +59,3 @@ const seedFuelTypes = async () => {
     }
 };
 exports.seedFuelTypes = seedFuelTypes;
-//# sourceMappingURL=fuel-type.seed.js.map

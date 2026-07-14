@@ -30,4 +30,3 @@ router.get('/platform', auth_middleware_1.protect, (0, auth_middleware_1.restric
 router.get('/platform/:group', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), platform_settings_controller_1.PlatformSettingsController.getByGroup);
 router.put('/platform/:group', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), platform_settings_controller_1.PlatformSettingsController.updateByGroup);
 exports.default = router;
-//# sourceMappingURL=settings.routes.js.map

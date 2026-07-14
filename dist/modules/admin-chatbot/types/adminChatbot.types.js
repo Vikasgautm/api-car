@@ -91,4 +91,3 @@ function isIntentAllowedForRole(intent, role) {
     const allowed = exports.ROLE_TOOL_PERMISSIONS[role] ?? exports.ROLE_TOOL_PERMISSIONS.viewer;
     return allowed.includes(intent);
 }
-//# sourceMappingURL=adminChatbot.types.js.map

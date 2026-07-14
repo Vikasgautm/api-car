@@ -1,8 +1,3 @@
 export declare class BlogRelatedService {
-    static getRelatedArticles(blogId: string, limit?: number): Promise<(import("../../../models/blog.model").IBlog & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    })[]>;
+    static getRelatedArticles(blogId: string, limit?: number): Promise<(import("../../../models/blog.model").IBlog & import("../../../sql/common/BaseModel").SQLDocument)[]>;
 }
-//# sourceMappingURL=blog-related.service.d.ts.map

@@ -27,7 +27,7 @@ export class BlogRelationshipService {
       { blog_id: blogId, is_deleted: false },
       { $set: update },
       { returnDocument: 'after' }
-    ).lean();
+    );
 
     if (!blog) {
       throw new AppError('Blog not found', 404);

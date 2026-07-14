@@ -98,4 +98,3 @@ const optionalAuth = async (req, res, next) => {
     next();
 };
 exports.optionalAuth = optionalAuth;
-//# sourceMappingURL=auth.middleware.js.map

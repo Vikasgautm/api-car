@@ -1,5 +1,4 @@
-import mongoose, { Document } from 'mongoose';
-export interface IComparisonRival extends Document {
+export interface IComparisonRival {
     rival_id: string;
     primary_car_id: string;
     rival_car_id: string;
@@ -11,11 +10,5 @@ export interface IComparisonRival extends Document {
     created_at: Date;
     updated_at: Date;
 }
-export declare const ComparisonRival: mongoose.Model<IComparisonRival, {}, {}, {}, mongoose.Document<unknown, {}, IComparisonRival, {}, mongoose.DefaultSchemaOptions> & IComparisonRival & Required<{
-    _id: mongoose.Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IComparisonRival>;
-//# sourceMappingURL=comparison-rival.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const ComparisonRival: BaseModel<IComparisonRival>;

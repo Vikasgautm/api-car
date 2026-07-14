@@ -40,3 +40,5 @@ export const userFilterSchema = paginationSchema.extend({
   is_email_verified: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(),
   is_deleted: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(),
 }).strict();
+
+export type UserFilterDto = z.infer<typeof userFilterSchema>;

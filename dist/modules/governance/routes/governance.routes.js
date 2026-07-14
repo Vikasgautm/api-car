@@ -40,4 +40,3 @@ router.post('/locks/acquire', governance_controller_1.GovernanceController.acqui
 router.post('/locks/release', governance_controller_1.GovernanceController.releaseLock);
 router.post('/locks/force-release', governance_controller_1.GovernanceController.forceReleaseLock);
 exports.default = router;
-//# sourceMappingURL=governance.routes.js.map

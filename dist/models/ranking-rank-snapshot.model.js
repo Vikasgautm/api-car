@@ -27,4 +27,3 @@ schema.index({ score_type: 1, entity_type: 1, generated_at: -1 });
 schema.index({ generated_at: -1 });
 schema.index({ generated_at: 1 }, { expireAfterSeconds: 365 * 24 * 3600 });
 exports.RankingRankSnapshot = (0, mongoose_1.model)('RankingRankSnapshot', schema);
-//# sourceMappingURL=ranking-rank-snapshot.model.js.map

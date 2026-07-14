@@ -35,4 +35,3 @@ export declare class CollectionStatusService {
     private static safeGetEngineStatus;
     private static safeGetRankings;
 }
-//# sourceMappingURL=collection-status.service.d.ts.map

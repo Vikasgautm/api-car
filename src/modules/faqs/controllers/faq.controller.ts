@@ -1,9 +1,8 @@
+import { createFaqSchema, updateFaqSchema } from '../../../shared/validation';
 import { Request, Response } from 'express';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { ResponseUtil } from '../../../shared/utils/response.util';
 import { catchAsync } from '../../../utils/catchAsync';
-import { CreateFaqDto } from '../dto/create-faq.dto';
-import { UpdateFaqDto } from '../dto/update-faq.dto';
 import { FAQService } from '../services/faq.service';
 import { FAQOrchestratorService } from '../services/faq-orchestrator.service';
 import { FAQTemplateEngineService } from '../services/faq-template-engine.service';
@@ -81,7 +80,7 @@ export class FAQController {
   });
 
   static createFAQ = catchAsync(async (req: Request, res: Response) => {
-    const createDto: CreateFaqDto = {
+    const createDto: any = {
       question: req.body.question,
       answer: req.body.answer,
       category: req.body.category,
@@ -111,15 +110,15 @@ export class FAQController {
       source_type: req.body.source_type,
     };
 
-    const validation = CreateFaqDto.validate(createDto);
-    if (!validation.valid) throw new AppError(validation.errors.join(', '), 400);
+    const validation = createFaqSchema.safeParse(createDto);
+    if (!validation.success) throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
 
     const faq = await FAQService.createFAQ(createDto);
     return ResponseUtil.created(res, faq, 'FAQ created successfully');
   });
 
   static updateFAQ = catchAsync(async (req: Request, res: Response) => {
-    const updateDto: UpdateFaqDto = {
+    const updateDto: any = {
       question: req.body.question,
       answer: req.body.answer,
       category: req.body.category,
@@ -156,8 +155,8 @@ export class FAQController {
       source_type: req.body.source_type,
     };
 
-    const validation = UpdateFaqDto.validate(updateDto);
-    if (!validation.valid) throw new AppError(validation.errors.join(', '), 400);
+    const validation = updateFaqSchema.safeParse(updateDto);
+    if (!validation.success) throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
 
     const faq = await FAQService.updateFAQ(req.params.id as string, updateDto);
     return ResponseUtil.success(res, faq, 'FAQ updated successfully');

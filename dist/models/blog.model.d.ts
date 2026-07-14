@@ -1,8 +1,8 @@
-import { Document } from 'mongoose';
 export type ArticleType = 'review' | 'comparison' | 'news' | 'guide' | 'listicle' | 'opinion' | 'launch' | 'first_drive';
 export type ArticleStatus = 'draft' | 'review' | 'published' | 'archived' | 'stale';
 export type ArticleIntent = 'informational' | 'commercial' | 'transactional' | 'navigational';
-export interface IBlog extends Document {
+import { BaseModel } from '../sql/common/BaseModel';
+export interface IBlog {
     blog_id: string;
     title: string;
     slug: string;
@@ -48,11 +48,4 @@ export interface IBlog extends Document {
     connected_comparisons?: string[];
     connected_collections?: string[];
 }
-export declare const Blog: import("mongoose").Model<IBlog, {}, {}, {}, Document<unknown, {}, IBlog, {}, import("mongoose").DefaultSchemaOptions> & IBlog & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IBlog>;
-//# sourceMappingURL=blog.model.d.ts.map
+export declare const Blog: BaseModel<IBlog>;

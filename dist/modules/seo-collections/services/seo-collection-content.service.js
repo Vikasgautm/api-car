@@ -83,4 +83,3 @@ class SeoCollectionContentService {
     }
 }
 exports.SeoCollectionContentService = SeoCollectionContentService;
-//# sourceMappingURL=seo-collection-content.service.js.map

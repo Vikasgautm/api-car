@@ -55,4 +55,3 @@ adminRouter.post('/bulk/category', car_image_controller_1.CarImageController.bul
 adminRouter.post('/bulk/delete', car_image_controller_1.CarImageController.bulkDelete);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=car-image.routes.js.map

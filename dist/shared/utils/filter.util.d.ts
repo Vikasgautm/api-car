@@ -8,4 +8,3 @@ export declare class FilterUtil {
     static buildBooleanFilter(field: string, value: boolean | undefined): Record<string, unknown>;
     static buildEnumFilter<T extends string>(field: string, value: T | undefined): Record<string, unknown>;
 }
-//# sourceMappingURL=filter.util.d.ts.map

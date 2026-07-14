@@ -32,4 +32,3 @@ export declare function auditRoutes(app: Application, silent?: boolean): {
  */
 export declare function logRouteAudit(audit: ReturnType<typeof auditRoutes>): void;
 export {};
-//# sourceMappingURL=route-audit.util.d.ts.map

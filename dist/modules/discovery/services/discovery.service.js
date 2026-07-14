@@ -617,4 +617,3 @@ exports.DiscoveryService = DiscoveryService;
 function clearDiscoveryFacetCache() {
     _facetCache.clear();
 }
-//# sourceMappingURL=discovery.service.js.map

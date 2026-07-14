@@ -10,4 +10,3 @@ export declare class DashboardController {
     static getComparisonSummary(req: Request, res: Response): Promise<void>;
     static globalSearch(req: Request, res: Response): Promise<void>;
 }
-//# sourceMappingURL=dashboard.controller.d.ts.map

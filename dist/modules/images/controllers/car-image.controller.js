@@ -130,4 +130,3 @@ class CarImageController {
     });
 }
 exports.CarImageController = CarImageController;
-//# sourceMappingURL=car-image.controller.js.map

@@ -9,4 +9,3 @@ export declare class LifecycleGovernanceController {
     static listRequests: (req: AuthRequest, res: Response, next: import("express").NextFunction) => void;
     static getPendingForCar: (req: AuthRequest, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=lifecycle-governance.controller.d.ts.map

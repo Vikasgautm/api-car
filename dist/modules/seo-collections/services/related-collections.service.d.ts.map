@@ -1,1 +1,0 @@
-{"version":3,"file":"related-collections.service.d.ts","sourceRoot":"","sources":["../../../../src/modules/seo-collections/services/related-collections.service.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,cAAc,EAAiB,MAAM,sCAAsC,CAAC;AAErF,qBAAa,yBAAyB;WACvB,WAAW,CAAC,UAAU,EAAE,cAAc,EAAE,KAAK,SAAI,GAAG,OAAO,CAAC,MAAM,EAAE,CAAC;CA2CnF"}

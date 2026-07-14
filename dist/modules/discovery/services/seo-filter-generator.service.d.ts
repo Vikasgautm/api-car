@@ -35,4 +35,3 @@ export declare class SeoFilterGeneratorService {
      */
     static getAllFeatures(): Promise<FeatureAvailability[]>;
 }
-//# sourceMappingURL=seo-filter-generator.service.d.ts.map

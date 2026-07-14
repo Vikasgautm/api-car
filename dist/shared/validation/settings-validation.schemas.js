@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateThemeSchema = exports.updateSEOSettingsSchema = void 0;
+exports.UpdateSEOSettingsDto = exports.updateThemeSchema = exports.updateSEOSettingsSchema = void 0;
 const zod_1 = require("zod");
 // Settings DTO schemas
 exports.updateSEOSettingsSchema = zod_1.z.object({
@@ -16,4 +16,17 @@ exports.updateSEOSettingsSchema = zod_1.z.object({
 exports.updateThemeSchema = zod_1.z.object({
     theme: zod_1.z.string().min(1, 'Theme is required'),
 }).strict();
-//# sourceMappingURL=settings-validation.schemas.js.map
+class UpdateSEOSettingsDto {
+    site_title;
+    site_description;
+    site_keywords;
+    og_default_image;
+    twitter_handle;
+    google_analytics_id;
+    google_tag_manager_id;
+    facebook_pixel_id;
+    static validate(dto) {
+        return exports.updateSEOSettingsSchema.safeParse(dto);
+    }
+}
+exports.UpdateSEOSettingsDto = UpdateSEOSettingsDto;

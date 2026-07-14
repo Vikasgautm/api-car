@@ -18,4 +18,3 @@ const seedMasterData = async () => {
     }
 };
 exports.seedMasterData = seedMasterData;
-//# sourceMappingURL=master-data.seed.js.map

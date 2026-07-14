@@ -22,4 +22,3 @@ router.get('/', image_subcategory_controller_1.ImageSubCategoryController.getAll
 router.get('/slug/:slug', image_subcategory_controller_1.ImageSubCategoryController.getImageSubCategoryBySlug);
 router.get('/:id', validation_1.validateIdParam, image_subcategory_controller_1.ImageSubCategoryController.getImageSubCategoryById);
 exports.default = router;
-//# sourceMappingURL=image-subcategory.routes.js.map

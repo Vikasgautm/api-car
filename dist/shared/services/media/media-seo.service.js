@@ -30,4 +30,3 @@ class MediaSeoService {
     }
 }
 exports.MediaSeoService = MediaSeoService;
-//# sourceMappingURL=media-seo.service.js.map

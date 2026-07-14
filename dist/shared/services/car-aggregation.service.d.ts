@@ -86,4 +86,3 @@ export declare class CarAggregationService {
      */
     static recomputeFullAggregates(carId: string): Promise<CarAggregates | null>;
 }
-//# sourceMappingURL=car-aggregation.service.d.ts.map

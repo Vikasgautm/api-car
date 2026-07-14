@@ -1,7 +1,6 @@
-import { Document, Schema, model } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
-export interface IMasterOption extends Document {
+export interface IMasterOption {
   option_id: string;
   category_key: string;   // e.g. 'transmission', 'drive_type', 'drive_modes'
   label: string;          // Display label shown in UI
@@ -13,28 +12,6 @@ export interface IMasterOption extends Document {
   created_at: Date;
   updated_at: Date;
 }
-
-const masterOptionSchema = new Schema<IMasterOption>(
-  {
-    option_id: { type: String, required: true, unique: true, default: () => uuidv4() },
-    category_key: { type: String, required: true, index: true },
-    label: { type: String, required: true, trim: true },
-    value: { type: String, required: true, trim: true },
-    sort_order: { type: Number, default: 0 },
-    is_active: { type: Boolean, default: true },
-    is_system: { type: Boolean, default: false },
-    metadata: { type: Schema.Types.Mixed, default: {} },
-  },
-  {
-    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
-  }
-);
-
-masterOptionSchema.index({ category_key: 1, value: 1 }, { unique: true });
-masterOptionSchema.index({ category_key: 1, sort_order: 1 });
-masterOptionSchema.index({ category_key: 1, is_active: 1 });
-
-export const MasterOption = model<IMasterOption>('MasterOption', masterOptionSchema);
 
 // ── Catalogue of all managed categories ───────────────────────────────────────
 export interface MasterCategory {
@@ -193,3 +170,6 @@ export const MASTER_SEED_DATA: Record<string, { label: string; value: string }[]
     { label: 'Other',            value: 'other' },
   ],
 };
+
+import { BaseModel } from '../../../sql/common/BaseModel';
+export const MasterOption = new BaseModel<IMasterOption>('MasterOptions', 'option_id', ['metadata']);

@@ -65,4 +65,3 @@ class AnalyticsController {
     });
 }
 exports.AnalyticsController = AnalyticsController;
-//# sourceMappingURL=analytics.controller.js.map

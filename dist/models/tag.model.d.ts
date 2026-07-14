@@ -1,5 +1,4 @@
-import { Document } from 'mongoose';
-export interface ITag extends Document {
+export interface ITag {
     tag_id: string;
     tag_category_id: string;
     name: string;
@@ -14,11 +13,5 @@ export interface ITag extends Document {
     is_deleted: boolean;
     sort_order: number;
 }
-export declare const Tag: import("mongoose").Model<ITag, {}, {}, {}, Document<unknown, {}, ITag, {}, import("mongoose").DefaultSchemaOptions> & ITag & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, ITag>;
-//# sourceMappingURL=tag.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const Tag: BaseModel<ITag>;

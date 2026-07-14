@@ -31,4 +31,3 @@ adminRouter.post('/hub/reorder', popular_collections_controller_1.PopularCollect
 adminRouter.post('/preview-query', popular_collections_controller_1.PopularCollectionsController.previewQuery);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=popular-collections.routes.js.map

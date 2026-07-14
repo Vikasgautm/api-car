@@ -364,21 +364,35 @@ export class AuditOperationsService {
   static async getAlerts() {
     const now = new Date();
 
+    const fetchOverdueLaunches = async () => {
+      try {
+        return await Car.find({ is_deleted: false, is_upcoming: true, expected_launch_date: { $lte: now, $ne: null } })
+          .select('car_id name expected_launch_date')
+          .limit(25)
+          .lean();
+      } catch {
+        return [];
+      }
+    };
+
+    const fetchSeoCollections = async () => {
+      try {
+        return await SeoCollection.find({
+          status: 'published',
+          $or: [{ auto_noindex: true }, { health_score: { $lt: 50 } }],
+        })
+          .select('collection_id title health_score auto_noindex')
+          .limit(25)
+          .lean();
+      } catch {
+        return [];
+      }
+    };
+
     const [healthResult, overdueLaunches, seoCollections] = await Promise.all([
       ContentHealthService.getIssues({ page: 1, limit: 100 }).catch(() => null),
-      Car.find({ is_deleted: false, is_upcoming: true, expected_launch_date: { $lte: now, $ne: null } })
-        .select('car_id name expected_launch_date')
-        .limit(25)
-        .lean()
-        .catch(() => []),
-      SeoCollection.find({
-        status: 'published',
-        $or: [{ auto_noindex: true }, { health_score: { $lt: 50 } }],
-      })
-        .select('collection_id title health_score auto_noindex')
-        .limit(25)
-        .lean()
-        .catch(() => []),
+      fetchOverdueLaunches(),
+      fetchSeoCollections(),
     ]);
 
     const alerts: Array<{
@@ -439,7 +453,7 @@ export class AuditOperationsService {
         title: `${overdueLaunches.length} upcoming launch${overdueLaunches.length === 1 ? '' : 'es'} overdue`,
         description: overdueLaunches
           .slice(0, 3)
-          .map((c) => c.name)
+          .map((c: any) => c.name)
           .join(', '),
         count: overdueLaunches.length,
         action_label: 'View Cars',
@@ -449,7 +463,7 @@ export class AuditOperationsService {
 
     // SEO collections — auto-noindexed or low health
     if (seoCollections.length) {
-      const noindexed = seoCollections.filter((c) => c.auto_noindex).length;
+      const noindexed = seoCollections.filter((c: any) => c.auto_noindex).length;
       alerts.push({
         id: 'seo:collection_health',
         source: 'SEO Collections',

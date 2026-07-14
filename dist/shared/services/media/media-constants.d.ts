@@ -25,4 +25,3 @@ export declare const EXTERIOR_PRIORITY: string[];
 export declare const INTERIOR_PRIORITY: string[];
 export declare const SUBCATEGORY_DISPLAY_NAMES: Record<string, string>;
 export declare const COLOUR_HEX_MAP: Record<string, string>;
-//# sourceMappingURL=media-constants.d.ts.map

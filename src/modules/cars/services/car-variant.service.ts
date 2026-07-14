@@ -449,13 +449,16 @@ export class CarVariantService {
       is_deleted === true || is_deleted === 'true'
     );
 
-    let restrictToCarIds: string[] | null = null;
+    let restrictToCarIds: string[] = [];
+    let hasRestriction = false;
     if (hasVariantLevelFilters) {
+      hasRestriction = true;
       restrictToCarIds = await CarVariant.distinct('car_id', variantMatchFilter);
       if (restrictToCarIds.length === 0) {
         return { groups: [], pagination: PaginationUtil.createPaginationMeta(page, limit, 0) };
       }
     } else if (q) {
+      hasRestriction = true;
       // For text search without other variant filters, INNER JOIN so cars
       // unrelated to the query don't pollute results.
       restrictToCarIds = await CarVariant.distinct('car_id', variantMatchFilter);
@@ -465,7 +468,7 @@ export class CarVariantService {
         is_deleted: { $ne: true },
       }).select('car_id').lean();
       const nameMatchIds = (carNameMatches as any[]).map((c) => c.car_id);
-      restrictToCarIds = Array.from(new Set([...(restrictToCarIds || []), ...nameMatchIds]));
+      restrictToCarIds = Array.from(new Set([...restrictToCarIds, ...nameMatchIds]));
       if (restrictToCarIds.length === 0) {
         return { groups: [], pagination: PaginationUtil.createPaginationMeta(page, limit, 0) };
       }
@@ -473,7 +476,7 @@ export class CarVariantService {
 
     const carFilter: Record<string, any> = { is_deleted: { $ne: true } };
     if (car_id) carFilter.car_id = car_id;
-    if (restrictToCarIds) {
+    if (hasRestriction) {
       carFilter.car_id = car_id
         ? { $in: restrictToCarIds.includes(car_id) ? [car_id] : [] }
         : { $in: restrictToCarIds };

@@ -295,4 +295,3 @@ class SeoCollectionService {
     }
 }
 exports.SeoCollectionService = SeoCollectionService;
-//# sourceMappingURL=seo-collection.service.js.map

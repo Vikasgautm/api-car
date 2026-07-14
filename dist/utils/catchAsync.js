@@ -7,4 +7,3 @@ const catchAsync = (fn) => {
     };
 };
 exports.catchAsync = catchAsync;
-//# sourceMappingURL=catchAsync.js.map

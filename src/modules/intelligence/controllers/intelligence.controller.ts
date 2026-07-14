@@ -4,8 +4,8 @@ import { AuthRequest } from '../../../types/auth';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { ResponseUtil } from '../../../shared/utils/response.util';
 import { catchAsync } from '../../../utils/catchAsync';
-import { UpsertBenchmarkOverrideDto } from '../dto/upsert-override.dto';
 import { IntelligenceService } from '../services/intelligence.service';
+import { UpsertBenchmarkOverrideDto } from '../dto/upsert-override.dto';
 
 function parseFuelCategory(input: unknown): FuelCategory {
   if (input !== 'ice' && input !== 'ev') {
@@ -30,8 +30,8 @@ export class IntelligenceController {
     };
 
     const validation = UpsertBenchmarkOverrideDto.validate(dto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    if (!validation.success) {
+      throw new AppError(validation.error!.errors.map((e: any) => e.message).join(', '), 400);
     }
 
     const updated = await IntelligenceService.upsertOverride(

@@ -1,5 +1,4 @@
 import bcrypt from 'bcrypt';
-import { Document, Schema, model } from 'mongoose';
 
 export enum UserRole {
   USER = 'user',
@@ -33,7 +32,7 @@ export interface ISecuritySettings {
   temp_access_expiry?: Date | null;
 }
 
-export interface IUser extends Document {
+export interface IUser  {
   user_id: string;
   user_name: string;
   email: string;
@@ -62,94 +61,5 @@ export interface IUser extends Document {
   comparePassword(password: string): Promise<boolean>;
 }
 
-const userSchema = new Schema<IUser>(
-  {
-    user_id: { type: String, required: true, unique: true },
-    user_name: {
-      type: String,
-      required: true,
-      minlength: 2,
-      maxlength: 50,
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
-    },
-    password: {
-      type: String,
-      minlength: 8,
-      select: false,
-    },
-    phone: {
-      type: String,
-      trim: true,
-    },
-    whatsapp_phone: {
-      type: String,
-      trim: true,
-    },
-    whatsapp_opt_in: { type: Boolean, default: false },
-    profile_pic: { type: String },
-    role: {
-      type: String,
-      enum: Object.values(UserRole),
-      default: UserRole.USER,
-      required: true,
-    },
-    governance_role: {
-      type: String,
-      enum: Object.values(GovernanceRole),
-    },
-    permissions: { type: [String], default: [] },
-    assigned_brands: { type: [String], default: [] },
-    assigned_domains: { type: [String], default: [] },
-    workflow_rights: {
-      type: {
-        can_review: { type: Boolean, default: false },
-        can_publish: { type: Boolean, default: false },
-        can_bulk_publish: { type: Boolean, default: false },
-      },
-      default: () => ({ can_review: false, can_publish: false, can_bulk_publish: false }),
-    },
-    security: {
-      type: {
-        max_sessions: { type: Number, default: 3 },
-        force_password_reset: { type: Boolean, default: false },
-        temp_access_expiry: { type: Date, default: null },
-      },
-      default: () => ({ max_sessions: 3, force_password_reset: false, temp_access_expiry: null }),
-    },
-    is_email_verified: { type: Boolean, default: false },
-    google_id: { type: String },
-    is_deleted: { type: Boolean, default: false, select: false },
-    theme: { type: String, default: "light" },
-    is_active: { type: Boolean, default: true },
-    last_login_at: { type: Date },
-    password_reset_token: { type: String, select: false },
-    password_reset_expires: { type: Date, select: false },
-  },
-  { timestamps: true }
-);
-
-userSchema.pre('save', async function () {
-  const user = this as IUser;
-  if (!user.isModified('password')) return;
-  user.password = await bcrypt.hash(user.password!, 12);
-});
-
-userSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
-  if (!this.password) return false;
-  return await bcrypt.compare(password, this.password);
-};
-
-userSchema.index({ google_id: 1 });
-userSchema.index({ is_deleted: 1 });
-userSchema.index({ is_email_verified: 1 });
-userSchema.index({ role: 1 });
-
-export const User = model<IUser>('User', userSchema);
+import { BaseModel } from '../sql/common/BaseModel';
+export const User = new BaseModel<IUser>('Users', 'user_id', ['permissions', 'assigned_brands', 'assigned_domains', 'workflow_rights', 'security']);

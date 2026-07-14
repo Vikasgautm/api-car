@@ -151,4 +151,3 @@ class PlatformSettingsController {
     });
 }
 exports.PlatformSettingsController = PlatformSettingsController;
-//# sourceMappingURL=platform-settings.controller.js.map

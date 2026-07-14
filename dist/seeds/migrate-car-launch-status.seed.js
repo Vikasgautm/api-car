@@ -126,4 +126,3 @@ if (require.main === module) {
         process.exit(1);
     });
 }
-//# sourceMappingURL=migrate-car-launch-status.seed.js.map

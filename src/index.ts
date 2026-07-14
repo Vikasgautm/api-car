@@ -36,6 +36,10 @@ const startServer = async () => {
     logger.info("Successfully connected to MongoDB", { mongodb_uri: config.mongodb_uri });
     console.log("MongoDB URI:", config.mongodb_uri);
 
+    // Redis Connection
+    const { redis } = await import("./shared/utils/redis");
+    await redis.connect();
+
     // Run lightweight idempotent seeds in parallel to minimise startup time.
     // Each seed is a no-op when data already exists, so ordering doesn't matter.
     // await Promise.all([

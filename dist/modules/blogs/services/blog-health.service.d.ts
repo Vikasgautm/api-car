@@ -22,4 +22,3 @@ export declare class BlogHealthService {
     }>;
 }
 export {};
-//# sourceMappingURL=blog-health.service.d.ts.map

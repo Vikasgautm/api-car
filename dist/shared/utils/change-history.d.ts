@@ -44,4 +44,3 @@ export declare class ChangeHistoryTracker {
     static filterChangesBySource(changes: ChangeHistoryEntry[], source: ChangeHistoryEntry['change_source']): ChangeHistoryEntry[];
     static auditTrail(changes: ChangeHistoryEntry[]): string;
 }
-//# sourceMappingURL=change-history.d.ts.map

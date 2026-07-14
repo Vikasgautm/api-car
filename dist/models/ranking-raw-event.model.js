@@ -43,4 +43,3 @@ schema.index({ event_type: 1, timestamp: -1 });
 schema.index({ timestamp: -1 });
 schema.index({ timestamp: 1 }, { expireAfterSeconds: 180 * 24 * 3600 });
 exports.RankingRawEvent = (0, mongoose_1.model)('RankingRawEvent', schema);
-//# sourceMappingURL=ranking-raw-event.model.js.map

@@ -11,4 +11,3 @@
  *   --dry             Dry run: parse + validate only, do not write to DB
  */
 export {};
-//# sourceMappingURL=migrate-cities.d.ts.map

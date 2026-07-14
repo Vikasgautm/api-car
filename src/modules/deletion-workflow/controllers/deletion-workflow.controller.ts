@@ -4,9 +4,8 @@ import { AppError } from '../../../shared/utils/app-error.util';
 import { AuditUtil } from '../../../shared/utils/audit.util';
 import { ResponseUtil } from '../../../shared/utils/response.util';
 import { catchAsync } from '../../../utils/catchAsync';
-import { CreateDeletionRequestDto } from '../dto/create-deletion-request.dto';
-import { VerifyDeletionRequestDto } from '../dto/verify-deletion-request.dto';
 import { DeletionWorkflowService } from '../services/deletion-workflow.service';
+import { CreateDeletionRequestDto, VerifyDeletionRequestDto } from '../../../shared/validation/deletion-workflow-validation.schemas';
 
 function actorWithId(req: AuthRequest) {
   const actor = AuditUtil.actorFromRequest(req);
@@ -18,28 +17,14 @@ function actorWithId(req: AuthRequest) {
 
 export class DeletionWorkflowController {
   static create = catchAsync(async (req: AuthRequest, res: Response) => {
-    const dto: CreateDeletionRequestDto = {
-      entity_type: req.body.entity_type,
-      entity_id: req.body.entity_id,
-      action: req.body.action,
-      reason: req.body.reason,
-      redirect_to_slug: req.body.redirect_to_slug,
-    };
-    const validation = CreateDeletionRequestDto.validate(dto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
-    }
+    const dto = CreateDeletionRequestDto.parse(req.body);
 
     const result = await DeletionWorkflowService.create(dto, actorWithId(req));
     return ResponseUtil.created(res, result, 'Deletion request created — OTP dispatched');
   });
 
   static verify = catchAsync(async (req: AuthRequest, res: Response) => {
-    const dto: VerifyDeletionRequestDto = { otp: req.body.otp };
-    const validation = VerifyDeletionRequestDto.validate(dto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
-    }
+    const dto = VerifyDeletionRequestDto.parse(req.body);
 
     const result = await DeletionWorkflowService.verify(
       req.params.id as string,

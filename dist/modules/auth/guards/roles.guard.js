@@ -19,4 +19,3 @@ const rolesGuard = (allowedRoles) => {
 exports.rolesGuard = rolesGuard;
 exports.adminGuard = (0, exports.rolesGuard)(['super_admin', 'admin']);
 exports.editorGuard = (0, exports.rolesGuard)(['super_admin', 'admin', 'editor']);
-//# sourceMappingURL=roles.guard.js.map

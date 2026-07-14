@@ -1,5 +1,5 @@
 import slugify from 'slugify';
-import { Model } from 'mongoose';
+import { BaseModel } from '../../sql/common/BaseModel';
 
 export class SlugUtil {
   static generate(text: string): string {
@@ -46,13 +46,13 @@ export class SlugUtil {
 
 export async function generateSlugWithIncrement(
   baseSlug: string,
-  Model: Model<any>,
+  Model: BaseModel<any> | any,
   fieldName: string = 'slug',
 ): Promise<string> {
   let slug = baseSlug;
   let counter = 1;
 
-  while (await Model.exists({ [fieldName]: slug })) {
+  while (await Model.findOne({ [fieldName]: slug })) {
     slug = `${baseSlug}-${counter}`;
     counter++;
   }

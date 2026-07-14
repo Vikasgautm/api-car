@@ -3,8 +3,11 @@ export declare class UpsertBenchmarkOverrideDto {
     average_max: number;
     good_max: number;
     static validate(dto: UpsertBenchmarkOverrideDto): {
-        valid: boolean;
-        errors: string[];
+        success: boolean;
+        error?: {
+            errors: {
+                message: string;
+            }[];
+        };
     };
 }
-//# sourceMappingURL=upsert-override.dto.d.ts.map

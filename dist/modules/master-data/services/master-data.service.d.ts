@@ -36,4 +36,3 @@ export declare class MasterDataService {
     static getPublicLabelMap(): Promise<Record<string, Record<string, string>>>;
     private static assertValidCategory;
 }
-//# sourceMappingURL=master-data.service.d.ts.map

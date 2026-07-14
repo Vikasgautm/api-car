@@ -20,4 +20,3 @@ export declare class PermissionService {
     static canWorkflow(userId: string, action: 'review' | 'publish' | 'bulk_publish'): Promise<boolean>;
     static getDefaultPermissionsForRole(role: GovernanceRoleKey): string[];
 }
-//# sourceMappingURL=permission.service.d.ts.map

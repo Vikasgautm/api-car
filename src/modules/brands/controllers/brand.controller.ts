@@ -1,10 +1,9 @@
+import { createBrandSchema, updateBrandSchema } from '../../../shared/validation';
 import { Request, Response } from 'express';
 import { ERROR_CODES, USER_MESSAGES } from '../../../constants/errorMessages';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { ResponseUtil } from '../../../shared/utils/response.util';
 import { catchAsync } from '../../../utils/catchAsync';
-import { CreateBrandDto } from '../dto/create-brand.dto';
-import { UpdateBrandDto } from '../dto/update-brand.dto';
 import { BrandService } from '../services/brand.service';
 
 interface MulterRequest extends Request {
@@ -51,7 +50,7 @@ export class BrandController {
   });
 
   static createBrand = catchAsync(async (req: MulterRequest, res: Response) => {
-    const createDto: CreateBrandDto = {
+    const createDto: any = {
       name: req.body.name,
       description: req.body.description,
       logo_url: req.file
@@ -68,9 +67,9 @@ export class BrandController {
       noindex: req.body.noindex,
     };
 
-    const validation = CreateBrandDto.validate(createDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const validation = createBrandSchema.safeParse(createDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
     }
 
     const brand = await BrandService.createBrand({ ...createDto, ...req.body });
@@ -78,7 +77,7 @@ export class BrandController {
   });
 
   static updateBrand = catchAsync(async (req: MulterRequest, res: Response) => {
-    const updateDto: UpdateBrandDto = {
+    const updateDto: any = {
       name: req.body.name,
       description: req.body.description,
       logo_url: req.file
@@ -101,12 +100,12 @@ export class BrandController {
       noindex: req.body.noindex,
     };
 
-    const validation = UpdateBrandDto.validate(updateDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400, {
+    const validation = updateBrandSchema.safeParse(updateDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400, {
         userMessage: USER_MESSAGES.VALIDATION_ERROR,
         errorCode: ERROR_CODES.VALIDATION_ERROR,
-        details: { fields: validation.errors },
+        details: { fields: validation.error.issues.map((e: any) => e.message) },
       });
     }
 

@@ -1,6 +1,5 @@
-import { Document } from 'mongoose';
 import { ImageStatus, MainCategory, MediaScope, SubCategory } from '../shared/services/media/media-constants';
-export interface ICarImage extends Document {
+export interface ICarImage {
     car_image_id: string;
     image_uuid?: string;
     car_id: string;
@@ -34,11 +33,5 @@ export interface ICarImage extends Document {
     inspection_severity?: string;
     metadata?: Record<string, any>;
 }
-export declare const CarImage: import("mongoose").Model<ICarImage, {}, {}, {}, Document<unknown, {}, ICarImage, {}, import("mongoose").DefaultSchemaOptions> & ICarImage & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, ICarImage>;
-//# sourceMappingURL=car-image.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const CarImage: BaseModel<ICarImage>;

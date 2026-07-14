@@ -22,4 +22,3 @@ export declare class FAQRelevanceService {
     private static scoreGeneratedFAQ;
 }
 export {};
-//# sourceMappingURL=faq-relevance.service.d.ts.map

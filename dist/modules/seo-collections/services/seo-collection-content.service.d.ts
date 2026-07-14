@@ -13,4 +13,3 @@ export declare class SeoCollectionContentService {
         intro_content: string;
     }>;
 }
-//# sourceMappingURL=seo-collection-content.service.d.ts.map

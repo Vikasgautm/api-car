@@ -21,4 +21,3 @@ const ImportSessionSchema = new mongoose_1.Schema({
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 });
 exports.ImportSession = (0, mongoose_1.model)('ImportSession', ImportSessionSchema);
-//# sourceMappingURL=ImportSession.js.map

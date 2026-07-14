@@ -573,7 +573,7 @@ export async function getRecentErrors(page: number, limit: number): Promise<Tool
     .limit(MAX_ROWS)
     .lean();
 
-  const recentAuditErrors = await AuditLog.find({ action: { $in: ['error', 'import_failed'] } })
+  const recentAuditErrors = await AuditLog.find({ action: { $in: ['error', 'import_failed'] } } as any)
     .select('entity_type entity_id action details createdAt')
     .sort({ createdAt: -1 })
     .limit(MAX_ROWS)

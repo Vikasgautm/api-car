@@ -73,6 +73,32 @@ app.use('/api/v1/chatbot', chatbotRateLimiter);
 app.get('/sitemap.xml', SitemapController.getXml);
 app.use("/api/v1", routes);
 
+// Swagger Documentation Setup
+import swaggerUi from "swagger-ui-express";
+import swaggerJSDoc from "swagger-jsdoc";
+
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Car Salahakar API Documentation",
+      version: "1.0.0",
+      description: "API documentation for the Car Salahakar (API-Car) system",
+    },
+    servers: [
+      {
+        url: "/api/v1",
+        description: "API server",
+      },
+    ],
+  },
+  apis: ["./src/modules/**/*.ts", "./src/shared/routes/*.ts"],
+};
+
+const swaggerDocs = swaggerJSDoc(swaggerOptions);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+
 // Handle 404 - Route not found
 app.use((req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

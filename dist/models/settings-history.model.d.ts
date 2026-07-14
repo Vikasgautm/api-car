@@ -16,4 +16,3 @@ export declare const SettingsHistory: import("mongoose").Model<ISettingsHistory,
 } & {
     id: string;
 }, any, ISettingsHistory>;
-//# sourceMappingURL=settings-history.model.d.ts.map

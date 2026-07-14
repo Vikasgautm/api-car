@@ -2,102 +2,43 @@ import { ICarImage } from '../../../models/car-image.model';
 import { ImageStatus, MainCategory, SubCategory } from '../../../shared/services/media/media-constants';
 export declare class CarImageService {
     static getAllCarImages(filterDto: any, includeDeleted?: boolean): Promise<{
-        images: (import("mongoose").Document<unknown, {}, ICarImage, {}, import("mongoose").DefaultSchemaOptions> & ICarImage & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        } & {
-            id: string;
-        })[];
+        images: (ICarImage & import("../../../sql/common/BaseModel").SQLDocument)[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
-    static getCarImageById(imageId: string): Promise<(import("mongoose").Document<unknown, {}, ICarImage, {}, import("mongoose").DefaultSchemaOptions> & ICarImage & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
+    static getCarImageById(imageId: string): Promise<(ICarImage & import("../../../sql/common/BaseModel").SQLDocument) | null>;
     static getImagesByCategory(carId: string, mainCategory: MainCategory, subCategory?: SubCategory): Promise<import("../../../shared/services/media").ImageRecord[]>;
     static getPrimaryWithFallback(carId: string): Promise<{
-        image: ICarImage & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        };
+        image: ICarImage & import("../../../sql/common/BaseModel").SQLDocument;
         level: string;
         fallback?: undefined;
     } | {
         image: null;
         fallback: import("../../../shared/services/media").FallbackImageResult;
-        level: "body_type" | "brand" | "standard" | "variant_showcase" | "placeholder";
+        level: "brand" | "body_type" | "standard" | "variant_showcase" | "placeholder";
     }>;
     static getPublicGallery(filterDto: any): Promise<{
-        images: (ICarImage & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        images: (ICarImage & import("../../../sql/common/BaseModel").SQLDocument)[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
     static getCarGallery(carId: string): Promise<{
-        images: (ICarImage & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        images: (ICarImage & import("../../../sql/common/BaseModel").SQLDocument)[];
         grouped: Record<string, any[]>;
     }>;
-    static createCarImage(imageData: any, uploadedBy?: string): Promise<import("mongoose").Document<unknown, {}, ICarImage, {}, import("mongoose").DefaultSchemaOptions> & ICarImage & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
+    static createCarImage(imageData: any, uploadedBy?: string): Promise<any>;
+    static updateCarImage(imageId: string, imageData: any): Promise<(ICarImage & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static bulkUpdateStatus(imageIds: string[], status: ImageStatus): Promise<{
+        modifiedCount: number;
     }>;
-    static updateCarImage(imageId: string, imageData: any): Promise<(import("mongoose").Document<unknown, {}, ICarImage, {}, import("mongoose").DefaultSchemaOptions> & ICarImage & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static bulkUpdateStatus(imageIds: string[], status: ImageStatus): Promise<import("mongoose").UpdateWriteOpResult>;
-    static bulkAssignCategory(imageIds: string[], mainCategory: MainCategory, subCategory?: SubCategory): Promise<import("mongoose").UpdateWriteOpResult>;
-    static bulkDelete(imageIds: string[]): Promise<import("mongoose").UpdateWriteOpResult>;
-    static deleteCarImage(imageId: string): Promise<import("mongoose").Document<unknown, {}, ICarImage, {}, import("mongoose").DefaultSchemaOptions> & ICarImage & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
+    static bulkAssignCategory(imageIds: string[], mainCategory: MainCategory, subCategory?: SubCategory): Promise<{
+        modifiedCount: number;
     }>;
-    static restoreCarImage(imageId: string): Promise<import("mongoose").Document<unknown, {}, ICarImage, {}, import("mongoose").DefaultSchemaOptions> & ICarImage & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
+    static bulkDelete(imageIds: string[]): Promise<{
+        modifiedCount: number;
     }>;
-    static togglePublish(imageId: string): Promise<import("mongoose").Document<unknown, {}, ICarImage, {}, import("mongoose").DefaultSchemaOptions> & ICarImage & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static setPrimaryImage(imageId: string): Promise<import("mongoose").Document<unknown, {}, ICarImage, {}, import("mongoose").DefaultSchemaOptions> & ICarImage & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static findDuplicateByHash(carId: string, imageHash: string): Promise<(ICarImage & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    }) | null>;
+    static deleteCarImage(imageId: string): Promise<ICarImage & import("../../../sql/common/BaseModel").SQLDocument>;
+    static restoreCarImage(imageId: string): Promise<ICarImage & import("../../../sql/common/BaseModel").SQLDocument>;
+    static togglePublish(imageId: string): Promise<ICarImage & import("../../../sql/common/BaseModel").SQLDocument>;
+    static setPrimaryImage(imageId: string): Promise<ICarImage & import("../../../sql/common/BaseModel").SQLDocument>;
+    static findDuplicateByHash(carId: string, imageHash: string): Promise<(ICarImage & import("../../../sql/common/BaseModel").SQLDocument) | null>;
     static resolveFallbackImage(carId: string): Promise<import("../../../shared/services/media").FallbackImageResult>;
 }
-//# sourceMappingURL=car-image.service.d.ts.map

@@ -26,4 +26,3 @@ export declare const RankingRankSnapshot: import("mongoose").Model<IRankingRankS
 } & {
     id: string;
 }, any, IRankingRankSnapshot>;
-//# sourceMappingURL=ranking-rank-snapshot.model.d.ts.map

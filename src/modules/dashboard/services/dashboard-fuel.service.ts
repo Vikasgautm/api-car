@@ -1,20 +1,26 @@
-import { CarVariant } from '../../../models/car-variant.model';
-import { FuelType } from '../../../models/fuel-type.model';
-import { FuelSnapshot } from '../dtos/dashboard.dto';
+import { getPool } from '../../../sql/utils/dbConnection';
+
+export interface FuelSnapshot {
+  petrol: number;
+  diesel: number;
+  electric: number;
+  hybrid: number;
+  cng: number;
+  strongest_segment: string;
+  total_variants: number;
+}
 
 export class DashboardFuelService {
   static async getSnapshot(): Promise<FuelSnapshot> {
-    const [fuelGroups, fuelTypes] = await Promise.all([
-      CarVariant.aggregate([
-        { $match: { is_deleted: false } },
-        { $group: { _id: '$fuel_type_id', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-      ]),
-      FuelType.find({ is_deleted: false }).select('fuel_type_id name').lean(),
+    const pool = await getPool();
+
+    const [fuelGroupsResult, fuelTypesResult] = await Promise.all([
+      pool.request().query('SELECT fuel_type_id, COUNT(*) as count FROM CarVariants WHERE is_deleted = 0 GROUP BY fuel_type_id'),
+      pool.request().query('SELECT fuel_type_id, name FROM FuelTypes WHERE is_deleted = 0'),
     ]);
 
     const fuelMap: Record<string, string> = {};
-    for (const ft of fuelTypes as any[]) {
+    for (const ft of fuelTypesResult.recordset) {
       fuelMap[ft.fuel_type_id] = (ft.name || '').toLowerCase();
     }
 
@@ -29,14 +35,18 @@ export class DashboardFuelService {
     let strongestId = '';
     let strongestCount = 0;
 
-    for (const g of fuelGroups) {
-      const name = fuelMap[g._id] ?? '';
-      if (g.count > strongestCount) { strongestCount = g.count; strongestId = name; }
-      if (name.includes('petrol')) counts.petrol += g.count;
-      else if (name.includes('diesel')) counts.diesel += g.count;
-      else if (name.includes('electric') || name.includes('ev')) counts.electric += g.count;
-      else if (name.includes('hybrid')) counts.hybrid += g.count;
-      else if (name.includes('cng')) counts.cng += g.count;
+    for (const g of fuelGroupsResult.recordset) {
+      const name = fuelMap[g.fuel_type_id] ?? '';
+      const count = g.count || 0;
+      if (count > strongestCount) {
+        strongestCount = count;
+        strongestId = name;
+      }
+      if (name.includes('petrol')) counts.petrol += count;
+      else if (name.includes('diesel')) counts.diesel += count;
+      else if (name.includes('electric') || name.includes('ev')) counts.electric += count;
+      else if (name.includes('hybrid')) counts.hybrid += count;
+      else if (name.includes('cng')) counts.cng += count;
     }
 
     const total = Object.values(counts).reduce((a, b) => a + b, 0);

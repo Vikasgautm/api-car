@@ -1,21 +1,19 @@
+import { loginSchema, refreshTokenSchema, registerSchema } from '../../../shared/validation';
 import { NextFunction, Request, Response } from 'express';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { ResponseUtil } from '../../../shared/utils/response.util';
 import { AuthRequest } from '../../../types/auth';
-import { LoginDto } from '../dto/login.dto';
-import { RefreshTokenDto } from '../dto/refresh-token.dto';
-import { RegisterDto } from '../dto/register.dto';
 import { AuthService } from '../services/auth.service';
 
 export class AuthController {
   static async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const registerDto: RegisterDto = req.body;
+      const registerDto: any = req.body;
       
       // Validate DTO
-      const validation = RegisterDto.validate(registerDto);
-      if (!validation.valid) {
-        throw new AppError(validation.errors.join(', '), 400);
+      const validation = registerSchema.safeParse(registerDto);
+      if (!validation.success) {
+        throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
       }
 
       const result = await AuthService.register(registerDto);
@@ -27,12 +25,12 @@ export class AuthController {
 
   static async login(req: Request, res: Response, next: NextFunction) {
     try {
-      const loginDto: LoginDto = req.body;
+      const loginDto: any = req.body;
       
       // Validate DTO
-      const validation = LoginDto.validate(loginDto);
-      if (!validation.valid) {
-        throw new AppError(validation.errors.join(', '), 400);
+      const validation = loginSchema.safeParse(loginDto);
+      if (!validation.success) {
+        throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
       }
 
       const result = await AuthService.login(loginDto, req);
@@ -44,12 +42,12 @@ export class AuthController {
 
   static async refreshToken(req: Request, res: Response, next: NextFunction) {
     try {
-      const refreshTokenDto: RefreshTokenDto = req.body;
+      const refreshTokenDto: any = req.body;
       
       // Validate DTO
-      const validation = RefreshTokenDto.validate(refreshTokenDto);
-      if (!validation.valid) {
-        throw new AppError(validation.errors.join(', '), 400);
+      const validation = refreshTokenSchema.safeParse(refreshTokenDto);
+      if (!validation.success) {
+        throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
       }
 
       const result = await AuthService.refreshToken(refreshTokenDto);

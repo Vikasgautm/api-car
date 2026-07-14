@@ -57,4 +57,3 @@ class SettingsService {
     }
 }
 exports.SettingsService = SettingsService;
-//# sourceMappingURL=settings.service.js.map

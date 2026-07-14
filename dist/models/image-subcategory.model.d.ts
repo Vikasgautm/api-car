@@ -1,5 +1,4 @@
-import { Document } from 'mongoose';
-export interface IImageSubCategory extends Document {
+export interface IImageSubCategory {
     category_id: string;
     subcategory_id: string;
     name: string;
@@ -12,11 +11,5 @@ export interface IImageSubCategory extends Document {
     is_deleted?: boolean;
     deleted_at?: Date;
 }
-export declare const ImageSubCategory: import("mongoose").Model<IImageSubCategory, {}, {}, {}, Document<unknown, {}, IImageSubCategory, {}, import("mongoose").DefaultSchemaOptions> & IImageSubCategory & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IImageSubCategory>;
-//# sourceMappingURL=image-subcategory.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const ImageSubCategory: BaseModel<IImageSubCategory>;

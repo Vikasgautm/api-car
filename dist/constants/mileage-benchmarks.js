@@ -198,4 +198,3 @@ function maxClass(a, b) {
         return a;
     return exports.MILEAGE_CLASS_ORDER[a] >= exports.MILEAGE_CLASS_ORDER[b] ? a : b;
 }
-//# sourceMappingURL=mileage-benchmarks.js.map

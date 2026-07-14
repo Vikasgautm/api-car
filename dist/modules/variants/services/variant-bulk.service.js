@@ -388,4 +388,3 @@ class VariantBulkService {
     }
 }
 exports.VariantBulkService = VariantBulkService;
-//# sourceMappingURL=variant-bulk.service.js.map

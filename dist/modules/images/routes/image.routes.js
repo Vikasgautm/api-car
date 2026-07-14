@@ -39,4 +39,3 @@ router.patch('/:id', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo
 // Delete image (soft delete with Cloudinary cleanup)
 router.delete('/:id', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), validation_1.validateIdParam, image_controller_1.ImageController.deleteImage);
 exports.default = router;
-//# sourceMappingURL=image.routes.js.map

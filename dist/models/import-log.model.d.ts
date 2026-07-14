@@ -1,7 +1,7 @@
 import { Document } from 'mongoose';
 export type ImportType = 'car' | 'variant';
 export type ImportStatus = 'previewed' | 'saved' | 'failed';
-export type ImportSource = 'cardekho';
+export type ImportSource = 'cardekho' | 'carwale';
 export interface IImportLog extends Omit<Document, 'errors'> {
     import_id: string;
     source: ImportSource;
@@ -26,4 +26,3 @@ export declare const ImportLog: import("mongoose").Model<IImportLog, {}, {}, {},
 } & {
     id: string;
 }, any, IImportLog>;
-//# sourceMappingURL=import-log.model.d.ts.map

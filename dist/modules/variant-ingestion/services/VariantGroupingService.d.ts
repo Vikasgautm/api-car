@@ -16,4 +16,3 @@ export declare class VariantGroupingService {
         groups: number;
     }>;
 }
-//# sourceMappingURL=VariantGroupingService.d.ts.map

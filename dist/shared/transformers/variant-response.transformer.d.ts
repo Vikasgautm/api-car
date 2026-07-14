@@ -58,4 +58,3 @@ export declare class VariantResponseTransformer {
     private static getBodyType;
     private static getFuelType;
 }
-//# sourceMappingURL=variant-response.transformer.d.ts.map

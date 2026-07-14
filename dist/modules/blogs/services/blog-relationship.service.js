@@ -53,7 +53,7 @@ class BlogRelationshipService {
             update.connected_comparisons = connections.connected_comparisons;
         if (connections.connected_collections !== undefined)
             update.connected_collections = connections.connected_collections;
-        const blog = await blog_model_1.Blog.findOneAndUpdate({ blog_id: blogId, is_deleted: false }, { $set: update }, { returnDocument: 'after' }).lean();
+        const blog = await blog_model_1.Blog.findOneAndUpdate({ blog_id: blogId, is_deleted: false }, { $set: update }, { returnDocument: 'after' });
         if (!blog) {
             throw new app_error_util_1.AppError('Blog not found', 404);
         }
@@ -93,4 +93,3 @@ class BlogRelationshipService {
     }
 }
 exports.BlogRelationshipService = BlogRelationshipService;
-//# sourceMappingURL=blog-relationship.service.js.map

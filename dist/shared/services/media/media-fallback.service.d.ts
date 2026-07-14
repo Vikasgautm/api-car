@@ -14,4 +14,3 @@ export declare class MediaFallbackService {
      */
     static resolveImage(carId: string): Promise<FallbackImageResult>;
 }
-//# sourceMappingURL=media-fallback.service.d.ts.map

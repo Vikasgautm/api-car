@@ -1,4 +1,4 @@
-import { Document, Schema, model } from 'mongoose';
+import { Schema } from 'mongoose';
 
 export interface RawSignals {
   qualified_attention: number;
@@ -13,7 +13,7 @@ export interface RawSignals {
   commercial_acceleration: number;
 }
 
-export interface IRankingScore extends Document {
+export interface IRankingScore  {
   score_id: string;
   entity_type: string;
   entity_id: string;
@@ -81,4 +81,5 @@ schema.index({ entity_type: 1, retention_score: -1 });
 schema.index({ behavioral_confidence: -1 });
 schema.index({ computed_at: -1 });
 
-export const RankingScore = model<IRankingScore>('RankingScore', schema);
+import { BaseModel } from '../sql/common/BaseModel';
+export const RankingScore = new BaseModel<IRankingScore>('RankingScores', 'score_id', ['raw_signals']);

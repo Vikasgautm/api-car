@@ -16,4 +16,3 @@ exports.signupSchema = zod_1.z.object({
         phone: zod_1.z.string().optional(),
     }),
 });
-//# sourceMappingURL=auth.schema.js.map

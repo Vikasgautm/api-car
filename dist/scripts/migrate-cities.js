@@ -159,4 +159,3 @@ run().catch(err => {
     console.error('Fatal:', err);
     process.exit(1);
 });
-//# sourceMappingURL=migrate-cities.js.map

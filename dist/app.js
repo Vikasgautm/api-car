@@ -99,6 +99,28 @@ app.use('/api/v1/content-health/admin', rate_limit_middleware_1.adminRateLimiter
 app.use('/api/v1/chatbot', rate_limit_middleware_1.chatbotRateLimiter);
 app.get('/sitemap.xml', sitemap_controller_1.SitemapController.getXml);
 app.use("/api/v1", routes_1.default);
+// Swagger Documentation Setup
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
+const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
+const swaggerOptions = {
+    definition: {
+        openapi: "3.0.0",
+        info: {
+            title: "Car Salahakar API Documentation",
+            version: "1.0.0",
+            description: "API documentation for the Car Salahakar (API-Car) system",
+        },
+        servers: [
+            {
+                url: "/api/v1",
+                description: "API server",
+            },
+        ],
+    },
+    apis: ["./src/modules/**/*.ts", "./src/shared/routes/*.ts"],
+};
+const swaggerDocs = (0, swagger_jsdoc_1.default)(swaggerOptions);
+app.use("/api-docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swaggerDocs));
 // Handle 404 - Route not found
 app.use((req, res, next) => {
     next(new app_error_util_1.AppError(`Can't find ${req.originalUrl} on this server!`, 404));
@@ -110,4 +132,3 @@ if (process.env.SENTRY_DSN) {
 // Error handling
 app.use(error_middleware_1.errorMiddleware);
 exports.default = app;
-//# sourceMappingURL=app.js.map

@@ -9,4 +9,3 @@ export declare class ProcessScheduledLaunchesJob {
     static stop(): void;
     static execute(): Promise<void>;
 }
-//# sourceMappingURL=processScheduledLaunches.job.d.ts.map

@@ -1,24 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MASTER_SEED_DATA = exports.MASTER_CATEGORIES = exports.MasterOption = void 0;
-const mongoose_1 = require("mongoose");
-const uuid_1 = require("uuid");
-const masterOptionSchema = new mongoose_1.Schema({
-    option_id: { type: String, required: true, unique: true, default: () => (0, uuid_1.v4)() },
-    category_key: { type: String, required: true, index: true },
-    label: { type: String, required: true, trim: true },
-    value: { type: String, required: true, trim: true },
-    sort_order: { type: Number, default: 0 },
-    is_active: { type: Boolean, default: true },
-    is_system: { type: Boolean, default: false },
-    metadata: { type: mongoose_1.Schema.Types.Mixed, default: {} },
-}, {
-    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
-});
-masterOptionSchema.index({ category_key: 1, value: 1 }, { unique: true });
-masterOptionSchema.index({ category_key: 1, sort_order: 1 });
-masterOptionSchema.index({ category_key: 1, is_active: 1 });
-exports.MasterOption = (0, mongoose_1.model)('MasterOption', masterOptionSchema);
+exports.MasterOption = exports.MASTER_SEED_DATA = exports.MASTER_CATEGORIES = void 0;
 exports.MASTER_CATEGORIES = [
     { key: 'transmission', label: 'Transmission Types', description: 'Gearbox/transmission options', multi_select: false },
     { key: 'drive_type', label: 'Drive Types', description: 'Drivetrain / drive layout', multi_select: false },
@@ -167,4 +149,5 @@ exports.MASTER_SEED_DATA = {
         { label: 'Other', value: 'other' },
     ],
 };
-//# sourceMappingURL=master-option.model.js.map
+const BaseModel_1 = require("../../../sql/common/BaseModel");
+exports.MasterOption = new BaseModel_1.BaseModel('MasterOptions', 'option_id', ['metadata']);

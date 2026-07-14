@@ -314,4 +314,3 @@ class CollectionRendererService {
     }
 }
 exports.CollectionRendererService = CollectionRendererService;
-//# sourceMappingURL=collection-renderer.service.js.map

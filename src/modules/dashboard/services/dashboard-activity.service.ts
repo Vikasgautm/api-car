@@ -1,8 +1,21 @@
-import { Blog } from '../../../models/blog.model';
-import { Car } from '../../../models/car.model';
-import { CarVariant } from '../../../models/car-variant.model';
 import { AuditLog } from '../../../models/audit-log.model';
-import { ActivityItem, DashboardRecentActivity } from '../dtos/dashboard.dto';
+import { getPool, mssql } from '../../../sql/utils/dbConnection';
+
+export interface ActivityItem {
+  activity_id: string;
+  title: string;
+  entity_type: string;
+  entity_id: string;
+  entity_name: string | null;
+  action: string;
+  actor_email: string | null;
+  timestamp: Date;
+  redirect_link: string;
+}
+
+export interface DashboardRecentActivity {
+  items: ActivityItem[];
+}
 
 const ACTION_LABELS: Record<string, string> = {
   create: 'created',
@@ -57,15 +70,56 @@ export class DashboardActivityService {
     const variantIds = [...new Set(logs.filter(l => l.entity_type === 'variant').map(l => l.entity_id))];
     const blogIds = [...new Set(logs.filter(l => l.entity_type === 'blog').map(l => l.entity_id))];
 
+    const pool = await getPool();
+
+    const fetchCars = async () => {
+      if (!carIds.length) return [];
+      const request = pool.request();
+      const inParams = carIds.map((id, index) => {
+        const paramName = `car_${index}`;
+        request.input(paramName, mssql.NVarChar, id);
+        return `@${paramName}`;
+      });
+      const query = `SELECT car_id, name FROM Cars WHERE car_id IN (${inParams.join(', ')})`;
+      const res = await request.query(query);
+      return res.recordset;
+    };
+
+    const fetchVariants = async () => {
+      if (!variantIds.length) return [];
+      const request = pool.request();
+      const inParams = variantIds.map((id, index) => {
+        const paramName = `var_${index}`;
+        request.input(paramName, mssql.NVarChar, id);
+        return `@${paramName}`;
+      });
+      const query = `SELECT variant_id, variant_name FROM CarVariants WHERE variant_id IN (${inParams.join(', ')})`;
+      const res = await request.query(query);
+      return res.recordset;
+    };
+
+    const fetchBlogs = async () => {
+      if (!blogIds.length) return [];
+      const request = pool.request();
+      const inParams = blogIds.map((id, index) => {
+        const paramName = `blog_${index}`;
+        request.input(paramName, mssql.NVarChar, id);
+        return `@${paramName}`;
+      });
+      const query = `SELECT blog_id, title FROM Blogs WHERE blog_id IN (${inParams.join(', ')})`;
+      const res = await request.query(query);
+      return res.recordset;
+    };
+
     const [carDocs, variantDocs, blogDocs] = await Promise.all([
-      carIds.length ? Car.find({ car_id: { $in: carIds } }).select('car_id name').lean() : [],
-      variantIds.length ? CarVariant.find({ variant_id: { $in: variantIds } }).select('variant_id variant_name').lean() : [],
-      blogIds.length ? Blog.find({ blog_id: { $in: blogIds } }).select('blog_id title').lean() : [],
+      fetchCars(),
+      fetchVariants(),
+      fetchBlogs(),
     ]);
 
-    const carNames = new Map((carDocs as any[]).map((c) => [c.car_id, c.name]));
-    const variantNames = new Map((variantDocs as any[]).map((v) => [v.variant_id, v.variant_name]));
-    const blogNames = new Map((blogDocs as any[]).map((b) => [b.blog_id, b.title]));
+    const carNames = new Map(carDocs.map((c: any) => [c.car_id, c.name]));
+    const variantNames = new Map(variantDocs.map((v: any) => [v.variant_id, v.variant_name]));
+    const blogNames = new Map(blogDocs.map((b: any) => [b.blog_id, b.title]));
 
     const items: ActivityItem[] = logs.map((log) => {
       const entityLabel = ENTITY_LABELS[log.entity_type] ?? log.entity_type;

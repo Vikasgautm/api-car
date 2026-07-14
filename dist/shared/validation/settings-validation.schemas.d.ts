@@ -12,4 +12,23 @@ export declare const updateSEOSettingsSchema: z.ZodObject<{
 export declare const updateThemeSchema: z.ZodObject<{
     theme: z.ZodString;
 }, z.core.$strict>;
-//# sourceMappingURL=settings-validation.schemas.d.ts.map
+export declare class UpdateSEOSettingsDto {
+    site_title?: string;
+    site_description?: string;
+    site_keywords?: string;
+    og_default_image?: string;
+    twitter_handle?: string;
+    google_analytics_id?: string;
+    google_tag_manager_id?: string;
+    facebook_pixel_id?: string;
+    static validate(dto: any): z.ZodSafeParseResult<{
+        site_title?: string | undefined;
+        site_description?: string | undefined;
+        site_keywords?: string | undefined;
+        og_default_image?: string | undefined;
+        twitter_handle?: string | undefined;
+        google_analytics_id?: string | undefined;
+        google_tag_manager_id?: string | undefined;
+        facebook_pixel_id?: string | undefined;
+    }>;
+}

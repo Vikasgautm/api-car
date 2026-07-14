@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlatformSettings = exports.SETTINGS_GROUPS = void 0;
-const mongoose_1 = require("mongoose");
 exports.SETTINGS_GROUPS = [
     'general',
     'seo',
@@ -14,16 +13,5 @@ exports.SETTINGS_GROUPS = [
     'feature_flags',
     'audit_logs',
 ];
-const platformSettingsSchema = new mongoose_1.Schema({
-    group: {
-        type: String,
-        required: true,
-        unique: true,
-        enum: exports.SETTINGS_GROUPS,
-    },
-    data: { type: mongoose_1.Schema.Types.Mixed, required: true, default: {} },
-    updated_by: { type: String },
-    updated_at: { type: Date, default: Date.now },
-}, { timestamps: true });
-exports.PlatformSettings = (0, mongoose_1.model)('PlatformSettings', platformSettingsSchema);
-//# sourceMappingURL=platform-settings.model.js.map
+const BaseModel_1 = require("../sql/common/BaseModel");
+exports.PlatformSettings = new BaseModel_1.BaseModel('PlatformSettings', 'settings_id', ['settings_data']);

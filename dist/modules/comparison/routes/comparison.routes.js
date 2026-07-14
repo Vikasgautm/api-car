@@ -22,4 +22,3 @@ router.patch('/:id/restore', auth_middleware_1.protect, (0, auth_middleware_1.re
 router.delete('/:id', auth_middleware_1.protect, (0, auth_middleware_1.restrictTo)('admin', 'super_admin'), (req, res, next) => comparison_controller_1.ComparisonController.deleteComparison(req, res, next));
 router.get('/:id', (req, res, next) => comparison_controller_1.ComparisonController.getComparisonById(req, res, next));
 exports.default = router;
-//# sourceMappingURL=comparison.routes.js.map

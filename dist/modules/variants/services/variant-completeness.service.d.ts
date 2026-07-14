@@ -33,4 +33,3 @@ export declare class VariantCompletenessService {
     private static getEmptySections;
     private static generateRecommendation;
 }
-//# sourceMappingURL=variant-completeness.service.d.ts.map

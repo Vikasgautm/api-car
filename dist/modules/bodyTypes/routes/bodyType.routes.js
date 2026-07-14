@@ -31,4 +31,3 @@ router.use('/admin', adminRouter);
 router.get('/', validation_1.validatePaginationQuery, bodyType_controller_1.BodyTypeController.getAllPublicBodyTypes);
 router.get('/:slug', validation_1.validateSlugParam, bodyType_controller_1.BodyTypeController.getPublicBodyTypeBySlug);
 exports.default = router;
-//# sourceMappingURL=bodyType.routes.js.map

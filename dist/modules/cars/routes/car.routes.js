@@ -60,4 +60,3 @@ router.use('/admin', adminRouter);
 router.get('/', validation_1.validatePaginationQuery, car_controller_1.CarController.getAllPublicCars);
 router.get('/:slug', validation_1.validateSlugParam, car_controller_1.CarController.getPublicCarBySlug);
 exports.default = router;
-//# sourceMappingURL=car.routes.js.map

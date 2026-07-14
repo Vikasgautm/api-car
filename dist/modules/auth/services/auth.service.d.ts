@@ -1,18 +1,15 @@
-import { LoginDto } from '../dto/login.dto';
-import { RefreshTokenDto } from '../dto/refresh-token.dto';
-import { RegisterDto } from '../dto/register.dto';
 export declare class AuthService {
-    static register(registerDto: RegisterDto): Promise<{
+    static register(registerDto: any): Promise<{
         user: any;
         accessToken: string;
         refreshToken: string;
     }>;
-    static login(loginDto: LoginDto, req?: any): Promise<{
+    static login(loginDto: any, req?: any): Promise<{
         user: any;
         accessToken: string;
         refreshToken: string;
     }>;
-    static refreshToken(refreshTokenDto: RefreshTokenDto): Promise<{
+    static refreshToken(refreshTokenDto: any): Promise<{
         user: any;
         accessToken: string;
         refreshToken: string;
@@ -31,4 +28,3 @@ export declare class AuthService {
     private static extractDeviceInfo;
     private static extractIpAddress;
 }
-//# sourceMappingURL=auth.service.d.ts.map

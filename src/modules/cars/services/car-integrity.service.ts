@@ -1,6 +1,6 @@
-import { Car, ICar } from '../../../models/car.model';
 import { AppError } from '../../../shared/utils/app-error.util';
 import { ChangeHistoryTracker } from '../../../shared/utils/change-history';
+import { getPool, mssql } from '../../../sql/utils/dbConnection';
 
 export class CarIntegrityService {
   /**
@@ -14,8 +14,12 @@ export class CarIntegrityService {
     changedBy: string,
     changeSource: 'manual_edit' | 'import' | 'bulk_operation' | 'system' | 'api' = 'manual_edit',
   ): Promise<void> {
-    const car = await Car.findOne({ car_id: carId });
-    if (!car) {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input('cid', mssql.NVarChar, carId)
+      .query('SELECT change_history FROM Cars WHERE car_id = @cid');
+
+    if (result.recordset.length === 0) {
       throw new AppError('Car not found', 404);
     }
 
@@ -27,10 +31,14 @@ export class CarIntegrityService {
       ChangeHistoryTracker.createEntry(c.field, c.oldValue, c.newValue, changedBy, changeSource),
     );
 
-    car.change_history = car.change_history || [];
-    car.change_history.push(...historyEntries);
+    const oldHistoryStr = result.recordset[0].change_history;
+    const oldHistory = oldHistoryStr ? JSON.parse(oldHistoryStr) : [];
+    const newHistory = [...oldHistory, ...historyEntries];
 
-    await car.save();
+    await pool.request()
+      .input('cid', mssql.NVarChar, carId)
+      .input('history', mssql.NVarChar, JSON.stringify(newHistory))
+      .query('UPDATE Cars SET change_history = @history, updatedAt = GETDATE() WHERE car_id = @cid');
   }
 
   /**
@@ -46,12 +54,17 @@ export class CarIntegrityService {
       limit?: number;
     },
   ): Promise<any[]> {
-    const car = await Car.findOne({ car_id: carId }).select('change_history');
-    if (!car) {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input('cid', mssql.NVarChar, carId)
+      .query('SELECT change_history FROM Cars WHERE car_id = @cid');
+
+    if (result.recordset.length === 0) {
       throw new AppError('Car not found', 404);
     }
 
-    let history = car.change_history || [];
+    const historyStr = result.recordset[0].change_history;
+    let history = historyStr ? JSON.parse(historyStr) : [];
 
     if (options?.field) {
       history = ChangeHistoryTracker.filterChangesByField(history, options.field);
@@ -80,12 +93,7 @@ export class CarIntegrityService {
    * Get audit trail for car as formatted string
    */
   static async getAuditTrail(carId: string): Promise<string> {
-    const car = await Car.findOne({ car_id: carId }).select('change_history');
-    if (!car) {
-      throw new AppError('Car not found', 404);
-    }
-
-    const history = car.change_history || [];
+    const history = await this.getChangeHistory(carId);
     return ChangeHistoryTracker.auditTrail(history as any);
   }
 
@@ -103,12 +111,7 @@ export class CarIntegrityService {
       changedBy: string;
     };
   }> {
-    const car = await Car.findOne({ car_id: carId }).select('change_history');
-    if (!car) {
-      throw new AppError('Car not found', 404);
-    }
-
-    const history = car.change_history || [];
+    const history = await this.getChangeHistory(carId);
     const summary = ChangeHistoryTracker.summarizeChanges(history as any);
 
     return {
@@ -118,10 +121,10 @@ export class CarIntegrityService {
       changeSources: Array.from(summary.changeSources),
       lastChange: summary.latestChange
         ? {
-          field: summary.latestChange.field,
-          changedAt: summary.latestChange.changed_at,
-          changedBy: summary.latestChange.changed_by,
-        }
+            field: summary.latestChange.field,
+            changedAt: summary.latestChange.changed_at,
+            changedBy: summary.latestChange.changed_by,
+          }
         : undefined,
     };
   }

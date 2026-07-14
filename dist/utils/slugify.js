@@ -14,4 +14,3 @@ const generateSlug = (text) => {
     });
 };
 exports.generateSlug = generateSlug;
-//# sourceMappingURL=slugify.js.map

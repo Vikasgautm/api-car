@@ -28,4 +28,3 @@ export declare class ImportService {
         id: string;
     })[]>;
 }
-//# sourceMappingURL=import.service.d.ts.map

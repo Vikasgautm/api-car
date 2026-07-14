@@ -162,4 +162,3 @@ class FuelTypeService {
     }
 }
 exports.FuelTypeService = FuelTypeService;
-//# sourceMappingURL=fuel-type.service.js.map

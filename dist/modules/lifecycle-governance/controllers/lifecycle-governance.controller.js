@@ -60,4 +60,3 @@ class LifecycleGovernanceController {
     });
 }
 exports.LifecycleGovernanceController = LifecycleGovernanceController;
-//# sourceMappingURL=lifecycle-governance.controller.js.map

@@ -1103,19 +1103,21 @@ export class CarService {
     } catch (err: any) {
       // Rollback step 1.
       if (outgoing && original_outgoing_slug) {
-        await Car.findOneAndUpdate(
-          { car_id: outgoing.car_id },
-          {
-            slug: original_outgoing_slug,
-            status: outgoing.status,
-            is_current: true,
-            archived_at: outgoing.archived_at ?? null,
-            archived_by: outgoing.archived_by ?? null,
-            generation_end_year: outgoing.generation_end_year ?? null,
-            successor_car_id: outgoing.successor_car_id ?? null,
-            redirect_to_slug: outgoing.redirect_to_slug ?? null,
-          }
-        ).catch(() => { /* best-effort rollback */ });
+        try {
+          await Car.findOneAndUpdate(
+            { car_id: outgoing.car_id },
+            {
+              slug: original_outgoing_slug,
+              status: outgoing.status,
+              is_current: true,
+              archived_at: outgoing.archived_at ?? null,
+              archived_by: outgoing.archived_by ?? null,
+              generation_end_year: outgoing.generation_end_year ?? null,
+              successor_car_id: outgoing.successor_car_id ?? null,
+              redirect_to_slug: outgoing.redirect_to_slug ?? null,
+            }
+          );
+        } catch { /* best-effort rollback */ }
       }
       if (err?.code === 11000) {
         throw new AppError(

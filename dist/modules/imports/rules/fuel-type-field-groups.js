@@ -48,4 +48,3 @@ function isHybridFuelType(name) {
     const lower = name.toLowerCase().trim();
     return HYBRID_IDENTIFIERS.some(id => lower.includes(id));
 }
-//# sourceMappingURL=fuel-type-field-groups.js.map

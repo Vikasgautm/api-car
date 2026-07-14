@@ -1,47 +1,47 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardHealthService = void 0;
-const car_model_1 = require("../../../models/car.model");
-const car_variant_model_1 = require("../../../models/car-variant.model");
+const dbConnection_1 = require("../../../sql/utils/dbConnection");
 class DashboardHealthService {
     static async getSummary() {
-        const [missingImages, missingSeo, orphanVariants, staleLifecycle, lowConfidence,] = await Promise.all([
-            car_model_1.Car.countDocuments({
-                is_deleted: false,
-                is_published: true,
-                $or: [{ thumbnail: null }, { thumbnail: { $exists: false } }, { 'thumbnail.url': '' }],
-            }),
-            car_model_1.Car.countDocuments({
-                is_deleted: false,
-                $or: [
-                    { 'seo.meta_title': { $in: [null, ''] } },
-                    { 'seo.meta_description': { $in: [null, ''] } },
-                ],
-            }),
-            car_variant_model_1.CarVariant.countDocuments({
-                is_deleted: false,
-                car_id: { $exists: false },
-            }),
-            car_model_1.Car.countDocuments({
-                is_deleted: false,
-                is_upcoming: true,
-                expected_launch_date: { $lt: new Date() },
-            }),
-            car_variant_model_1.CarVariant.countDocuments({
-                is_deleted: false,
-                $and: [
-                    { field_confidence_scores: { $exists: true } },
-                ],
-            }),
+        const pool = await (0, dbConnection_1.getPool)();
+        const [missingImagesRes, missingSeoRes, orphanVariantsRes, staleLifecycleRes, duplicateSlugsRes,] = await Promise.all([
+            pool.request().query(`
+        SELECT COUNT(*) as cnt FROM Cars 
+        WHERE is_deleted = 0 
+        AND is_published = 1 
+        AND (thumbnail IS NULL OR JSON_VALUE(thumbnail, '$.url') IS NULL OR JSON_VALUE(thumbnail, '$.url') = '')
+      `),
+            pool.request().query(`
+        SELECT COUNT(*) as cnt FROM Cars 
+        WHERE is_deleted = 0 
+        AND (meta_title IS NULL OR meta_title = '' OR meta_description IS NULL OR meta_description = '')
+      `),
+            pool.request().query(`
+        SELECT COUNT(*) as cnt FROM CarVariants 
+        WHERE is_deleted = 0 
+        AND (car_id IS NULL OR car_id = '')
+      `),
+            pool.request().query(`
+        SELECT COUNT(*) as cnt FROM Cars 
+        WHERE is_deleted = 0 
+        AND is_upcoming = 1 
+        AND expected_launch_date < GETDATE()
+      `),
+            pool.request().query(`
+        SELECT COUNT(*) as cnt FROM (
+          SELECT slug FROM Cars 
+          WHERE is_deleted = 0 
+          GROUP BY slug 
+          HAVING COUNT(*) > 1
+        ) as t
+      `),
         ]);
-        // Duplicate slug detection via aggregation
-        const duplicateSlugsAgg = await car_model_1.Car.aggregate([
-            { $match: { is_deleted: false } },
-            { $group: { _id: '$slug', count: { $sum: 1 } } },
-            { $match: { count: { $gt: 1 } } },
-            { $count: 'total' },
-        ]);
-        const duplicateSlugs = duplicateSlugsAgg[0]?.total ?? 0;
+        const missingImages = missingImagesRes.recordset[0].cnt || 0;
+        const missingSeo = missingSeoRes.recordset[0].cnt || 0;
+        const orphanVariants = orphanVariantsRes.recordset[0].cnt || 0;
+        const staleLifecycle = staleLifecycleRes.recordset[0].cnt || 0;
+        const duplicateSlugs = duplicateSlugsRes.recordset[0].cnt || 0;
         return {
             missing_images: missingImages,
             missing_seo: missingSeo,
@@ -55,4 +55,3 @@ class DashboardHealthService {
     }
 }
 exports.DashboardHealthService = DashboardHealthService;
-//# sourceMappingURL=dashboard-health.service.js.map

@@ -85,4 +85,3 @@ class UserActivityService {
     }
 }
 exports.UserActivityService = UserActivityService;
-//# sourceMappingURL=user-activity.service.js.map

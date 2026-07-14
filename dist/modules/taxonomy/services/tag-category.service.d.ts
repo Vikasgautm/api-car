@@ -1,54 +1,13 @@
 import { ITagCategory } from '../../../models/tag-category.model';
 export declare class TagCategoryService {
     static getAll(filterDto: any, includeDeleted?: boolean): Promise<{
-        categories: (ITagCategory & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        categories: (ITagCategory & import("../../../sql/common/BaseModel").SQLDocument)[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
     }>;
-    static getById(tagCategoryId: string): Promise<(import("mongoose").Document<unknown, {}, ITagCategory, {}, import("mongoose").DefaultSchemaOptions> & ITagCategory & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static getBySlug(slug: string): Promise<(import("mongoose").Document<unknown, {}, ITagCategory, {}, import("mongoose").DefaultSchemaOptions> & ITagCategory & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }) | null>;
-    static create(data: any): Promise<import("mongoose").Document<unknown, {}, ITagCategory, {}, import("mongoose").DefaultSchemaOptions> & ITagCategory & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static update(tagCategoryId: string, data: any): Promise<import("mongoose").Document<unknown, {}, ITagCategory, {}, import("mongoose").DefaultSchemaOptions> & ITagCategory & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static softDelete(tagCategoryId: string): Promise<import("mongoose").Document<unknown, {}, ITagCategory, {}, import("mongoose").DefaultSchemaOptions> & ITagCategory & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    static restore(tagCategoryId: string): Promise<import("mongoose").Document<unknown, {}, ITagCategory, {}, import("mongoose").DefaultSchemaOptions> & ITagCategory & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static getById(tagCategoryId: string): Promise<(ITagCategory & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static getBySlug(slug: string): Promise<(ITagCategory & import("../../../sql/common/BaseModel").SQLDocument) | null>;
+    static create(data: any): Promise<any>;
+    static update(tagCategoryId: string, data: any): Promise<ITagCategory & import("../../../sql/common/BaseModel").SQLDocument>;
+    static softDelete(tagCategoryId: string): Promise<ITagCategory & import("../../../sql/common/BaseModel").SQLDocument>;
+    static restore(tagCategoryId: string): Promise<ITagCategory & import("../../../sql/common/BaseModel").SQLDocument>;
 }
-//# sourceMappingURL=tag-category.service.d.ts.map

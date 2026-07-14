@@ -56,4 +56,3 @@ editorRouter.patch('/:id/toggle', validation_1.validateIdParam, faq_controller_1
 editorRouter.patch('/:id/reviewed', validation_1.validateIdParam, faq_controller_1.FAQController.markReviewed);
 router.use('/editor', editorRouter);
 exports.default = router;
-//# sourceMappingURL=faq.routes.js.map

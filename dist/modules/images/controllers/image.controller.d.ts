@@ -9,4 +9,3 @@ export declare class ImageController {
     static deleteImage: (req: any, res: Response, next: import("express").NextFunction) => void;
     static updateImage: (req: any, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=image.controller.d.ts.map

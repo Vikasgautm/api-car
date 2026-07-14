@@ -24,4 +24,3 @@ export declare const AdminChatbotLog: import("mongoose").Model<IAdminChatbotLog,
 } & {
     id: string;
 }, any, IAdminChatbotLog>;
-//# sourceMappingURL=admin-chatbot-log.model.d.ts.map

@@ -5,8 +5,8 @@ export declare const carPreviewSchema: z.ZodObject<{
 export declare const carSaveSchema: z.ZodObject<{
     url: z.ZodString;
     mode: z.ZodEnum<{
-        create: "create";
         update: "update";
+        create: "create";
         merge: "merge";
     }>;
     car_id: z.ZodOptional<z.ZodString>;
@@ -30,8 +30,8 @@ export declare const variantPreviewSchema: z.ZodObject<{
 export declare const variantSaveSchema: z.ZodObject<{
     car_id: z.ZodString;
     mode: z.ZodEnum<{
-        create: "create";
         update: "update";
+        create: "create";
         merge: "merge";
     }>;
     items: z.ZodArray<z.ZodObject<{
@@ -89,8 +89,8 @@ export declare const unifiedSaveSchema: z.ZodObject<{
     variantUrls: z.ZodOptional<z.ZodArray<z.ZodString>>;
     car: z.ZodOptional<z.ZodObject<{
         mode: z.ZodEnum<{
-            create: "create";
             update: "update";
+            create: "create";
             merge: "merge";
         }>;
         car_id: z.ZodOptional<z.ZodString>;
@@ -114,8 +114,8 @@ export declare const unifiedSaveSchema: z.ZodObject<{
     }, z.core.$strip>>;
     variants: z.ZodOptional<z.ZodArray<z.ZodObject<{
         mode: z.ZodEnum<{
-            create: "create";
             update: "update";
+            create: "create";
             merge: "merge";
         }>;
         car_id: z.ZodDefault<z.ZodOptional<z.ZodString>>;
@@ -141,4 +141,3 @@ export declare const unifiedSaveSchema: z.ZodObject<{
 }, z.core.$strip>;
 export type UnifiedPreviewInput = z.infer<typeof unifiedPreviewSchema>;
 export type UnifiedSaveInput = z.infer<typeof unifiedSaveSchema>;
-//# sourceMappingURL=import.validation.d.ts.map

@@ -27,4 +27,3 @@ export declare const USER_MESSAGES: {
 };
 export type ErrorCodeType = typeof ERROR_CODES[keyof typeof ERROR_CODES];
 export type UserMessageType = typeof USER_MESSAGES[keyof typeof USER_MESSAGES];
-//# sourceMappingURL=errorMessages.d.ts.map

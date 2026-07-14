@@ -50,4 +50,3 @@ export declare class UserActivityService {
         })[];
     }>;
 }
-//# sourceMappingURL=user-activity.service.d.ts.map

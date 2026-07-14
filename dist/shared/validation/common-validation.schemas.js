@@ -70,4 +70,3 @@ exports.carIdParamSchema = zod_1.z.object({
 exports.uuidIdParamSchema = zod_1.z.object({
     id: exports.uuidSchema,
 });
-//# sourceMappingURL=common-validation.schemas.js.map

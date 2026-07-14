@@ -38,4 +38,3 @@ router.use('/admin', adminRouter);
 router.get('/', validation_1.validatePaginationQuery, brand_controller_1.BrandController.getAllPublicBrands);
 router.get('/:slug', validation_1.validateSlugParam, brand_controller_1.BrandController.getPublicBrandBySlug);
 exports.default = router;
-//# sourceMappingURL=brand.routes.js.map

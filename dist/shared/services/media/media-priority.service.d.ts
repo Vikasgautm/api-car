@@ -23,4 +23,3 @@ export declare class MediaPriorityService {
      */
     static sortByPriority(images: ImageRecord[], mainCategory: string): ImageRecord[];
 }
-//# sourceMappingURL=media-priority.service.d.ts.map

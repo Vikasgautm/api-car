@@ -11,7 +11,7 @@ export class CreateSeoPresetDto {
   is_published?: boolean;
   sort_order?: number;
 
-  static validate(dto: CreateSeoPresetDto): { valid: boolean; errors: string[] } {
+  static validate(dto: CreateSeoPresetDto): { success: boolean; error: { errors: { message: string }[] } } {
     const errors: string[] = [];
 
     const slugRequired = ValidationUtil.required(dto.slug, 'slug');
@@ -36,7 +36,10 @@ export class CreateSeoPresetDto {
       errors.push('query_params must be an object of csv strings');
     }
 
-    return { valid: errors.length === 0, errors };
+    return {
+      success: errors.length === 0,
+      error: { errors: errors.map(e => ({ message: e })) }
+    };
   }
 }
 
@@ -51,7 +54,7 @@ export class UpdateSeoPresetDto {
   is_published?: boolean;
   sort_order?: number;
 
-  static validate(dto: UpdateSeoPresetDto): { valid: boolean; errors: string[] } {
+  static validate(dto: UpdateSeoPresetDto): { success: boolean; error: { errors: { message: string }[] } } {
     const errors: string[] = [];
     if (dto.slug !== undefined) {
       const r = ValidationUtil.slug(dto.slug);
@@ -68,6 +71,9 @@ export class UpdateSeoPresetDto {
     if (dto.query_params !== undefined && (typeof dto.query_params !== 'object' || Array.isArray(dto.query_params))) {
       errors.push('query_params must be an object of csv strings');
     }
-    return { valid: errors.length === 0, errors };
+    return {
+      success: errors.length === 0,
+      error: { errors: errors.map(e => ({ message: e })) }
+    };
   }
 }

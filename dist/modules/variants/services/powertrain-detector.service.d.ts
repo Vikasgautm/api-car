@@ -45,4 +45,3 @@ export declare class PowertrainDetectorService {
      */
     private static hasChargingSigns;
 }
-//# sourceMappingURL=powertrain-detector.service.d.ts.map

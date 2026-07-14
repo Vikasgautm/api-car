@@ -21,4 +21,3 @@ export declare class BooleanNormalizer {
      */
     static normalizeBatch(values: any[]): BooleanNormalizationResult[];
 }
-//# sourceMappingURL=boolean-normalizer.d.ts.map

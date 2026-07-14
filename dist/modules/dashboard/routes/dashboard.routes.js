@@ -18,4 +18,3 @@ adminRouter.get('/comparison-summary', dashboard_controller_1.DashboardControlle
 adminRouter.get('/global-search', dashboard_controller_1.DashboardController.globalSearch);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=dashboard.routes.js.map

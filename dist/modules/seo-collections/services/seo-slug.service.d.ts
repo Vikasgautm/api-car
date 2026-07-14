@@ -13,4 +13,3 @@ export declare class SeoSlugService {
     }): Promise<string>;
     static ensureUnique(baseSlug: string, excludeId?: string): Promise<string>;
 }
-//# sourceMappingURL=seo-slug.service.d.ts.map

@@ -1,5 +1,4 @@
-import { Document } from 'mongoose';
-export interface IImportKeyMapping extends Document {
+export interface IImportKeyMapping {
     mapping_id: string;
     source: 'carwale' | 'cardekho';
     scraped_key: string;
@@ -14,11 +13,5 @@ export interface IImportKeyMapping extends Document {
     createdAt: Date;
     updatedAt: Date;
 }
-export declare const ImportKeyMapping: import("mongoose").Model<IImportKeyMapping, {}, {}, {}, Document<unknown, {}, IImportKeyMapping, {}, import("mongoose").DefaultSchemaOptions> & IImportKeyMapping & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IImportKeyMapping>;
-//# sourceMappingURL=import-key-mapping.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const ImportKeyMapping: BaseModel<IImportKeyMapping>;

@@ -1,11 +1,6 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.User = exports.GovernanceRole = exports.UserRole = void 0;
-const bcrypt_1 = __importDefault(require("bcrypt"));
-const mongoose_1 = require("mongoose");
 var UserRole;
 (function (UserRole) {
     UserRole["USER"] = "user";
@@ -24,90 +19,5 @@ var GovernanceRole;
     GovernanceRole["IMPORT_OPERATOR"] = "import_operator";
     GovernanceRole["MEDIA_MANAGER"] = "media_manager";
 })(GovernanceRole || (exports.GovernanceRole = GovernanceRole = {}));
-const userSchema = new mongoose_1.Schema({
-    user_id: { type: String, required: true, unique: true },
-    user_name: {
-        type: String,
-        required: true,
-        minlength: 2,
-        maxlength: 50,
-        trim: true,
-    },
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-        lowercase: true,
-        trim: true,
-        match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
-    },
-    password: {
-        type: String,
-        minlength: 8,
-        select: false,
-    },
-    phone: {
-        type: String,
-        trim: true,
-    },
-    whatsapp_phone: {
-        type: String,
-        trim: true,
-    },
-    whatsapp_opt_in: { type: Boolean, default: false },
-    profile_pic: { type: String },
-    role: {
-        type: String,
-        enum: Object.values(UserRole),
-        default: UserRole.USER,
-        required: true,
-    },
-    governance_role: {
-        type: String,
-        enum: Object.values(GovernanceRole),
-    },
-    permissions: { type: [String], default: [] },
-    assigned_brands: { type: [String], default: [] },
-    assigned_domains: { type: [String], default: [] },
-    workflow_rights: {
-        type: {
-            can_review: { type: Boolean, default: false },
-            can_publish: { type: Boolean, default: false },
-            can_bulk_publish: { type: Boolean, default: false },
-        },
-        default: () => ({ can_review: false, can_publish: false, can_bulk_publish: false }),
-    },
-    security: {
-        type: {
-            max_sessions: { type: Number, default: 3 },
-            force_password_reset: { type: Boolean, default: false },
-            temp_access_expiry: { type: Date, default: null },
-        },
-        default: () => ({ max_sessions: 3, force_password_reset: false, temp_access_expiry: null }),
-    },
-    is_email_verified: { type: Boolean, default: false },
-    google_id: { type: String },
-    is_deleted: { type: Boolean, default: false, select: false },
-    theme: { type: String, default: "light" },
-    is_active: { type: Boolean, default: true },
-    last_login_at: { type: Date },
-    password_reset_token: { type: String, select: false },
-    password_reset_expires: { type: Date, select: false },
-}, { timestamps: true });
-userSchema.pre('save', async function () {
-    const user = this;
-    if (!user.isModified('password'))
-        return;
-    user.password = await bcrypt_1.default.hash(user.password, 12);
-});
-userSchema.methods.comparePassword = async function (password) {
-    if (!this.password)
-        return false;
-    return await bcrypt_1.default.compare(password, this.password);
-};
-userSchema.index({ google_id: 1 });
-userSchema.index({ is_deleted: 1 });
-userSchema.index({ is_email_verified: 1 });
-userSchema.index({ role: 1 });
-exports.User = (0, mongoose_1.model)('User', userSchema);
-//# sourceMappingURL=user.model.js.map
+const BaseModel_1 = require("../sql/common/BaseModel");
+exports.User = new BaseModel_1.BaseModel('Users', 'user_id', ['permissions', 'assigned_brands', 'assigned_domains', 'workflow_rights', 'security']);

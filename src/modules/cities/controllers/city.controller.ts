@@ -1,9 +1,8 @@
+import { createCitySchema, updateCitySchema } from '../../../shared/validation';
 import { Request, Response } from "express";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { ResponseUtil } from "../../../shared/utils/response.util";
 import { catchAsync } from "../../../utils/catchAsync";
-import { CreateCityDto } from "../dto/create-city.dto";
-import { UpdateCityDto } from "../dto/update-city.dto";
 import { CityService } from "../services/city.service";
 
 export class CityController {
@@ -37,7 +36,7 @@ export class CityController {
   });
 
   static createCity = catchAsync(async (req: Request, res: Response) => {
-    const createDto: CreateCityDto = {
+    const createDto: any = {
       name: req.body.name,
       state: req.body.state,
       pincode: req.body.pincode,
@@ -45,9 +44,9 @@ export class CityController {
       latitude: req.body.latitude,
     };
 
-    const validation = CreateCityDto.validate(createDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const validation = createCitySchema.safeParse(createDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map(e => e.message).join(', '), 400);
     }
 
     const city = await CityService.createCity(createDto);
@@ -55,7 +54,7 @@ export class CityController {
   });
 
   static updateCity = catchAsync(async (req: Request, res: Response) => {
-    const updateDto: UpdateCityDto = {
+    const updateDto: any = {
       name: req.body.name,
       slug: req.body.slug,
       state: req.body.state,
@@ -64,9 +63,9 @@ export class CityController {
       latitude: req.body.latitude,
     };
 
-    const validation = UpdateCityDto.validate(updateDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const validation = updateCitySchema.safeParse(updateDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map(e => e.message).join(', '), 400);
     }
 
     const city = await CityService.updateCity(req.params.id as string, updateDto);

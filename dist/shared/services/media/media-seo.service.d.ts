@@ -17,4 +17,3 @@ export declare class MediaSeoService {
         image_title: string;
     };
 }
-//# sourceMappingURL=media-seo.service.d.ts.map

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CarImageService = void 0;
-const cloudinary_1 = require("cloudinary");
+const upload_service_1 = require("../../../shared/services/upload.service");
 const uuid_1 = require("uuid");
 const car_image_model_1 = require("../../../models/car-image.model");
 const car_variant_model_1 = require("../../../models/car-variant.model");
@@ -15,11 +15,18 @@ const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
 const pagination_util_1 = require("../../../shared/utils/pagination.util");
 // ─── Private helpers ──────────────────────────────────────────────────────────
-function extractPublicId(url) {
+function extractS3Key(url) {
     if (!url)
         return null;
-    const match = url.match(/\/v\d+\/(.+)\.\w+$/);
-    return match ? match[1] : null;
+    if (!url.startsWith('http'))
+        return null;
+    try {
+        const parsed = new URL(url);
+        return decodeURIComponent(parsed.pathname.substring(1));
+    }
+    catch (err) {
+        return null;
+    }
 }
 async function getCarName(carId) {
     // brand_id is a plain string key, not a Mongoose ref, so .populate() throws
@@ -350,18 +357,17 @@ class CarImageService {
     static async bulkDelete(imageIds) {
         return car_image_model_1.CarImage.updateMany({ _id: { $in: imageIds } }, { is_deleted: true, status: 'rejected' });
     }
-    // ─── Delete (soft) ───────────────────────────────────────────────────────────
     static async deleteCarImage(imageId) {
         const image = await car_image_model_1.CarImage.findById(imageId);
         if (!image)
             throw new app_error_util_1.AppError('Car image not found', 404);
         try {
-            const publicId = extractPublicId(image.url);
-            if (publicId)
-                await cloudinary_1.v2.uploader.destroy(publicId);
+            const s3Key = extractS3Key(image.url);
+            if (s3Key)
+                await upload_service_1.UploadService.deleteFromS3(s3Key);
         }
         catch (err) {
-            console.error('Cloudinary delete error:', err);
+            console.error('S3 delete error:', err);
         }
         await car_image_model_1.CarImage.findByIdAndUpdate(imageId, { is_deleted: true, status: 'rejected' });
         return image;
@@ -407,4 +413,3 @@ class CarImageService {
     }
 }
 exports.CarImageService = CarImageService;
-//# sourceMappingURL=car-image.service.js.map

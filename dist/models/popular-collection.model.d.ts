@@ -1,4 +1,3 @@
-import { Document } from 'mongoose';
 export type CollectionType = 'trending' | 'popular' | 'ev' | 'mileage' | 'comparison' | 'family' | 'launch' | 'brand' | 'custom';
 export type CollectionStatus = 'draft' | 'published' | 'archived';
 export type CollectionRenderingMode = 'manual' | 'hybrid' | 'behavioral' | 'observe_only';
@@ -21,7 +20,7 @@ export interface IDiscoveryFilters {
     vehicle_segment?: string[];
     family_friendly?: boolean;
 }
-export interface IPopularCollection extends Document {
+export interface IPopularCollection {
     collection_id: string;
     slug: string;
     title: string;
@@ -58,11 +57,5 @@ export interface IPopularCollection extends Document {
     updated_by?: string;
     last_rendered_at?: Date;
 }
-export declare const PopularCollection: import("mongoose").Model<IPopularCollection, {}, {}, {}, Document<unknown, {}, IPopularCollection, {}, import("mongoose").DefaultSchemaOptions> & IPopularCollection & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IPopularCollection>;
-//# sourceMappingURL=popular-collection.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const PopularCollection: BaseModel<IPopularCollection>;

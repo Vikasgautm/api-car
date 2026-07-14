@@ -15,4 +15,3 @@ export declare class ComparisonController {
     static getTrendingComparisons(req: AuthRequest, res: Response, next: NextFunction): Promise<void>;
     static getComparisonsByCategory(req: AuthRequest, res: Response, next: NextFunction): Promise<void>;
 }
-//# sourceMappingURL=comparison.controller.d.ts.map

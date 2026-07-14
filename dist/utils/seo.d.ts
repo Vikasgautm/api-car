@@ -7,4 +7,3 @@ export interface SEOMetadata {
 }
 export declare const generateCarMetadata: (car: any) => SEOMetadata;
 export declare const generateBlogMetadata: (blog: any) => SEOMetadata;
-//# sourceMappingURL=seo.d.ts.map

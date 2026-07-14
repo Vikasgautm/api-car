@@ -26,4 +26,3 @@ class SitemapController {
     }
 }
 exports.SitemapController = SitemapController;
-//# sourceMappingURL=sitemap.controller.js.map

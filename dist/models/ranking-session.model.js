@@ -43,4 +43,3 @@ schema.index({ session_quality_score: -1 });
 schema.index({ started_at: -1 });
 schema.index({ started_at: 1 }, { expireAfterSeconds: 90 * 24 * 3600 });
 exports.RankingSession = (0, mongoose_1.model)('RankingSession', schema);
-//# sourceMappingURL=ranking-session.model.js.map

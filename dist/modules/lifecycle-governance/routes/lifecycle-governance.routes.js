@@ -19,4 +19,3 @@ adminRouter.post('/:id/reject', (0, auth_middleware_1.restrictTo)('super_admin')
 adminRouter.get('/cars/:car_id/pending', lifecycle_governance_controller_1.LifecycleGovernanceController.getPendingForCar);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=lifecycle-governance.routes.js.map

@@ -23,4 +23,3 @@ export declare class FAQHealthService {
         needs_refresh: number;
     }>;
 }
-//# sourceMappingURL=faq-health.service.d.ts.map

@@ -30,4 +30,3 @@ export declare const RankingRawEvent: import("mongoose").Model<IRankingRawEvent,
 } & {
     id: string;
 }, any, IRankingRawEvent>;
-//# sourceMappingURL=ranking-raw-event.model.d.ts.map

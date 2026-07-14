@@ -16,8 +16,8 @@ export declare const createCarSchema: z.ZodObject<{
     gallery_summary: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
         archived: "archived";
-        upcoming: "upcoming";
         launched: "launched";
+        upcoming: "upcoming";
         discontinued: "discontinued";
         disabled: "disabled";
     }>>>;
@@ -99,8 +99,8 @@ export declare const updateCarSchema: z.ZodObject<{
     gallery_summary: z.ZodOptional<z.ZodOptional<z.ZodString>>;
     status: z.ZodOptional<z.ZodOptional<z.ZodOptional<z.ZodEnum<{
         archived: "archived";
-        upcoming: "upcoming";
         launched: "launched";
+        upcoming: "upcoming";
         discontinued: "discontinued";
         disabled: "disabled";
     }>>>>;
@@ -220,16 +220,16 @@ export declare const carFilterSchema: z.ZodObject<{
     limit: z.ZodOptional<z.ZodDefault<z.ZodCoercedNumber<unknown>>>;
     sortBy: z.ZodOptional<z.ZodString>;
     sortOrder: z.ZodOptional<z.ZodEnum<{
-        asc: "asc";
         desc: "desc";
+        asc: "asc";
     }>>;
     q: z.ZodOptional<z.ZodString>;
     brand_id: z.ZodOptional<z.ZodString>;
     body_type_id: z.ZodOptional<z.ZodString>;
     status: z.ZodOptional<z.ZodOptional<z.ZodEnum<{
         archived: "archived";
-        upcoming: "upcoming";
         launched: "launched";
+        upcoming: "upcoming";
         discontinued: "discontinued";
         disabled: "disabled";
     }>>>;
@@ -262,4 +262,3 @@ export declare const carFilterSchema: z.ZodObject<{
         excellent: "excellent";
     }>>, z.ZodString]>>;
 }, z.core.$strict>;
-//# sourceMappingURL=car-validation.schemas.d.ts.map

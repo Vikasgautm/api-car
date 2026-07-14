@@ -24,4 +24,3 @@ router.use('/admin', adminRouter);
 router.get('/', validation_1.validatePaginationQuery, fuel_type_controller_1.FuelTypeController.getAllPublicFuelTypes);
 router.get('/:slug', validation_1.validateSlugParam, fuel_type_controller_1.FuelTypeController.getPublicFuelTypeBySlug);
 exports.default = router;
-//# sourceMappingURL=fuel-type.routes.js.map

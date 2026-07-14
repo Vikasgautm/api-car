@@ -36,4 +36,3 @@ export declare class EmailService {
     }): Promise<SendOtpEmailResult>;
     static sendInviteEmail(recipient: string, userName: string, resetUrl: string): Promise<SendOtpEmailResult>;
 }
-//# sourceMappingURL=email.service.d.ts.map

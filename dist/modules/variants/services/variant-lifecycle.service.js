@@ -189,4 +189,3 @@ class VariantLifecycleService {
     }
 }
 exports.VariantLifecycleService = VariantLifecycleService;
-//# sourceMappingURL=variant-lifecycle.service.js.map

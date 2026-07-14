@@ -17,4 +17,3 @@ router.get('/labels', async (req, res, next) => {
     }
 });
 exports.default = router;
-//# sourceMappingURL=master-data-public.routes.js.map

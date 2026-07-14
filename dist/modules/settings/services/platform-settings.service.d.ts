@@ -20,4 +20,3 @@ export declare class PlatformSettingsService {
     static invalidateCache(group?: SettingsGroup): void;
     static getSystemStatus(): Promise<Record<string, any>>;
 }
-//# sourceMappingURL=platform-settings.service.d.ts.map

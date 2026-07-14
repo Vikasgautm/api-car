@@ -48,10 +48,9 @@ exports.SlugUtil = SlugUtil;
 async function generateSlugWithIncrement(baseSlug, Model, fieldName = 'slug') {
     let slug = baseSlug;
     let counter = 1;
-    while (await Model.exists({ [fieldName]: slug })) {
+    while (await Model.findOne({ [fieldName]: slug })) {
         slug = `${baseSlug}-${counter}`;
         counter++;
     }
     return slug;
 }
-//# sourceMappingURL=slug.util.js.map

@@ -7,4 +7,3 @@ export declare class SpecNormalizationService {
     static normalizePrice(raw: string | number | undefined): number | undefined;
     static normalizeSpecs(rawSpecs: Record<string, any>): Record<string, any>;
 }
-//# sourceMappingURL=SpecNormalizationService.d.ts.map

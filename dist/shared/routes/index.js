@@ -117,4 +117,3 @@ router.use('/master-data/public', master_data_public_routes_1.default);
 router.use('/chatbot', adminChatbot_routes_1.default);
 router.use('/sitemap', sitemap_routes_1.default);
 exports.default = router;
-//# sourceMappingURL=index.js.map

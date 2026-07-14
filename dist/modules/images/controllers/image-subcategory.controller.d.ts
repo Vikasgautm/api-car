@@ -10,4 +10,3 @@ export declare class ImageSubCategoryController {
     static toggleImageSubCategoryActive: (req: any, res: Response, next: import("express").NextFunction) => void;
     static reorderImageSubCategories: (req: any, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=image-subcategory.controller.d.ts.map

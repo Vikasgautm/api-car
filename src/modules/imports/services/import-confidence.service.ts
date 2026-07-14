@@ -27,7 +27,7 @@ export interface ImportConfidenceScore {
 
 export class ImportConfidenceService {
   static async scoreImport(import_id: string): Promise<ImportConfidenceScore> {
-    const log = await ImportLog.findOne({ import_id, is_deleted: false });
+    const log = await ImportLog.findOne({ import_id });
     if (!log) {
       throw AppError.notFound('Import', 'import_id', import_id);
     }
@@ -91,7 +91,6 @@ export class ImportConfidenceService {
     const logs = await ImportLog.find({
       variant_id,
       import_type: 'variant',
-      is_deleted: false,
     });
 
     const scores = await Promise.all(logs.map(log => this.scoreImport(log.import_id)));
@@ -101,7 +100,6 @@ export class ImportConfidenceService {
   static async scoreCarImports(car_id: string): Promise<ImportConfidenceScore[]> {
     const logs = await ImportLog.find({
       car_id,
-      is_deleted: false,
     });
 
     const scores = await Promise.all(logs.map(log => this.scoreImport(log.import_id)));
@@ -115,7 +113,7 @@ export class ImportConfidenceService {
     low_confidence: number;
     recent_imports: ImportConfidenceScore[];
   }> {
-    const recentLogs = await ImportLog.find({ is_deleted: false })
+    const recentLogs = await ImportLog.find({})
       .sort({ createdAt: -1 })
       .limit(limit);
 

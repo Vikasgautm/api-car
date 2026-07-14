@@ -20,7 +20,7 @@ class AuthService {
             throw new app_error_util_1.AppError('User with this email already exists', 400);
         }
         // Create new user
-        const user = new user_model_1.User({
+        const user = user_model_1.User.createDraft({
             user_id: (0, uuid_1.v4)(),
             user_name,
             email,
@@ -160,7 +160,7 @@ class AuthService {
     }
     static async saveRefreshToken(user_id, refreshToken, deviceInfo, ipAddress) {
         const expiresMs = this.parseExpiresIn(config_1.config.jwt_refresh_expires_in);
-        const session = new user_session_model_1.UserSession({
+        await user_session_model_1.UserSession.create({
             session_id: (0, uuid_1.v4)(),
             user_id,
             refresh_token: refreshToken,
@@ -169,7 +169,6 @@ class AuthService {
             device_info: deviceInfo,
             ip_address: ipAddress,
         });
-        await session.save();
     }
     static parseExpiresIn(expiresIn) {
         const match = expiresIn.match(/^(\d+)([smhd])$/);
@@ -186,7 +185,7 @@ class AuthService {
         return value * (multipliers[unit] || multipliers['d']);
     }
     static sanitizeUser(user) {
-        const userObj = user.toObject();
+        const userObj = user.toObject ? user.toObject() : { ...user };
         delete userObj.password;
         delete userObj.__v;
         return userObj;
@@ -208,4 +207,3 @@ class AuthService {
     }
 }
 exports.AuthService = AuthService;
-//# sourceMappingURL=auth.service.js.map

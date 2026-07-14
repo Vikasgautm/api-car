@@ -146,11 +146,7 @@ export declare class DiscoveryService {
     static getSortClause(sortBy: SortKey | undefined): Record<string, 1 | -1>;
     /** Full discovery query: list + pagination + facet counts. */
     static discover(filters: DiscoveryFilters): Promise<{
-        cars: (import("../../../models/car.model").ICar & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
+        cars: (import("../../../models/car.model").ICar & import("../../../sql/common/BaseModel").SQLDocument)[];
         pagination: import("../../../shared/interfaces/pagination-response.interface").PaginationMeta;
         facets: DiscoveryFacets;
         applied: ResolvedFilters;
@@ -178,4 +174,3 @@ export declare class DiscoveryService {
 export type DiscoveryMileageClass = MileageClass;
 /** Clears the in-memory facet cache. Called by the performance settings clear action. */
 export declare function clearDiscoveryFacetCache(): void;
-//# sourceMappingURL=discovery.service.d.ts.map

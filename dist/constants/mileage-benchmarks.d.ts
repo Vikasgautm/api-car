@@ -52,4 +52,3 @@ export declare function applyThresholds(value: number | null | undefined, t: Ben
  * Pick the higher of two classes by `MILEAGE_CLASS_ORDER`. Either side may be null.
  */
 export declare function maxClass(a: MileageClass | null | undefined, b: MileageClass | null | undefined): MileageClass | null;
-//# sourceMappingURL=mileage-benchmarks.d.ts.map

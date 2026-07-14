@@ -3,8 +3,8 @@ import { User } from "../../../models/user.model";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { ResponseUtil } from "../../../shared/utils/response.util";
 import { catchAsync } from "../../../utils/catchAsync";
-import { UpdateSEOSettingsDto } from "../dto/update-seo-settings.dto";
 import { SettingsService } from "../services/settings.service";
+import { UpdateSEOSettingsDto } from "../../../shared/validation";
 
 export class SettingsController {
   static updateTheme = catchAsync(async (req: Request, res: Response) => {
@@ -46,8 +46,8 @@ export class SettingsController {
     };
 
     const validation = UpdateSEOSettingsDto.validate(updateDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);
     }
 
     const seoSettings = await SettingsService.updateSEOSettings(updateDto);

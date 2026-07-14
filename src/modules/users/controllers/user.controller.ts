@@ -1,12 +1,10 @@
+import { adminUpdateUserSchema, updateProfileSchema, userFilterSchema, UserFilterDto } from '../../../shared/validation';
 import { Request, Response } from "express";
 import { User } from "../../../models/user.model";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { ResponseUtil } from "../../../shared/utils/response.util";
 import { AuthRequest } from "../../../types/auth";
 import { catchAsync } from "../../../utils/catchAsync";
-import { AdminUpdateUserDto } from "../dto/admin-update-user.dto";
-import { UpdateProfileDto } from "../dto/update-profile.dto";
-import { UserFilterDto } from "../dto/user-filter.dto";
 import { UserService } from "../services/user.service";
 
 interface MulterRequest extends AuthRequest {
@@ -48,10 +46,10 @@ export class UserController {
       updateData.profile_pic = cloudinaryFile.secure_url || req.file.path;
     }
 
-    const updateDto: UpdateProfileDto = { user_name, phone, profile_pic: updateData.profile_pic as string };
-    const validation = UpdateProfileDto.validate(updateDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const updateDto: any = { user_name, phone, profile_pic: updateData.profile_pic as string };
+    const validation = updateProfileSchema.safeParse(updateDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map(e => e.message).join(', '), 400);
     }
 
     const updatedUser = await User.findOneAndUpdate(
@@ -72,9 +70,9 @@ export class UserController {
   // Admin endpoints
   static getAllAdminUsers = catchAsync(async (req: Request, res: Response) => {
     const filterDto = req.query as unknown as UserFilterDto;
-    const validation = UserFilterDto.validate(filterDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const validation = userFilterSchema.safeParse(filterDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map(e => e.message).join(', '), 400);
     }
 
     const includeDeleted = req.query.include_deleted === 'true';
@@ -115,11 +113,11 @@ export class UserController {
 
   static updateUser = catchAsync(async (req: Request, res: Response) => {
     const userId = req.params.id as string;
-    const updateDto: AdminUpdateUserDto = req.body;
+    const updateDto: any = req.body;
 
-    const validation = AdminUpdateUserDto.validate(updateDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const validation = adminUpdateUserSchema.safeParse(updateDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map(e => e.message).join(', '), 400);
     }
 
     const user = await UserService.updateUser(userId, updateDto as Record<string, unknown>);

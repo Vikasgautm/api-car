@@ -1,5 +1,4 @@
-import { Document } from 'mongoose';
-export interface IBodyType extends Document {
+export interface IBodyType {
     body_type_id: string;
     name: string;
     slug: string;
@@ -26,11 +25,5 @@ export interface IBodyType extends Document {
     updated_by?: string;
     published_at?: Date;
 }
-export declare const BodyType: import("mongoose").Model<IBodyType, {}, {}, {}, Document<unknown, {}, IBodyType, {}, import("mongoose").DefaultSchemaOptions> & IBodyType & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IBodyType>;
-//# sourceMappingURL=body-type.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const BodyType: BaseModel<IBodyType>;

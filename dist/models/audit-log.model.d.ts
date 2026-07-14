@@ -1,5 +1,5 @@
 import { Document } from 'mongoose';
-export type AuditEntityType = 'car' | 'variant' | 'tag' | 'tag_category' | 'benchmark_override' | 'blog';
+export type AuditEntityType = 'car' | 'variant' | 'tag' | 'tag_category' | 'benchmark_override' | 'blog' | 'comparison' | 'seo_collection' | 'import' | 'brand' | 'user' | 'setting';
 export type AuditAction = 'create' | 'update' | 'delete' | 'restore' | 'archive' | 'unarchive' | 'publish' | 'unpublish' | 'mark_launched' | 'mark_upcoming' | 'mark_reviewed' | 'clone';
 export interface IAuditLog extends Document {
     audit_id: string;
@@ -23,4 +23,3 @@ export declare const AuditLog: import("mongoose").Model<IAuditLog, {}, {}, {}, D
 } & {
     id: string;
 }, any, IAuditLog>;
-//# sourceMappingURL=audit-log.model.d.ts.map

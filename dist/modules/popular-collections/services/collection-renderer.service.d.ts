@@ -74,4 +74,3 @@ export declare class CollectionRendererService {
     private static applyHybridSlots;
     private static applyBehavioralSlots;
 }
-//# sourceMappingURL=collection-renderer.service.d.ts.map

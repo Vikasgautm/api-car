@@ -33,4 +33,3 @@ adminRouter.get('/sessions', rankings_controller_1.RankingsController.listSessio
 adminRouter.post('/sessions/:session_id/recompute', rankings_controller_1.RankingsController.recomputeSession);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=rankings.routes.js.map

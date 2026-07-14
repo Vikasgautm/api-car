@@ -4,7 +4,7 @@ exports.ImportLog = void 0;
 const mongoose_1 = require("mongoose");
 const importLogSchema = new mongoose_1.Schema({
     import_id: { type: String, required: true, unique: true },
-    source: { type: String, enum: ['cardekho'], required: true },
+    source: { type: String, enum: ['cardekho', 'carwale'], required: true },
     import_type: { type: String, enum: ['car', 'variant'], required: true },
     source_url: { type: String, required: true },
     car_id: { type: String },
@@ -30,4 +30,3 @@ importLogSchema.index({ status: 1 });
 importLogSchema.index({ created_by: 1 });
 importLogSchema.index({ createdAt: -1 });
 exports.ImportLog = (0, mongoose_1.model)('ImportLog', importLogSchema);
-//# sourceMappingURL=import-log.model.js.map

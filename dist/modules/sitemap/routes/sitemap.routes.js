@@ -8,4 +8,3 @@ router.get('/urls', sitemap_controller_1.SitemapController.getUrls);
 // XML sitemap (also mounted at root /sitemap.xml via app.ts)
 router.get('/', sitemap_controller_1.SitemapController.getXml);
 exports.default = router;
-//# sourceMappingURL=sitemap.routes.js.map

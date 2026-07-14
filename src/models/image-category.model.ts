@@ -1,6 +1,4 @@
-import { Document, Schema, model } from 'mongoose';
-
-export interface IImageCategory extends Document {
+export interface IImageCategory  {
   category_id: string;
   name: string;
   slug: string;
@@ -13,29 +11,5 @@ export interface IImageCategory extends Document {
   deleted_at?: Date;
 }
 
-const imageCategorySchema = new Schema<IImageCategory>(
-  {
-    category_id: { type: String, required: true, unique: true },
-    name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true },
-    description: { type: String },
-    is_active: { type: Boolean, default: true },
-    is_published: { type: Boolean, default: true },
-    sort_order: { type: Number, default: 0 },
-    display_order: { type: Number, default: 0 },
-    is_deleted: { type: Boolean, default: false },
-    deleted_at: { type: Date },
-  },
-  {
-    timestamps: true,
-  }
-);
-
-imageCategorySchema.index({ name: 1 });
-imageCategorySchema.index({ is_active: 1 });
-imageCategorySchema.index({ is_published: 1 });
-imageCategorySchema.index({ sort_order: 1 });
-imageCategorySchema.index({ is_active: 1, sort_order: 1 });
-imageCategorySchema.index({ is_published: 1, sort_order: 1 });
-
-export const ImageCategory = model<IImageCategory>('ImageCategory', imageCategorySchema);
+import { BaseModel } from '../sql/common/BaseModel';
+export const ImageCategory = new BaseModel<IImageCategory>('ImageCategories', 'category_id');

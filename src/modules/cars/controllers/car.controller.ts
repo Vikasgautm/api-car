@@ -1,3 +1,4 @@
+import { createCarSchema, updateCarSchema } from '../../../shared/validation';
 import { Request, Response } from "express";
 import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { AuthRequest } from "../../../types/auth";
@@ -5,8 +6,6 @@ import { AppError } from "../../../shared/utils/app-error.util";
 import { AuditUtil } from "../../../shared/utils/audit.util";
 import { ResponseUtil } from "../../../shared/utils/response.util";
 import { catchAsync } from "../../../utils/catchAsync";
-import { CreateCarDto } from "../dto/create-car.dto";
-import { UpdateCarDto } from "../dto/update-car.dto";
 import { CarService } from "../services/car.service";
 import { CarLifecycleService } from "../services/car-lifecycle.service";
 import { RedirectService } from "../../redirects/services/redirect.service";
@@ -219,7 +218,7 @@ export class CarController {
       }
     }
 
-    const createDto: CreateCarDto = {
+    const createDto: any = {
       name: req.body.name,
       slug: req.body.slug,
       brand_id: req.body.brand_id,
@@ -264,9 +263,9 @@ export class CarController {
       successor_car_id: req.body.successor_car_id,
     };
 
-    const validation = CreateCarDto.validate(createDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const validation = createCarSchema.safeParse(createDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map(e => e.message).join(', '), 400);
     }
 
     const car = await CarService.createCar(createDto, AuditUtil.actorFromRequest(req as AuthRequest));
@@ -307,7 +306,7 @@ export class CarController {
       }
     }
 
-    const updateDto: UpdateCarDto = {
+    const updateDto: any = {
       name: req.body.name,
       slug: req.body.slug,
       brand_id: req.body.brand_id,
@@ -353,9 +352,9 @@ export class CarController {
       successor_car_id: req.body.successor_car_id,
     };
 
-    const validation = UpdateCarDto.validate(updateDto);
-    if (!validation.valid) {
-      throw new AppError(validation.errors.join(', '), 400);
+    const validation = updateCarSchema.safeParse(updateDto);
+    if (!validation.success) {
+      throw new AppError(validation.error.issues.map(e => e.message).join(', '), 400);
     }
 
     const car = await CarService.updateCar(req.params.id as string, updateDto, AuditUtil.actorFromRequest(req as AuthRequest));

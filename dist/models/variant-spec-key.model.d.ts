@@ -1,7 +1,6 @@
-import { Document } from 'mongoose';
 export type SpecDataType = 'string' | 'number' | 'boolean' | 'list' | 'date';
 export type SpecCategory = 'engine_performance' | 'mileage_range' | 'battery_charging' | 'dimensions_practicality' | 'suspension_steering_brakes' | 'tyres_wheels' | 'safety' | 'adas' | 'comfort_convenience' | 'infotainment_connectivity' | 'connected_car' | 'interior' | 'exterior' | 'warranty';
-export interface IVariantSpecKey extends Document {
+export interface IVariantSpecKey {
     key_id: string;
     name: string;
     slug: string;
@@ -16,11 +15,5 @@ export interface IVariantSpecKey extends Document {
     sort_order?: number;
     display_order?: number;
 }
-export declare const VariantSpecKey: import("mongoose").Model<IVariantSpecKey, {}, {}, {}, Document<unknown, {}, IVariantSpecKey, {}, import("mongoose").DefaultSchemaOptions> & IVariantSpecKey & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IVariantSpecKey>;
-//# sourceMappingURL=variant-spec-key.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const VariantSpecKey: BaseModel<IVariantSpecKey>;

@@ -23,4 +23,3 @@ export declare class RankingsController {
     static listSessions: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response, next: import("express").NextFunction) => void;
     private static parseQueryParams;
 }
-//# sourceMappingURL=rankings.controller.d.ts.map

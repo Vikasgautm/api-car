@@ -129,4 +129,3 @@ class ImageSubCategoryService {
     }
 }
 exports.ImageSubCategoryService = ImageSubCategoryService;
-//# sourceMappingURL=image-subcategory.service.js.map

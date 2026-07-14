@@ -40,4 +40,3 @@ export declare class CarHealthService {
     static getFaqCountsByCar(carIds: string[]): Promise<Map<string, number>>;
     static compute(car: CarHealthInput, faqCount: number): CarHealth;
 }
-//# sourceMappingURL=car-health.service.d.ts.map

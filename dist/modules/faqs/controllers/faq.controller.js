@@ -1,11 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FAQController = void 0;
+const validation_1 = require("../../../shared/validation");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const create_faq_dto_1 = require("../dto/create-faq.dto");
-const update_faq_dto_1 = require("../dto/update-faq.dto");
 const faq_service_1 = require("../services/faq.service");
 const faq_orchestrator_service_1 = require("../services/faq-orchestrator.service");
 const faq_template_engine_service_1 = require("../services/faq-template-engine.service");
@@ -94,9 +93,9 @@ class FAQController {
             visibility_status: req.body.visibility_status,
             source_type: req.body.source_type,
         };
-        const validation = create_faq_dto_1.CreateFaqDto.validate(createDto);
-        if (!validation.valid)
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.createFaqSchema.safeParse(createDto);
+        if (!validation.success)
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         const faq = await faq_service_1.FAQService.createFAQ(createDto);
         return response_util_1.ResponseUtil.created(res, faq, 'FAQ created successfully');
     });
@@ -135,9 +134,9 @@ class FAQController {
             needs_refresh: req.body.needs_refresh,
             source_type: req.body.source_type,
         };
-        const validation = update_faq_dto_1.UpdateFaqDto.validate(updateDto);
-        if (!validation.valid)
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.updateFaqSchema.safeParse(updateDto);
+        if (!validation.success)
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         const faq = await faq_service_1.FAQService.updateFAQ(req.params.id, updateDto);
         return response_util_1.ResponseUtil.success(res, faq, 'FAQ updated successfully');
     });
@@ -251,4 +250,3 @@ class FAQController {
     });
 }
 exports.FAQController = FAQController;
-//# sourceMappingURL=faq.controller.js.map

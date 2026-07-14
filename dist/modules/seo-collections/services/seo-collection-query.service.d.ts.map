@@ -1,1 +1,0 @@
-{"version":3,"file":"seo-collection-query.service.d.ts","sourceRoot":"","sources":["../../../../src/modules/seo-collections/services/seo-collection-query.service.ts"],"names":[],"mappings":"AAGA,OAAO,EAAE,cAAc,EAAE,MAAM,sCAAsC,CAAC;AACtE,OAAO,EAAE,gBAAgB,EAAE,MAAM,4CAA4C,CAAC;AAE9E,qBAAa,yBAAyB;WACvB,qBAAqB,CAAC,UAAU,EAAE,OAAO,CAAC,cAAc,CAAC,GAAG,OAAO,CAAC,gBAAgB,CAAC;CA2EnG"}

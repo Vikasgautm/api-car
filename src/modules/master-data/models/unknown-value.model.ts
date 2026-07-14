@@ -1,7 +1,6 @@
-import { Document, Schema, model } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
-export interface IUnknownValue extends Document {
+export interface IUnknownValue {
   unknown_id: string;
   category_key: string;
   raw_value: string;
@@ -14,23 +13,5 @@ export interface IUnknownValue extends Document {
   updated_at: Date;
 }
 
-const unknownValueSchema = new Schema<IUnknownValue>(
-  {
-    unknown_id: { type: String, required: true, unique: true, default: () => uuidv4() },
-    category_key: { type: String, required: true, index: true },
-    raw_value: { type: String, required: true, trim: true },
-    context: { type: String, default: '' },
-    occurrence_count: { type: Number, default: 1 },
-    is_resolved: { type: Boolean, default: false, index: true },
-    resolved_to: { type: String, default: null },
-    resolved_at: { type: Date, default: null },
-  },
-  {
-    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
-  },
-);
-
-unknownValueSchema.index({ category_key: 1, raw_value: 1 }, { unique: true });
-unknownValueSchema.index({ is_resolved: 1, created_at: -1 });
-
-export const UnknownValue = model<IUnknownValue>('UnknownValue', unknownValueSchema);
+import { BaseModel } from '../../../sql/common/BaseModel';
+export const UnknownValue = new BaseModel<IUnknownValue>('UnknownValues', 'unknown_id');

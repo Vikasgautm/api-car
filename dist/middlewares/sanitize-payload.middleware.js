@@ -67,4 +67,3 @@ const sanitizeHtmlFields = (req, _res, next) => {
     next();
 };
 exports.sanitizeHtmlFields = sanitizeHtmlFields;
-//# sourceMappingURL=sanitize-payload.middleware.js.map

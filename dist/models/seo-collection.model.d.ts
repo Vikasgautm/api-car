@@ -1,4 +1,3 @@
-import { Document } from 'mongoose';
 export type SeoCollectionType = 'fuel' | 'fuel_body_type' | 'fuel_budget' | 'fuel_body_budget' | 'fuel_feature' | 'fuel_transmission' | 'fuel_seating' | 'fuel_mileage' | 'fuel_usage' | 'fuel_safety' | 'fuel_family' | 'fuel_brand' | 'future_custom';
 export type SeoIndexStatus = 'index' | 'noindex';
 export type SeoCollectionStatus = 'draft' | 'published' | 'archived';
@@ -16,7 +15,7 @@ export interface ISeoMeta {
     intro_content?: string | null;
     conclusion_content?: string | null;
 }
-export interface ISeoCollection extends Document {
+export interface ISeoCollection {
     collection_id: string;
     title: string;
     slug: string;
@@ -55,11 +54,5 @@ export interface ISeoCollection extends Document {
     created_by?: string | null;
     updated_by?: string | null;
 }
-export declare const SeoCollection: import("mongoose").Model<ISeoCollection, {}, {}, {}, Document<unknown, {}, ISeoCollection, {}, import("mongoose").DefaultSchemaOptions> & ISeoCollection & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, ISeoCollection>;
-//# sourceMappingURL=seo-collection.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const SeoCollection: BaseModel<ISeoCollection>;

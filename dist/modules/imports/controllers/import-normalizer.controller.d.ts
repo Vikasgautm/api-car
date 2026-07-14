@@ -15,4 +15,3 @@ export declare class ImportNormalizerController {
      */
     static detectPowertrain(req: Request, res: Response): Promise<void>;
 }
-//# sourceMappingURL=import-normalizer.controller.d.ts.map

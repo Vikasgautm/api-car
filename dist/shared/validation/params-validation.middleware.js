@@ -8,4 +8,3 @@ exports.validateIdParam = (0, validate_middleware_1.validateParams)(common_valid
 exports.validateSlugParam = (0, validate_middleware_1.validateParams)(common_validation_schemas_1.slugParamSchema);
 exports.validateCarIdParam = (0, validate_middleware_1.validateParams)(common_validation_schemas_1.carIdParamSchema);
 exports.validateUuidIdParam = (0, validate_middleware_1.validateParams)(common_validation_schemas_1.uuidIdParamSchema);
-//# sourceMappingURL=params-validation.middleware.js.map

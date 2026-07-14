@@ -30,4 +30,3 @@ function cacheInvalidate(pattern) {
 function cacheSize() {
     return store.size;
 }
-//# sourceMappingURL=health-cache.js.map

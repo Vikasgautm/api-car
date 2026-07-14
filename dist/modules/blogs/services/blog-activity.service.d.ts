@@ -1,10 +1,6 @@
 export declare class BlogActivityService {
     static getRecentActivity(limit?: number): Promise<any[]>;
-    static getStaleAlerts(limit?: number): Promise<(import("../../../models/blog.model").IBlog & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    })[]>;
+    static getStaleAlerts(limit?: number): Promise<(import("../../../models/blog.model").IBlog & import("../../../sql/common/BaseModel").SQLDocument)[]>;
     static getContentHealthSummary(): Promise<{
         total: number;
         published: number;
@@ -23,4 +19,3 @@ export declare class BlogActivityService {
         message: string;
     }[]>;
 }
-//# sourceMappingURL=blog-activity.service.d.ts.map

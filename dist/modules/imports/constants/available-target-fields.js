@@ -309,4 +309,3 @@ exports.AVAILABLE_TARGET_FIELD_GROUPS = [
 exports.ALL_TARGET_FIELDS = exports.AVAILABLE_TARGET_FIELD_GROUPS.flatMap(g => g.fields);
 // Build a quick lookup map from key → TargetField
 exports.TARGET_FIELD_MAP = Object.fromEntries(exports.ALL_TARGET_FIELDS.map(f => [f.key, f]));
-//# sourceMappingURL=available-target-fields.js.map

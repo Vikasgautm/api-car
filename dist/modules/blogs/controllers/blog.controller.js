@@ -1,13 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BlogController = void 0;
+const validation_1 = require("../../../shared/validation");
 const errorMessages_1 = require("../../../constants/errorMessages");
 const upload_service_1 = require("../../../shared/services/upload.service");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const create_blog_dto_1 = require("../dto/create-blog.dto");
-const update_blog_dto_1 = require("../dto/update-blog.dto");
 const blog_service_1 = require("../services/blog.service");
 const blog_relationship_service_1 = require("../services/blog-relationship.service");
 const blog_query_service_1 = require("../services/blog-query.service");
@@ -113,13 +112,13 @@ class BlogController {
             noindex: req.body.noindex,
         };
         console.log(createDto, "hello");
-        const validation = create_blog_dto_1.CreateBlogDto.validate(createDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400, {
+        const validation = validation_1.createBlogSchema.safeParse(createDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400, {
                 userMessage: errorMessages_1.USER_MESSAGES.VALIDATION_ERROR,
                 errorCode: errorMessages_1.ERROR_CODES.VALIDATION_ERROR,
                 details: {
-                    fields: validation.errors,
+                    fields: validation.error.errors.map(e => e.message),
                 },
             });
         }
@@ -170,9 +169,9 @@ class BlogController {
             noindex: req.body.noindex,
         };
         console.log(updateDto, "updatedto");
-        const validation = update_blog_dto_1.UpdateBlogDto.validate(updateDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.updateBlogSchema.safeParse(updateDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const blog = await blog_service_1.BlogService.updateBlog(req.params.id, updateDto);
         return response_util_1.ResponseUtil.success(res, blog, "Blog updated successfully");
@@ -287,4 +286,3 @@ class BlogController {
     });
 }
 exports.BlogController = BlogController;
-//# sourceMappingURL=blog.controller.js.map

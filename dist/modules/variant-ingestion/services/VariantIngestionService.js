@@ -266,4 +266,3 @@ class VariantIngestionService {
     }
 }
 exports.VariantIngestionService = VariantIngestionService;
-//# sourceMappingURL=VariantIngestionService.js.map

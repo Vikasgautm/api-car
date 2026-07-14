@@ -3,53 +3,23 @@ export declare class VariantLifecycleService {
     /**
      * Set visibility state for a specific section
      */
-    static setSectionVisibility(variantId: string, sectionKey: string, visibility: FieldVisibilityState, hiddenFields?: string[]): Promise<import("mongoose").Document<unknown, {}, import("../../../models/car-variant.model").ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/car-variant.model").ICarVariant & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static setSectionVisibility(variantId: string, sectionKey: string, visibility: FieldVisibilityState, hiddenFields?: string[]): Promise<import("../../../models/car-variant.model").ICarVariant & import("../../../sql/common/BaseModel").SQLDocument>;
     /**
      * Set visibility for a specific field
      */
-    static setFieldVisibility(variantId: string, fieldKey: string, visibility: FieldVisibilityState, isEstimated?: boolean, confidenceScore?: number): Promise<import("mongoose").Document<unknown, {}, import("../../../models/car-variant.model").ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/car-variant.model").ICarVariant & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static setFieldVisibility(variantId: string, fieldKey: string, visibility: FieldVisibilityState, isEstimated?: boolean, confidenceScore?: number): Promise<import("../../../models/car-variant.model").ICarVariant & import("../../../sql/common/BaseModel").SQLDocument>;
     /**
      * Mark multiple fields as estimated for upcoming variants
      */
-    static markFieldsAsEstimated(variantId: string, fieldKeys: string[]): Promise<import("mongoose").Document<unknown, {}, import("../../../models/car-variant.model").ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/car-variant.model").ICarVariant & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static markFieldsAsEstimated(variantId: string, fieldKeys: string[]): Promise<import("../../../models/car-variant.model").ICarVariant & import("../../../sql/common/BaseModel").SQLDocument>;
     /**
      * Unhide all sections when variant/car launches
      */
-    static unhideAllSections(variantId: string): Promise<import("mongoose").Document<unknown, {}, import("../../../models/car-variant.model").ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/car-variant.model").ICarVariant & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    static unhideAllSections(variantId: string): Promise<import("../../../models/car-variant.model").ICarVariant & import("../../../sql/common/BaseModel").SQLDocument>;
     /**
      * Get all upcoming variants for a car that need data completion
      */
-    static getUpcomingVariantsNeedingData(carId: string): Promise<(import("mongoose").Document<unknown, {}, import("../../../models/car-variant.model").ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/car-variant.model").ICarVariant & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    })[]>;
+    static getUpcomingVariantsNeedingData(carId: string): Promise<(import("../../../models/car-variant.model").ICarVariant & import("../../../sql/common/BaseModel").SQLDocument)[]>;
     /**
      * Get completeness score for upcoming variant (estimation completeness)
      */
@@ -69,12 +39,5 @@ export declare class VariantLifecycleService {
         price?: number;
         launch_date?: Date;
         highlights?: string[];
-    }): Promise<import("mongoose").Document<unknown, {}, import("../../../models/car-variant.model").ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & import("../../../models/car-variant.model").ICarVariant & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    }): Promise<import("../../../models/car-variant.model").ICarVariant & import("../../../sql/common/BaseModel").SQLDocument>;
 }
-//# sourceMappingURL=variant-lifecycle.service.d.ts.map

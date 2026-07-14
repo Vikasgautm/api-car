@@ -12,4 +12,3 @@ export declare class AuditController {
     static entitySearch: (req: AuthRequest, res: Response, next: import("express").NextFunction) => void;
     static entityHistory: (req: AuthRequest, res: Response, next: import("express").NextFunction) => void;
 }
-//# sourceMappingURL=audit.controller.d.ts.map

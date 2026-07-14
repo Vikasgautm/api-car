@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import { BaseModel } from '../../sql/common/BaseModel';
 export declare class SlugUtil {
     static generate(text: string): string;
     static generateUnique(baseText: string, existingSlugs: string[]): string;
@@ -6,5 +6,4 @@ export declare class SlugUtil {
     static sanitize(text: string): string;
     static fromId(id: string, prefix?: string): string;
 }
-export declare function generateSlugWithIncrement(baseSlug: string, Model: Model<any>, fieldName?: string): Promise<string>;
-//# sourceMappingURL=slug.util.d.ts.map
+export declare function generateSlugWithIncrement(baseSlug: string, Model: BaseModel<any> | any, fieldName?: string): Promise<string>;

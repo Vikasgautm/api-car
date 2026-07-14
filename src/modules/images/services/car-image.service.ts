@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
+import { UploadService } from '../../../shared/services/upload.service';
 import { v4 as uuidv4 } from 'uuid';
 import { CarImage, ICarImage } from '../../../models/car-image.model';
 import { CarVariant } from '../../../models/car-variant.model';
@@ -21,10 +21,15 @@ import { PaginationUtil } from '../../../shared/utils/pagination.util';
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
-function extractPublicId(url: string): string | null {
+function extractS3Key(url: string): string | null {
   if (!url) return null;
-  const match = url.match(/\/v\d+\/(.+)\.\w+$/);
-  return match ? match[1] : null;
+  if (!url.startsWith('http')) return null;
+  try {
+    const parsed = new URL(url);
+    return decodeURIComponent(parsed.pathname.substring(1));
+  } catch (err) {
+    return null;
+  }
 }
 
 async function getCarName(carId: string): Promise<string> {
@@ -434,17 +439,15 @@ export class CarImageService {
     );
   }
 
-  // ─── Delete (soft) ───────────────────────────────────────────────────────────
-
   static async deleteCarImage(imageId: string) {
     const image = await CarImage.findById(imageId);
     if (!image) throw new AppError('Car image not found', 404);
 
     try {
-      const publicId = extractPublicId(image.url);
-      if (publicId) await cloudinary.uploader.destroy(publicId);
+      const s3Key = extractS3Key(image.url);
+      if (s3Key) await UploadService.deleteFromS3(s3Key);
     } catch (err) {
-      console.error('Cloudinary delete error:', err);
+      console.error('S3 delete error:', err);
     }
 
     await CarImage.findByIdAndUpdate(imageId, { is_deleted: true, status: 'rejected' });

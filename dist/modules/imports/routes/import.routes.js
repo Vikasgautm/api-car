@@ -59,4 +59,3 @@ router.get('/analytics/standardization-report', analytics_controller_1.Analytics
 router.post('/normalize', import_normalizer_controller_1.ImportNormalizerController.normalizeSpecs);
 router.post('/detect-powertrain', import_normalizer_controller_1.ImportNormalizerController.detectPowertrain);
 exports.default = router;
-//# sourceMappingURL=import.routes.js.map

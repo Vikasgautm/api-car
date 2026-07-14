@@ -8,4 +8,3 @@ export interface JwtPayload {
 export interface AuthRequest extends Omit<Request, 'user'> {
     user?: JwtPayload;
 }
-//# sourceMappingURL=auth.d.ts.map

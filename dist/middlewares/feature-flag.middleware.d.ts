@@ -5,4 +5,3 @@ import { NextFunction, Request, Response } from 'express';
  * Fails open: if settings cannot be loaded, the request passes through.
  */
 export declare function requireFeatureEnabled(flagKey: string): (_req: Request, res: Response, next: NextFunction) => Promise<void>;
-//# sourceMappingURL=feature-flag.middleware.d.ts.map

@@ -78,4 +78,3 @@ async function runPublishingHealthChecker(_params) {
         return { checker: CHECKER_NAME, issues: [], total: 0, error: err?.message || 'Publishing health checker failed' };
     }
 }
-//# sourceMappingURL=publishing-health.checker.js.map

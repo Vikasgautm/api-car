@@ -111,4 +111,3 @@ export interface SystemStatus {
     message: string;
     details: string[];
 }
-//# sourceMappingURL=dashboard.dto.d.ts.map

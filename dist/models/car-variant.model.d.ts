@@ -1,4 +1,3 @@
-import { Document } from 'mongoose';
 import { MileageClass, MileageSource } from '../constants/mileage-benchmarks';
 export type FieldVisibilityState = 'visible' | 'hidden' | 'partial' | 'teaser_only' | 'estimated';
 export interface FieldValue {
@@ -334,7 +333,7 @@ export interface FieldMetadata {
     last_updated?: Date;
     last_updated_by?: string;
 }
-export interface ICarVariant extends Document {
+export interface ICarVariant {
     variant_id: string;
     car_id: string;
     variant_name: string;
@@ -400,11 +399,5 @@ export interface ICarVariant extends Document {
     isMostComparedVariant?: boolean;
     mostComparedPriority?: number;
 }
-export declare const CarVariant: import("mongoose").Model<ICarVariant, {}, {}, {}, Document<unknown, {}, ICarVariant, {}, import("mongoose").DefaultSchemaOptions> & ICarVariant & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, ICarVariant>;
-//# sourceMappingURL=car-variant.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const CarVariant: BaseModel<ICarVariant>;

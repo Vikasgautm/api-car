@@ -25,4 +25,3 @@ export declare class SeoCollectionHealthService {
     static refreshCollection(collection_id: string): Promise<void>;
 }
 export {};
-//# sourceMappingURL=seo-collection-health.service.d.ts.map

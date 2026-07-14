@@ -35,4 +35,3 @@ export declare class IntelligenceService {
         variants: number;
     }>;
 }
-//# sourceMappingURL=intelligence.service.d.ts.map

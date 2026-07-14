@@ -96,4 +96,3 @@ class ChangeHistoryTracker {
     }
 }
 exports.ChangeHistoryTracker = ChangeHistoryTracker;
-//# sourceMappingURL=change-history.js.map

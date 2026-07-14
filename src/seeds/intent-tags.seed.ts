@@ -61,7 +61,7 @@ export const seedIntentTags = async () => {
 
     await Tag.create({
       tag_id: uuidv4(),
-      tag_category_id: category.tag_category_id,
+      tag_category_id: category!.tag_category_id,
       name: seed.name,
       slug,
       description: seed.description,

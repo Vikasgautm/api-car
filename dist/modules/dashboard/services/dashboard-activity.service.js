@@ -1,10 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardActivityService = void 0;
-const blog_model_1 = require("../../../models/blog.model");
-const car_model_1 = require("../../../models/car.model");
-const car_variant_model_1 = require("../../../models/car-variant.model");
 const audit_log_model_1 = require("../../../models/audit-log.model");
+const dbConnection_1 = require("../../../sql/utils/dbConnection");
 const ACTION_LABELS = {
     create: 'created',
     update: 'updated',
@@ -53,10 +51,50 @@ class DashboardActivityService {
         const carIds = [...new Set(logs.filter(l => l.entity_type === 'car').map(l => l.entity_id))];
         const variantIds = [...new Set(logs.filter(l => l.entity_type === 'variant').map(l => l.entity_id))];
         const blogIds = [...new Set(logs.filter(l => l.entity_type === 'blog').map(l => l.entity_id))];
+        const pool = await (0, dbConnection_1.getPool)();
+        const fetchCars = async () => {
+            if (!carIds.length)
+                return [];
+            const request = pool.request();
+            const inParams = carIds.map((id, index) => {
+                const paramName = `car_${index}`;
+                request.input(paramName, dbConnection_1.mssql.NVarChar, id);
+                return `@${paramName}`;
+            });
+            const query = `SELECT car_id, name FROM Cars WHERE car_id IN (${inParams.join(', ')})`;
+            const res = await request.query(query);
+            return res.recordset;
+        };
+        const fetchVariants = async () => {
+            if (!variantIds.length)
+                return [];
+            const request = pool.request();
+            const inParams = variantIds.map((id, index) => {
+                const paramName = `var_${index}`;
+                request.input(paramName, dbConnection_1.mssql.NVarChar, id);
+                return `@${paramName}`;
+            });
+            const query = `SELECT variant_id, variant_name FROM CarVariants WHERE variant_id IN (${inParams.join(', ')})`;
+            const res = await request.query(query);
+            return res.recordset;
+        };
+        const fetchBlogs = async () => {
+            if (!blogIds.length)
+                return [];
+            const request = pool.request();
+            const inParams = blogIds.map((id, index) => {
+                const paramName = `blog_${index}`;
+                request.input(paramName, dbConnection_1.mssql.NVarChar, id);
+                return `@${paramName}`;
+            });
+            const query = `SELECT blog_id, title FROM Blogs WHERE blog_id IN (${inParams.join(', ')})`;
+            const res = await request.query(query);
+            return res.recordset;
+        };
         const [carDocs, variantDocs, blogDocs] = await Promise.all([
-            carIds.length ? car_model_1.Car.find({ car_id: { $in: carIds } }).select('car_id name').lean() : [],
-            variantIds.length ? car_variant_model_1.CarVariant.find({ variant_id: { $in: variantIds } }).select('variant_id variant_name').lean() : [],
-            blogIds.length ? blog_model_1.Blog.find({ blog_id: { $in: blogIds } }).select('blog_id title').lean() : [],
+            fetchCars(),
+            fetchVariants(),
+            fetchBlogs(),
         ]);
         const carNames = new Map(carDocs.map((c) => [c.car_id, c.name]));
         const variantNames = new Map(variantDocs.map((v) => [v.variant_id, v.variant_name]));
@@ -91,4 +129,3 @@ class DashboardActivityService {
     }
 }
 exports.DashboardActivityService = DashboardActivityService;
-//# sourceMappingURL=dashboard-activity.service.js.map

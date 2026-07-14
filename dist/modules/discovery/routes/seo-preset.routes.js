@@ -17,4 +17,3 @@ adminRouter.put('/:id', validation_1.validateUuidIdParam, seo_preset_controller_
 adminRouter.delete('/:id', validation_1.validateUuidIdParam, seo_preset_controller_1.SeoPresetController.remove);
 router.use('/admin', adminRouter);
 exports.default = router;
-//# sourceMappingURL=seo-preset.routes.js.map

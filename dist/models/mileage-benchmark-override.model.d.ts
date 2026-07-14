@@ -1,6 +1,5 @@
-import { Document } from 'mongoose';
 import { FuelCategory } from '../constants/mileage-benchmarks';
-export interface IMileageBenchmarkOverride extends Document {
+export interface IMileageBenchmarkOverride {
     override_id: string;
     body_type_id: string;
     fuel_category: FuelCategory;
@@ -11,11 +10,5 @@ export interface IMileageBenchmarkOverride extends Document {
     };
     updated_by?: string;
 }
-export declare const MileageBenchmarkOverride: import("mongoose").Model<IMileageBenchmarkOverride, {}, {}, {}, Document<unknown, {}, IMileageBenchmarkOverride, {}, import("mongoose").DefaultSchemaOptions> & IMileageBenchmarkOverride & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IMileageBenchmarkOverride>;
-//# sourceMappingURL=mileage-benchmark-override.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const MileageBenchmarkOverride: BaseModel<IMileageBenchmarkOverride>;

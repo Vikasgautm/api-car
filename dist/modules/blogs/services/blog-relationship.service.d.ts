@@ -8,32 +8,11 @@ export interface EntityConnections {
     connected_collections?: string[];
 }
 export declare class BlogRelationshipService {
-    static updateConnections(blogId: string, connections: EntityConnections): Promise<import("../../../models/blog.model").IBlog & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    }>;
-    static getConnections(blogId: string): Promise<import("../../../models/blog.model").IBlog & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    }>;
+    static updateConnections(blogId: string, connections: EntityConnections): Promise<import("../../../models/blog.model").IBlog & import("../../../sql/common/BaseModel").SQLDocument>;
+    static getConnections(blogId: string): Promise<import("../../../models/blog.model").IBlog & import("../../../sql/common/BaseModel").SQLDocument>;
     static getRelatedEntityNames(blogId: string): Promise<{
-        cars: never[] | (import("../../../models/car.model").ICar & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
-        brands: never[] | (import("../../../models/brand.model").IBrand & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        })[];
-        connections: import("../../../models/blog.model").IBlog & Required<{
-            _id: import("mongoose").Types.ObjectId;
-        }> & {
-            __v: number;
-        };
+        cars: never[] | (import("../../../models/car.model").ICar & import("../../../sql/common/BaseModel").SQLDocument)[];
+        brands: never[] | (import("../../../models/brand.model").IBrand & import("../../../sql/common/BaseModel").SQLDocument)[];
+        connections: import("../../../models/blog.model").IBlog & import("../../../sql/common/BaseModel").SQLDocument;
     }>;
 }
-//# sourceMappingURL=blog-relationship.service.d.ts.map

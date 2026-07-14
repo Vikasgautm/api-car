@@ -19,4 +19,3 @@ export declare class PaginationUtil {
     static removeFieldFilter<T extends Record<string, unknown>>(filter: T, field: string): T;
     static addOnlyDeletedFilter<T extends Record<string, unknown>>(filter: T, field?: string): T;
 }
-//# sourceMappingURL=pagination.util.d.ts.map

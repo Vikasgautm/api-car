@@ -118,7 +118,7 @@ class VariantPushService {
                     ...(rootFields.drivetrain ? { drivetrain: rootFields.drivetrain } : {}),
                     ...(rootFields.seating_capacity ? { seating_capacity: rootFields.seating_capacity } : {}),
                 };
-                const variant = new car_variant_model_1.CarVariant(variantData);
+                const variant = car_variant_model_1.CarVariant.createDraft(variantData);
                 await variant.save();
                 variantId = variant.variant_id;
             }
@@ -241,4 +241,3 @@ class VariantPushService {
     }
 }
 exports.VariantPushService = VariantPushService;
-//# sourceMappingURL=VariantPushService.js.map

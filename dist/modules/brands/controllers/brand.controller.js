@@ -1,12 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BrandController = void 0;
+const validation_1 = require("../../../shared/validation");
 const errorMessages_1 = require("../../../constants/errorMessages");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const create_brand_dto_1 = require("../dto/create-brand.dto");
-const update_brand_dto_1 = require("../dto/update-brand.dto");
 const brand_service_1 = require("../services/brand.service");
 class BrandController {
     // Public routes
@@ -60,9 +59,9 @@ class BrandController {
             canonical_url: req.body.canonical_url,
             noindex: req.body.noindex,
         };
-        const validation = create_brand_dto_1.CreateBrandDto.validate(createDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.createBrandSchema.safeParse(createDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const brand = await brand_service_1.BrandService.createBrand({ ...createDto, ...req.body });
         return response_util_1.ResponseUtil.created(res, brand, 'Brand created successfully');
@@ -88,12 +87,12 @@ class BrandController {
             canonical_url: req.body.canonical_url,
             noindex: req.body.noindex,
         };
-        const validation = update_brand_dto_1.UpdateBrandDto.validate(updateDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400, {
+        const validation = validation_1.updateBrandSchema.safeParse(updateDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400, {
                 userMessage: errorMessages_1.USER_MESSAGES.VALIDATION_ERROR,
                 errorCode: errorMessages_1.ERROR_CODES.VALIDATION_ERROR,
-                details: { fields: validation.errors },
+                details: { fields: validation.error.errors.map(e => e.message) },
             });
         }
         const brand = await brand_service_1.BrandService.updateBrand(req.params.id, {
@@ -142,4 +141,3 @@ class BrandController {
     });
 }
 exports.BrandController = BrandController;
-//# sourceMappingURL=brand.controller.js.map

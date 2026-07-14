@@ -1,12 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FuelTypeController = void 0;
+const validation_1 = require("../../../shared/validation");
 const errorMessages_1 = require("../../../constants/errorMessages");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
 const catchAsync_1 = require("../../../utils/catchAsync");
-const create_fuel_type_dto_1 = require("../dto/create-fuel-type.dto");
-const update_fuel_type_dto_1 = require("../dto/update-fuel-type.dto");
 const fuel_type_service_1 = require("../services/fuel-type.service");
 class FuelTypeController {
     // Public routes
@@ -59,9 +58,9 @@ class FuelTypeController {
             is_published: req.body.is_published,
             is_featured: req.body.is_featured,
         };
-        const validation = create_fuel_type_dto_1.CreateFuelTypeDto.validate(createDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.createFuelTypeSchema.safeParse(createDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const fuelType = await fuel_type_service_1.FuelTypeService.createFuelType(createDto);
         return response_util_1.ResponseUtil.created(res, fuelType, "Fuel type created successfully");
@@ -73,9 +72,9 @@ class FuelTypeController {
             is_published: req.body.is_published !== undefined ? req.body.is_published === 'true' || req.body.is_published === true : undefined,
             is_featured: req.body.is_featured !== undefined ? req.body.is_featured === 'true' || req.body.is_featured === true : undefined,
         };
-        const validation = update_fuel_type_dto_1.UpdateFuelTypeDto.validate(updateDto);
-        if (!validation.valid) {
-            throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+        const validation = validation_1.updateFuelTypeSchema.safeParse(updateDto);
+        if (!validation.success) {
+            throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
         }
         const fuelType = await fuel_type_service_1.FuelTypeService.updateFuelType(req.params.id, updateDto);
         return response_util_1.ResponseUtil.success(res, fuelType, "Fuel type updated successfully");
@@ -94,4 +93,3 @@ class FuelTypeController {
     });
 }
 exports.FuelTypeController = FuelTypeController;
-//# sourceMappingURL=fuel-type.controller.js.map

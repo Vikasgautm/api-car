@@ -1,5 +1,4 @@
-import mongoose, { Document } from 'mongoose';
-export interface IUserSession extends Document {
+export interface IUserSession {
     session_id: string;
     user_id: string;
     refresh_token: string;
@@ -9,5 +8,5 @@ export interface IUserSession extends Document {
     ip_address?: string;
     revoked_at?: Date;
 }
-export declare const UserSession: mongoose.Model<any, {}, {}, {}, any, any, any>;
-//# sourceMappingURL=user-session.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const UserSession: BaseModel<IUserSession>;

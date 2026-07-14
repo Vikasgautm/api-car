@@ -14,4 +14,3 @@ export declare class MasterDataController {
     static dismissUnknownValue(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
     static promoteUnknownToMaster(req: Request, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
 }
-//# sourceMappingURL=master-data.controller.d.ts.map

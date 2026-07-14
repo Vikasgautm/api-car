@@ -38,4 +38,3 @@ export declare function performWriteAction(action: ChatbotWriteAction, entity_ty
     message: string;
     entity_name: string;
 }>;
-//# sourceMappingURL=adminChatbot.tools.d.ts.map

@@ -1,4 +1,3 @@
-import { Document } from 'mongoose';
 export interface RawSignals {
     qualified_attention: number;
     qualified_exploration: number;
@@ -11,7 +10,7 @@ export interface RawSignals {
     search_acceleration: number;
     commercial_acceleration: number;
 }
-export interface IRankingScore extends Document {
+export interface IRankingScore {
     score_id: string;
     entity_type: string;
     entity_id: string;
@@ -33,11 +32,5 @@ export interface IRankingScore extends Document {
     prev_popularity_score: number;
     prev_trending_score: number;
 }
-export declare const RankingScore: import("mongoose").Model<IRankingScore, {}, {}, {}, Document<unknown, {}, IRankingScore, {}, import("mongoose").DefaultSchemaOptions> & IRankingScore & Required<{
-    _id: import("mongoose").Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IRankingScore>;
-//# sourceMappingURL=ranking-score.model.d.ts.map
+import { BaseModel } from '../sql/common/BaseModel';
+export declare const RankingScore: BaseModel<IRankingScore>;

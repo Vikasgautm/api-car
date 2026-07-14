@@ -1,7 +1,7 @@
+import { IssueCategory, IssueSeverity, IssuesQueryParams } from "../dto/content-health.dto";
 import { Request, Response } from 'express';
 import { ResponseUtil } from '../../../shared/utils/response.util';
 import { catchAsync } from '../../../utils/catchAsync';
-import { IssueCategory, IssueSeverity, IssuesQueryParams } from '../dto/content-health.dto';
 import { ContentHealthService } from '../services/content-health.service';
 
 const MAX_LIMIT = 100;

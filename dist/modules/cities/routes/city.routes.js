@@ -24,4 +24,3 @@ router.use('/admin', adminRouter);
 router.get('/', validation_1.validatePaginationQuery, city_controller_1.CityController.getAllPublicCities);
 router.get('/:slug', validation_1.validateSlugParam, city_controller_1.CityController.getPublicCityBySlug);
 exports.default = router;
-//# sourceMappingURL=city.routes.js.map

@@ -72,4 +72,3 @@ class SeoFaqService {
     }
 }
 exports.SeoFaqService = SeoFaqService;
-//# sourceMappingURL=seo-faq.service.js.map

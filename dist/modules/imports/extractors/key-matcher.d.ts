@@ -21,4 +21,3 @@ export declare class KeyMatcher {
     };
     static clearCache(): void;
 }
-//# sourceMappingURL=key-matcher.d.ts.map

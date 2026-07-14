@@ -24,4 +24,3 @@ const jwtAuthGuard = async (req, res, next) => {
     }
 };
 exports.jwtAuthGuard = jwtAuthGuard;
-//# sourceMappingURL=jwt-auth.guard.js.map

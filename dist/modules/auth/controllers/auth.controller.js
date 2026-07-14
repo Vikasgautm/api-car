@@ -1,20 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
+const validation_1 = require("../../../shared/validation");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const response_util_1 = require("../../../shared/utils/response.util");
-const login_dto_1 = require("../dto/login.dto");
-const refresh_token_dto_1 = require("../dto/refresh-token.dto");
-const register_dto_1 = require("../dto/register.dto");
 const auth_service_1 = require("../services/auth.service");
 class AuthController {
     static async register(req, res, next) {
         try {
             const registerDto = req.body;
             // Validate DTO
-            const validation = register_dto_1.RegisterDto.validate(registerDto);
-            if (!validation.valid) {
-                throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+            const validation = validation_1.registerSchema.safeParse(registerDto);
+            if (!validation.success) {
+                throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
             }
             const result = await auth_service_1.AuthService.register(registerDto);
             return response_util_1.ResponseUtil.created(res, result, 'User registered successfully');
@@ -27,9 +25,9 @@ class AuthController {
         try {
             const loginDto = req.body;
             // Validate DTO
-            const validation = login_dto_1.LoginDto.validate(loginDto);
-            if (!validation.valid) {
-                throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+            const validation = validation_1.loginSchema.safeParse(loginDto);
+            if (!validation.success) {
+                throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
             }
             const result = await auth_service_1.AuthService.login(loginDto, req);
             return response_util_1.ResponseUtil.success(res, result, 'Login successful');
@@ -42,9 +40,9 @@ class AuthController {
         try {
             const refreshTokenDto = req.body;
             // Validate DTO
-            const validation = refresh_token_dto_1.RefreshTokenDto.validate(refreshTokenDto);
-            if (!validation.valid) {
-                throw new app_error_util_1.AppError(validation.errors.join(', '), 400);
+            const validation = validation_1.refreshTokenSchema.safeParse(refreshTokenDto);
+            if (!validation.success) {
+                throw new app_error_util_1.AppError(validation.error.errors.map(e => e.message).join(', '), 400);
             }
             const result = await auth_service_1.AuthService.refreshToken(refreshTokenDto);
             return response_util_1.ResponseUtil.success(res, result, 'Token refreshed successfully');
@@ -99,4 +97,3 @@ class AuthController {
     }
 }
 exports.AuthController = AuthController;
-//# sourceMappingURL=auth.controller.js.map

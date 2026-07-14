@@ -20,4 +20,3 @@ const storage = multer_1.default.diskStorage({
     },
 });
 exports.uploaddata = (0, multer_1.default)({ storage });
-//# sourceMappingURL=multer.js.map

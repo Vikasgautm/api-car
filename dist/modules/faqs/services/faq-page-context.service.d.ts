@@ -14,4 +14,3 @@ export declare class FAQPageContextService {
     static getPageLimit(pageType: string): number;
     static getApplicableFaqTypes(pageType: string): string[];
 }
-//# sourceMappingURL=faq-page-context.service.d.ts.map

@@ -35,4 +35,3 @@ export declare class FAQTemplateEngineService {
     static getAllTemplates(): FAQTemplate[];
     private static buildFAQ;
 }
-//# sourceMappingURL=faq-template-engine.service.d.ts.map

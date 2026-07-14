@@ -82,4 +82,3 @@ class ImageController {
     });
 }
 exports.ImageController = ImageController;
-//# sourceMappingURL=image.controller.js.map

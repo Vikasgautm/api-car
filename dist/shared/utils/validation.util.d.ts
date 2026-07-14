@@ -19,4 +19,3 @@ export declare class ValidationUtil {
     static combineResults(...results: ValidationResult[]): ValidationResult;
     static throwIfInvalid(result: ValidationResult): void;
 }
-//# sourceMappingURL=validation.util.d.ts.map

@@ -133,4 +133,3 @@ export interface MultiFuelResponse {
     total_multi_fuel_cars: number;
     generated_at: string;
 }
-//# sourceMappingURL=fuel-types-intelligence.dto.d.ts.map

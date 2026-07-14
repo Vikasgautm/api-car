@@ -25,4 +25,3 @@ export declare class StringNormalizer {
      */
     static extractNumeric(value: any): number | null;
 }
-//# sourceMappingURL=string-normalizer.d.ts.map

@@ -34,4 +34,3 @@ export declare class FAQAIDraftService {
     private static buildEntityContext;
     private static serializeCar;
 }
-//# sourceMappingURL=faq-ai-draft.service.d.ts.map

@@ -9,8 +9,12 @@ export declare class CreateSeoPresetDto {
     is_published?: boolean;
     sort_order?: number;
     static validate(dto: CreateSeoPresetDto): {
-        valid: boolean;
-        errors: string[];
+        success: boolean;
+        error: {
+            errors: {
+                message: string;
+            }[];
+        };
     };
 }
 export declare class UpdateSeoPresetDto {
@@ -24,8 +28,11 @@ export declare class UpdateSeoPresetDto {
     is_published?: boolean;
     sort_order?: number;
     static validate(dto: UpdateSeoPresetDto): {
-        valid: boolean;
-        errors: string[];
+        success: boolean;
+        error: {
+            errors: {
+                message: string;
+            }[];
+        };
     };
 }
-//# sourceMappingURL=seo-preset.dto.d.ts.map

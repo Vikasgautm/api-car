@@ -77,4 +77,3 @@ function getAutoLaunchUpdateData() {
         // launch_date will be set conditionally in the service
     };
 }
-//# sourceMappingURL=car-launch-status.util.js.map
