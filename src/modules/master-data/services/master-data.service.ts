@@ -52,29 +52,63 @@ export class MasterDataService {
     };
   }
 
-  static async getAllActiveOptions(): Promise<Record<string, IMasterOption[]>> {
-    const cached = cache.get<Record<string, IMasterOption[]>>(CACHE_KEY);
-    if (cached) return cached;
+ static async getAllActiveOptions(): Promise<Record<string, IMasterOption[]>> {
+  const cached = cache.get<Record<string, IMasterOption[]>>(CACHE_KEY);
+  if (cached) return cached;
 
-    const pool = await getPool();
-    const result = await pool.request()
-      .query('SELECT * FROM MasterOptions WHERE is_active = 1 ORDER BY category_key ASC, sort_order ASC');
+  const pool = await getPool();
 
-    const map: Record<string, IMasterOption[]> = {};
-    for (const row of result.recordset) {
-      const opt: IMasterOption = {
-        ...row,
-        is_active: row.is_active === true || row.is_active === 1,
-        is_system: row.is_system === true || row.is_system === 1,
-        metadata: row.metadata ? JSON.parse(row.metadata) : {},
-      };
-      if (!map[opt.category_key]) map[opt.category_key] = [];
-      map[opt.category_key].push(opt);
+  const query = `
+    SELECT *
+    FROM MasterOptions
+    WHERE is_active = 1
+    ORDER BY category_key ASC, sort_order ASC
+  `;
+
+  const result = await pool.request().query(query);
+
+  const map: Record<string, IMasterOption[]> = {};
+
+  for (const row of result.recordset) {
+    let metadata = {};
+
+    try {
+      if (typeof row.metadata === "string") {
+        metadata = row.metadata.trim()
+          ? JSON.parse(row.metadata)
+          : {};
+      } else if (
+        row.metadata &&
+        typeof row.metadata === "object"
+      ) {
+        metadata = row.metadata;
+      }
+    } catch (error) {
+      console.error(
+        `Invalid metadata JSON for option_id ${row.option_id}:`,
+        row.metadata
+      );
+      metadata = {};
     }
 
-    cache.set(CACHE_KEY, map, CACHE_TTL_MS);
-    return map;
+    const opt: IMasterOption = {
+      ...row,
+      is_active: row.is_active === true || row.is_active === 1,
+      is_system: row.is_system === true || row.is_system === 1,
+      metadata,
+    };
+
+    if (!map[opt.category_key]) {
+      map[opt.category_key] = [];
+    }
+
+    map[opt.category_key].push(opt);
   }
+
+  cache.set(CACHE_KEY, map, CACHE_TTL_MS);
+
+  return map;
+}
 
   // ── Mutations ─────────────────────────────────────────────────────────────────
 
