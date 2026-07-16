@@ -38,7 +38,7 @@ export class CarIntegrityService {
     await pool.request()
       .input('cid', mssql.NVarChar, carId)
       .input('history', mssql.NVarChar, JSON.stringify(newHistory))
-      .query('UPDATE Cars SET change_history = @history, updatedAt = GETDATE() WHERE car_id = @cid');
+      .query('UPDATE Cars SET change_history = @history, updatedAt = NOW() WHERE car_id = @cid');
   }
 
   /**

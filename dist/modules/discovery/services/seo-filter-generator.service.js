@@ -46,6 +46,7 @@ class SeoFilterGeneratorService {
         const results = new Map();
         // Scan all published variants
         const variants = await car_variant_model_1.CarVariant.find({ is_published: true, is_deleted: false })
+            .select('variant_id car_id specs_normalized specifications')
             .populate('car_id')
             .lean();
         for (const variant of variants) {

@@ -300,7 +300,8 @@ class CarService {
         }
         catch (error) {
             logger_1.logger.error('getAllCars failed', { error });
-            throw new app_error_util_1.AppError('Failed to fetch cars', 500);
+            console.error('DEBUG getAllCars error:', error);
+            throw new app_error_util_1.AppError(error?.message || 'Failed to fetch cars', 500);
         }
     }
     static async getCarById(carId) {

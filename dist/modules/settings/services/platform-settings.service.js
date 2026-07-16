@@ -189,9 +189,18 @@ class PlatformSettingsService {
         cacheInvalidate(group);
     }
     static async getSystemStatus() {
-        const mongoose = await Promise.resolve().then(() => __importStar(require('mongoose')));
-        const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
-        const dbState = states[mongoose.connection.readyState] || 'unknown';
+        let dbState = 'disconnected';
+        try {
+            const mongooseModule = await Promise.resolve().then(() => __importStar(require('mongoose')));
+            const conn = mongooseModule.default?.connection || mongooseModule.connection;
+            const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+            if (conn && typeof conn.readyState === 'number') {
+                dbState = states[conn.readyState] || 'unknown';
+            }
+        }
+        catch (e) {
+            dbState = 'disconnected';
+        }
         return {
             backend: 'ok',
             mongodb: dbState,

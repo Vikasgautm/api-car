@@ -160,11 +160,22 @@ class AuthService {
     }
     static async generateTokens(user) {
         const accessToken = jsonwebtoken_1.default.sign({
-            id: user.user_id,
+            id: user.id,
+            user_id: user.user_id,
             email: user.email,
             role: user.role,
+            phone: user.phone,
+            permissions: user.permissions,
+            is_email_verified: user.is_email_verified,
+            last_login_at: user.last_login_at,
+            theme: user.theme
         }, config_1.config.jwt_secret, { expiresIn: config_1.config.jwt_expires_in });
-        const refreshToken = jsonwebtoken_1.default.sign({ user_id: user.user_id }, config_1.config.jwt_refresh_secret, { expiresIn: config_1.config.jwt_refresh_expires_in });
+        const refreshToken = jsonwebtoken_1.default.sign({
+            id: user.id,
+            user_id: user.user_id,
+            email: user.email,
+            role: user.role
+        }, config_1.config.jwt_refresh_secret, { expiresIn: config_1.config.jwt_refresh_expires_in });
         return { accessToken, refreshToken };
     }
     static async saveRefreshToken(user_id, refreshToken, deviceInfo, ipAddress) {

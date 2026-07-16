@@ -27,7 +27,7 @@ class CarIntegrityService {
         await pool.request()
             .input('cid', dbConnection_1.mssql.NVarChar, carId)
             .input('history', dbConnection_1.mssql.NVarChar, JSON.stringify(newHistory))
-            .query('UPDATE Cars SET change_history = @history, updatedAt = GETDATE() WHERE car_id = @cid');
+            .query('UPDATE Cars SET change_history = @history, updatedAt = NOW() WHERE car_id = @cid');
     }
     /**
      * Get car change history with optional filtering

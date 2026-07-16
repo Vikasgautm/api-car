@@ -126,12 +126,15 @@ const tables = {
       'name NVARCHAR(255) NOT NULL',
       'slug NVARCHAR(255) NOT NULL UNIQUE',
       'description NVARCHAR(MAX) NULL',
+      'is_published BIT DEFAULT 0',
+      'published_at DATETIME NULL',
       'is_deleted BIT DEFAULT 0',
       'createdAt DATETIME DEFAULT GETDATE()',
       'updatedAt DATETIME DEFAULT GETDATE()'
     ],
     indexes: [
-      'CREATE INDEX IX_BodyTypes_IsDeleted ON BodyTypes(is_deleted)'
+      'CREATE INDEX IX_BodyTypes_IsDeleted ON BodyTypes(is_deleted)',
+      'CREATE INDEX IX_BodyTypes_IsPublished_IsDeleted ON BodyTypes(is_published, is_deleted)'
     ]
   },
   '005_brands': {

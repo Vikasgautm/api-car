@@ -5,8 +5,11 @@ let rawPool: mysql.Pool | null = null;
 let mssqlPool: MySqlConnectionPool | null = null;
 
 function translateQuery(query: string, paramsMap: Record<string, any>): { sql: string; values: any[] } {
-  // 1. Replace square brackets with backticks
-  let sql = query.replace(/\[([^\]]+)\]/g, '`$1`');
+  // 1. Replace square brackets with backticks for column/table identifiers (ignoring numeric JSON array indices like $[0])
+  let sql = query.replace(/(?<!\$)\[([a-zA-Z_0-9\.]+)\]/g, (match, p1) => {
+    if (/^\d+$/.test(p1)) return match;
+    return `\`${p1.replace(/\./g, '`.`')}\``;
+  });
 
   // 2. Replace GETDATE() with NOW()
   sql = sql.replace(/GETDATE\(\)/gi, 'NOW()');
@@ -26,6 +29,9 @@ function translateQuery(query: string, paramsMap: Record<string, any>): { sql: s
       sql += ` LIMIT ${limitVal}`;
     }
   }
+
+  // 5b. Replace MSSQL OFFSET x ROWS FETCH NEXT y ROWS ONLY with MySQL LIMIT y OFFSET x
+  sql = sql.replace(/OFFSET\s+([@a-zA-Z0-9_?]+|\d+)\s+ROWS\s+FETCH\s+NEXT\s+([@a-zA-Z0-9_?]+|\d+)\s+ROWS\s+ONLY/gi, 'LIMIT $2 OFFSET $1');
 
   // 6. Replace OUTPUT INSERTED.*
   sql = sql.replace(/OUTPUT\s+INSERTED\.\*/gi, '');

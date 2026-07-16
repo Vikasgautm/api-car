@@ -18,7 +18,7 @@ export const booleanStringSchema = z.union([
 
 export const paginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1).optional(),
-  limit: z.coerce.number().int().positive().max(1000).default(10).optional(),
+  limit: z.coerce.number().int().positive().max(100000).default(10).optional(),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
   q: z.string().optional(),

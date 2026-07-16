@@ -18,4 +18,4 @@ export interface IImage  {
 }
 
 import { BaseModel } from '../sql/common/BaseModel';
-export const Image = new BaseModel<IImage>('Images', 'image_id');
+export const Image = new BaseModel<IImage>('Images', 'image_id', ['tags', 'metadata']);

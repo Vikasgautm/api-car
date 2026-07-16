@@ -7,13 +7,28 @@ const slug_util_1 = require("../../../shared/utils/slug.util");
 const dbConnection_1 = require("../../../sql/utils/dbConnection");
 const comparison_model_1 = require("../../../models/comparison.model"); // import for generating slug increment type reference
 const uuid_1 = require("uuid");
+function safeJsonParse(val, fallback) {
+    if (!val)
+        return fallback;
+    if (typeof val !== 'string')
+        return val;
+    const trimmed = val.trim();
+    if (!trimmed)
+        return fallback;
+    try {
+        return JSON.parse(trimmed);
+    }
+    catch (e) {
+        return fallback;
+    }
+}
 async function findCarByEitherId(id) {
     if (!id)
         return null;
     const pool = await (0, dbConnection_1.getPool)();
     const result = await pool.request()
         .input('id', dbConnection_1.mssql.NVarChar, id)
-        .query('SELECT TOP 1 * FROM Cars WHERE car_id = @id AND is_deleted = 0');
+        .query('SELECT * FROM Cars WHERE car_id = @id AND is_deleted = 0 LIMIT 1');
     if (result.recordset.length > 0) {
         return result.recordset[0];
     }
@@ -59,9 +74,9 @@ class ComparisonService {
             const duplicatePair = await transaction.request()
                 .input('c1', dbConnection_1.mssql.NVarChar, data.car1_id)
                 .input('c2', dbConnection_1.mssql.NVarChar, data.car2_id)
-                .query(`SELECT TOP 1 slug FROM Comparisons 
+                .query(`SELECT slug FROM Comparisons 
           WHERE is_deleted = 0 
-          AND ((car1_id = @c1 AND car2_id = @c2) OR (car1_id = @c2 AND car2_id = @c1))`);
+          AND ((car1_id = @c1 AND car2_id = @c2) OR (car1_id = @c2 AND car2_id = @c1)) LIMIT 1`);
             if (duplicatePair.recordset.length > 0) {
                 const dupSlug = duplicatePair.recordset[0].slug;
                 throw new app_error_util_1.AppError(`Comparison between these cars already exists (slug: ${dupSlug})`, 409, {
@@ -74,7 +89,7 @@ class ComparisonService {
             let slug = data.slug;
             const existingSlug = await transaction.request()
                 .input('slug', dbConnection_1.mssql.NVarChar, slug)
-                .query('SELECT TOP 1 comparison_id FROM Comparisons WHERE slug = @slug AND is_deleted = 0');
+                .query('SELECT comparison_id FROM Comparisons WHERE slug = @slug AND is_deleted = 0 LIMIT 1');
             if (existingSlug.recordset.length > 0) {
                 slug = await (0, slug_util_1.generateSlugWithIncrement)(slug, comparison_model_1.Comparison, 'slug');
             }
@@ -83,7 +98,7 @@ class ComparisonService {
                 const variant1 = await transaction.request()
                     .input('vid', dbConnection_1.mssql.NVarChar, data.variant1_id)
                     .input('cid', dbConnection_1.mssql.NVarChar, data.car1_id)
-                    .query('SELECT TOP 1 variant_id FROM CarVariants WHERE variant_id = @vid AND car_id = @cid AND is_deleted = 0');
+                    .query('SELECT variant_id FROM CarVariants WHERE variant_id = @vid AND car_id = @cid AND is_deleted = 0 LIMIT 1');
                 if (variant1.recordset.length === 0) {
                     throw new app_error_util_1.AppError('Variant 1 not found or does not belong to Car 1', 404, {
                         errorCode: 'VARIANT_NOT_FOUND',
@@ -95,7 +110,7 @@ class ComparisonService {
                 const variant2 = await transaction.request()
                     .input('vid', dbConnection_1.mssql.NVarChar, data.variant2_id)
                     .input('cid', dbConnection_1.mssql.NVarChar, data.car2_id)
-                    .query('SELECT TOP 1 variant_id FROM CarVariants WHERE variant_id = @vid AND car_id = @cid AND is_deleted = 0');
+                    .query('SELECT variant_id FROM CarVariants WHERE variant_id = @vid AND car_id = @cid AND is_deleted = 0 LIMIT 1');
                 if (variant2.recordset.length === 0) {
                     throw new app_error_util_1.AppError('Variant 2 not found or does not belong to Car 2', 404, {
                         errorCode: 'VARIANT_NOT_FOUND',
@@ -139,7 +154,7 @@ class ComparisonService {
         ) VALUES (
           @id, @c1, @c2, @v1, @v2, @slug, @title, @cat, @desc,
           @intro, @pop, @trend, @home, @related, @m_title, @m_desc,
-          @faq, @status, @pub, @creator, 0, GETDATE(), GETDATE()
+          @faq, @status, @pub, @creator, 0, NOW(), NOW()
         )`);
             await audit_log_model_1.AuditLog.create([{
                     audit_id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -152,7 +167,7 @@ class ComparisonService {
             await transaction.commit();
             const created = await pool.request()
                 .input('id', dbConnection_1.mssql.NVarChar, comparison_id)
-                .query('SELECT TOP 1 * FROM Comparisons WHERE comparison_id = @id');
+                .query('SELECT * FROM Comparisons WHERE comparison_id = @id LIMIT 1');
             const row = created.recordset[0];
             return {
                 ...row,
@@ -160,8 +175,8 @@ class ComparisonService {
                 isTrending: row.isTrending === 1 || row.isTrending === true,
                 showOnHomepage: row.showOnHomepage === 1 || row.showOnHomepage === true,
                 is_published: row.is_published === 1 || row.is_published === true,
-                relatedComparisons: row.relatedComparisons ? JSON.parse(row.relatedComparisons) : [],
-                seoFAQSchema: row.seoFAQSchema ? JSON.parse(row.seoFAQSchema) : {},
+                relatedComparisons: safeJsonParse(row.relatedComparisons, []),
+                seoFAQSchema: safeJsonParse(row.seoFAQSchema, {}),
             };
         }
         catch (error) {
@@ -176,7 +191,7 @@ class ComparisonService {
         try {
             const existingRes = await transaction.request()
                 .input('cid', dbConnection_1.mssql.NVarChar, comparisonId)
-                .query('SELECT TOP 1 * FROM Comparisons WHERE comparison_id = @cid AND is_deleted = 0');
+                .query('SELECT * FROM Comparisons WHERE comparison_id = @cid AND is_deleted = 0 LIMIT 1');
             if (existingRes.recordset.length === 0)
                 throw new app_error_util_1.AppError('Comparison not found', 404);
             const comparison = existingRes.recordset[0];
@@ -185,7 +200,7 @@ class ComparisonService {
             if (data.slug && data.slug !== comparison.slug) {
                 const existingSlug = await transaction.request()
                     .input('slug', dbConnection_1.mssql.NVarChar, data.slug)
-                    .query('SELECT TOP 1 comparison_id FROM Comparisons WHERE slug = @slug AND is_deleted = 0');
+                    .query('SELECT comparison_id FROM Comparisons WHERE slug = @slug AND is_deleted = 0 LIMIT 1');
                 if (existingSlug.recordset.length > 0) {
                     slug = await (0, slug_util_1.generateSlugWithIncrement)(data.slug, comparison_model_1.Comparison, 'slug');
                 }
@@ -200,7 +215,7 @@ class ComparisonService {
                 const variant1 = await transaction.request()
                     .input('vid', dbConnection_1.mssql.NVarChar, data.variant1_id)
                     .input('cid', dbConnection_1.mssql.NVarChar, resolvedCar1Id)
-                    .query('SELECT TOP 1 variant_id FROM CarVariants WHERE variant_id = @vid AND car_id = @cid AND is_deleted = 0');
+                    .query('SELECT variant_id FROM CarVariants WHERE variant_id = @vid AND car_id = @cid AND is_deleted = 0 LIMIT 1');
                 if (variant1.recordset.length === 0) {
                     throw new app_error_util_1.AppError('Variant 1 not found or does not belong to Car 1', 404, {
                         errorCode: 'VARIANT_NOT_FOUND',
@@ -212,7 +227,7 @@ class ComparisonService {
                 const variant2 = await transaction.request()
                     .input('vid', dbConnection_1.mssql.NVarChar, data.variant2_id)
                     .input('cid', dbConnection_1.mssql.NVarChar, resolvedCar2Id)
-                    .query('SELECT TOP 1 variant_id FROM CarVariants WHERE variant_id = @vid AND car_id = @cid AND is_deleted = 0');
+                    .query('SELECT variant_id FROM CarVariants WHERE variant_id = @vid AND car_id = @cid AND is_deleted = 0 LIMIT 1');
                 if (variant2.recordset.length === 0) {
                     throw new app_error_util_1.AppError('Variant 2 not found or does not belong to Car 2', 404, {
                         errorCode: 'VARIANT_NOT_FOUND',
@@ -262,7 +277,7 @@ class ComparisonService {
           car1_id = @c1, car2_id = @c2, variant1_id = @v1, variant2_id = @v2, slug = @slug, title = @title,
           category = @cat, description = @desc, compareIntroContent = @intro, isPopular = @pop, isTrending = @trend,
           showOnHomepage = @home, relatedComparisons = @related, seoMetaTitle = @m_title, seoMetaDescription = @m_desc,
-          seoFAQSchema = @faq, status = @status, is_published = @pub, updated_by = @upd, updatedAt = GETDATE()
+          seoFAQSchema = @faq, status = @status, is_published = @pub, updated_by = @upd, updatedAt = NOW()
           WHERE comparison_id = @cid AND is_deleted = 0`);
             await audit_log_model_1.AuditLog.create([{
                     audit_id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -275,7 +290,7 @@ class ComparisonService {
             await transaction.commit();
             const updated = await pool.request()
                 .input('cid', dbConnection_1.mssql.NVarChar, comparisonId)
-                .query('SELECT TOP 1 * FROM Comparisons WHERE comparison_id = @cid');
+                .query('SELECT * FROM Comparisons WHERE comparison_id = @cid LIMIT 1');
             const row = updated.recordset[0];
             return {
                 ...row,
@@ -283,8 +298,8 @@ class ComparisonService {
                 isTrending: row.isTrending === 1 || row.isTrending === true,
                 showOnHomepage: row.showOnHomepage === 1 || row.showOnHomepage === true,
                 is_published: row.is_published === 1 || row.is_published === true,
-                relatedComparisons: row.relatedComparisons ? JSON.parse(row.relatedComparisons) : [],
-                seoFAQSchema: row.seoFAQSchema ? JSON.parse(row.seoFAQSchema) : {},
+                relatedComparisons: safeJsonParse(row.relatedComparisons, []),
+                seoFAQSchema: safeJsonParse(row.seoFAQSchema, {}),
             };
         }
         catch (error) {
@@ -296,16 +311,16 @@ class ComparisonService {
         const pool = await (0, dbConnection_1.getPool)();
         const result = await pool.request()
             .input('cid', dbConnection_1.mssql.NVarChar, comparisonId)
-            .query('SELECT TOP 1 comparison_id FROM Comparisons WHERE comparison_id = @cid AND is_deleted = 0');
+            .query('SELECT comparison_id FROM Comparisons WHERE comparison_id = @cid AND is_deleted = 0 LIMIT 1');
         if (result.recordset.length === 0)
             throw new app_error_util_1.AppError('Comparison not found', 404);
         await pool.request()
             .input('cid', dbConnection_1.mssql.NVarChar, comparisonId)
             .query(`UPDATE Comparisons SET 
         is_deleted = 1, 
-        deleted_at = GETDATE(), 
+        deleted_at = NOW(), 
         status = 'archived',
-        updatedAt = GETDATE()
+        updatedAt = NOW()
         WHERE comparison_id = @cid`);
         await audit_log_model_1.AuditLog.create([{
                 audit_id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -319,7 +334,7 @@ class ComparisonService {
         const pool = await (0, dbConnection_1.getPool)();
         const result = await pool.request()
             .input('cid', dbConnection_1.mssql.NVarChar, comparisonId)
-            .query('SELECT TOP 1 * FROM Comparisons WHERE comparison_id = @cid AND is_deleted = 1');
+            .query('SELECT * FROM Comparisons WHERE comparison_id = @cid AND is_deleted = 1 LIMIT 1');
         if (result.recordset.length === 0)
             throw new app_error_util_1.AppError('Comparison not found', 404);
         await pool.request()
@@ -328,7 +343,7 @@ class ComparisonService {
         is_deleted = 0, 
         deleted_at = NULL, 
         status = 'draft',
-        updatedAt = GETDATE()
+        updatedAt = NOW()
         WHERE comparison_id = @cid`);
         await audit_log_model_1.AuditLog.create([{
                 audit_id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -339,7 +354,7 @@ class ComparisonService {
             }]);
         const updated = await pool.request()
             .input('cid', dbConnection_1.mssql.NVarChar, comparisonId)
-            .query('SELECT TOP 1 * FROM Comparisons WHERE comparison_id = @cid');
+            .query('SELECT * FROM Comparisons WHERE comparison_id = @cid LIMIT 1');
         const row = updated.recordset[0];
         return {
             ...row,
@@ -347,8 +362,8 @@ class ComparisonService {
             isTrending: row.isTrending === 1 || row.isTrending === true,
             showOnHomepage: row.showOnHomepage === 1 || row.showOnHomepage === true,
             is_published: row.is_published === 1 || row.is_published === true,
-            relatedComparisons: row.relatedComparisons ? JSON.parse(row.relatedComparisons) : [],
-            seoFAQSchema: row.seoFAQSchema ? JSON.parse(row.seoFAQSchema) : {},
+            relatedComparisons: safeJsonParse(row.relatedComparisons, []),
+            seoFAQSchema: safeJsonParse(row.seoFAQSchema, {}),
         };
     }
     static async getComparisons(page = 1, limit = 10, filter = {}) {
@@ -382,14 +397,13 @@ class ComparisonService {
         const countResult = await request.query(`SELECT COUNT(*) as cnt FROM Comparisons WHERE ${whereClauseStr}`);
         const total = countResult.recordset[0].cnt || 0;
         // Get paginated results
-        const offset = (page - 1) * limit;
-        request.input('offset', dbConnection_1.mssql.Int, offset);
-        request.input('limit', dbConnection_1.mssql.Int, limit);
+        const offset = Math.max(0, (page - 1) * limit);
+        const safeLimit = Math.max(1, limit);
         const queryStr = `
       SELECT * FROM Comparisons 
       WHERE ${whereClauseStr} 
       ORDER BY createdAt DESC 
-      OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
+      LIMIT ${safeLimit} OFFSET ${offset}
     `;
         const results = await request.query(queryStr);
         const comparisons = results.recordset.map((row) => ({
@@ -398,8 +412,8 @@ class ComparisonService {
             isTrending: row.isTrending === 1 || row.isTrending === true,
             showOnHomepage: row.showOnHomepage === 1 || row.showOnHomepage === true,
             is_published: row.is_published === 1 || row.is_published === true,
-            relatedComparisons: row.relatedComparisons ? JSON.parse(row.relatedComparisons) : [],
-            seoFAQSchema: row.seoFAQSchema ? JSON.parse(row.seoFAQSchema) : {},
+            relatedComparisons: safeJsonParse(row.relatedComparisons, []),
+            seoFAQSchema: safeJsonParse(row.seoFAQSchema, {}),
         }));
         // Batch-resolve car names in a single query — no N+1.
         const carIds = comparisons.flatMap((c) => [c.car1_id, c.car2_id]);
@@ -421,7 +435,7 @@ class ComparisonService {
         const pool = await (0, dbConnection_1.getPool)();
         const result = await pool.request()
             .input('slug', dbConnection_1.mssql.NVarChar, slug)
-            .query('SELECT TOP 1 * FROM Comparisons WHERE slug = @slug AND is_deleted = 0');
+            .query('SELECT * FROM Comparisons WHERE slug = @slug AND is_deleted = 0 LIMIT 1');
         if (result.recordset.length === 0)
             throw new app_error_util_1.AppError('Comparison not found', 404);
         const row = result.recordset[0];
@@ -431,8 +445,8 @@ class ComparisonService {
             isTrending: row.isTrending === 1 || row.isTrending === true,
             showOnHomepage: row.showOnHomepage === 1 || row.showOnHomepage === true,
             is_published: row.is_published === 1 || row.is_published === true,
-            relatedComparisons: row.relatedComparisons ? JSON.parse(row.relatedComparisons) : [],
-            seoFAQSchema: row.seoFAQSchema ? JSON.parse(row.seoFAQSchema) : {},
+            relatedComparisons: safeJsonParse(row.relatedComparisons, []),
+            seoFAQSchema: safeJsonParse(row.seoFAQSchema, {}),
         };
         const [car1, car2] = await Promise.all([
             findCarByEitherId(comparison.car1_id),
@@ -448,7 +462,7 @@ class ComparisonService {
         const pool = await (0, dbConnection_1.getPool)();
         const result = await pool.request()
             .input('id', dbConnection_1.mssql.NVarChar, id)
-            .query('SELECT TOP 1 * FROM Comparisons WHERE comparison_id = @id AND is_deleted = 0');
+            .query('SELECT * FROM Comparisons WHERE comparison_id = @id AND is_deleted = 0 LIMIT 1');
         if (result.recordset.length === 0)
             throw new app_error_util_1.AppError('Comparison not found', 404);
         const row = result.recordset[0];
@@ -458,8 +472,8 @@ class ComparisonService {
             isTrending: row.isTrending === 1 || row.isTrending === true,
             showOnHomepage: row.showOnHomepage === 1 || row.showOnHomepage === true,
             is_published: row.is_published === 1 || row.is_published === true,
-            relatedComparisons: row.relatedComparisons ? JSON.parse(row.relatedComparisons) : [],
-            seoFAQSchema: row.seoFAQSchema ? JSON.parse(row.seoFAQSchema) : {},
+            relatedComparisons: safeJsonParse(row.relatedComparisons, []),
+            seoFAQSchema: safeJsonParse(row.seoFAQSchema, {}),
         };
         const [car1, car2] = await Promise.all([
             findCarByEitherId(comparison.car1_id),
@@ -495,7 +509,7 @@ class ComparisonService {
                     .query(`UPDATE ComparisonRivals SET 
             relationship_strength = @strength, 
             manual_mapping = 1, 
-            updatedAt = GETDATE() 
+            updatedAt = NOW() 
             WHERE primary_car_id = @pId AND rival_car_id = @rId`);
             }
             else {
@@ -507,7 +521,7 @@ class ComparisonService {
                     .query(`INSERT INTO ComparisonRivals (
             rival_id, primary_car_id, rival_car_id, relationship_strength, manual_mapping, createdAt, updatedAt
           ) VALUES (
-            @rid, @pId, @rId, @strength, 1, GETDATE(), GETDATE()
+            @rid, @pId, @rId, @strength, 1, NOW(), NOW()
           )`);
             }
         };
@@ -547,12 +561,12 @@ class ComparisonService {
     }
     static async getRivals(carId, limit = 10) {
         const pool = await (0, dbConnection_1.getPool)();
+        const safeLimit = Math.max(1, limit);
         const result = await pool.request()
             .input('cid', dbConnection_1.mssql.NVarChar, carId)
-            .input('lim', dbConnection_1.mssql.Int, limit)
-            .query(`SELECT TOP (@lim) * FROM ComparisonRivals 
+            .query(`SELECT * FROM ComparisonRivals 
         WHERE primary_car_id = @cid 
-        ORDER BY relationship_strength DESC`);
+        ORDER BY relationship_strength DESC LIMIT ${safeLimit}`);
         return result.recordset.map((row) => ({
             ...row,
             manual_mapping: row.manual_mapping === 1 || row.manual_mapping === true,
@@ -560,14 +574,14 @@ class ComparisonService {
     }
     static async getPopularComparisons(category, limit = 10) {
         const pool = await (0, dbConnection_1.getPool)();
-        const request = pool.request()
-            .input('lim', dbConnection_1.mssql.Int, limit);
-        let query = 'SELECT TOP (@lim) * FROM Comparisons WHERE is_published = 1 AND is_deleted = 0 AND isPopular = 1';
+        const safeLimit = Math.max(1, limit);
+        const request = pool.request();
+        let query = 'SELECT * FROM Comparisons WHERE is_published = 1 AND is_deleted = 0 AND isPopular = 1';
         if (category) {
             request.input('category', dbConnection_1.mssql.NVarChar, category);
             query += ' AND category = @category';
         }
-        query += ' ORDER BY createdAt DESC';
+        query += ` ORDER BY createdAt DESC LIMIT ${safeLimit}`;
         const result = await request.query(query);
         return result.recordset.map((row) => ({
             ...row,
@@ -575,23 +589,23 @@ class ComparisonService {
             isTrending: row.isTrending === 1 || row.isTrending === true,
             showOnHomepage: row.showOnHomepage === 1 || row.showOnHomepage === true,
             is_published: row.is_published === 1 || row.is_published === true,
-            relatedComparisons: row.relatedComparisons ? JSON.parse(row.relatedComparisons) : [],
-            seoFAQSchema: row.seoFAQSchema ? JSON.parse(row.seoFAQSchema) : {},
+            relatedComparisons: safeJsonParse(row.relatedComparisons, []),
+            seoFAQSchema: safeJsonParse(row.seoFAQSchema, {}),
         }));
     }
     static async getTrendingComparisons(limit = 10) {
         const pool = await (0, dbConnection_1.getPool)();
+        const safeLimit = Math.max(1, limit);
         const result = await pool.request()
-            .input('lim', dbConnection_1.mssql.Int, limit)
-            .query('SELECT TOP (@lim) * FROM Comparisons WHERE is_published = 1 AND is_deleted = 0 AND isTrending = 1 ORDER BY updatedAt DESC');
+            .query(`SELECT * FROM Comparisons WHERE is_published = 1 AND is_deleted = 0 AND isTrending = 1 ORDER BY updatedAt DESC LIMIT ${safeLimit}`);
         return result.recordset.map((row) => ({
             ...row,
             isPopular: row.isPopular === 1 || row.isPopular === true,
             isTrending: row.isTrending === 1 || row.isTrending === true,
             showOnHomepage: row.showOnHomepage === 1 || row.showOnHomepage === true,
             is_published: row.is_published === 1 || row.is_published === true,
-            relatedComparisons: row.relatedComparisons ? JSON.parse(row.relatedComparisons) : [],
-            seoFAQSchema: row.seoFAQSchema ? JSON.parse(row.seoFAQSchema) : {},
+            relatedComparisons: safeJsonParse(row.relatedComparisons, []),
+            seoFAQSchema: safeJsonParse(row.seoFAQSchema, {}),
         }));
     }
     static async getComparisonsByCategory(category, page = 1, limit = 10) {
@@ -600,23 +614,22 @@ class ComparisonService {
             .input('category', dbConnection_1.mssql.NVarChar, category)
             .query('SELECT COUNT(*) as cnt FROM Comparisons WHERE category = @category AND is_published = 1 AND is_deleted = 0');
         const total = countResult.recordset[0].cnt || 0;
-        const offset = (page - 1) * limit;
+        const offset = Math.max(0, (page - 1) * limit);
+        const safeLimit = Math.max(1, limit);
         const result = await pool.request()
             .input('category', dbConnection_1.mssql.NVarChar, category)
-            .input('offset', dbConnection_1.mssql.Int, offset)
-            .input('limit', dbConnection_1.mssql.Int, limit)
             .query(`SELECT * FROM Comparisons 
         WHERE category = @category AND is_published = 1 AND is_deleted = 0 
         ORDER BY createdAt DESC 
-        OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`);
+        LIMIT ${safeLimit} OFFSET ${offset}`);
         const comparisons = result.recordset.map((row) => ({
             ...row,
             isPopular: row.isPopular === 1 || row.isPopular === true,
             isTrending: row.isTrending === 1 || row.isTrending === true,
             showOnHomepage: row.showOnHomepage === 1 || row.showOnHomepage === true,
             is_published: row.is_published === 1 || row.is_published === true,
-            relatedComparisons: row.relatedComparisons ? JSON.parse(row.relatedComparisons) : [],
-            seoFAQSchema: row.seoFAQSchema ? JSON.parse(row.seoFAQSchema) : {},
+            relatedComparisons: safeJsonParse(row.relatedComparisons, []),
+            seoFAQSchema: safeJsonParse(row.seoFAQSchema, {}),
         }));
         return { comparisons, total, page, limit };
     }

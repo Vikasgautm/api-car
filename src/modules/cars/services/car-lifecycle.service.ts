@@ -69,7 +69,7 @@ export class CarLifecycleService {
     try {
       const carResult = await transaction.request()
         .input('cid', mssql.NVarChar, carId)
-        .query('SELECT TOP 1 entity_lifecycle_state, entity_created_at, entity_status_history, createdAt FROM Cars WHERE car_id = @cid AND is_deleted = 0');
+        .query('SELECT entity_lifecycle_state, entity_created_at, entity_status_history, createdAt FROM Cars WHERE car_id = @cid AND is_deleted = 0 LIMIT 1');
 
       if (carResult.recordset.length === 0) throw new AppError('Car not found', 404);
       const car = carResult.recordset[0];
@@ -165,7 +165,7 @@ export class CarLifecycleService {
           archived_at = @arch_at,
           archived_by = @arch_by,
           entity_status_history = @history,
-          updatedAt = GETDATE()
+          updatedAt = NOW()
           WHERE car_id = @cid AND is_deleted = 0`);
 
       if (newState === 'launched') {
@@ -176,7 +176,7 @@ export class CarLifecycleService {
 
       const updatedResult = await pool.request()
         .input('cid', mssql.NVarChar, carId)
-        .query('SELECT TOP 1 * FROM Cars WHERE car_id = @cid AND is_deleted = 0');
+        .query('SELECT * FROM Cars WHERE car_id = @cid AND is_deleted = 0 LIMIT 1');
       
       const updatedRow = updatedResult.recordset[0];
       return {
@@ -245,7 +245,7 @@ export class CarLifecycleService {
           .input('hidden', mssql.NVarChar, JSON.stringify(newHiddenSections))
           .input('sec', mssql.NVarChar, JSON.stringify(newSectionVisibility))
           .input('field', mssql.NVarChar, JSON.stringify(newFieldVisibility))
-          .query('UPDATE CarVariants SET hidden_sections = @hidden, section_visibility = @sec, field_visibility = @field, updatedAt = GETDATE() WHERE variant_id = @vid');
+          .query('UPDATE CarVariants SET hidden_sections = @hidden, section_visibility = @sec, field_visibility = @field, updatedAt = NOW() WHERE variant_id = @vid');
       }
     }
   }
@@ -310,7 +310,7 @@ export class CarLifecycleService {
     await pool.request()
       .input('cid', mssql.NVarChar, carId)
       .input('history', mssql.NVarChar, JSON.stringify(history))
-      .query('UPDATE Cars SET entity_status_history = @history, updatedAt = GETDATE() WHERE car_id = @cid AND is_deleted = 0');
+      .query('UPDATE Cars SET entity_status_history = @history, updatedAt = NOW() WHERE car_id = @cid AND is_deleted = 0');
 
     return {
       car_id: car.car_id,
@@ -372,7 +372,7 @@ export class CarLifecycleService {
     await pool.request()
       .input('cid', mssql.NVarChar, carId)
       .input('seo', mssql.NVarChar, JSON.stringify(seo_history))
-      .query('UPDATE Cars SET seo_history = @seo, updatedAt = GETDATE() WHERE car_id = @cid AND is_deleted = 0');
+      .query('UPDATE Cars SET seo_history = @seo, updatedAt = NOW() WHERE car_id = @cid AND is_deleted = 0');
   }
 
   /**
@@ -406,7 +406,7 @@ export class CarLifecycleService {
     await pool.request()
       .input('cid', mssql.NVarChar, carId)
       .input('var', mssql.NVarChar, JSON.stringify(variant_history))
-      .query('UPDATE Cars SET variant_history = @var, updatedAt = GETDATE() WHERE car_id = @cid AND is_deleted = 0');
+      .query('UPDATE Cars SET variant_history = @var, updatedAt = NOW() WHERE car_id = @cid AND is_deleted = 0');
   }
 
   /**

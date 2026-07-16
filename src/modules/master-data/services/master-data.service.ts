@@ -8,6 +8,19 @@ import { getPool, mssql } from '../../../sql/utils/dbConnection';
 const CACHE_KEY = 'master_data:all_active';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
+function safeParseJson(value: any): any {
+  if (value === null || value === undefined) return {};
+  if (typeof value === 'object') return value;
+  if (typeof value === 'string') {
+    try {
+      return value.trim() ? JSON.parse(value) : {};
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
 export class MasterDataService {
   // ── Query ────────────────────────────────────────────────────────────────────
 
@@ -31,7 +44,7 @@ export class MasterDataService {
       ...row,
       is_active: row.is_active === true || row.is_active === 1,
       is_system: row.is_system === true || row.is_system === 1,
-      metadata: row.metadata ? JSON.parse(row.metadata) : {},
+      metadata: safeParseJson(row.metadata),
     }));
   }
 
@@ -40,7 +53,7 @@ export class MasterDataService {
     const result = await pool.request()
       .input('cat', mssql.NVarChar, categoryKey)
       .input('val', mssql.NVarChar, value)
-      .query('SELECT TOP 1 * FROM MasterOptions WHERE category_key = @cat AND value = @val');
+      .query('SELECT * FROM MasterOptions WHERE category_key = @cat AND value = @val LIMIT 1');
 
     if (result.recordset.length === 0) return null;
     const row = result.recordset[0];
@@ -48,7 +61,7 @@ export class MasterDataService {
       ...row,
       is_active: row.is_active === true || row.is_active === 1,
       is_system: row.is_system === true || row.is_system === 1,
-      metadata: row.metadata ? JSON.parse(row.metadata) : {},
+      metadata: safeParseJson(row.metadata),
     };
   }
 
@@ -147,7 +160,7 @@ export class MasterDataService {
       .input('val', mssql.NVarChar, value)
       .input('ord', mssql.Int, nextOrder)
       .input('meta', mssql.NVarChar, metadata)
-      .query('INSERT INTO MasterOptions (option_id, category_key, label, value, sort_order, is_active, is_system, metadata, createdAt, updatedAt) VALUES (@oid, @cat, @lbl, @val, @ord, 1, 0, @meta, GETDATE(), GETDATE())');
+      .query('INSERT INTO MasterOptions (option_id, category_key, label, value, sort_order, is_active, is_system, metadata, createdAt, updatedAt) VALUES (@oid, @cat, @lbl, @val, @ord, 1, 0, @meta, NOW(), NOW())');
 
     cache.delete(CACHE_KEY);
 
@@ -172,7 +185,7 @@ export class MasterDataService {
     const pool = await getPool();
     const existingResult = await pool.request()
       .input('oid', mssql.NVarChar, optionId)
-      .query('SELECT TOP 1 * FROM MasterOptions WHERE option_id = @oid');
+      .query('SELECT * FROM MasterOptions WHERE option_id = @oid LIMIT 1');
 
     if (existingResult.recordset.length === 0) throw new AppError('Option not found', 404);
     const opt = existingResult.recordset[0];
@@ -190,7 +203,7 @@ export class MasterDataService {
       .input('ord', mssql.Int, sort_order)
       .input('act', mssql.Bit, is_active)
       .input('meta', mssql.NVarChar, metadata)
-      .query('UPDATE MasterOptions SET label = @lbl, value = @val, sort_order = @ord, is_active = @act, metadata = @meta, updatedAt = GETDATE() WHERE option_id = @oid');
+      .query('UPDATE MasterOptions SET label = @lbl, value = @val, sort_order = @ord, is_active = @act, metadata = @meta, updatedAt = NOW() WHERE option_id = @oid');
 
     cache.delete(CACHE_KEY);
 
@@ -202,7 +215,7 @@ export class MasterDataService {
       sort_order,
       is_active: is_active === 1 || is_active === true,
       is_system: opt.is_system === 1 || opt.is_system === true,
-      metadata: data.metadata !== undefined ? data.metadata : (opt.metadata ? JSON.parse(opt.metadata) : {}),
+      metadata: data.metadata !== undefined ? data.metadata : safeParseJson(opt.metadata),
       created_at: opt.createdAt,
       updated_at: new Date(),
     };
@@ -212,7 +225,7 @@ export class MasterDataService {
     const pool = await getPool();
     const existingResult = await pool.request()
       .input('oid', mssql.NVarChar, optionId)
-      .query('SELECT TOP 1 is_system FROM MasterOptions WHERE option_id = @oid');
+      .query('SELECT is_system FROM MasterOptions WHERE option_id = @oid LIMIT 1');
 
     if (existingResult.recordset.length === 0) throw new AppError('Option not found', 404);
     if (existingResult.recordset[0].is_system === 1 || existingResult.recordset[0].is_system === true) {
@@ -230,7 +243,7 @@ export class MasterDataService {
     const pool = await getPool();
     const existingResult = await pool.request()
       .input('oid', mssql.NVarChar, optionId)
-      .query('SELECT TOP 1 * FROM MasterOptions WHERE option_id = @oid');
+      .query('SELECT * FROM MasterOptions WHERE option_id = @oid LIMIT 1');
 
     if (existingResult.recordset.length === 0) throw new AppError('Option not found', 404);
     const opt = existingResult.recordset[0];
@@ -239,7 +252,7 @@ export class MasterDataService {
     await pool.request()
       .input('oid', mssql.NVarChar, optionId)
       .input('act', mssql.Bit, newActive)
-      .query('UPDATE MasterOptions SET is_active = @act, updatedAt = GETDATE() WHERE option_id = @oid');
+      .query('UPDATE MasterOptions SET is_active = @act, updatedAt = NOW() WHERE option_id = @oid');
 
     cache.delete(CACHE_KEY);
 
@@ -247,7 +260,7 @@ export class MasterDataService {
       ...opt,
       is_active: newActive === 1,
       is_system: opt.is_system === 1 || opt.is_system === true,
-      metadata: opt.metadata ? JSON.parse(opt.metadata) : {},
+      metadata: safeParseJson(opt.metadata),
       created_at: opt.createdAt,
       updated_at: new Date(),
     };
@@ -263,7 +276,7 @@ export class MasterDataService {
           .input('oid', mssql.NVarChar, orderedIds[i])
           .input('cat', mssql.NVarChar, categoryKey)
           .input('ord', mssql.Int, i)
-          .query('UPDATE MasterOptions SET sort_order = @ord, updatedAt = GETDATE() WHERE option_id = @oid AND category_key = @cat');
+          .query('UPDATE MasterOptions SET sort_order = @ord, updatedAt = NOW() WHERE option_id = @oid AND category_key = @cat');
       }
       await transaction.commit();
     } catch (err) {
@@ -296,7 +309,7 @@ export class MasterDataService {
             .input('lbl', mssql.NVarChar, label)
             .input('val', mssql.NVarChar, value)
             .input('ord', mssql.Int, i)
-            .query('INSERT INTO MasterOptions (option_id, category_key, label, value, sort_order, is_active, is_system, metadata, createdAt, updatedAt) VALUES (@oid, @cat, @lbl, @val, @ord, 1, 1, \'{}\', GETDATE(), GETDATE())');
+            .query('INSERT INTO MasterOptions (option_id, category_key, label, value, sort_order, is_active, is_system, metadata, createdAt, updatedAt) VALUES (@oid, @cat, @lbl, @val, @ord, 1, 1, \'{}\', NOW(), NOW())');
           created++;
         }
       }
@@ -357,14 +370,14 @@ export class MasterDataService {
         const record = check.recordset[0];
         await pool.request()
           .input('uid', mssql.NVarChar, record.unknown_id)
-          .query('UPDATE UnknownValues SET occurrence_count = occurrence_count + 1, updatedAt = GETDATE() WHERE unknown_id = @uid');
+          .query('UPDATE UnknownValues SET occurrence_count = occurrence_count + 1, updatedAt = NOW() WHERE unknown_id = @uid');
       } else {
         await pool.request()
           .input('uid', mssql.NVarChar, uuidv4())
           .input('cat', mssql.NVarChar, categoryKey)
           .input('val', mssql.NVarChar, rawValue)
           .input('ctx', mssql.NVarChar, context ?? '')
-          .query('INSERT INTO UnknownValues (unknown_id, category_key, raw_value, context, occurrence_count, is_resolved, createdAt, updatedAt) VALUES (@uid, @cat, @val, @ctx, 1, 0, GETDATE(), GETDATE())');
+          .query('INSERT INTO UnknownValues (unknown_id, category_key, raw_value, context, occurrence_count, is_resolved, createdAt, updatedAt) VALUES (@uid, @cat, @val, @ctx, 1, 0, NOW(), NOW())');
       }
     } catch {
       // Non-fatal — never break imports due to logging failures
@@ -393,14 +406,14 @@ export class MasterDataService {
     const pool = await getPool();
     const existing = await pool.request()
       .input('uid', mssql.NVarChar, unknownId)
-      .query('SELECT TOP 1 * FROM UnknownValues WHERE unknown_id = @uid');
+      .query('SELECT * FROM UnknownValues WHERE unknown_id = @uid LIMIT 1');
 
     if (existing.recordset.length === 0) throw new AppError('Unknown value record not found', 404);
     
     await pool.request()
       .input('uid', mssql.NVarChar, unknownId)
       .input('to', mssql.NVarChar, targetOptionValue)
-      .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = @to, resolved_at = GETDATE(), updatedAt = GETDATE() WHERE unknown_id = @uid');
+      .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = @to, resolved_at = NOW(), updatedAt = NOW() WHERE unknown_id = @uid');
 
     return {
       ...existing.recordset[0],
@@ -421,14 +434,14 @@ export class MasterDataService {
 
     await pool.request()
       .input('uid', mssql.NVarChar, unknownId)
-      .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = \'dismissed\', resolved_at = GETDATE(), updatedAt = GETDATE() WHERE unknown_id = @uid');
+      .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = \'dismissed\', resolved_at = NOW(), updatedAt = NOW() WHERE unknown_id = @uid');
   }
 
   static async promoteUnknownToMaster(unknownId: string): Promise<IMasterOption> {
     const pool = await getPool();
     const existing = await pool.request()
       .input('uid', mssql.NVarChar, unknownId)
-      .query('SELECT TOP 1 * FROM UnknownValues WHERE unknown_id = @uid');
+      .query('SELECT * FROM UnknownValues WHERE unknown_id = @uid LIMIT 1');
 
     if (existing.recordset.length === 0) throw new AppError('Unknown value record not found', 404);
     const record = existing.recordset[0];
@@ -440,7 +453,7 @@ export class MasterDataService {
     await pool.request()
       .input('uid', unknownId)
       .input('to', created.value)
-      .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = @to, resolved_at = GETDATE(), updatedAt = GETDATE() WHERE unknown_id = @uid');
+      .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = @to, resolved_at = NOW(), updatedAt = NOW() WHERE unknown_id = @uid');
 
     return created;
   }

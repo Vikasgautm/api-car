@@ -203,9 +203,17 @@ export class PlatformSettingsService {
   }
 
   static async getSystemStatus(): Promise<Record<string, any>> {
-    const mongoose = await import('mongoose');
-    const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
-    const dbState = states[mongoose.connection.readyState] || 'unknown';
+    let dbState = 'disconnected';
+    try {
+      const mongooseModule: any = await import('mongoose');
+      const conn = mongooseModule.default?.connection || mongooseModule.connection;
+      const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+      if (conn && typeof conn.readyState === 'number') {
+        dbState = states[conn.readyState] || 'unknown';
+      }
+    } catch (e) {
+      dbState = 'disconnected';
+    }
 
     return {
       backend: 'ok',

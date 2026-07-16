@@ -14,7 +14,7 @@ exports.booleanStringSchema = zod_1.z.union([
 ]);
 exports.paginationSchema = zod_1.z.object({
     page: zod_1.z.coerce.number().int().positive().default(1).optional(),
-    limit: zod_1.z.coerce.number().int().positive().max(1000).default(10).optional(),
+    limit: zod_1.z.coerce.number().int().positive().max(100000).default(10).optional(),
     sortBy: zod_1.z.string().optional(),
     sortOrder: zod_1.z.enum(['asc', 'desc']).optional(),
     q: zod_1.z.string().optional(),

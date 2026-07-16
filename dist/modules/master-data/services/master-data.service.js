@@ -8,6 +8,21 @@ const cache_util_1 = require("../../../utils/cache.util");
 const dbConnection_1 = require("../../../sql/utils/dbConnection");
 const CACHE_KEY = 'master_data:all_active';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+function safeParseJson(value) {
+    if (value === null || value === undefined)
+        return {};
+    if (typeof value === 'object')
+        return value;
+    if (typeof value === 'string') {
+        try {
+            return value.trim() ? JSON.parse(value) : {};
+        }
+        catch {
+            return {};
+        }
+    }
+    return {};
+}
 class MasterDataService {
     // ── Query ────────────────────────────────────────────────────────────────────
     static async getCategories() {
@@ -27,7 +42,7 @@ class MasterDataService {
             ...row,
             is_active: row.is_active === true || row.is_active === 1,
             is_system: row.is_system === true || row.is_system === 1,
-            metadata: row.metadata ? JSON.parse(row.metadata) : {},
+            metadata: safeParseJson(row.metadata),
         }));
     }
     static async getOptionByValue(categoryKey, value) {
@@ -35,7 +50,7 @@ class MasterDataService {
         const result = await pool.request()
             .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
             .input('val', dbConnection_1.mssql.NVarChar, value)
-            .query('SELECT TOP 1 * FROM MasterOptions WHERE category_key = @cat AND value = @val');
+            .query('SELECT * FROM MasterOptions WHERE category_key = @cat AND value = @val LIMIT 1');
         if (result.recordset.length === 0)
             return null;
         const row = result.recordset[0];
@@ -43,7 +58,7 @@ class MasterDataService {
             ...row,
             is_active: row.is_active === true || row.is_active === 1,
             is_system: row.is_system === true || row.is_system === 1,
-            metadata: row.metadata ? JSON.parse(row.metadata) : {},
+            metadata: safeParseJson(row.metadata),
         };
     }
     static async getAllActiveOptions() {
@@ -51,18 +66,40 @@ class MasterDataService {
         if (cached)
             return cached;
         const pool = await (0, dbConnection_1.getPool)();
-        const result = await pool.request()
-            .query('SELECT * FROM MasterOptions WHERE is_active = 1 ORDER BY category_key ASC, sort_order ASC');
+        const query = `
+    SELECT *
+    FROM MasterOptions
+    WHERE is_active = 1
+    ORDER BY category_key ASC, sort_order ASC
+  `;
+        const result = await pool.request().query(query);
         const map = {};
         for (const row of result.recordset) {
+            let metadata = {};
+            try {
+                if (typeof row.metadata === "string") {
+                    metadata = row.metadata.trim()
+                        ? JSON.parse(row.metadata)
+                        : {};
+                }
+                else if (row.metadata &&
+                    typeof row.metadata === "object") {
+                    metadata = row.metadata;
+                }
+            }
+            catch (error) {
+                console.error(`Invalid metadata JSON for option_id ${row.option_id}:`, row.metadata);
+                metadata = {};
+            }
             const opt = {
                 ...row,
                 is_active: row.is_active === true || row.is_active === 1,
                 is_system: row.is_system === true || row.is_system === 1,
-                metadata: row.metadata ? JSON.parse(row.metadata) : {},
+                metadata,
             };
-            if (!map[opt.category_key])
+            if (!map[opt.category_key]) {
                 map[opt.category_key] = [];
+            }
             map[opt.category_key].push(opt);
         }
         cache_util_1.cache.set(CACHE_KEY, map, CACHE_TTL_MS);
@@ -95,7 +132,7 @@ class MasterDataService {
             .input('val', dbConnection_1.mssql.NVarChar, value)
             .input('ord', dbConnection_1.mssql.Int, nextOrder)
             .input('meta', dbConnection_1.mssql.NVarChar, metadata)
-            .query('INSERT INTO MasterOptions (option_id, category_key, label, value, sort_order, is_active, is_system, metadata, createdAt, updatedAt) VALUES (@oid, @cat, @lbl, @val, @ord, 1, 0, @meta, GETDATE(), GETDATE())');
+            .query('INSERT INTO MasterOptions (option_id, category_key, label, value, sort_order, is_active, is_system, metadata, createdAt, updatedAt) VALUES (@oid, @cat, @lbl, @val, @ord, 1, 0, @meta, NOW(), NOW())');
         cache_util_1.cache.delete(CACHE_KEY);
         return {
             option_id,
@@ -114,7 +151,7 @@ class MasterDataService {
         const pool = await (0, dbConnection_1.getPool)();
         const existingResult = await pool.request()
             .input('oid', dbConnection_1.mssql.NVarChar, optionId)
-            .query('SELECT TOP 1 * FROM MasterOptions WHERE option_id = @oid');
+            .query('SELECT * FROM MasterOptions WHERE option_id = @oid LIMIT 1');
         if (existingResult.recordset.length === 0)
             throw new app_error_util_1.AppError('Option not found', 404);
         const opt = existingResult.recordset[0];
@@ -130,7 +167,7 @@ class MasterDataService {
             .input('ord', dbConnection_1.mssql.Int, sort_order)
             .input('act', dbConnection_1.mssql.Bit, is_active)
             .input('meta', dbConnection_1.mssql.NVarChar, metadata)
-            .query('UPDATE MasterOptions SET label = @lbl, value = @val, sort_order = @ord, is_active = @act, metadata = @meta, updatedAt = GETDATE() WHERE option_id = @oid');
+            .query('UPDATE MasterOptions SET label = @lbl, value = @val, sort_order = @ord, is_active = @act, metadata = @meta, updatedAt = NOW() WHERE option_id = @oid');
         cache_util_1.cache.delete(CACHE_KEY);
         return {
             option_id: optionId,
@@ -140,7 +177,7 @@ class MasterDataService {
             sort_order,
             is_active: is_active === 1 || is_active === true,
             is_system: opt.is_system === 1 || opt.is_system === true,
-            metadata: data.metadata !== undefined ? data.metadata : (opt.metadata ? JSON.parse(opt.metadata) : {}),
+            metadata: data.metadata !== undefined ? data.metadata : safeParseJson(opt.metadata),
             created_at: opt.createdAt,
             updated_at: new Date(),
         };
@@ -149,7 +186,7 @@ class MasterDataService {
         const pool = await (0, dbConnection_1.getPool)();
         const existingResult = await pool.request()
             .input('oid', dbConnection_1.mssql.NVarChar, optionId)
-            .query('SELECT TOP 1 is_system FROM MasterOptions WHERE option_id = @oid');
+            .query('SELECT is_system FROM MasterOptions WHERE option_id = @oid LIMIT 1');
         if (existingResult.recordset.length === 0)
             throw new app_error_util_1.AppError('Option not found', 404);
         if (existingResult.recordset[0].is_system === 1 || existingResult.recordset[0].is_system === true) {
@@ -164,7 +201,7 @@ class MasterDataService {
         const pool = await (0, dbConnection_1.getPool)();
         const existingResult = await pool.request()
             .input('oid', dbConnection_1.mssql.NVarChar, optionId)
-            .query('SELECT TOP 1 * FROM MasterOptions WHERE option_id = @oid');
+            .query('SELECT * FROM MasterOptions WHERE option_id = @oid LIMIT 1');
         if (existingResult.recordset.length === 0)
             throw new app_error_util_1.AppError('Option not found', 404);
         const opt = existingResult.recordset[0];
@@ -172,13 +209,13 @@ class MasterDataService {
         await pool.request()
             .input('oid', dbConnection_1.mssql.NVarChar, optionId)
             .input('act', dbConnection_1.mssql.Bit, newActive)
-            .query('UPDATE MasterOptions SET is_active = @act, updatedAt = GETDATE() WHERE option_id = @oid');
+            .query('UPDATE MasterOptions SET is_active = @act, updatedAt = NOW() WHERE option_id = @oid');
         cache_util_1.cache.delete(CACHE_KEY);
         return {
             ...opt,
             is_active: newActive === 1,
             is_system: opt.is_system === 1 || opt.is_system === true,
-            metadata: opt.metadata ? JSON.parse(opt.metadata) : {},
+            metadata: safeParseJson(opt.metadata),
             created_at: opt.createdAt,
             updated_at: new Date(),
         };
@@ -193,7 +230,7 @@ class MasterDataService {
                     .input('oid', dbConnection_1.mssql.NVarChar, orderedIds[i])
                     .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
                     .input('ord', dbConnection_1.mssql.Int, i)
-                    .query('UPDATE MasterOptions SET sort_order = @ord, updatedAt = GETDATE() WHERE option_id = @oid AND category_key = @cat');
+                    .query('UPDATE MasterOptions SET sort_order = @ord, updatedAt = NOW() WHERE option_id = @oid AND category_key = @cat');
             }
             await transaction.commit();
         }
@@ -223,7 +260,7 @@ class MasterDataService {
                         .input('lbl', dbConnection_1.mssql.NVarChar, label)
                         .input('val', dbConnection_1.mssql.NVarChar, value)
                         .input('ord', dbConnection_1.mssql.Int, i)
-                        .query('INSERT INTO MasterOptions (option_id, category_key, label, value, sort_order, is_active, is_system, metadata, createdAt, updatedAt) VALUES (@oid, @cat, @lbl, @val, @ord, 1, 1, \'{}\', GETDATE(), GETDATE())');
+                        .query('INSERT INTO MasterOptions (option_id, category_key, label, value, sort_order, is_active, is_system, metadata, createdAt, updatedAt) VALUES (@oid, @cat, @lbl, @val, @ord, 1, 1, \'{}\', NOW(), NOW())');
                     created++;
                 }
             }
@@ -278,7 +315,7 @@ class MasterDataService {
                 const record = check.recordset[0];
                 await pool.request()
                     .input('uid', dbConnection_1.mssql.NVarChar, record.unknown_id)
-                    .query('UPDATE UnknownValues SET occurrence_count = occurrence_count + 1, updatedAt = GETDATE() WHERE unknown_id = @uid');
+                    .query('UPDATE UnknownValues SET occurrence_count = occurrence_count + 1, updatedAt = NOW() WHERE unknown_id = @uid');
             }
             else {
                 await pool.request()
@@ -286,7 +323,7 @@ class MasterDataService {
                     .input('cat', dbConnection_1.mssql.NVarChar, categoryKey)
                     .input('val', dbConnection_1.mssql.NVarChar, rawValue)
                     .input('ctx', dbConnection_1.mssql.NVarChar, context ?? '')
-                    .query('INSERT INTO UnknownValues (unknown_id, category_key, raw_value, context, occurrence_count, is_resolved, createdAt, updatedAt) VALUES (@uid, @cat, @val, @ctx, 1, 0, GETDATE(), GETDATE())');
+                    .query('INSERT INTO UnknownValues (unknown_id, category_key, raw_value, context, occurrence_count, is_resolved, createdAt, updatedAt) VALUES (@uid, @cat, @val, @ctx, 1, 0, NOW(), NOW())');
             }
         }
         catch {
@@ -312,13 +349,13 @@ class MasterDataService {
         const pool = await (0, dbConnection_1.getPool)();
         const existing = await pool.request()
             .input('uid', dbConnection_1.mssql.NVarChar, unknownId)
-            .query('SELECT TOP 1 * FROM UnknownValues WHERE unknown_id = @uid');
+            .query('SELECT * FROM UnknownValues WHERE unknown_id = @uid LIMIT 1');
         if (existing.recordset.length === 0)
             throw new app_error_util_1.AppError('Unknown value record not found', 404);
         await pool.request()
             .input('uid', dbConnection_1.mssql.NVarChar, unknownId)
             .input('to', dbConnection_1.mssql.NVarChar, targetOptionValue)
-            .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = @to, resolved_at = GETDATE(), updatedAt = GETDATE() WHERE unknown_id = @uid');
+            .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = @to, resolved_at = NOW(), updatedAt = NOW() WHERE unknown_id = @uid');
         return {
             ...existing.recordset[0],
             is_resolved: true,
@@ -336,13 +373,13 @@ class MasterDataService {
             throw new app_error_util_1.AppError('Unknown value record not found', 404);
         await pool.request()
             .input('uid', dbConnection_1.mssql.NVarChar, unknownId)
-            .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = \'dismissed\', resolved_at = GETDATE(), updatedAt = GETDATE() WHERE unknown_id = @uid');
+            .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = \'dismissed\', resolved_at = NOW(), updatedAt = NOW() WHERE unknown_id = @uid');
     }
     static async promoteUnknownToMaster(unknownId) {
         const pool = await (0, dbConnection_1.getPool)();
         const existing = await pool.request()
             .input('uid', dbConnection_1.mssql.NVarChar, unknownId)
-            .query('SELECT TOP 1 * FROM UnknownValues WHERE unknown_id = @uid');
+            .query('SELECT * FROM UnknownValues WHERE unknown_id = @uid LIMIT 1');
         if (existing.recordset.length === 0)
             throw new app_error_util_1.AppError('Unknown value record not found', 404);
         const record = existing.recordset[0];
@@ -352,7 +389,7 @@ class MasterDataService {
         await pool.request()
             .input('uid', unknownId)
             .input('to', created.value)
-            .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = @to, resolved_at = GETDATE(), updatedAt = GETDATE() WHERE unknown_id = @uid');
+            .query('UPDATE UnknownValues SET is_resolved = 1, resolved_to = @to, resolved_at = NOW(), updatedAt = NOW() WHERE unknown_id = @uid');
         return created;
     }
     static async getPublicLabelMap() {

@@ -10,7 +10,7 @@ class DashboardHealthService {
         SELECT COUNT(*) as cnt FROM Cars 
         WHERE is_deleted = 0 
         AND is_published = 1 
-        AND (thumbnail IS NULL OR JSON_VALUE(thumbnail, '$.url') IS NULL OR JSON_VALUE(thumbnail, '$.url') = '')
+        AND (og_image IS NULL OR og_image = '')
       `),
             pool.request().query(`
         SELECT COUNT(*) as cnt FROM Cars 
@@ -25,8 +25,8 @@ class DashboardHealthService {
             pool.request().query(`
         SELECT COUNT(*) as cnt FROM Cars 
         WHERE is_deleted = 0 
-        AND is_upcoming = 1 
-        AND expected_launch_date < GETDATE()
+        AND status = 'upcoming' 
+        AND launch_date < NOW()
       `),
             pool.request().query(`
         SELECT COUNT(*) as cnt FROM (

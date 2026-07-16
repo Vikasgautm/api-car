@@ -6,45 +6,57 @@ const dbConnection_1 = require("../../../sql/utils/dbConnection");
 class DashboardPriorityService {
     static async getPriorities() {
         const pool = await (0, dbConnection_1.getPool)();
-        const [failedImports, missingSeoRes, missingImagesRes, weakCollectionsRes, emptyCollectionsRes, staleUpcomingRes, duplicateSlugsRes,] = await Promise.all([
-            import_log_model_1.ImportLog.countDocuments({ status: 'failed' }),
-            pool.request().query(`
-        SELECT COUNT(*) as cnt FROM Cars 
-        WHERE is_deleted = 0 
-        AND is_published = 1 
-        AND (meta_title IS NULL OR meta_title = '' OR meta_description IS NULL OR meta_description = '')
-      `),
-            pool.request().query(`
-        SELECT COUNT(*) as cnt FROM Cars 
-        WHERE is_deleted = 0 
-        AND is_published = 1 
-        AND (thumbnail IS NULL OR JSON_VALUE(thumbnail, '$.url') IS NULL OR JSON_VALUE(thumbnail, '$.url') = '')
-      `),
-            pool.request().query(`
-        SELECT COUNT(*) as cnt FROM SeoCollections 
-        WHERE is_deleted = 0 
-        AND matched_car_count > 0 AND matched_car_count < 3
-      `),
-            pool.request().query(`
-        SELECT COUNT(*) as cnt FROM SeoCollections 
-        WHERE is_deleted = 0 
-        AND matched_car_count = 0
-      `),
-            pool.request().query(`
-        SELECT COUNT(*) as cnt FROM Cars 
-        WHERE is_deleted = 0 
-        AND is_upcoming = 1 
-        AND expected_launch_date < GETDATE()
-      `),
-            pool.request().query(`
-        SELECT COUNT(*) as cnt FROM (
-          SELECT slug FROM Cars 
+        let missingImagesRes = { recordset: [{ cnt: 0 }] };
+        let missingSeoRes = { recordset: [{ cnt: 0 }] };
+        let weakCollectionsRes = { recordset: [{ cnt: 0 }] };
+        let emptyCollectionsRes = { recordset: [{ cnt: 0 }] };
+        let staleUpcomingRes = { recordset: [{ cnt: 0 }] };
+        let duplicateSlugsRes = { recordset: [{ cnt: 0 }] };
+        let failedImports = 0;
+        try {
+            failedImports = await import_log_model_1.ImportLog.countDocuments({ status: 'failed' });
+        }
+        catch {
+            failedImports = 0;
+        }
+        try {
+            [
+                missingSeoRes,
+                missingImagesRes,
+                staleUpcomingRes,
+                duplicateSlugsRes,
+            ] = await Promise.all([
+                pool.request().query(`
+          SELECT COUNT(*) as cnt FROM Cars 
           WHERE is_deleted = 0 
-          GROUP BY slug 
-          HAVING COUNT(*) > 1
-        ) as t
-      `),
-        ]);
+          AND is_published = 1 
+          AND (meta_title IS NULL OR meta_title = '' OR meta_description IS NULL OR meta_description = '')
+        `),
+                pool.request().query(`
+          SELECT COUNT(*) as cnt FROM Cars 
+          WHERE is_deleted = 0 
+          AND is_published = 1 
+          AND (og_image IS NULL OR og_image = '')
+        `),
+                pool.request().query(`
+          SELECT COUNT(*) as cnt FROM Cars 
+          WHERE is_deleted = 0 
+          AND status = 'upcoming' 
+          AND launch_date < NOW()
+        `),
+                pool.request().query(`
+          SELECT COUNT(*) as cnt FROM (
+            SELECT slug FROM Cars 
+            WHERE is_deleted = 0 
+            GROUP BY slug 
+            HAVING COUNT(*) > 1
+          ) as t
+        `),
+            ]);
+        }
+        catch (err) {
+            console.error('Priority queries partial failure:', err);
+        }
         const missingSeo = missingSeoRes.recordset[0].cnt || 0;
         const missingImages = missingImagesRes.recordset[0].cnt || 0;
         const weakCollections = weakCollectionsRes.recordset[0].cnt || 0;

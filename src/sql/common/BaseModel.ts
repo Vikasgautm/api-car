@@ -72,20 +72,36 @@ export function compileFilter(
       continue;
     }
 
-    const paramName = `${prefix}_${key}_${paramCounter++}`;
+    let colExpr = `[${key}]`;
+    const cleanParamKey = key.replace(/[^a-zA-Z0-9_]/g, '_');
+    const paramName = `${prefix}_${cleanParamKey}_${paramCounter++}`;
+
+    if (key.includes('.')) {
+      const parts = key.split('.');
+      const topField = parts[0];
+      const subPathParts = parts.slice(1).map(p => (/^\d+$/.test(p) ? `[${p}]` : `.${p}`));
+      let jsonPath = '$' + subPathParts.join('');
+      colExpr = `JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID([${topField}]), [${topField}], '[]'), '${jsonPath}'))`;
+    }
+
     if (val && typeof val === 'object' && !(val instanceof Date) && !Array.isArray(val)) {
       const ops = Object.keys(val);
       for (const op of ops) {
         const opVal = (val as any)[op];
         if (op === '$ne') {
-          clauses.push(`([${key}] IS NULL OR [${key}] <> @${paramName})`);
-          params.push({ name: paramName, type: getSqlType(opVal), value: prepareValue(opVal) });
+          if (opVal === null) {
+            clauses.push(`(${colExpr} IS NOT NULL AND ${colExpr} <> 'null' AND ${colExpr} <> '')`);
+          } else {
+            clauses.push(`(${colExpr} IS NULL OR ${colExpr} <> @${paramName})`);
+            params.push({ name: paramName, type: getSqlType(opVal), value: prepareValue(opVal) });
+          }
         } else if (op === '$in' && Array.isArray(opVal)) {
           if (opVal.length === 0) {
             clauses.push('1 = 0');
           } else {
             const inParamNames = opVal.map((_, i) => `@${paramName}_in${i}`);
-            clauses.push(`[${key}] IN (${inParamNames.join(', ')})`);
+            const jsonSearchClauses = opVal.map((_, i) => `(JSON_VALID(${colExpr}) AND JSON_SEARCH(${colExpr}, 'one', @${paramName}_in${i}) IS NOT NULL)`);
+            clauses.push(`(${colExpr} IN (${inParamNames.join(', ')}) OR (${jsonSearchClauses.join(' OR ')}))`);
             opVal.forEach((v, i) => {
               params.push({ name: `${paramName}_in${i}`, type: getSqlType(v), value: prepareValue(v) });
             });
@@ -93,35 +109,41 @@ export function compileFilter(
         } else if (op === '$nin' && Array.isArray(opVal)) {
           if (opVal.length > 0) {
             const ninParamNames = opVal.map((_, i) => `@${paramName}_nin${i}`);
-            clauses.push(`([${key}] IS NULL OR [${key}] NOT IN (${ninParamNames.join(', ')}))`);
+            clauses.push(`(${colExpr} IS NULL OR ${colExpr} NOT IN (${ninParamNames.join(', ')}))`);
             opVal.forEach((v, i) => {
               params.push({ name: `${paramName}_nin${i}`, type: getSqlType(v), value: prepareValue(v) });
             });
           }
         } else if (op === '$regex') {
-          clauses.push(`[${key}] LIKE @${paramName}`);
+          clauses.push(`${colExpr} LIKE @${paramName}`);
           let regexStr = typeof opVal === 'string' ? opVal : (opVal.source || '');
           regexStr = regexStr.replace(/^\^/, '').replace(/\$$/, '');
           params.push({ name: paramName, type: mssql.NVarChar(), value: `%${regexStr}%` });
         } else if (op === '$gt') {
-          clauses.push(`[${key}] > @${paramName}`);
+          clauses.push(`${colExpr} > @${paramName}`);
           params.push({ name: paramName, type: getSqlType(opVal), value: prepareValue(opVal) });
         } else if (op === '$gte') {
-          clauses.push(`[${key}] >= @${paramName}`);
+          clauses.push(`${colExpr} >= @${paramName}`);
           params.push({ name: paramName, type: getSqlType(opVal), value: prepareValue(opVal) });
         } else if (op === '$lt') {
-          clauses.push(`[${key}] < @${paramName}`);
+          clauses.push(`${colExpr} < @${paramName}`);
           params.push({ name: paramName, type: getSqlType(opVal), value: prepareValue(opVal) });
         } else if (op === '$lte') {
-          clauses.push(`[${key}] <= @${paramName}`);
+          clauses.push(`${colExpr} <= @${paramName}`);
           params.push({ name: paramName, type: getSqlType(opVal), value: prepareValue(opVal) });
+        } else if (op === '$exists') {
+          if (opVal) {
+            clauses.push(`(${colExpr} IS NOT NULL AND ${colExpr} <> 'null' AND ${colExpr} <> '')`);
+          } else {
+            clauses.push(`(${colExpr} IS NULL OR ${colExpr} = 'null' OR ${colExpr} = '')`);
+          }
         }
       }
     } else {
       if (val === null) {
-        clauses.push(`[${key}] IS NULL`);
+        clauses.push(`(${colExpr} IS NULL OR ${colExpr} = 'null')`);
       } else {
-        clauses.push(`[${key}] = @${paramName}`);
+        clauses.push(`(${colExpr} = @${paramName} OR (JSON_VALID(${colExpr}) AND JSON_SEARCH(${colExpr}, 'one', @${paramName}) IS NOT NULL))`);
         params.push({ name: paramName, type: getSqlType(val), value: prepareValue(val) });
       }
     }
@@ -413,6 +435,41 @@ export class BaseModel<T extends { [key: string]: any } = any> {
   private serialize(data: any): any {
     if (!data) return data;
     const serialized = { ...data };
+
+    for (const key of Object.keys(serialized)) {
+      if (key.includes('.')) {
+        const parts = key.split('.');
+        const topField = parts[0];
+        const val = serialized[key];
+        delete serialized[key];
+
+        let topObj = serialized[topField];
+        if (typeof topObj === 'string') {
+          try {
+            topObj = JSON.parse(topObj);
+          } catch {
+            topObj = {};
+          }
+        }
+        if (!topObj || typeof topObj !== 'object') {
+          topObj = {};
+        } else {
+          topObj = { ...topObj };
+        }
+
+        let curr = topObj;
+        for (let i = 1; i < parts.length - 1; i++) {
+          if (!curr[parts[i]] || typeof curr[parts[i]] !== 'object') {
+            curr[parts[i]] = {};
+          }
+          curr = curr[parts[i]];
+        }
+        curr[parts[parts.length - 1]] = val;
+
+        serialized[topField] = topObj;
+      }
+    }
+
     for (const field of this.jsonFields) {
       if (serialized[field] !== undefined && serialized[field] !== null) {
         if (typeof serialized[field] === 'object') {
@@ -550,14 +607,9 @@ export class BaseModel<T extends { [key: string]: any } = any> {
       whereClause = whereClauseOrObj;
       localParams.push(...params);
     } else if (whereClauseOrObj && typeof whereClauseOrObj === 'object') {
-      const clauses: string[] = [];
-      let idx = 0;
-      for (const [key, val] of Object.entries(whereClauseOrObj)) {
-        const paramName = `w_${key}_${idx++}`;
-        clauses.push(`[${key}] = @${paramName}`);
-        localParams.push({ name: paramName, type: getSqlType(val), value: prepareValue(val) });
-      }
-      whereClause = clauses.join(' AND ');
+      const compiled = compileFilter(whereClauseOrObj);
+      whereClause = compiled.whereClause;
+      localParams.push(...compiled.params);
     }
 
     const query = `DELETE FROM [${this.tableName}] ${whereClause ? `WHERE ${whereClause}` : ''}`;
@@ -585,14 +637,9 @@ export class BaseModel<T extends { [key: string]: any } = any> {
       whereClause = whereClauseOrObj;
       localParams.push(...params);
     } else if (whereClauseOrObj && typeof whereClauseOrObj === 'object') {
-      const clauses: string[] = [];
-      let idx = 0;
-      for (const [key, val] of Object.entries(whereClauseOrObj)) {
-        const paramName = `w_${key}_${idx++}`;
-        clauses.push(`[${key}] = @${paramName}`);
-        localParams.push({ name: paramName, type: getSqlType(val), value: prepareValue(val) });
-      }
-      whereClause = clauses.join(' AND ');
+      const compiled = compileFilter(whereClauseOrObj);
+      whereClause = compiled.whereClause;
+      localParams.push(...compiled.params);
     }
 
     const query = `SELECT TOP 1 * FROM [${this.tableName}] ${whereClause ? `WHERE ${whereClause}` : ''}`;
@@ -628,14 +675,9 @@ export class BaseModel<T extends { [key: string]: any } = any> {
       whereClause = whereClauseOrObj;
       localParams.push(...params);
     } else if (whereClauseOrObj && typeof whereClauseOrObj === 'object') {
-      const clauses: string[] = [];
-      let idx = 0;
-      for (const [key, val] of Object.entries(whereClauseOrObj)) {
-        const paramName = `w_${key}_${idx++}`;
-        clauses.push(`[${key}] = @${paramName}`);
-        localParams.push({ name: paramName, type: getSqlType(val), value: prepareValue(val) });
-      }
-      whereClause = clauses.join(' AND ');
+      const compiled = compileFilter(whereClauseOrObj);
+      whereClause = compiled.whereClause;
+      localParams.push(...compiled.params);
     }
 
     let selectCols = '*';
@@ -948,6 +990,7 @@ function compileAggregation(tableName: string, pipeline: any[]): { sql: string; 
   let limitValue: number | null = null;
   let offsetValue: number | null = null;
   const compoundKeys: string[] = [];
+  const compoundKeySourceMap: Record<string, string> = {};
   
   let paramIdx = 0;
 
@@ -961,19 +1004,57 @@ function compileAggregation(tableName: string, pipeline: any[]): { sql: string; 
         }
       }
     } else if (stage.$group) {
+      if (groupByCols.length > 0) {
+        groupByCols = [];
+        selectCols = [];
+      }
+
+      const getFieldExpr = (rawPath: string) => {
+        let p = rawPath.startsWith('$') ? rawPath.substring(1) : rawPath;
+        if (p.startsWith('car_doc.')) p = p.substring(8);
+        if (p.startsWith('car.')) p = p.substring(4);
+        if (p.startsWith('_id.')) p = p.substring(4);
+        if (p.includes('.')) {
+          const parts = p.split('.');
+          if (parts[0] === '_id' && compoundKeys.includes(parts[1])) {
+            const src = compoundKeySourceMap[parts[1]] || parts[1];
+            return `[${src}]`;
+          }
+          if (parts[0] === '_id') {
+            return `[_id]`;
+          }
+          return `JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID([${parts[0]}]), [${parts[0]}], '{}'), '$.${parts.slice(1).join('.')}'))`;
+        }
+        if (p === '_id' && compoundKeys.length > 0) {
+          return compoundKeys.map(k => `[${compoundKeySourceMap[k] || k}]`).join(', ');
+        }
+        const mappedCol = compoundKeySourceMap[p] || p;
+        return `[${mappedCol}]`;
+      };
+
       const idVal = stage.$group._id;
       if (idVal) {
         if (typeof idVal === 'string' && idVal.startsWith('$')) {
-          const colName = idVal.substring(1);
-          groupByCols.push(`[${colName}]`);
-          selectCols.push(`[${colName}] as [_id]`);
+          const expr = getFieldExpr(idVal);
+          groupByCols.push(expr);
+          selectCols.push(`${expr} as [_id]`);
+          if (idVal.includes('fuel_type_id')) {
+            selectCols.push(`${expr} as [fuel_type_id]`);
+          }
         } else if (typeof idVal === 'object') {
           const keys = Object.keys(idVal);
           for (const key of keys) {
             const val = idVal[key];
             if (typeof val === 'string' && val.startsWith('$')) {
-              groupByCols.push(`[${val.substring(1)}]`);
-              selectCols.push(`[${val.substring(1)}] as [__grp_${key}]`);
+              const rawSource = val.startsWith('$') ? val.substring(1) : val;
+              let sourceCol = rawSource;
+              if (sourceCol.startsWith('car_doc.')) sourceCol = sourceCol.substring(8);
+              if (sourceCol.startsWith('car.')) sourceCol = sourceCol.substring(4);
+              if (sourceCol.startsWith('_id.')) sourceCol = sourceCol.substring(4);
+              compoundKeySourceMap[key] = sourceCol;
+              const expr = getFieldExpr(val);
+              groupByCols.push(expr);
+              selectCols.push(`${expr} as [${key}]`);
               compoundKeys.push(key);
             }
           }
@@ -989,14 +1070,18 @@ function compileAggregation(tableName: string, pipeline: any[]): { sql: string; 
             if (optVal === 1) {
               selectCols.push(`COUNT(*) as [${key}]`);
             } else if (typeof optVal === 'string' && optVal.startsWith('$')) {
-              selectCols.push(`SUM([${optVal.substring(1)}]) as [${key}]`);
+              selectCols.push(`SUM(${getFieldExpr(optVal)}) as [${key}]`);
+            }
+          } else if (opt === '$addToSet') {
+            if (typeof optVal === 'string' && optVal.startsWith('$')) {
+              selectCols.push(`COUNT(DISTINCT ${getFieldExpr(optVal)}) as [${key}]`);
             }
           } else if (opt === '$avg' && typeof optVal === 'string' && optVal.startsWith('$')) {
-            selectCols.push(`AVG([${optVal.substring(1)}]) as [${key}]`);
+            selectCols.push(`AVG(${getFieldExpr(optVal)}) as [${key}]`);
           } else if (opt === '$min' && typeof optVal === 'string' && optVal.startsWith('$')) {
-            selectCols.push(`MIN([${optVal.substring(1)}]) as [${key}]`);
+            selectCols.push(`MIN(${getFieldExpr(optVal)}) as [${key}]`);
           } else if (opt === '$max' && typeof optVal === 'string' && optVal.startsWith('$')) {
-            selectCols.push(`MAX([${optVal.substring(1)}]) as [${key}]`);
+            selectCols.push(`MAX(${getFieldExpr(optVal)}) as [${key}]`);
           }
         }
       }
@@ -1014,7 +1099,17 @@ function compileAggregation(tableName: string, pipeline: any[]): { sql: string; 
       const sortParts: string[] = [];
       for (const [key, val] of Object.entries(stage.$sort)) {
         const dir = val === -1 ? 'DESC' : 'ASC';
-        sortParts.push(`[${key}] ${dir}`);
+        let sortExpr = `[${key}]`;
+        if (key === '_id') {
+          sortExpr = `[_id]`;
+        }
+        if (groupByCols.length > 0) {
+          const isSelected = selectCols.some(col => col.includes(`as [${key}]`) || col.includes(`[${key}]`) || col.endsWith(`as [${key}]`));
+          if (!isSelected) {
+            sortExpr = `MAX([${key}])`;
+          }
+        }
+        sortParts.push(`${sortExpr} ${dir}`);
       }
       if (sortParts.length > 0) {
         orderByClause = `ORDER BY ${sortParts.join(', ')}`;

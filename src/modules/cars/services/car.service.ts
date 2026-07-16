@@ -302,10 +302,10 @@ export class CarService {
     const paginationMeta = PaginationUtil.createPaginationMeta(page, validatedLimit, total);
 
     return { cars: enrichedCars, pagination: paginationMeta };
-  } catch (error) {
+  } catch (error: any) {
     logger.error('getAllCars failed', { error });
-    
-    throw new AppError('Failed to fetch cars', 500);
+    console.error('DEBUG getAllCars error:', error);
+    throw new AppError(error?.message || 'Failed to fetch cars', 500);
   }
 }
   static async getCarById(carId: string) {

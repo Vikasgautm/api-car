@@ -107,4 +107,11 @@ export interface IFAQ  {
 }
 
 import { BaseModel } from '../sql/common/BaseModel';
-export const FAQ = new BaseModel<IFAQ>('FAQs', 'faq_id');
+export const FAQ = new BaseModel<IFAQ>('FAQs', 'faq_id', [
+  'related_cars',
+  'related_brands',
+  'related_blogs',
+  'tags',
+  'target_page_types',
+  'related_entities',
+]);

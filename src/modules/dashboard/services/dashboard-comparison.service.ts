@@ -17,7 +17,7 @@ export class DashboardComparisonService {
 
     const [statusCountsRes, recentUpdatedRes, totalCarsRes, carsInComparisonsRes] = await Promise.all([
       pool.request().query('SELECT status, COUNT(*) as count FROM Comparisons WHERE is_deleted = 0 GROUP BY status'),
-      pool.request().input('sevenDaysAgo', mssql.DateTime, sevenDaysAgo).query('SELECT COUNT(*) as count FROM Comparisons WHERE is_deleted = 0 AND updated_at >= @sevenDaysAgo'),
+      pool.request().input('sevenDaysAgo', mssql.DateTime, sevenDaysAgo).query('SELECT COUNT(*) as count FROM Comparisons WHERE is_deleted = 0 AND updatedAt >= @sevenDaysAgo'),
       pool.request().query('SELECT COUNT(*) as count FROM Cars WHERE is_deleted = 0'),
       pool.request().query('SELECT DISTINCT car1_id FROM Comparisons WHERE is_deleted = 0'),
     ]);

@@ -12,8 +12,12 @@ const db_config_1 = require("../config/db.config");
 let rawPool = null;
 let mssqlPool = null;
 function translateQuery(query, paramsMap) {
-    // 1. Replace square brackets with backticks
-    let sql = query.replace(/\[([^\]]+)\]/g, '`$1`');
+    // 1. Replace square brackets with backticks for column/table identifiers (ignoring numeric JSON array indices like $[0])
+    let sql = query.replace(/(?<!\$)\[([a-zA-Z_0-9\.]+)\]/g, (match, p1) => {
+        if (/^\d+$/.test(p1))
+            return match;
+        return `\`${p1.replace(/\./g, '`.`')}\``;
+    });
     // 2. Replace GETDATE() with NOW()
     sql = sql.replace(/GETDATE\(\)/gi, 'NOW()');
     // 3. Replace ISNULL with COALESCE
@@ -29,6 +33,8 @@ function translateQuery(query, paramsMap) {
             sql += ` LIMIT ${limitVal}`;
         }
     }
+    // 5b. Replace MSSQL OFFSET x ROWS FETCH NEXT y ROWS ONLY with MySQL LIMIT y OFFSET x
+    sql = sql.replace(/OFFSET\s+([@a-zA-Z0-9_?]+|\d+)\s+ROWS\s+FETCH\s+NEXT\s+([@a-zA-Z0-9_?]+|\d+)\s+ROWS\s+ONLY/gi, 'LIMIT $2 OFFSET $1');
     // 6. Replace OUTPUT INSERTED.*
     sql = sql.replace(/OUTPUT\s+INSERTED\.\*/gi, '');
     // 7. Named parameter mappings: find all @paramName and replace with ?

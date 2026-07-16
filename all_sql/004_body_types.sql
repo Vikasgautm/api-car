@@ -9,8 +9,11 @@ CREATE TABLE IF NOT EXISTS `BodyTypes` (
         name VARCHAR(255) NOT NULL,
         slug VARCHAR(255) NOT NULL UNIQUE,
         description LONGTEXT NULL,
+        is_published TINYINT(1) DEFAULT 0,
+        published_at DATETIME NULL,
         is_deleted TINYINT(1) DEFAULT 0,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        KEY `IX_BodyTypes_IsDeleted` (`is_deleted`)
+        KEY `IX_BodyTypes_IsDeleted` (`is_deleted`),
+        KEY `IX_BodyTypes_IsPublished_IsDeleted` (`is_published`, `is_deleted`)
 );

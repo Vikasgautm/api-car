@@ -6,12 +6,12 @@ class DashboardFuelService {
     static async getSnapshot() {
         const pool = await (0, dbConnection_1.getPool)();
         const [fuelGroupsResult, fuelTypesResult] = await Promise.all([
-            pool.request().query('SELECT fuel_type_id, COUNT(*) as count FROM CarVariants WHERE is_deleted = 0 GROUP BY fuel_type_id'),
-            pool.request().query('SELECT fuel_type_id, name FROM FuelTypes WHERE is_deleted = 0'),
+            pool.request().query('SELECT fuel_type, COUNT(*) as count FROM CarVariants WHERE is_deleted = 0 GROUP BY fuel_type'),
+            pool.request().query('SELECT fuel_id, name FROM FuelTypes WHERE is_deleted = 0'),
         ]);
         const fuelMap = {};
         for (const ft of fuelTypesResult.recordset) {
-            fuelMap[ft.fuel_type_id] = (ft.name || '').toLowerCase();
+            fuelMap[ft.fuel_id] = (ft.name || '').toLowerCase();
         }
         const counts = {
             petrol: 0,
@@ -23,7 +23,7 @@ class DashboardFuelService {
         let strongestId = '';
         let strongestCount = 0;
         for (const g of fuelGroupsResult.recordset) {
-            const name = fuelMap[g.fuel_type_id] ?? '';
+            const name = fuelMap[g.fuel_type] ?? '';
             const count = g.count || 0;
             if (count > strongestCount) {
                 strongestCount = count;

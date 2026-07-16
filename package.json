@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node --max-old-space-size=512 dist/index.js",
     "dev": "nodemon src/index.ts",
+    "migrate:mongo": "node src/sql/scripts/migrate-mongo-to-mysql.js",
     "build": "tsc",
     "lint": "eslint src/",
     "format": "prettier --write 'src/**/*.{js,ts}'",
