@@ -197,7 +197,8 @@ export class CarController {
     return ResponseUtil.success(res, car, "Car retrieved successfully");
   });
 
-  static createCar = catchAsync(async (req: MulterRequest, res: Response) => {
+  static 
+  createCar = catchAsync(async (req: MulterRequest, res: Response) => {
     let thumbnailUrl = req.body.thumbnail_url;
     if (req.file) {
       // Handle both local storage (path) and Cloudinary (secure_url)

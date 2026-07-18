@@ -17,7 +17,10 @@
     "test": "vitest",
     "test:unit": "vitest tests/unit",
     "test:api": "vitest tests/api",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "cache:list": "ts-node src/scripts/cache-debug.ts",
+    "cache:clear": "ts-node src/scripts/cache-debug.ts --clear",
+    "cache:delete": "ts-node src/scripts/cache-debug.ts --delete"
   },
   "keywords": [],
   "author": "",

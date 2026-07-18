@@ -57,6 +57,7 @@ const error_middleware_1 = require("./middlewares/error.middleware");
 const routes_1 = __importDefault(require("./shared/routes"));
 const app_error_util_1 = require("./shared/utils/app-error.util");
 const sitemap_controller_1 = require("./modules/sitemap/controllers/sitemap.controller");
+const cache_util_1 = require("./utils/cache.util");
 // Swagger Documentation Setup
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
@@ -101,6 +102,33 @@ app.use('/api/v1/cars/public', rate_limit_middleware_1.publicCarsRateLimiter);
 app.use('/api/v1/content-health/admin', rate_limit_middleware_1.adminRateLimiter);
 app.use('/api/v1/chatbot', rate_limit_middleware_1.chatbotRateLimiter);
 app.get('/sitemap.xml', sitemap_controller_1.SitemapController.getXml);
+app.get('/debug/cache', (req, res) => {
+    const key = typeof req.query.key === 'string' ? req.query.key : undefined;
+    const pattern = typeof req.query.pattern === 'string' ? req.query.pattern : undefined;
+    if (key) {
+        cache_util_1.cache.delete(key);
+        return res.json({ deletedKey: key, size: cache_util_1.cache.size, entries: cache_util_1.cache.debugSnapshot() });
+    }
+    if (pattern) {
+        cache_util_1.cache.invalidatePattern(pattern);
+        return res.json({ deletedPattern: pattern, size: cache_util_1.cache.size, entries: cache_util_1.cache.debugSnapshot() });
+    }
+    res.json({ size: cache_util_1.cache.size, entries: cache_util_1.cache.debugSnapshot() });
+});
+app.delete('/debug/cache', (req, res) => {
+    const key = typeof req.query.key === 'string' ? req.query.key : undefined;
+    const pattern = typeof req.query.pattern === 'string' ? req.query.pattern : undefined;
+    if (key) {
+        cache_util_1.cache.delete(key);
+        return res.json({ deletedKey: key, size: cache_util_1.cache.size, entries: cache_util_1.cache.debugSnapshot() });
+    }
+    if (pattern) {
+        cache_util_1.cache.invalidatePattern(pattern);
+        return res.json({ deletedPattern: pattern, size: cache_util_1.cache.size, entries: cache_util_1.cache.debugSnapshot() });
+    }
+    cache_util_1.cache.clear();
+    res.json({ clearedAll: true, size: cache_util_1.cache.size, entries: cache_util_1.cache.debugSnapshot() });
+});
 app.use("/api/v1", routes_1.default);
 const swaggerOptions = {
     definition: {

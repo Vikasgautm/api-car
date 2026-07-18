@@ -80,6 +80,13 @@ export class FAQController {
   });
 
   static createFAQ = catchAsync(async (req: Request, res: Response) => {
+
+    const toBoolean = (value: any) => {
+      if (value === true || value === "true") return true;
+      if (value === false || value === "false") return false;
+      return undefined;
+    };
+
     const createDto: any = {
       question: req.body.question,
       answer: req.body.answer,
@@ -91,20 +98,20 @@ export class FAQController {
       related_cars: req.body.related_cars,
       related_brands: req.body.related_brands,
       related_blogs: req.body.related_blogs,
-      is_published: req.body.is_published,
-      is_featured: req.body.is_featured,
+      is_published: toBoolean(req.body.is_published),
+      is_featured: toBoolean(req.body.is_featured),
       faq_type: req.body.faq_type,
-      intent_type: req.body.intent_type,
+      // intent_type: req.body.intent_type,
       entity_type: req.body.entity_type,
       entity_id: req.body.entity_id,
       related_entities: req.body.related_entities,
       target_page_types: req.body.target_page_types,
       template_key: req.body.template_key,
-      is_dynamic: req.body.is_dynamic,
-      is_editorial: req.body.is_editorial,
+      is_dynamic: toBoolean(req.body.is_dynamic),
+      is_editorial: toBoolean(req.body.is_editorial),
       canonical_intent_key: req.body.canonical_intent_key,
-      indexable: req.body.indexable,
-      schema_enabled: req.body.schema_enabled,
+      indexable: toBoolean(req.body.indexable),
+      schema_enabled: toBoolean(req.body.schema_enabled),
       priority_score: req.body.priority_score,
       visibility_status: req.body.visibility_status,
       source_type: req.body.source_type,
@@ -138,7 +145,7 @@ export class FAQController {
           ? req.body.is_featured === 'true' || req.body.is_featured === true
           : undefined,
       faq_type: req.body.faq_type,
-      intent_type: req.body.intent_type,
+      // intent_type: req.body.intent_type,
       entity_type: req.body.entity_type,
       entity_id: req.body.entity_id,
       related_entities: req.body.related_entities,

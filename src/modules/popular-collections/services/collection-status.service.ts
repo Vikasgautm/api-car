@@ -57,7 +57,7 @@ export class CollectionStatusService {
       const avgConf =
         rankingData.length > 0
           ? rankingData.reduce((s: number, r: any) => s + (r.behavioral_confidence ?? 0), 0) /
-            rankingData.length
+          rankingData.length
           : 0;
 
       const confPct = Math.round(avgConf * 100);
@@ -97,10 +97,13 @@ export class CollectionStatusService {
         behavioral_confidence: confPct,
         recommendation,
         recommendation_detail: detail,
-        car_count: coll.manual_car_ids.length + coll.pinned_car_ids.length,
-        pinned_count: coll.pinned_car_ids.length,
-        manual_count: coll.manual_car_ids.length,
-        suppressed_count: coll.suppressed_car_ids.length,
+        // car_count: coll.manual_car_ids.length + coll.pinned_car_ids.length,
+        // pinned_count: coll.pinned_car_ids.length,
+        // manual_count: coll.manual_car_ids.length,
+        car_count: (coll.manual_car_ids?.length || 0) + (coll.pinned_car_ids?.length || 0),
+        pinned_count: coll.pinned_car_ids?.length || 0,
+        manual_count: coll.manual_car_ids?.length || 0,
+        suppressed_count: coll.suppressed_car_ids?.length || 0,
         last_rendered_at: coll.last_rendered_at,
         rising_cars: [...risingSet].slice(0, 5),
         is_behavioral_ready: isReady,
@@ -130,10 +133,12 @@ export class CollectionStatusService {
 
   static async getCollectionStatus(collection_id: string): Promise<CollectionStatusEntry | null> {
     const coll = await PopularCollection.findOne({ collection_id }).lean();
+    console.log("this  data print oi r not->", coll);
     if (!coll) return null;
-
     const status = await CollectionStatusService.getSystemStatus();
-    return status.collection_statuses.find((s) => s.collection_id === collection_id) ?? null;
+
+
+    return status.collection_statuses?.find((s) => s.collection_id === collection_id) ?? null;
   }
 
   private static async safeGetEngineStatus(): Promise<any> {

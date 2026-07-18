@@ -21,6 +21,7 @@ import { errorMiddleware } from "./middlewares/error.middleware";
 import routes from "./shared/routes";
 import { AppError } from "./shared/utils/app-error.util";
 import { SitemapController } from "./modules/sitemap/controllers/sitemap.controller";
+import { cache } from "./utils/cache.util";
 // Swagger Documentation Setup
 import swaggerUi from "swagger-ui-express";
 import swaggerJSDoc from "swagger-jsdoc";
@@ -75,8 +76,43 @@ app.use('/api/v1/cars/public', publicCarsRateLimiter);
 app.use('/api/v1/content-health/admin', adminRateLimiter);
 app.use('/api/v1/chatbot', chatbotRateLimiter);
 app.get('/sitemap.xml', SitemapController.getXml);
-app.use("/api/v1", routes);
 
+app.get('/debug/cache', (req, res) => {
+  const key = typeof req.query.key === 'string' ? req.query.key : undefined;
+  const pattern = typeof req.query.pattern === 'string' ? req.query.pattern : undefined;
+
+  if (key) {
+    cache.delete(key);
+    return res.json({ deletedKey: key, size: cache.size, entries: cache.debugSnapshot() });
+  }
+
+  if (pattern) {
+    cache.invalidatePattern(pattern);
+    return res.json({ deletedPattern: pattern, size: cache.size, entries: cache.debugSnapshot() });
+  }
+
+  res.json({ size: cache.size, entries: cache.debugSnapshot() });
+});
+
+app.delete('/debug/cache', (req, res) => {
+  const key = typeof req.query.key === 'string' ? req.query.key : undefined;
+  const pattern = typeof req.query.pattern === 'string' ? req.query.pattern : undefined;
+
+  if (key) {
+    cache.delete(key);
+    return res.json({ deletedKey: key, size: cache.size, entries: cache.debugSnapshot() });
+  }
+
+  if (pattern) {
+    cache.invalidatePattern(pattern);
+    return res.json({ deletedPattern: pattern, size: cache.size, entries: cache.debugSnapshot() });
+  }
+
+  cache.clear();
+  res.json({ clearedAll: true, size: cache.size, entries: cache.debugSnapshot() });
+});
+
+app.use("/api/v1", routes);
 
 const swaggerOptions = {
   definition: {

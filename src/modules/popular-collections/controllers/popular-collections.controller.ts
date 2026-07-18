@@ -125,6 +125,7 @@ export class PopularCollectionsController {
 
   static getCollectionStatus = catchAsync(async (req: Request, res: Response) => {
     const id = qs(req.params.id);
+
     const status = await CollectionStatusService.getCollectionStatus(id);
     if (!status) return ResponseUtil.error(res, 'Collection not found', 404);
     return ResponseUtil.success(res, status, 'Collection status');

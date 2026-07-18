@@ -14,7 +14,8 @@
     "resolveJsonModule": true,
     "sourceMap": false,
     "declaration": true,
-    "declarationMap": false
+    "declarationMap": false,
+    "types": ["node"]
   },
   "include": [
     "src/**/*"

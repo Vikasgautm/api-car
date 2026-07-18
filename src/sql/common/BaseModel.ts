@@ -84,7 +84,11 @@ export function compileFilter(
       colExpr = `JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID([${topField}]), [${topField}], '[]'), '${jsonPath}'))`;
     }
 
-    if (val && typeof val === 'object' && !(val instanceof Date) && !Array.isArray(val)) {
+    if (val instanceof RegExp) {
+      const pattern = val.source;
+      clauses.push(`${colExpr} REGEXP @${paramName}`);
+      params.push({ name: paramName, type: mssql.NVarChar(), value: pattern });
+    } else if (val && typeof val === 'object' && !(val instanceof Date) && !Array.isArray(val)) {
       const ops = Object.keys(val);
       for (const op of ops) {
         const opVal = (val as any)[op];
@@ -115,10 +119,9 @@ export function compileFilter(
             });
           }
         } else if (op === '$regex') {
-          clauses.push(`${colExpr} LIKE @${paramName}`);
-          let regexStr = typeof opVal === 'string' ? opVal : (opVal.source || '');
-          regexStr = regexStr.replace(/^\^/, '').replace(/\$$/, '');
-          params.push({ name: paramName, type: mssql.NVarChar(), value: `%${regexStr}%` });
+          let regexStr = typeof opVal === 'string' ? opVal : (opVal instanceof RegExp ? opVal.source : String(opVal || ''));
+          clauses.push(`${colExpr} REGEXP @${paramName}`);
+          params.push({ name: paramName, type: mssql.NVarChar(), value: regexStr });
         } else if (op === '$gt') {
           clauses.push(`${colExpr} > @${paramName}`);
           params.push({ name: paramName, type: getSqlType(opVal), value: prepareValue(opVal) });
@@ -991,8 +994,8 @@ function compileAggregation(tableName: string, pipeline: any[]): { sql: string; 
   let offsetValue: number | null = null;
   const compoundKeys: string[] = [];
   const compoundKeySourceMap: Record<string, string> = {};
-  
-  let paramIdx = 0;
+  let unwindJoinClause = '';
+  const unwindColsMap: Record<string, string> = {};
 
   for (const stage of pipeline) {
     if (stage.$match) {
@@ -1002,6 +1005,13 @@ function compileAggregation(tableName: string, pipeline: any[]): { sql: string; 
         for (const p of matchParams) {
           params.push(p);
         }
+      }
+    } else if (stage.$unwind) {
+      let uCol = typeof stage.$unwind === 'string' ? stage.$unwind : (stage.$unwind.path || '');
+      if (uCol.startsWith('$')) uCol = uCol.substring(1);
+      if (uCol) {
+        unwindJoinClause += ` CROSS JOIN JSON_TABLE(IF(JSON_VALID([${tableName}].[${uCol}]), [${tableName}].[${uCol}], '[]'), '$[*]' COLUMNS (val VARCHAR(255) PATH '$')) as [jt_${uCol}]`;
+        unwindColsMap[uCol] = `[jt_${uCol}].[val]`;
       }
     } else if (stage.$group) {
       if (groupByCols.length > 0) {
@@ -1014,6 +1024,9 @@ function compileAggregation(tableName: string, pipeline: any[]): { sql: string; 
         if (p.startsWith('car_doc.')) p = p.substring(8);
         if (p.startsWith('car.')) p = p.substring(4);
         if (p.startsWith('_id.')) p = p.substring(4);
+        if (unwindColsMap[p]) {
+          return unwindColsMap[p];
+        }
         if (p.includes('.')) {
           const parts = p.split('.');
           if (parts[0] === '_id' && compoundKeys.includes(parts[1])) {
@@ -1123,7 +1136,7 @@ function compileAggregation(tableName: string, pipeline: any[]): { sql: string; 
 
   let selectClause = selectCols.length > 0 ? selectCols.join(', ') : '*';
 
-  let sql = `SELECT ${selectClause} FROM [${tableName}]`;
+  let sql = `SELECT ${selectClause} FROM [${tableName}]${unwindJoinClause}`;
   if (whereClauses.length > 0) {
     sql += ` WHERE ${whereClauses.join(' AND ')}`;
   }

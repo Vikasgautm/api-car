@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ERROR_CODES, USER_MESSAGES } from "../../../constants/errorMessages";
 import { CarVariant, ICarVariant, SpecsNormalized } from "../../../models/car-variant.model";
 import { Car } from "../../../models/car.model";
+import { Brand } from "../../../models/brand.model";
 import { FuelType } from "../../../models/fuel-type.model";
 import { CarAggregationService } from "../../../shared/services/car-aggregation.service";
 import { MileageRecomputeService } from "../../../shared/services/mileage-recompute.service";
@@ -336,8 +337,49 @@ export class CarVariantService {
       }
 
       if (q) {
-        const searchFilter = FilterUtil.buildSearchFilter(['variant_name'], q);
-        Object.assign(filter, searchFilter);
+        const qStr = String(q).trim();
+        const escaped = FilterUtil.escapeRegExp(qStr);
+        const flexiblePattern = escaped.replace(/\s+/g, '[\\s-_]+');
+        const searchRegex = new RegExp(flexiblePattern, 'i');
+
+        const tokens = qStr.split(/\s+/).filter(t => t.length > 1).map(t => FilterUtil.escapeRegExp(t));
+        const tokenRegexes = tokens.map(t => new RegExp(t, 'i'));
+
+        const brandMatches = await Brand.find({
+          $or: [
+            { name: searchRegex },
+            { slug: searchRegex },
+            { alias: searchRegex },
+            ...(tokenRegexes.length > 0 ? [{ name: { $in: tokenRegexes } }, { alias: { $in: tokenRegexes } }] : [])
+          ],
+          is_deleted: false
+        }).select('brand_id').lean();
+        const brandIds = (brandMatches as any[]).map((b: any) => b.brand_id);
+
+        const carMatches = await Car.find({
+          $or: [
+            { name: searchRegex },
+            { slug: searchRegex },
+            { model_family: searchRegex },
+            ...(brandIds.length > 0 ? [{ brand_id: { $in: brandIds } }] : []),
+            ...(tokenRegexes.length > 0 ? [{ name: { $in: tokenRegexes } }, { model_family: { $in: tokenRegexes } }] : [])
+          ],
+          is_deleted: false
+        }).select('car_id').lean();
+        const carIds = (carMatches as any[]).map((c: any) => c.car_id);
+
+        const orClauses: Record<string, unknown>[] = [
+          { variant_name: searchRegex },
+          { slug: searchRegex },
+          { variant_id: searchRegex },
+          { trim_name: searchRegex },
+          { edition_name: searchRegex },
+        ];
+        if (carIds.length > 0) {
+          orClauses.push({ car_id: { $in: carIds } });
+        }
+
+        FilterUtil.mergeFilterWithOr(filter, { $or: orClauses });
       }
 
       const { skip, limit: validatedLimit } = PaginationUtil.getPaginationParams(page, limit, { maxLimit: 500 });
@@ -423,14 +465,45 @@ export class CarVariantService {
       conditions.push({ $or: [{ ex_showroom_price: pf }, { expected_price: pf }] });
     }
 
-    // Search: match variant name OR car name
+    // Search: match variant attributes, car attributes, or brand attributes
     if (q) {
-      const regex = new RegExp(String(q), 'i');
-      const matchingCars = await Car.find({ name: regex, is_deleted: { $ne: true } })
-        .select('car_id')
-        .lean();
-      const carIdsByName = matchingCars.map((c: any) => c.car_id);
-      const orTerms: any[] = [{ variant_name: regex }, { slug: regex }];
+      const qStr = String(q).trim();
+      const escaped = FilterUtil.escapeRegExp(qStr);
+      const flexiblePattern = escaped.replace(/\s+/g, '[\\s-_]+');
+      const searchRegex = new RegExp(flexiblePattern, 'i');
+
+      const tokens = qStr.split(/\s+/).filter(t => t.length > 1).map(t => FilterUtil.escapeRegExp(t));
+      const tokenRegexes = tokens.map(t => new RegExp(t, 'i'));
+
+      const brandMatches = await Brand.find({
+        $or: [
+          { name: searchRegex },
+          { slug: searchRegex },
+          { alias: searchRegex },
+          ...(tokenRegexes.length > 0 ? [{ name: { $in: tokenRegexes } }, { alias: { $in: tokenRegexes } }] : [])
+        ],
+        is_deleted: false
+      }).select('brand_id').lean();
+      const brandIds = (brandMatches as any[]).map((b: any) => b.brand_id);
+
+      const carMatches = await Car.find({
+        $or: [
+          { name: searchRegex },
+          { slug: searchRegex },
+          { model_family: searchRegex },
+          ...(brandIds.length > 0 ? [{ brand_id: { $in: brandIds } }] : []),
+          ...(tokenRegexes.length > 0 ? [{ name: { $in: tokenRegexes } }, { model_family: { $in: tokenRegexes } }] : [])
+        ],
+        is_deleted: { $ne: true }
+      }).select('car_id').lean();
+      const carIdsByName = (carMatches as any[]).map((c: any) => c.car_id);
+
+      const orTerms: any[] = [
+        { variant_name: searchRegex },
+        { slug: searchRegex },
+        { trim_name: searchRegex },
+        { edition_name: searchRegex }
+      ];
       if (carIdsByName.length > 0) orTerms.push({ car_id: { $in: carIdsByName } });
       conditions.push({ $or: orTerms });
     }
@@ -459,15 +532,38 @@ export class CarVariantService {
       }
     } else if (q) {
       hasRestriction = true;
-      // For text search without other variant filters, INNER JOIN so cars
-      // unrelated to the query don't pollute results.
+      const qStr = String(q).trim();
+      const escaped = FilterUtil.escapeRegExp(qStr);
+      const flexiblePattern = escaped.replace(/\s+/g, '[\\s-_]+');
+      const searchRegex = new RegExp(flexiblePattern, 'i');
+
+      const tokens = qStr.split(/\s+/).filter(t => t.length > 1).map(t => FilterUtil.escapeRegExp(t));
+      const tokenRegexes = tokens.map(t => new RegExp(t, 'i'));
+
       restrictToCarIds = await CarVariant.distinct('car_id', variantMatchFilter);
-      // Also surface cars whose own name matched, even with zero variants.
+
+      const brandMatches = await Brand.find({
+        $or: [
+          { name: searchRegex },
+          { slug: searchRegex },
+          { alias: searchRegex },
+          ...(tokenRegexes.length > 0 ? [{ name: { $in: tokenRegexes } }, { alias: { $in: tokenRegexes } }] : [])
+        ],
+        is_deleted: false
+      }).select('brand_id').lean();
+      const brandIds = (brandMatches as any[]).map((b: any) => b.brand_id);
+
       const carNameMatches = await Car.find({
-        name: new RegExp(String(q), 'i'),
+        $or: [
+          { name: searchRegex },
+          { slug: searchRegex },
+          { model_family: searchRegex },
+          ...(brandIds.length > 0 ? [{ brand_id: { $in: brandIds } }] : []),
+          ...(tokenRegexes.length > 0 ? [{ name: { $in: tokenRegexes } }, { model_family: { $in: tokenRegexes } }] : [])
+        ],
         is_deleted: { $ne: true },
       }).select('car_id').lean();
-      const nameMatchIds = (carNameMatches as any[]).map((c) => c.car_id);
+      const nameMatchIds = (carNameMatches as any[]).map((c: any) => c.car_id);
       restrictToCarIds = Array.from(new Set([...restrictToCarIds, ...nameMatchIds]));
       if (restrictToCarIds.length === 0) {
         return { groups: [], pagination: PaginationUtil.createPaginationMeta(page, limit, 0) };

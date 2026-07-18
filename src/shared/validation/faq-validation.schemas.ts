@@ -15,6 +15,29 @@ export const createFaqSchema = z.object({
   related_blogs: z.array(uuidSchema).optional(),
   is_published: z.boolean().optional(),
   is_featured: z.boolean().optional(),
+  faq_type: z.string().optional(),
+  // intent_type: z.string().optional(),
+  entity_type: z.string().optional(),
+  entity_id: uuidSchema.optional(),
+
+  related_entities: z.array(uuidSchema).optional(),
+  target_page_types: z.array(z.string()).optional(),
+
+  template_key: z.string().optional(),
+
+  is_dynamic: z.boolean().optional(),
+  is_editorial: z.boolean().optional(),
+  indexable: z.boolean().optional(),
+  schema_enabled: z.boolean().optional(),
+  needs_refresh: z.boolean().optional(),
+
+  canonical_intent_key: z.string().optional(),
+
+  priority_score: z.number().optional(),
+
+  visibility_status: z.string().optional(),
+  source_type: z.string().optional(),
+
 }).strict();
 
 export const updateFaqSchema = createFaqSchema.partial().strict();

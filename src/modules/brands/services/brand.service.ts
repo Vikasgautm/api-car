@@ -71,8 +71,8 @@ export class BrandService {
     }
 
     if (q) {
-      const searchFilter = FilterUtil.buildSearchFilter(['name', 'description', 'alias'], q);
-      Object.assign(filter, searchFilter);
+      const searchFilter = FilterUtil.buildSearchFilter(['name', 'alias', 'slug', 'brand_id', 'short_description'], q);
+      FilterUtil.mergeFilterWithOr(filter, searchFilter);
     }
 
     const { skip, limit: validatedLimit } = PaginationUtil.getPaginationParams(page, limit);

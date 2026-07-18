@@ -113,6 +113,11 @@ export class BlogController {
         // ignore parse errors
       }
     }
+    const toBoolean = (value: any) => {
+      if (value === true || value === "true") return true;
+      if (value === false || value === "false") return false;
+      return undefined;
+    };
 
     const createDto: any = {
       title: req.body.title,
@@ -126,17 +131,18 @@ export class BlogController {
       thumbnail_alt: req.body.thumbnail_alt,
       images,
       link: linkUrl,
-      is_published: req.body.is_published,
-      is_featured: req.body.is_featured,
+      is_published: toBoolean(req.body.is_published),
+      is_featured: toBoolean(req.body.is_featured),
+      noindex: toBoolean(req.body.noindex),
       meta_title: req.body.meta_title,
       meta_description: req.body.meta_description,
       meta_keywords: req.body.meta_keywords,
       og_image: req.body.og_image,
       canonical_url: req.body.canonical_url,
-      noindex: req.body.noindex,
+      // noindex: req.body.noindex,
     };
     console.log(createDto, "hello");
-    
+
     const validation = createBlogSchema.safeParse(createDto);
     if (!validation.success) {
       throw new AppError(
@@ -204,7 +210,7 @@ export class BlogController {
       noindex: req.body.noindex,
     };
     console.log(updateDto, "updatedto");
-    
+
     const validation = updateBlogSchema.safeParse(updateDto);
     if (!validation.success) {
       throw new AppError(validation.error.issues.map((e: any) => e.message).join(', '), 400);

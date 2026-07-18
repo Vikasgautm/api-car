@@ -33,6 +33,10 @@ export const createCarSchema = z.object({
   is_latest: booleanOrString.optional(),
   top_selling: booleanOrString.optional(),
   is_launched: booleanOrString.optional(),
+  expected_exshowroom_price: z.coerce.number().nonnegative().nullable().optional(),
+  expected_launch_date: z.coerce.date().nullable().optional(),
+  exshowroom_price: z.coerce.number().nonnegative().nullable().optional(),
+  launch_date: z.coerce.date().nullable().optional(),
   tag_ids: z.union([
     z.array(z.string()),
     z.string().transform((s) => s.split(',').map((v) => v.trim()).filter(Boolean)),

@@ -193,15 +193,31 @@ export class CarService {
       const andClauses: Record<string, unknown>[] = [];
 
       if (stripped) {
-        const searchRegex = new RegExp(stripped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-        // Resolve brand IDs whose name matches the search term (e.g. "Honda")
-        const brandMatches = await Brand.find({ name: searchRegex, is_deleted: false })
+        const escaped = FilterUtil.escapeRegExp(stripped);
+        const flexiblePattern = escaped.replace(/\s+/g, '[\\s-_]+');
+        const searchRegex = new RegExp(flexiblePattern, 'i');
+
+        const tokens = stripped.split(/\s+/).filter(t => t.length > 1).map(t => FilterUtil.escapeRegExp(t));
+        const tokenRegexes = tokens.map(t => new RegExp(t, 'i'));
+
+        // Resolve brand IDs whose name, slug, or alias matches search term or tokens
+        const brandMatches = await Brand.find({
+          $or: [
+            { name: searchRegex },
+            { slug: searchRegex },
+            { alias: searchRegex },
+            ...(tokenRegexes.length > 0 ? [{ name: { $in: tokenRegexes } }, { alias: { $in: tokenRegexes } }] : [])
+          ],
+          is_deleted: false
+        })
           .select('brand_id')
           .lean();
         const matchedBrandIds = (brandMatches as any[]).map((b: any) => b.brand_id);
 
         const orClauses: Record<string, unknown>[] = [
           { name: searchRegex },
+          { slug: searchRegex },
+          { car_id: searchRegex },
           { short_description: searchRegex },
           { description: searchRegex },
           { body_type_name: searchRegex },
@@ -229,9 +245,9 @@ export class CarService {
       }
 
       if (andClauses.length === 1) {
-        Object.assign(filter, andClauses[0]);
+        FilterUtil.mergeFilterWithOr(filter, andClauses[0]);
       } else if (andClauses.length > 1) {
-        filter.$and = andClauses;
+        filter.$and = filter.$and ? [...(filter.$and as any[]), ...andClauses] : andClauses;
       }
     }
 

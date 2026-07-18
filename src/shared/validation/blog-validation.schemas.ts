@@ -19,6 +19,7 @@ export const createBlogSchema = z.object({
   link: z.string().url().optional().or(z.literal('')),
   is_published: z.boolean().optional(),
   is_featured: z.boolean().optional(),
+  noindex: z.boolean().optional(),
 }).extend(metaFieldsSchema.shape).strict();
 
 export const updateBlogSchema = createBlogSchema.partial().strict();
@@ -33,4 +34,5 @@ export const blogFilterSchema = z.object({
   tags: z.string().optional(),
   is_published: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(),
   is_featured: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(),
+  noindex: z.boolean().optional(),
 }).strict();

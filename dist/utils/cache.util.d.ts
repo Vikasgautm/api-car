@@ -11,6 +11,11 @@ declare class InProcessCache {
     delete(key: string): void;
     clear(): void;
     invalidatePattern(pattern: string): void;
+    debugSnapshot(): Array<{
+        key: string;
+        expiresAt: number;
+        remainingMs: number;
+    }>;
     private cleanup;
     get size(): number;
 }

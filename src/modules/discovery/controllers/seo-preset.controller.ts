@@ -35,7 +35,8 @@ export class SeoPresetController {
 
   static create = catchAsync(async (req: Request, res: Response) => {
     const dto: CreateSeoPresetDto = {
-      slug: req.body.slug,
+      // slug: req.body.slug,
+      slug: req.body.slug?.trim().toLowerCase(),
       title: req.body.title,
       h1: req.body.h1,
       meta_description: req.body.meta_description,
@@ -45,8 +46,16 @@ export class SeoPresetController {
       is_published: req.body.is_published,
       sort_order: req.body.sort_order,
     };
+    console.log("seo presetes data are hte here->", dto);
     const validation = CreateSeoPresetDto.validate(dto);
-    if (!validation.success) throw new AppError(validation.error.errors.map((e: any) => e.message).join(', '), 400);
+    console.log("test data pased or not chekoing g g ", validation);
+    console.log(JSON.stringify(validation, null, 2));
+    if (!validation.success) {
+      console.log(validation.error.errors);
+      throw new AppError(validation.error.errors.map((e: any) => e.message).join(', '), 400);
+
+    }
+
 
     const created = await SeoPresetService.create(dto);
     return ResponseUtil.created(res, created, 'SEO preset created');

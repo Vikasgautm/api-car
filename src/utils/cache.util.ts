@@ -54,6 +54,15 @@ class InProcessCache {
     }
   }
 
+  debugSnapshot(): Array<{ key: string; expiresAt: number; remainingMs: number }> {
+    const now = Date.now();
+    return Array.from(this.cache.entries()).map(([key, entry]) => ({
+      key,
+      expiresAt: entry.expiresAt,
+      remainingMs: Math.max(0, entry.expiresAt - now),
+    }));
+  }
+
   private cleanup(): void {
     const now = Date.now();
     for (const [key, entry] of this.cache.entries()) {

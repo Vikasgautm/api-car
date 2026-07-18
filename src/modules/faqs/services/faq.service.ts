@@ -91,16 +91,16 @@ export class FAQService {
     const finalFilter: Record<string, unknown> =
       q && typeof q === 'string' && q.trim()
         ? {
-            $and: [
-              filter,
-              {
-                $or: [
-                  { question: { $regex: q.trim(), $options: 'i' } },
-                  { answer: { $regex: q.trim(), $options: 'i' } },
-                ],
-              },
-            ],
-          }
+          $and: [
+            filter,
+            {
+              $or: [
+                { question: { $regex: q.trim(), $options: 'i' } },
+                { answer: { $regex: q.trim(), $options: 'i' } },
+              ],
+            },
+          ],
+        }
         : filter;
 
     const faqs = await FAQ.find(finalFilter).sort(sortFilter).skip(skip).limit(validatedLimit);
@@ -207,16 +207,16 @@ export class FAQService {
 
       // Intelligence fields
       faq_type: faqData.faq_type ?? 'editorial',
-      intent_type: faqData.intent_type,
+      // intent_type: faqData.intent_type,
       entity_type: faqData.entity_type,
       entity_id: faqData.entity_id,
       related_entities: faqData.related_entities ?? [],
       target_page_types: faqData.target_page_types ?? [],
-      template_key: faqData.template_key,
+      // template_key: faqData.template_key,
       is_dynamic: faqData.is_dynamic ?? false,
       is_editorial: faqData.is_editorial ?? true,
       source_type: faqData.source_type ?? 'manual',
-      canonical_intent_key: faqData.canonical_intent_key,
+      // canonical_intent_key: faqData.canonical_intent_key,
       normalized_question: normalizedQuestion,
       indexable: faqData.indexable ?? true,
       schema_enabled: faqData.schema_enabled ?? true,
@@ -265,7 +265,7 @@ export class FAQService {
     if (faqData.template_key !== undefined) updateData.template_key = faqData.template_key;
     if (faqData.is_dynamic !== undefined) updateData.is_dynamic = faqData.is_dynamic;
     if (faqData.is_editorial !== undefined) updateData.is_editorial = faqData.is_editorial;
-    if (faqData.canonical_intent_key !== undefined) updateData.canonical_intent_key = faqData.canonical_intent_key;
+    // if (faqData.canonical_intent_key !== undefined) updateData.canonical_intent_key = faqData.canonical_intent_key;
     if (faqData.indexable !== undefined) updateData.indexable = faqData.indexable;
     if (faqData.schema_enabled !== undefined) updateData.schema_enabled = faqData.schema_enabled;
     if (faqData.priority_score !== undefined) updateData.priority_score = faqData.priority_score;
