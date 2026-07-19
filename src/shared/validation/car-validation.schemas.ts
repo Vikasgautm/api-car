@@ -1,11 +1,8 @@
 import { z } from 'zod';
-import { metaFieldsSchema, publishStatusSchema, transmissionTypeSchema, uuidSchema } from './common-validation.schemas';
+import { booleanStringSchema, metaFieldsSchema, publishStatusSchema, transmissionTypeSchema, uuidSchema } from './common-validation.schemas';
 
-// Helper for boolean fields that may come as strings from FormData
-const booleanOrString = z.union([
-  z.boolean(),
-  z.enum(['true', 'false']).transform((v) => v === 'true'),
-]);
+// Helper for boolean fields that may come as strings or numbers (1/0)
+const booleanOrString = booleanStringSchema;
 
 // Car DTO schemas
 export const createCarSchema = z.object({
@@ -72,7 +69,7 @@ export const createVariantSchema = z.object({
   ex_showroom_price: z.number().nonnegative().optional(),
   expected_price: z.number().nonnegative().optional(),
   expected_launch_date: z.coerce.date().optional(),
-  is_published: z.boolean().optional(),
+  is_published: booleanStringSchema.optional(),
 }).strict();
 
 export const updateVariantSchema = createVariantSchema.partial().strict();
@@ -86,9 +83,9 @@ export const carFilterSchema = z.object({
   brand_id: uuidSchema.optional(),
   body_type_id: uuidSchema.optional(),
   status: publishStatusSchema.optional(),
-  is_electric: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(),
-  is_published: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(),
-  is_featured: z.union([z.boolean(), z.enum(['true', 'false'])]).optional(),
+  is_electric: booleanStringSchema.optional(),
+  is_published: booleanStringSchema.optional(),
+  is_featured: booleanStringSchema.optional(),
   min_price: z.number().nonnegative().optional(),
   max_price: z.number().nonnegative().optional(),
   tag_ids: z.union([

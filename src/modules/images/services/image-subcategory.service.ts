@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { ImageCategory } from "../../../models/image-category.model";
 import { IImageSubCategory, ImageSubCategory } from "../../../models/image-subcategory.model";
 import { AppError } from "../../../shared/utils/app-error.util";
@@ -40,7 +41,7 @@ export class ImageSubCategoryService {
 
     const subcategories = await ImageSubCategory.find(filter)
       .populate('category_id', 'name slug')
-      .select('category_id name slug description is_active display_order')
+      .select('id subcategory_id category_id name slug description is_active display_order')
       .sort(sortFilter)
       .skip(skip)
       .limit(validatedLimit)
@@ -76,6 +77,7 @@ export class ImageSubCategoryService {
     subcategoryData.slug = finalSlug;
 
     const subcategory: Partial<IImageSubCategory> = {
+      subcategory_id: subcategoryData.subcategory_id || uuidv4(),
       category_id: subcategoryData.category_id,
       name: subcategoryData.name,
       slug: subcategoryData.slug,

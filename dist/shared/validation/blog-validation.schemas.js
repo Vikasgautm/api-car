@@ -21,6 +21,7 @@ exports.createBlogSchema = zod_1.z.object({
     link: zod_1.z.string().url().optional().or(zod_1.z.literal('')),
     is_published: zod_1.z.boolean().optional(),
     is_featured: zod_1.z.boolean().optional(),
+    noindex: zod_1.z.boolean().optional(),
 }).extend(common_validation_schemas_1.metaFieldsSchema.shape).strict();
 exports.updateBlogSchema = exports.createBlogSchema.partial().strict();
 exports.blogFilterSchema = zod_1.z.object({
@@ -33,4 +34,5 @@ exports.blogFilterSchema = zod_1.z.object({
     tags: zod_1.z.string().optional(),
     is_published: zod_1.z.union([zod_1.z.boolean(), zod_1.z.enum(['true', 'false'])]).optional(),
     is_featured: zod_1.z.union([zod_1.z.boolean(), zod_1.z.enum(['true', 'false'])]).optional(),
+    noindex: zod_1.z.boolean().optional(),
 }).strict();

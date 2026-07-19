@@ -1,6 +1,7 @@
 export declare const config: {
     port: string | number;
     mongodb_uri: string;
+    mongodb_db_name: string;
     jwt_secret: string;
     jwt_refresh_secret: string;
     jwt_expires_in: string;

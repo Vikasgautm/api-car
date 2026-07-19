@@ -13,6 +13,7 @@ export const urlSchema = z.string().url('Invalid URL format');
 
 export const booleanStringSchema = z.union([
   z.boolean(),
+  z.number().transform((val) => val === 1),
   z.enum(['true', 'false', '1', '0']).transform((val) => val === 'true' || val === '1'),
 ]);
 
@@ -65,9 +66,9 @@ export const commonFieldsSchema = z.object({
   is_featured: z.boolean().optional(),
 });
 
-// ID params schema
+// ID params schema (supports UUID, ObjectId, or string IDs)
 export const idParamSchema = z.object({
-  id: objectIdSchema,
+  id: z.union([uuidSchema, objectIdSchema, z.string().min(1)]),
 });
 
 // Slug param schema

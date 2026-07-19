@@ -3,11 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.carFilterSchema = exports.updateVariantSchema = exports.createVariantSchema = exports.updateCarSchema = exports.createCarSchema = void 0;
 const zod_1 = require("zod");
 const common_validation_schemas_1 = require("./common-validation.schemas");
-// Helper for boolean fields that may come as strings from FormData
-const booleanOrString = zod_1.z.union([
-    zod_1.z.boolean(),
-    zod_1.z.enum(['true', 'false']).transform((v) => v === 'true'),
-]);
+// Helper for boolean fields that may come as strings or numbers (1/0)
+const booleanOrString = common_validation_schemas_1.booleanStringSchema;
 // Car DTO schemas
 exports.createCarSchema = zod_1.z.object({
     name: zod_1.z.string().min(2, 'Name must be at least 2 characters'),
@@ -34,6 +31,10 @@ exports.createCarSchema = zod_1.z.object({
     is_latest: booleanOrString.optional(),
     top_selling: booleanOrString.optional(),
     is_launched: booleanOrString.optional(),
+    expected_exshowroom_price: zod_1.z.coerce.number().nonnegative().nullable().optional(),
+    expected_launch_date: zod_1.z.coerce.date().nullable().optional(),
+    exshowroom_price: zod_1.z.coerce.number().nonnegative().nullable().optional(),
+    launch_date: zod_1.z.coerce.date().nullable().optional(),
     tag_ids: zod_1.z.union([
         zod_1.z.array(zod_1.z.string()),
         zod_1.z.string().transform((s) => s.split(',').map((v) => v.trim()).filter(Boolean)),
@@ -67,7 +68,7 @@ exports.createVariantSchema = zod_1.z.object({
     ex_showroom_price: zod_1.z.number().nonnegative().optional(),
     expected_price: zod_1.z.number().nonnegative().optional(),
     expected_launch_date: zod_1.z.coerce.date().optional(),
-    is_published: zod_1.z.boolean().optional(),
+    is_published: common_validation_schemas_1.booleanStringSchema.optional(),
 }).strict();
 exports.updateVariantSchema = exports.createVariantSchema.partial().strict();
 exports.carFilterSchema = zod_1.z.object({
@@ -79,9 +80,9 @@ exports.carFilterSchema = zod_1.z.object({
     brand_id: common_validation_schemas_1.uuidSchema.optional(),
     body_type_id: common_validation_schemas_1.uuidSchema.optional(),
     status: common_validation_schemas_1.publishStatusSchema.optional(),
-    is_electric: zod_1.z.union([zod_1.z.boolean(), zod_1.z.enum(['true', 'false'])]).optional(),
-    is_published: zod_1.z.union([zod_1.z.boolean(), zod_1.z.enum(['true', 'false'])]).optional(),
-    is_featured: zod_1.z.union([zod_1.z.boolean(), zod_1.z.enum(['true', 'false'])]).optional(),
+    is_electric: common_validation_schemas_1.booleanStringSchema.optional(),
+    is_published: common_validation_schemas_1.booleanStringSchema.optional(),
+    is_featured: common_validation_schemas_1.booleanStringSchema.optional(),
     min_price: zod_1.z.number().nonnegative().optional(),
     max_price: zod_1.z.number().nonnegative().optional(),
     tag_ids: zod_1.z.union([

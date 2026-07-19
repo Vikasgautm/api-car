@@ -2,6 +2,7 @@
  * Named SEO landing page derived from a fixed set of discovery filters.
  * `query_params` matches `DiscoveryFilters` (csv strings on plural keys).
  */
+import { BaseModel } from '../sql/common/BaseModel';
 export interface ISeoPreset {
     preset_id: string;
     slug: string;
@@ -15,5 +16,4 @@ export interface ISeoPreset {
     is_deleted: boolean;
     sort_order: number;
 }
-import { BaseModel } from '../sql/common/BaseModel';
 export declare const SeoPreset: BaseModel<ISeoPreset>;

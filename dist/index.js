@@ -59,9 +59,9 @@ const startServer = async () => {
     }
     try {
         // MongoDB Connection
-        await mongoose_1.default.connect(config_1.config.mongodb_uri);
-        logger_1.logger.info("Successfully connected to MongoDB", { mongodb_uri: config_1.config.mongodb_uri });
-        console.log("MongoDB URI:", config_1.config.mongodb_uri);
+        await mongoose_1.default.connect(config_1.config.mongodb_uri, { dbName: config_1.config.mongodb_db_name });
+        logger_1.logger.info("Successfully connected to MongoDB", { mongodb_uri: config_1.config.mongodb_uri, dbName: config_1.config.mongodb_db_name });
+        console.log("MongoDB URI:", config_1.config.mongodb_uri, "Database:", config_1.config.mongodb_db_name);
         // Redis Connection
         const { redis } = await Promise.resolve().then(() => __importStar(require("./shared/utils/redis")));
         await redis.connect();

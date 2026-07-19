@@ -10,6 +10,7 @@ exports.emailSchema = zod_1.z.string().email('Invalid email format');
 exports.urlSchema = zod_1.z.string().url('Invalid URL format');
 exports.booleanStringSchema = zod_1.z.union([
     zod_1.z.boolean(),
+    zod_1.z.number().transform((val) => val === 1),
     zod_1.z.enum(['true', 'false', '1', '0']).transform((val) => val === 'true' || val === '1'),
 ]);
 exports.paginationSchema = zod_1.z.object({
@@ -54,9 +55,9 @@ exports.commonFieldsSchema = zod_1.z.object({
     is_published: zod_1.z.boolean().optional(),
     is_featured: zod_1.z.boolean().optional(),
 });
-// ID params schema
+// ID params schema (supports UUID, ObjectId, or string IDs)
 exports.idParamSchema = zod_1.z.object({
-    id: exports.objectIdSchema,
+    id: zod_1.z.union([exports.uuidSchema, exports.objectIdSchema, zod_1.z.string().min(1)]),
 });
 // Slug param schema
 exports.slugParamSchema = zod_1.z.object({

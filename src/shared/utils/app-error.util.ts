@@ -93,9 +93,9 @@ export class AppError extends Error {
     this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
     this.isOperational = true;
 
-    this.code = options.code || ErrorCode.INTERNAL_ERROR;
+    this.code = options.code || (statusCode === 400 ? ErrorCode.VALIDATION_ERROR : ErrorCode.INTERNAL_ERROR);
     this.errorCode = options.errorCode || this.code;
-    this.userMessage = options.userMessage || AppError.getDefaultUserMessage(statusCode);
+    this.userMessage = options.userMessage || (statusCode === 400 ? message : AppError.getDefaultUserMessage(statusCode));
     this.details = options.details;
     this.errors = options.errors;
 
@@ -195,12 +195,12 @@ export class AppError extends Error {
   static validation(
     message: string = 'Validation failed',
     errors?: any[],
-    userMessage: string = 'Some fields are invalid. Please correct them and try again.'
+    userMessage?: string
   ): AppError {
     return new AppError(message, 400, {
       code: ErrorCode.VALIDATION_ERROR,
       errorCode: ErrorCode.VALIDATION_ERROR,
-      userMessage,
+      userMessage: userMessage || message,
       errors,
     });
   }

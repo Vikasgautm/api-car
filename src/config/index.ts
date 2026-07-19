@@ -5,6 +5,7 @@ dotenv.config();
 export const config = {
   port: process.env.PORT || 4500,
   mongodb_uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/car-salahakar',
+  mongodb_db_name: process.env.MONGODB_DB_NAME || 'car-salahakar-2',
   jwt_secret: process.env.JWT_SECRET || 'your-secret-key',
   jwt_refresh_secret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
   jwt_expires_in: process.env.JWT_EXPIRES_IN || '24h', // 24 hours for admin sessions

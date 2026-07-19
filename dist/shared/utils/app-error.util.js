@@ -52,9 +52,9 @@ class AppError extends Error {
         this.statusCode = statusCode;
         this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
         this.isOperational = true;
-        this.code = options.code || ErrorCode.INTERNAL_ERROR;
+        this.code = options.code || (statusCode === 400 ? ErrorCode.VALIDATION_ERROR : ErrorCode.INTERNAL_ERROR);
         this.errorCode = options.errorCode || this.code;
-        this.userMessage = options.userMessage || AppError.getDefaultUserMessage(statusCode);
+        this.userMessage = options.userMessage || (statusCode === 400 ? message : AppError.getDefaultUserMessage(statusCode));
         this.details = options.details;
         this.errors = options.errors;
         Error.captureStackTrace(this, this.constructor);
@@ -130,11 +130,11 @@ class AppError extends Error {
             errors,
         });
     }
-    static validation(message = 'Validation failed', errors, userMessage = 'Some fields are invalid. Please correct them and try again.') {
+    static validation(message = 'Validation failed', errors, userMessage) {
         return new AppError(message, 400, {
             code: ErrorCode.VALIDATION_ERROR,
             errorCode: ErrorCode.VALIDATION_ERROR,
-            userMessage,
+            userMessage: userMessage || message,
             errors,
         });
     }

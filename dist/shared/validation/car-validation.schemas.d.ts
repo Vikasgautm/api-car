@@ -21,55 +21,81 @@ export declare const createCarSchema: z.ZodObject<{
         discontinued: "discontinued";
         disabled: "disabled";
     }>>>;
-    is_electric: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    is_electric: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
-    is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
+    is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
-    is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
+    is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
-    is_upcoming: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
+    is_upcoming: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
-    is_popular: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
+    is_popular: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
-    is_recommended: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
+    is_recommended: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
-    is_latest: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
+    is_latest: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
-    top_selling: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
+    top_selling: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
-    is_launched: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
+    is_launched: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
+    expected_exshowroom_price: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+    expected_launch_date: z.ZodOptional<z.ZodNullable<z.ZodCoercedDate<unknown>>>;
+    exshowroom_price: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
+    launch_date: z.ZodOptional<z.ZodNullable<z.ZodCoercedDate<unknown>>>;
     tag_ids: z.ZodOptional<z.ZodUnion<readonly [z.ZodArray<z.ZodString>, z.ZodPipe<z.ZodString, z.ZodTransform<string[], string>>]>>;
     model_family: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     generation_start_year: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
     generation_end_year: z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>;
     generation_label: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    is_current: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    is_current: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
-    is_facelift: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
+    is_facelift: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>;
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
     predecessor_car_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     successor_car_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     editor_user_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -104,55 +130,81 @@ export declare const updateCarSchema: z.ZodObject<{
         discontinued: "discontinued";
         disabled: "disabled";
     }>>>>;
-    is_electric: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    is_electric: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
-    is_published: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>>;
+    is_published: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
-    is_featured: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>>;
+    is_featured: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
-    is_upcoming: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>>;
+    is_upcoming: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
-    is_popular: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>>;
+    is_popular: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
-    is_recommended: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>>;
+    is_recommended: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
-    is_latest: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>>;
+    is_latest: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
-    top_selling: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>>;
+    top_selling: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
-    is_launched: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>>;
+    is_launched: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>>;
+    expected_exshowroom_price: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>>;
+    expected_launch_date: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodCoercedDate<unknown>>>>;
+    exshowroom_price: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>>;
+    launch_date: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodCoercedDate<unknown>>>>;
     tag_ids: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodArray<z.ZodString>, z.ZodPipe<z.ZodString, z.ZodTransform<string[], string>>]>>>;
     model_family: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     generation_start_year: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>>;
     generation_end_year: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodCoercedNumber<unknown>>>>;
     generation_label: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
-    is_current: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    is_current: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
-    is_facelift: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>>;
+    is_facelift: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>, z.ZodTransform<boolean, "true" | "false">>]>>>;
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>>;
     predecessor_car_id: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     successor_car_id: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
     editor_user_id: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
@@ -188,7 +240,12 @@ export declare const createVariantSchema: z.ZodObject<{
     ex_showroom_price: z.ZodOptional<z.ZodNumber>;
     expected_price: z.ZodOptional<z.ZodNumber>;
     expected_launch_date: z.ZodOptional<z.ZodCoercedDate<unknown>>;
-    is_published: z.ZodOptional<z.ZodBoolean>;
+    is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        0: "0";
+        1: "1";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
 }, z.core.$strict>;
 export declare const updateVariantSchema: z.ZodObject<{
     car_id: z.ZodOptional<z.ZodString>;
@@ -213,7 +270,12 @@ export declare const updateVariantSchema: z.ZodObject<{
     ex_showroom_price: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
     expected_price: z.ZodOptional<z.ZodOptional<z.ZodNumber>>;
     expected_launch_date: z.ZodOptional<z.ZodOptional<z.ZodCoercedDate<unknown>>>;
-    is_published: z.ZodOptional<z.ZodOptional<z.ZodBoolean>>;
+    is_published: z.ZodOptional<z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
+        true: "true";
+        0: "0";
+        1: "1";
+        false: "false";
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>>;
 }, z.core.$strict>;
 export declare const carFilterSchema: z.ZodObject<{
     page: z.ZodOptional<z.ZodDefault<z.ZodCoercedNumber<unknown>>>;
@@ -233,18 +295,24 @@ export declare const carFilterSchema: z.ZodObject<{
         discontinued: "discontinued";
         disabled: "disabled";
     }>>>;
-    is_electric: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
+    is_electric: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>]>>;
-    is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
+    is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>]>>;
-    is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodEnum<{
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
+    is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
+        0: "0";
+        1: "1";
         false: "false";
-    }>]>>;
+    }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
     min_price: z.ZodOptional<z.ZodNumber>;
     max_price: z.ZodOptional<z.ZodNumber>;
     tag_ids: z.ZodOptional<z.ZodUnion<readonly [z.ZodArray<z.ZodString>, z.ZodString]>>;

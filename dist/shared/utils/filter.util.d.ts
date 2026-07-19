@@ -1,5 +1,7 @@
 export declare class FilterUtil {
+    static escapeRegExp(str: string): string;
     static buildSearchFilter(fields: string[], searchTerm: string): Record<string, unknown>;
+    static mergeFilterWithOr(filter: Record<string, any>, searchFilter: Record<string, any>): Record<string, any>;
     static buildSortFilter(sortBy: string, sortOrder?: 'asc' | 'desc'): Record<string, 1 | -1>;
     static buildDateRangeFilter(field: string, startDate?: Date, endDate?: Date): Record<string, unknown>;
     static buildArrayFilter<T>(field: string, values: T[]): Record<string, unknown>;

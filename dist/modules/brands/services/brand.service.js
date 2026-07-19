@@ -51,8 +51,8 @@ class BrandService {
             filter['aggregates_cache.total_variants'] = { $gt: 20 };
         }
         if (q) {
-            const searchFilter = filter_util_1.FilterUtil.buildSearchFilter(['name', 'description', 'alias'], q);
-            Object.assign(filter, searchFilter);
+            const searchFilter = filter_util_1.FilterUtil.buildSearchFilter(['name', 'alias', 'slug', 'brand_id', 'short_description'], q);
+            filter_util_1.FilterUtil.mergeFilterWithOr(filter, searchFilter);
         }
         const { skip, limit: validatedLimit } = pagination_util_1.PaginationUtil.getPaginationParams(page, limit);
         const sortFilter = filter_util_1.FilterUtil.buildSortFilter(sortBy, sortOrder);

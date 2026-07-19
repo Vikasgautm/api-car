@@ -199,14 +199,28 @@ class CarService {
                 const stripped = yearMatch ? String(q).replace(yearMatch[0], '').trim() : String(q).trim();
                 const andClauses = [];
                 if (stripped) {
-                    const searchRegex = new RegExp(stripped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-                    // Resolve brand IDs whose name matches the search term (e.g. "Honda")
-                    const brandMatches = await brand_model_1.Brand.find({ name: searchRegex, is_deleted: false })
+                    const escaped = filter_util_1.FilterUtil.escapeRegExp(stripped);
+                    const flexiblePattern = escaped.replace(/\s+/g, '[\\s-_]+');
+                    const searchRegex = new RegExp(flexiblePattern, 'i');
+                    const tokens = stripped.split(/\s+/).filter(t => t.length > 1).map(t => filter_util_1.FilterUtil.escapeRegExp(t));
+                    const tokenRegexes = tokens.map(t => new RegExp(t, 'i'));
+                    // Resolve brand IDs whose name, slug, or alias matches search term or tokens
+                    const brandMatches = await brand_model_1.Brand.find({
+                        $or: [
+                            { name: searchRegex },
+                            { slug: searchRegex },
+                            { alias: searchRegex },
+                            ...(tokenRegexes.length > 0 ? [{ name: { $in: tokenRegexes } }, { alias: { $in: tokenRegexes } }] : [])
+                        ],
+                        is_deleted: false
+                    })
                         .select('brand_id')
                         .lean();
                     const matchedBrandIds = brandMatches.map((b) => b.brand_id);
                     const orClauses = [
                         { name: searchRegex },
+                        { slug: searchRegex },
+                        { car_id: searchRegex },
                         { short_description: searchRegex },
                         { description: searchRegex },
                         { body_type_name: searchRegex },
@@ -232,10 +246,10 @@ class CarService {
                     });
                 }
                 if (andClauses.length === 1) {
-                    Object.assign(filter, andClauses[0]);
+                    filter_util_1.FilterUtil.mergeFilterWithOr(filter, andClauses[0]);
                 }
                 else if (andClauses.length > 1) {
-                    filter.$and = andClauses;
+                    filter.$and = filter.$and ? [...filter.$and, ...andClauses] : andClauses;
                 }
             }
             const priceFilter = {};

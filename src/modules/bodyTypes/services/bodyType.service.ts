@@ -112,35 +112,39 @@ export class BodyTypeService {
 
     bodyTypeIds = bodyTypesRaw.map((bt: any) => bt.body_type_id);
 
-    // Fetch car counts and variant counts in batch
-    const [carCountsRaw, variantCountsRaw, seoCountsRaw] = await Promise.all([
-      Car.aggregate([
-        { $match: { body_type_id: { $in: bodyTypeIds }, is_deleted: false } },
-        { $group: { _id: '$body_type_id', count: { $sum: 1 } } },
-      ]),
-      Car.aggregate([
-        { $match: { body_type_id: { $in: bodyTypeIds }, is_deleted: false } },
-        {
-          $lookup: {
-            from: 'carvariants',
-            localField: 'car_id',
-            foreignField: 'car_id',
-            as: 'variants',
-          },
-        },
-        { $group: { _id: '$body_type_id', count: { $sum: { $size: '$variants' } } } },
-      ]),
-      SeoCollection.aggregate([
-        { $match: { body_type_ids: { $in: bodyTypeIds } } },
-        { $unwind: '$body_type_ids' },
-        { $match: { body_type_ids: { $in: bodyTypeIds } } },
-        { $group: { _id: '$body_type_ids', count: { $sum: 1 } } },
-      ]),
+    const [carsForBodyTypes, activeVariants, seoCollections] = await Promise.all([
+      Car.find({ body_type_id: { $in: bodyTypeIds }, is_deleted: false }).select('car_id body_type_id').lean(),
+      CarVariant.find({ is_deleted: false }).select('car_id').lean(),
+      SeoCollection.find({ is_deleted: false }).select('body_type_ids').lean(),
     ]);
 
-    const carCountMap = new Map(carCountsRaw.map((r: any) => [r._id, r.count]));
-    const variantCountMap = new Map(variantCountsRaw.map((r: any) => [r._id, r.count]));
-    const seoCountMap = new Map(seoCountsRaw.map((r: any) => [r._id, r.count]));
+    const carCountMap = new Map<string, number>();
+    const carToBodyTypeMap = new Map<string, string>();
+    for (const c of carsForBodyTypes) {
+      if (c.body_type_id) {
+        carCountMap.set(c.body_type_id, (carCountMap.get(c.body_type_id) || 0) + 1);
+        carToBodyTypeMap.set(c.car_id, c.body_type_id);
+      }
+    }
+
+    const variantCountMap = new Map<string, number>();
+    for (const v of activeVariants) {
+      const btid = carToBodyTypeMap.get(v.car_id);
+      if (btid) {
+        variantCountMap.set(btid, (variantCountMap.get(btid) || 0) + 1);
+      }
+    }
+
+    const seoCountMap = new Map<string, number>();
+    for (const seo of seoCollections) {
+      if (Array.isArray(seo.body_type_ids)) {
+        for (const btid of seo.body_type_ids) {
+          if (bodyTypeIds.includes(btid)) {
+            seoCountMap.set(btid, (seoCountMap.get(btid) || 0) + 1);
+          }
+        }
+      }
+    }
 
     const bodyTypes = bodyTypesRaw.map((bt: any) => {
       const seo = computeSeoCompleteness(bt);

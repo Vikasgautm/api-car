@@ -163,13 +163,31 @@ export function createDocumentWrapper(model: BaseModel<any>, data: any, pkName: 
 
   const doc = { ...data };
 
-  if (pkName && doc[pkName] !== undefined && doc._id === undefined) {
+  if (model && model['tableName'] === 'CarImages') {
+    const cid = doc.image_id || doc.car_image_id || doc.image_uuid || doc.id;
+    if (cid) {
+      if (!doc.image_id) doc.image_id = cid;
+      if (!doc.car_image_id) doc.car_image_id = cid;
+    }
+  }
+
+  if (pkName && (doc[pkName] === undefined || doc[pkName] === null) && doc.id !== undefined && doc.id !== null) {
+    doc[pkName] = doc.id;
+  } else if ((doc.id === undefined || doc.id === null) && pkName && doc[pkName] !== undefined && doc[pkName] !== null) {
+    doc.id = doc[pkName];
+  }
+
+  const primaryId = (pkName && doc[pkName] !== undefined && doc[pkName] !== null) ? doc[pkName] : (doc.car_image_id || doc.image_id || doc.id);
+
+  if (primaryId !== undefined && (doc._id === undefined || doc._id === null)) {
+    try { delete doc._id; } catch (e) {}
     Object.defineProperty(doc, '_id', {
       get() {
-        return doc[pkName];
+        return (pkName && doc[pkName] !== undefined && doc[pkName] !== null) ? doc[pkName] : (doc.car_image_id || doc.image_id || doc.id);
       },
       set(val) {
-        doc[pkName] = val;
+        if (pkName) doc[pkName] = val;
+        doc.id = val;
       },
       enumerable: true,
       configurable: true
@@ -509,7 +527,7 @@ export class BaseModel<T extends { [key: string]: any } = any> {
     const serializedData = this.serialize(data);
 
     const keys = Object.keys(serializedData).filter(
-      k => k !== '_id' && (k !== 'id' || serializedData[k] !== undefined) && typeof serializedData[k] !== 'function'
+      k => k !== '_id' && serializedData[k] !== undefined && typeof serializedData[k] !== 'function'
     );
 
     const cols = keys.map(k => `[${k}]`).join(', ');
@@ -563,7 +581,7 @@ export class BaseModel<T extends { [key: string]: any } = any> {
 
     const setClauses: string[] = [];
     const updateKeys = Object.keys(serializedData).filter(
-      k => k !== '_id' && k !== 'id' && k !== this.primaryKey && typeof serializedData[k] !== 'function'
+      k => k !== '_id' && k !== 'id' && k !== this.primaryKey && serializedData[k] !== undefined && typeof serializedData[k] !== 'function'
     );
 
     for (const key of updateKeys) {
@@ -688,9 +706,13 @@ export class BaseModel<T extends { [key: string]: any } = any> {
       selectCols = options.select.map(col => `[${col}]`).join(', ');
     }
 
-    const orderByCol = options?.orderBy ? `[${options.orderBy}]` : `[${this.primaryKey}]`;
-    const orderDir = options?.orderDirection === 'DESC' ? 'DESC' : 'ASC';
-    const orderByClause = `ORDER BY ${orderByCol} ${orderDir}`;
+    let orderByClause = '';
+    if (options?.orderBy) {
+      const orderDir = options?.orderDirection === 'DESC' ? 'DESC' : 'ASC';
+      orderByClause = `ORDER BY [${options.orderBy}] ${orderDir}`;
+    } else if (options?.skip !== undefined || options?.limit !== undefined) {
+      orderByClause = `ORDER BY 1 ASC`;
+    }
 
     let query = '';
     if (options?.skip !== undefined || options?.limit !== undefined) {
@@ -793,6 +815,24 @@ export class BaseModel<T extends { [key: string]: any } = any> {
   }
 
   findById(id: any): SQLQuery<T, (T & SQLDocument) | null> {
+    if (id === undefined || id === null || id === 'null' || id === 'undefined') {
+      return this.findOne({ [this.primaryKey]: '__invalid_id_not_found__' });
+    }
+    if (this.primaryKey !== 'id') {
+      const isNum = typeof id === 'number' || (typeof id === 'string' && /^\d+$/.test(id));
+      const filters: any[] = [{ [this.primaryKey]: id }];
+      if (this.tableName === 'CarImages') {
+        filters.push({ car_image_id: id });
+        filters.push({ image_id: id });
+        filters.push({ image_uuid: id });
+      }
+      if (isNum) {
+        filters.push({ id: Number(id) });
+      } else {
+        filters.push({ id });
+      }
+      return this.findOne({ $or: filters });
+    }
     return this.findOne({ [this.primaryKey]: id });
   }
 
@@ -843,7 +883,27 @@ export class BaseModel<T extends { [key: string]: any } = any> {
     update: any,
     options?: { session?: any; new?: boolean; returnDocument?: 'before' | 'after'; runValidators?: boolean; upsert?: boolean }
   ): SQLUpdateQuery<T & SQLDocument> {
-    return this.findOneAndUpdate({ [this.primaryKey]: id }, update, options);
+    if (id === undefined || id === null || id === 'null' || id === 'undefined') {
+      const promise = Promise.resolve(null);
+      return new SQLUpdateQuery<T & SQLDocument>(promise as any);
+    }
+    let filter: any = { [this.primaryKey]: id };
+    if (this.primaryKey !== 'id') {
+      const isNum = typeof id === 'number' || (typeof id === 'string' && /^\d+$/.test(id));
+      const filters: any[] = [{ [this.primaryKey]: id }];
+      if (this.tableName === 'CarImages') {
+        filters.push({ car_image_id: id });
+        filters.push({ image_id: id });
+        filters.push({ image_uuid: id });
+      }
+      if (isNum) {
+        filters.push({ id: Number(id) });
+      } else {
+        filters.push({ id });
+      }
+      filter = { $or: filters };
+    }
+    return this.findOneAndUpdate(filter, update, options);
   }
 
   private async findOneAndUpdateInternal(

@@ -2,14 +2,42 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FilterUtil = void 0;
 class FilterUtil {
+    static escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
     static buildSearchFilter(fields, searchTerm) {
         if (!searchTerm || !fields.length)
             return {};
-        const regex = new RegExp(searchTerm, 'i');
+        const trimmed = searchTerm.trim();
+        const escaped = this.escapeRegExp(trimmed);
+        const flexiblePattern = escaped.replace(/\s+/g, '[\\s-_]+');
+        const pattern = /^[a-zA-Z0-9\s-_]+$/.test(trimmed)
+            ? `\\b${flexiblePattern}\\b`
+            : flexiblePattern;
+        const regex = new RegExp(pattern, 'i');
         const searchConditions = fields.map((field) => ({
             [field]: regex,
         }));
         return { $or: searchConditions };
+    }
+    static mergeFilterWithOr(filter, searchFilter) {
+        if (!searchFilter || Object.keys(searchFilter).length === 0)
+            return filter;
+        if (!filter || Object.keys(filter).length === 0) {
+            Object.assign(filter, searchFilter);
+            return filter;
+        }
+        if (filter.$or) {
+            const existingOr = filter.$or;
+            delete filter.$or;
+            filter.$and = filter.$and || [];
+            filter.$and.push({ $or: existingOr }, searchFilter);
+            return filter;
+        }
+        else {
+            Object.assign(filter, searchFilter);
+            return filter;
+        }
     }
     static buildSortFilter(sortBy, sortOrder = 'asc') {
         return { [sortBy]: sortOrder === 'asc' ? 1 : -1 };

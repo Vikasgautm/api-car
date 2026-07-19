@@ -34,6 +34,15 @@ class PopularCollectionService {
             collection_id: (0, uuid_1.v4)(),
             created_by: userId,
             updated_by: userId,
+            manual_car_ids: Array.isArray(data.manual_car_ids)
+                ? data.manual_car_ids
+                : [],
+            pinned_car_ids: Array.isArray(data.pinned_car_ids)
+                ? data.pinned_car_ids
+                : [],
+            suppressed_car_ids: Array.isArray(data.suppressed_car_ids)
+                ? data.suppressed_car_ids
+                : [],
         });
     }
     static async update(collection_id, data, userId) {

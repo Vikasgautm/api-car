@@ -95,7 +95,7 @@ export declare const carImageFilterSchema: z.ZodObject<{
     }>>;
     q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
-    is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
         0: "0";
         1: "1";
@@ -169,13 +169,13 @@ export declare const imageFilterSchema: z.ZodObject<{
     }>>;
     q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
-    is_deleted: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    is_deleted: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
         0: "0";
         1: "1";
         false: "false";
     }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
-    is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
         0: "0";
         1: "1";

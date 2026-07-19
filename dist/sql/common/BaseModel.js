@@ -76,7 +76,12 @@ function compileFilter(filter, prefix = 'f') {
             let jsonPath = '$' + subPathParts.join('');
             colExpr = `JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID([${topField}]), [${topField}], '[]'), '${jsonPath}'))`;
         }
-        if (val && typeof val === 'object' && !(val instanceof Date) && !Array.isArray(val)) {
+        if (val instanceof RegExp) {
+            const pattern = val.source;
+            clauses.push(`${colExpr} REGEXP @${paramName}`);
+            params.push({ name: paramName, type: dbConnection_1.mssql.NVarChar(), value: pattern });
+        }
+        else if (val && typeof val === 'object' && !(val instanceof Date) && !Array.isArray(val)) {
             const ops = Object.keys(val);
             for (const op of ops) {
                 const opVal = val[op];
@@ -112,10 +117,9 @@ function compileFilter(filter, prefix = 'f') {
                     }
                 }
                 else if (op === '$regex') {
-                    clauses.push(`${colExpr} LIKE @${paramName}`);
-                    let regexStr = typeof opVal === 'string' ? opVal : (opVal.source || '');
-                    regexStr = regexStr.replace(/^\^/, '').replace(/\$$/, '');
-                    params.push({ name: paramName, type: dbConnection_1.mssql.NVarChar(), value: `%${regexStr}%` });
+                    let regexStr = typeof opVal === 'string' ? opVal : (opVal instanceof RegExp ? opVal.source : String(opVal || ''));
+                    clauses.push(`${colExpr} REGEXP @${paramName}`);
+                    params.push({ name: paramName, type: dbConnection_1.mssql.NVarChar(), value: regexStr });
                 }
                 else if (op === '$gt') {
                     clauses.push(`${colExpr} > @${paramName}`);
@@ -162,13 +166,35 @@ function createDocumentWrapper(model, data, pkName) {
     if (!data)
         return data;
     const doc = { ...data };
-    if (pkName && doc[pkName] !== undefined && doc._id === undefined) {
+    if (model && model['tableName'] === 'CarImages') {
+        const cid = doc.image_id || doc.car_image_id || doc.image_uuid || doc.id;
+        if (cid) {
+            if (!doc.image_id)
+                doc.image_id = cid;
+            if (!doc.car_image_id)
+                doc.car_image_id = cid;
+        }
+    }
+    if (pkName && (doc[pkName] === undefined || doc[pkName] === null) && doc.id !== undefined && doc.id !== null) {
+        doc[pkName] = doc.id;
+    }
+    else if ((doc.id === undefined || doc.id === null) && pkName && doc[pkName] !== undefined && doc[pkName] !== null) {
+        doc.id = doc[pkName];
+    }
+    const primaryId = (pkName && doc[pkName] !== undefined && doc[pkName] !== null) ? doc[pkName] : (doc.car_image_id || doc.image_id || doc.id);
+    if (primaryId !== undefined && (doc._id === undefined || doc._id === null)) {
+        try {
+            delete doc._id;
+        }
+        catch (e) { }
         Object.defineProperty(doc, '_id', {
             get() {
-                return doc[pkName];
+                return (pkName && doc[pkName] !== undefined && doc[pkName] !== null) ? doc[pkName] : (doc.car_image_id || doc.image_id || doc.id);
             },
             set(val) {
-                doc[pkName] = val;
+                if (pkName)
+                    doc[pkName] = val;
+                doc.id = val;
             },
             enumerable: true,
             configurable: true
@@ -475,7 +501,7 @@ class BaseModel {
         const pool = await (0, dbConnection_1.getPool)();
         const request = transaction ? transaction.request() : pool.request();
         const serializedData = this.serialize(data);
-        const keys = Object.keys(serializedData).filter(k => k !== '_id' && (k !== 'id' || serializedData[k] !== undefined) && typeof serializedData[k] !== 'function');
+        const keys = Object.keys(serializedData).filter(k => k !== '_id' && serializedData[k] !== undefined && typeof serializedData[k] !== 'function');
         const cols = keys.map(k => `[${k}]`).join(', ');
         const vals = keys.map(k => `@i_${k}`).join(', ');
         const query = `INSERT INTO [${this.tableName}] (${cols}) OUTPUT INSERTED.* VALUES (${vals})`;
@@ -515,7 +541,7 @@ class BaseModel {
             whereClause = clauses.join(' AND ');
         }
         const setClauses = [];
-        const updateKeys = Object.keys(serializedData).filter(k => k !== '_id' && k !== 'id' && k !== this.primaryKey && typeof serializedData[k] !== 'function');
+        const updateKeys = Object.keys(serializedData).filter(k => k !== '_id' && k !== 'id' && k !== this.primaryKey && serializedData[k] !== undefined && typeof serializedData[k] !== 'function');
         for (const key of updateKeys) {
             setClauses.push(`[${key}] = @u_${key}`);
         }
@@ -601,9 +627,14 @@ class BaseModel {
         if (options?.select && Array.isArray(options.select) && options.select.length > 0) {
             selectCols = options.select.map(col => `[${col}]`).join(', ');
         }
-        const orderByCol = options?.orderBy ? `[${options.orderBy}]` : `[${this.primaryKey}]`;
-        const orderDir = options?.orderDirection === 'DESC' ? 'DESC' : 'ASC';
-        const orderByClause = `ORDER BY ${orderByCol} ${orderDir}`;
+        let orderByClause = '';
+        if (options?.orderBy) {
+            const orderDir = options?.orderDirection === 'DESC' ? 'DESC' : 'ASC';
+            orderByClause = `ORDER BY [${options.orderBy}] ${orderDir}`;
+        }
+        else if (options?.skip !== undefined || options?.limit !== undefined) {
+            orderByClause = `ORDER BY 1 ASC`;
+        }
         let query = '';
         if (options?.skip !== undefined || options?.limit !== undefined) {
             const offset = options.skip !== undefined ? options.skip : 0;
@@ -679,6 +710,25 @@ class BaseModel {
         return new SQLQuery(this, filter, true, this.primaryKey);
     }
     findById(id) {
+        if (id === undefined || id === null || id === 'null' || id === 'undefined') {
+            return this.findOne({ [this.primaryKey]: '__invalid_id_not_found__' });
+        }
+        if (this.primaryKey !== 'id') {
+            const isNum = typeof id === 'number' || (typeof id === 'string' && /^\d+$/.test(id));
+            const filters = [{ [this.primaryKey]: id }];
+            if (this.tableName === 'CarImages') {
+                filters.push({ car_image_id: id });
+                filters.push({ image_id: id });
+                filters.push({ image_uuid: id });
+            }
+            if (isNum) {
+                filters.push({ id: Number(id) });
+            }
+            else {
+                filters.push({ id });
+            }
+            return this.findOne({ $or: filters });
+        }
         return this.findOne({ [this.primaryKey]: id });
     }
     async countDocuments(filter = {}, options) {
@@ -716,7 +766,28 @@ class BaseModel {
         return new SQLUpdateQuery(promise);
     }
     findByIdAndUpdate(id, update, options) {
-        return this.findOneAndUpdate({ [this.primaryKey]: id }, update, options);
+        if (id === undefined || id === null || id === 'null' || id === 'undefined') {
+            const promise = Promise.resolve(null);
+            return new SQLUpdateQuery(promise);
+        }
+        let filter = { [this.primaryKey]: id };
+        if (this.primaryKey !== 'id') {
+            const isNum = typeof id === 'number' || (typeof id === 'string' && /^\d+$/.test(id));
+            const filters = [{ [this.primaryKey]: id }];
+            if (this.tableName === 'CarImages') {
+                filters.push({ car_image_id: id });
+                filters.push({ image_id: id });
+                filters.push({ image_uuid: id });
+            }
+            if (isNum) {
+                filters.push({ id: Number(id) });
+            }
+            else {
+                filters.push({ id });
+            }
+            filter = { $or: filters };
+        }
+        return this.findOneAndUpdate(filter, update, options);
     }
     async findOneAndUpdateInternal(filter, update, options) {
         const { whereClause, params } = compileFilter(filter);
@@ -852,7 +923,8 @@ function compileAggregation(tableName, pipeline) {
     let offsetValue = null;
     const compoundKeys = [];
     const compoundKeySourceMap = {};
-    let paramIdx = 0;
+    let unwindJoinClause = '';
+    const unwindColsMap = {};
     for (const stage of pipeline) {
         if (stage.$match) {
             const { whereClause, params: matchParams } = compileFilter(stage.$match);
@@ -861,6 +933,15 @@ function compileAggregation(tableName, pipeline) {
                 for (const p of matchParams) {
                     params.push(p);
                 }
+            }
+        }
+        else if (stage.$unwind) {
+            let uCol = typeof stage.$unwind === 'string' ? stage.$unwind : (stage.$unwind.path || '');
+            if (uCol.startsWith('$'))
+                uCol = uCol.substring(1);
+            if (uCol) {
+                unwindJoinClause += ` CROSS JOIN JSON_TABLE(IF(JSON_VALID([${tableName}].[${uCol}]), [${tableName}].[${uCol}], '[]'), '$[*]' COLUMNS (val VARCHAR(255) PATH '$')) as [jt_${uCol}]`;
+                unwindColsMap[uCol] = `[jt_${uCol}].[val]`;
             }
         }
         else if (stage.$group) {
@@ -876,6 +957,9 @@ function compileAggregation(tableName, pipeline) {
                     p = p.substring(4);
                 if (p.startsWith('_id.'))
                     p = p.substring(4);
+                if (unwindColsMap[p]) {
+                    return unwindColsMap[p];
+                }
                 if (p.includes('.')) {
                     const parts = p.split('.');
                     if (parts[0] === '_id' && compoundKeys.includes(parts[1])) {
@@ -996,7 +1080,7 @@ function compileAggregation(tableName, pipeline) {
         }
     }
     let selectClause = selectCols.length > 0 ? selectCols.join(', ') : '*';
-    let sql = `SELECT ${selectClause} FROM [${tableName}]`;
+    let sql = `SELECT ${selectClause} FROM [${tableName}]${unwindJoinClause}`;
     if (whereClauses.length > 0) {
         sql += ` WHERE ${whereClauses.join(' AND ')}`;
     }

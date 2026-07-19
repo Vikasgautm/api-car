@@ -34,16 +34,13 @@ const BUDGET_SLABS = [
 
 const SLAB_LABELS = BUDGET_SLABS.map((s) => s.label);
 
-function budgetSlabSwitch() {
-  return {
-    $switch: {
-      branches: BUDGET_SLABS.filter((s) => s.max !== null).map((s) => ({
-        case: { $and: [{ $gte: ['$car_price', s.min] }, { $lt: ['$car_price', s.max as number] }] },
-        then: s.label,
-      })),
-      default: 'Above 1Cr',
-    },
-  };
+function getBudgetSlabLabel(price: number): string {
+  if (!price || price <= 0) return 'Unpriced';
+  for (const s of BUDGET_SLABS) {
+    if (s.max !== null && price >= s.min && price < s.max) return s.label;
+    if (s.max === null && price >= s.min) return s.label;
+  }
+  return 'Above 1Cr';
 }
 
 function now() {
@@ -52,61 +49,47 @@ function now() {
 
 export class FuelTypesIntelligenceService {
   static async getSummary(): Promise<FuelSummaryResponse> {
-    const fuelTypes = await FuelType.find({ is_published: true, is_deleted: false })
-      .select('fuel_type_id name slug')
-      .lean();
+    const [fuelTypes, variants, cars] = await Promise.all([
+      FuelType.find({ is_published: true, is_deleted: false }).select('fuel_type_id name slug').lean(),
+      CarVariant.find(ACTIVE_MATCH as any).select('car_id fuel_type_id').lean(),
+      Car.find({ is_deleted: false }).select('car_id brand_id').lean(),
+    ]);
 
     if (!fuelTypes.length) {
       return { items: [], total_cars: 0, generated_at: now() };
     }
 
-    // Group by (car_id, fuel_type_id) first for distinct pairs, then lookup car for brand_id,
-    // then group by fuel_type_id. Avoids array-localField $lookup which has unreliable semantics.
-    const rows = await CarVariant.aggregate([
-      { $match: { ...ACTIVE_MATCH, fuel_type_id: { $exists: true, $ne: null } } },
-      { $group: { _id: { car_id: '$car_id', fuel_type_id: '$fuel_type_id' } } },
-      {
-        $lookup: {
-          from: 'cars',
-          localField: '_id.car_id',
-          foreignField: 'car_id',
-          as: 'car_doc',
-          pipeline: [{ $match: { is_deleted: false } }, { $project: { brand_id: 1 } }],
-        },
-      },
-      { $unwind: { path: '$car_doc', preserveNullAndEmptyArrays: false } },
-      {
-        $group: {
-          _id: '$_id.fuel_type_id',
-          car_ids: { $addToSet: '$_id.car_id' },
-          brand_ids: { $addToSet: '$car_doc.brand_id' },
-        },
-      },
-      {
-        $project: {
-          fuel_type_id: '$_id',
-          car_count: { $size: '$car_ids' },
-          brand_count: { $size: '$brand_ids' },
-        },
-      },
-    ]);
-
-    const rowMap: Record<string, { car_count: number; brand_count: number }> = {};
-    for (const r of rows) {
-      rowMap[r.fuel_type_id] = { car_count: r.car_count, brand_count: r.brand_count };
+    const carBrandMap = new Map<string, string>();
+    for (const c of cars) {
+      if (c.car_id && c.brand_id) carBrandMap.set(c.car_id, c.brand_id);
     }
 
-    const totalCars = Object.values(rowMap).reduce((sum, r) => sum + r.car_count, 0);
+    const statsMap: Record<string, { car_ids: Set<string>; brand_ids: Set<string> }> = {};
+    for (const v of variants) {
+      if (!v.car_id || !v.fuel_type_id) continue;
+      const brandId = carBrandMap.get(v.car_id);
+      if (!brandId) continue;
+
+      if (!statsMap[v.fuel_type_id]) {
+        statsMap[v.fuel_type_id] = { car_ids: new Set(), brand_ids: new Set() };
+      }
+      statsMap[v.fuel_type_id].car_ids.add(v.car_id);
+      statsMap[v.fuel_type_id].brand_ids.add(brandId);
+    }
+
+    const totalCars = Object.values(statsMap).reduce((sum, r) => sum + r.car_ids.size, 0);
 
     const items = fuelTypes.map((ft) => {
-      const stats = rowMap[ft.fuel_type_id] || { car_count: 0, brand_count: 0 };
+      const stats = statsMap[ft.fuel_type_id];
+      const carCount = stats ? stats.car_ids.size : 0;
+      const brandCount = stats ? stats.brand_ids.size : 0;
       return {
         fuel_type_id: ft.fuel_type_id,
         name: ft.name,
         slug: ft.slug,
-        total_cars: stats.car_count,
-        total_brands: stats.brand_count,
-        inventory_pct: totalCars > 0 ? Math.round((stats.car_count / totalCars) * 100 * 10) / 10 : 0,
+        total_cars: carCount,
+        total_brands: brandCount,
+        inventory_pct: totalCars > 0 ? Math.round((carCount / totalCars) * 100 * 10) / 10 : 0,
       };
     });
 
@@ -114,9 +97,11 @@ export class FuelTypesIntelligenceService {
   }
 
   static async getBrands(): Promise<BrandsResponse> {
-    const [fuelTypes, brands] = await Promise.all([
+    const [fuelTypes, brands, variants, cars] = await Promise.all([
       FuelType.find({ is_published: true, is_deleted: false }).select('fuel_type_id name slug').lean(),
       Brand.find({ is_deleted: false }).select('brand_id name slug').lean(),
+      CarVariant.find(ACTIVE_MATCH as any).select('car_id fuel_type_id').lean(),
+      Car.find({ is_deleted: false }).select('car_id brand_id').lean(),
     ]);
 
     const brandMap: Record<string, { name: string; slug: string }> = {};
@@ -125,47 +110,40 @@ export class FuelTypesIntelligenceService {
     const fuelMap: Record<string, { name: string; slug: string }> = {};
     for (const ft of fuelTypes) fuelMap[ft.fuel_type_id] = { name: ft.name, slug: ft.slug };
 
-    // Aggregate: per (car_id, fuel_type_id) → distinct, then lookup brand via Car
-    const agg = await CarVariant.aggregate([
-      { $match: { ...ACTIVE_MATCH, fuel_type_id: { $exists: true, $ne: null } } },
-      { $group: { _id: { car_id: '$car_id', fuel_type_id: '$fuel_type_id' } } },
-      {
-        $lookup: {
-          from: 'cars',
-          localField: '_id.car_id',
-          foreignField: 'car_id',
-          as: 'car_doc',
-          pipeline: [{ $match: { is_deleted: false } }, { $project: { brand_id: 1 } }],
-        },
-      },
-      { $unwind: { path: '$car_doc', preserveNullAndEmptyArrays: false } },
-      {
-        $group: {
-          _id: { brand_id: '$car_doc.brand_id', fuel_type_id: '$_id.fuel_type_id' },
-          car_count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    // Pivot into brand rows
-    const brandRows: Record<string, { fuels: Record<string, number>; total: number }> = {};
-    for (const row of agg) {
-      const bid = row._id.brand_id;
-      const fid = row._id.fuel_type_id;
-      const fslug = fuelMap[fid]?.slug ?? fid;
-      if (!brandRows[bid]) brandRows[bid] = { fuels: {}, total: 0 };
-      brandRows[bid].fuels[fslug] = (brandRows[bid].fuels[fslug] || 0) + row.car_count;
-      brandRows[bid].total += row.car_count;
+    const carBrandMap = new Map<string, string>();
+    for (const c of cars) {
+      if (c.car_id && c.brand_id) carBrandMap.set(c.car_id, c.brand_id);
     }
 
-    const rows = Object.entries(brandRows)
-      .map(([bid, data]) => ({
-        brand_id: bid,
-        brand_name: brandMap[bid]?.name ?? bid,
-        brand_slug: brandMap[bid]?.slug ?? bid,
-        fuels: data.fuels,
-        total: data.total,
-      }))
+    const brandFuelCars: Record<string, Record<string, Set<string>>> = {};
+
+    for (const v of variants) {
+      if (!v.car_id || !v.fuel_type_id) continue;
+      const brandId = carBrandMap.get(v.car_id);
+      if (!brandId) continue;
+
+      if (!brandFuelCars[brandId]) brandFuelCars[brandId] = {};
+      if (!brandFuelCars[brandId][v.fuel_type_id]) brandFuelCars[brandId][v.fuel_type_id] = new Set();
+      brandFuelCars[brandId][v.fuel_type_id].add(v.car_id);
+    }
+
+    const rows = Object.entries(brandFuelCars)
+      .map(([bid, fuelSets]) => {
+        const fuels: Record<string, number> = {};
+        let total = 0;
+        for (const [fid, carSet] of Object.entries(fuelSets)) {
+          const fslug = fuelMap[fid]?.slug ?? fid;
+          fuels[fslug] = carSet.size;
+          total += carSet.size;
+        }
+        return {
+          brand_id: bid,
+          brand_name: brandMap[bid]?.name ?? bid,
+          brand_slug: brandMap[bid]?.slug ?? bid,
+          fuels,
+          total,
+        };
+      })
       .sort((a, b) => b.total - a.total);
 
     return {
@@ -176,55 +154,47 @@ export class FuelTypesIntelligenceService {
   }
 
   static async getBodyTypes(): Promise<BodyTypesResponse> {
-    const [fuelTypes, bodyTypes] = await Promise.all([
+    const [fuelTypes, bodyTypes, variants, cars] = await Promise.all([
       FuelType.find({ is_published: true, is_deleted: false }).select('fuel_type_id name slug').lean(),
       BodyType.find({ is_deleted: false }).select('body_type_id name slug').lean(),
+      CarVariant.find(ACTIVE_MATCH as any).select('car_id fuel_type_id').lean(),
+      Car.find({ is_deleted: false }).select('car_id body_type_id').lean(),
     ]);
 
     const bodyMap: Record<string, { name: string; slug: string }> = {};
     for (const bt of bodyTypes) bodyMap[bt.body_type_id] = { name: bt.name, slug: bt.slug };
 
-    const fuelMap: Record<string, { name: string; slug: string }> = {};
-    for (const ft of fuelTypes) fuelMap[ft.fuel_type_id] = { name: ft.name, slug: ft.slug };
-
-    const agg = await CarVariant.aggregate([
-      { $match: { ...ACTIVE_MATCH, fuel_type_id: { $exists: true, $ne: null } } },
-      { $group: { _id: { car_id: '$car_id', fuel_type_id: '$fuel_type_id' } } },
-      {
-        $lookup: {
-          from: 'cars',
-          localField: '_id.car_id',
-          foreignField: 'car_id',
-          as: 'car_doc',
-          pipeline: [{ $match: { is_deleted: false } }, { $project: { body_type_id: 1 } }],
-        },
-      },
-      { $unwind: { path: '$car_doc', preserveNullAndEmptyArrays: false } },
-      {
-        $group: {
-          _id: { fuel_type_id: '$_id.fuel_type_id', body_type_id: '$car_doc.body_type_id' },
-          car_count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const fuelRows: Record<string, Record<string, number>> = {};
-    for (const ft of fuelTypes) fuelRows[ft.fuel_type_id] = {};
-
-    for (const row of agg) {
-      const fid = row._id.fuel_type_id;
-      const bid = row._id.body_type_id;
-      const bslug = bodyMap[bid]?.slug ?? bid;
-      if (!fuelRows[fid]) fuelRows[fid] = {};
-      fuelRows[fid][bslug] = (fuelRows[fid][bslug] || 0) + row.car_count;
+    const carBodyMap = new Map<string, string>();
+    for (const c of cars) {
+      if (c.car_id && c.body_type_id) carBodyMap.set(c.car_id, c.body_type_id);
     }
 
-    const rows = fuelTypes.map((ft) => ({
-      fuel_type_id: ft.fuel_type_id,
-      fuel_name: ft.name,
-      fuel_slug: ft.slug,
-      body_types: fuelRows[ft.fuel_type_id] || {},
-    }));
+    const fuelBodyCars: Record<string, Record<string, Set<string>>> = {};
+
+    for (const v of variants) {
+      if (!v.car_id || !v.fuel_type_id) continue;
+      const bodyTypeId = carBodyMap.get(v.car_id);
+      if (!bodyTypeId) continue;
+
+      if (!fuelBodyCars[v.fuel_type_id]) fuelBodyCars[v.fuel_type_id] = {};
+      if (!fuelBodyCars[v.fuel_type_id][bodyTypeId]) fuelBodyCars[v.fuel_type_id][bodyTypeId] = new Set();
+      fuelBodyCars[v.fuel_type_id][bodyTypeId].add(v.car_id);
+    }
+
+    const rows = fuelTypes.map((ft) => {
+      const bodySets = fuelBodyCars[ft.fuel_type_id] || {};
+      const body_types: Record<string, number> = {};
+      for (const [btid, carSet] of Object.entries(bodySets)) {
+        const bslug = bodyMap[btid]?.slug ?? btid;
+        body_types[bslug] = carSet.size;
+      }
+      return {
+        fuel_type_id: ft.fuel_type_id,
+        fuel_name: ft.name,
+        fuel_slug: ft.slug,
+        body_types,
+      };
+    });
 
     return {
       body_type_list: bodyTypes.map((bt) => ({ id: bt.body_type_id, name: bt.name, slug: bt.slug })),
@@ -234,77 +204,56 @@ export class FuelTypesIntelligenceService {
   }
 
   static async getBudget(): Promise<BudgetResponse> {
-    const fuelTypes = await FuelType.find({ is_published: true, is_deleted: false })
-      .select('fuel_type_id name slug')
-      .lean();
-
-    const fuelMap: Record<string, { name: string; slug: string }> = {};
-    for (const ft of fuelTypes) fuelMap[ft.fuel_type_id] = { name: ft.name, slug: ft.slug };
-
-    const agg = await CarVariant.aggregate([
-      { $match: { ...ACTIVE_MATCH, fuel_type_id: { $exists: true, $ne: null } } },
-      { $group: { _id: { car_id: '$car_id', fuel_type_id: '$fuel_type_id' } } },
-      {
-        $lookup: {
-          from: 'cars',
-          localField: '_id.car_id',
-          foreignField: 'car_id',
-          as: 'car_doc',
-          pipeline: [
-            { $match: { is_deleted: false } },
-            { $project: { min_variant_price: 1, ex_showroom_price: 1 } },
-          ],
-        },
-      },
-      { $unwind: { path: '$car_doc', preserveNullAndEmptyArrays: false } },
-      {
-        $addFields: {
-          car_price: {
-            $ifNull: ['$car_doc.min_variant_price', '$car_doc.ex_showroom_price'],
-          },
-        },
-      },
-      { $match: { car_price: { $gt: 0 } } },
-      {
-        $addFields: {
-          budget_slab: budgetSlabSwitch(),
-        },
-      },
-      {
-        $group: {
-          _id: { fuel_type_id: '$_id.fuel_type_id', budget_slab: '$budget_slab' },
-          car_count: { $sum: 1 },
-        },
-      },
+    const [fuelTypes, variants, cars] = await Promise.all([
+      FuelType.find({ is_published: true, is_deleted: false }).select('fuel_type_id name slug').lean(),
+      CarVariant.find(ACTIVE_MATCH as any).select('car_id fuel_type_id').lean(),
+      Car.find({ is_deleted: false }).select('car_id min_variant_price ex_showroom_price').lean(),
     ]);
 
-    const fuelSlabs: Record<string, Record<string, number>> = {};
-    for (const ft of fuelTypes) fuelSlabs[ft.fuel_type_id] = {};
-
-    for (const row of agg) {
-      const fid = row._id.fuel_type_id;
-      if (!fuelSlabs[fid]) fuelSlabs[fid] = {};
-      fuelSlabs[fid][row._id.budget_slab] = (fuelSlabs[fid][row._id.budget_slab] || 0) + row.car_count;
+    const carPriceMap = new Map<string, number>();
+    for (const c of cars) {
+      const p = Number((c as any).min_variant_price || (c as any).ex_showroom_price || 0);
+      if (p > 0) carPriceMap.set(c.car_id, p);
     }
 
-    const items = fuelTypes.map((ft) => ({
-      fuel_type_id: ft.fuel_type_id,
-      fuel_name: ft.name,
-      fuel_slug: ft.slug,
-      slabs: SLAB_LABELS.map((label) => ({
-        label,
-        count: fuelSlabs[ft.fuel_type_id]?.[label] ?? 0,
-      })),
-    }));
+    const fuelSlabCars: Record<string, Record<string, Set<string>>> = {};
+
+    for (const v of variants) {
+      if (!v.car_id || !v.fuel_type_id) continue;
+      const price = carPriceMap.get(v.car_id);
+      if (!price) continue;
+
+      const slabLabel = getBudgetSlabLabel(price);
+      if (slabLabel === 'Unpriced') continue;
+
+      if (!fuelSlabCars[v.fuel_type_id]) fuelSlabCars[v.fuel_type_id] = {};
+      if (!fuelSlabCars[v.fuel_type_id][slabLabel]) fuelSlabCars[v.fuel_type_id][slabLabel] = new Set();
+      fuelSlabCars[v.fuel_type_id][slabLabel].add(v.car_id);
+    }
+
+    const items = fuelTypes.map((ft) => {
+      const slabSets = fuelSlabCars[ft.fuel_type_id] || {};
+      return {
+        fuel_type_id: ft.fuel_type_id,
+        fuel_name: ft.name,
+        fuel_slug: ft.slug,
+        slabs: SLAB_LABELS.map((label) => ({
+          label,
+          count: slabSets[label]?.size ?? 0,
+        })),
+      };
+    });
 
     return { items, slab_labels: SLAB_LABELS, generated_at: now() };
   }
 
   static async getBrandBodyBudget(): Promise<BrandBodyBudgetResponse> {
-    const [fuelTypes, brands, bodyTypes] = await Promise.all([
+    const [fuelTypes, brands, bodyTypes, variants, cars] = await Promise.all([
       FuelType.find({ is_published: true, is_deleted: false }).select('fuel_type_id name slug').lean(),
       Brand.find({ is_deleted: false }).select('brand_id name slug').lean(),
       BodyType.find({ is_deleted: false }).select('body_type_id name slug').lean(),
+      CarVariant.find(ACTIVE_MATCH as any).select('car_id fuel_type_id').lean(),
+      Car.find({ is_deleted: false }).select('car_id brand_id body_type_id min_variant_price ex_showroom_price').lean(),
     ]);
 
     const fuelMap: Record<string, { name: string; slug: string }> = {};
@@ -314,66 +263,35 @@ export class FuelTypesIntelligenceService {
     const bodyMap: Record<string, { name: string; slug: string }> = {};
     for (const bt of bodyTypes) bodyMap[bt.body_type_id] = { name: bt.name, slug: bt.slug };
 
-    const agg = await CarVariant.aggregate([
-      { $match: { ...ACTIVE_MATCH, fuel_type_id: { $exists: true, $ne: null } } },
-      { $group: { _id: { car_id: '$car_id', fuel_type_id: '$fuel_type_id' } } },
-      {
-        $lookup: {
-          from: 'cars',
-          localField: '_id.car_id',
-          foreignField: 'car_id',
-          as: 'car_doc',
-          pipeline: [
-            { $match: { is_deleted: false } },
-            { $project: { brand_id: 1, body_type_id: 1, min_variant_price: 1, ex_showroom_price: 1 } },
-          ],
-        },
-      },
-      { $unwind: { path: '$car_doc', preserveNullAndEmptyArrays: false } },
-      {
-        $addFields: {
-          car_price: { $ifNull: ['$car_doc.min_variant_price', '$car_doc.ex_showroom_price'] },
-        },
-      },
-      {
-        $addFields: {
-          budget_slab: {
-            $cond: {
-              if: { $gt: ['$car_price', 0] },
-              then: budgetSlabSwitch(),
-              else: 'Unpriced',
-            },
-          },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            brand_id: '$car_doc.brand_id',
-            fuel_type_id: '$_id.fuel_type_id',
-            body_type_id: '$car_doc.body_type_id',
-            budget_slab: '$budget_slab',
-          },
-          car_count: { $sum: 1 },
-        },
-      },
-    ]);
+    const carDocMap = new Map<string, { brand_id: string; body_type_id: string; price: number }>();
+    for (const c of cars) {
+      if (c.car_id && c.brand_id && c.body_type_id) {
+        const p = Number((c as any).min_variant_price || (c as any).ex_showroom_price || 0);
+        carDocMap.set(c.car_id, { brand_id: c.brand_id, body_type_id: c.body_type_id, price: p });
+      }
+    }
 
-    // Build nested: brand → fuel → body_type → slab
-    type SlabMap = Record<string, number>;
-    type BodyMap = Record<string, SlabMap>;
-    type FuelBodyMap = Record<string, BodyMap>;
-    type BrandFuelBodyMap = Record<string, FuelBodyMap>;
+    type SlabSets = Record<string, Set<string>>;
+    type BodyTree = Record<string, SlabSets>;
+    type FuelTree = Record<string, BodyTree>;
+    type BrandTree = Record<string, FuelTree>;
 
-    const tree: BrandFuelBodyMap = {};
+    const tree: BrandTree = {};
 
-    for (const row of agg) {
-      const { brand_id, fuel_type_id, body_type_id, budget_slab } = row._id;
-      if (!tree[brand_id]) tree[brand_id] = {};
-      if (!tree[brand_id][fuel_type_id]) tree[brand_id][fuel_type_id] = {};
-      if (!tree[brand_id][fuel_type_id][body_type_id]) tree[brand_id][fuel_type_id][body_type_id] = {};
-      const cur = tree[brand_id][fuel_type_id][body_type_id][budget_slab] || 0;
-      tree[brand_id][fuel_type_id][body_type_id][budget_slab] = cur + row.car_count;
+    for (const v of variants) {
+      if (!v.car_id || !v.fuel_type_id) continue;
+      const cdoc = carDocMap.get(v.car_id);
+      if (!cdoc) continue;
+
+      const slabLabel = getBudgetSlabLabel(cdoc.price);
+
+      if (!tree[cdoc.brand_id]) tree[cdoc.brand_id] = {};
+      if (!tree[cdoc.brand_id][v.fuel_type_id]) tree[cdoc.brand_id][v.fuel_type_id] = {};
+      if (!tree[cdoc.brand_id][v.fuel_type_id][cdoc.body_type_id]) tree[cdoc.brand_id][v.fuel_type_id][cdoc.body_type_id] = {};
+      if (!tree[cdoc.brand_id][v.fuel_type_id][cdoc.body_type_id][slabLabel]) {
+        tree[cdoc.brand_id][v.fuel_type_id][cdoc.body_type_id][slabLabel] = new Set();
+      }
+      tree[cdoc.brand_id][v.fuel_type_id][cdoc.body_type_id][slabLabel].add(v.car_id);
     }
 
     const brandResults: NestedBrand[] = Object.entries(tree)
@@ -382,12 +300,12 @@ export class FuelTypesIntelligenceService {
         const fuelEntries = Object.entries(fuels).map(([fid, bodies]) => {
           let fuelTotal = 0;
           const bodyEntries = Object.entries(bodies).map(([btid, slabMap]) => {
-            const slabTotal = Object.values(slabMap).reduce((s, c) => s + c, 0);
+            const slabTotal = Object.values(slabMap).reduce((s, set) => s + set.size, 0);
             fuelTotal += slabTotal;
             return {
               body_type_slug: bodyMap[btid]?.slug ?? btid,
               body_type_name: bodyMap[btid]?.name ?? btid,
-              slabs: SLAB_LABELS.map((l) => ({ label: l, count: slabMap[l] ?? 0 })),
+              slabs: SLAB_LABELS.map((l) => ({ label: l, count: slabMap[l]?.size ?? 0 })),
               total: slabTotal,
             };
           });
@@ -413,108 +331,84 @@ export class FuelTypesIntelligenceService {
   }
 
   static async getSeating(): Promise<SeatingResponse> {
-    const fuelTypes = await FuelType.find({ is_published: true, is_deleted: false })
-      .select('fuel_type_id name slug')
-      .lean();
-
-    const fuelMap: Record<string, { name: string; slug: string }> = {};
-    for (const ft of fuelTypes) fuelMap[ft.fuel_type_id] = { name: ft.name, slug: ft.slug };
-
-    const agg = await CarVariant.aggregate([
-      {
-        $match: {
-          ...ACTIVE_MATCH,
-          fuel_type_id: { $exists: true, $ne: null },
-          seating_capacity: { $exists: true, $gt: 0 },
-        },
-      },
-      {
-        $group: {
-          _id: { car_id: '$car_id', fuel_type_id: '$fuel_type_id', seating: '$seating_capacity' },
-        },
-      },
-      {
-        $group: {
-          _id: { fuel_type_id: '$_id.fuel_type_id', seating: '$_id.seating' },
-          car_count: { $sum: 1 },
-        },
-      },
+    const [fuelTypes, variants] = await Promise.all([
+      FuelType.find({ is_published: true, is_deleted: false }).select('fuel_type_id name slug').lean(),
+      CarVariant.find(ACTIVE_MATCH as any).select('car_id fuel_type_id seating_capacity').lean(),
     ]);
 
     const allSeating = new Set<number>();
-    const fuelSeating: Record<string, Record<string, number>> = {};
+    const fuelSeatingCars: Record<string, Record<string, Set<string>>> = {};
 
-    for (const row of agg) {
-      const fid = row._id.fuel_type_id;
-      const seat = row._id.seating;
+    for (const v of variants) {
+      if (!v.car_id || !v.fuel_type_id || !v.seating_capacity || v.seating_capacity <= 0) continue;
+      const seat = v.seating_capacity;
       allSeating.add(seat);
-      if (!fuelSeating[fid]) fuelSeating[fid] = {};
-      fuelSeating[fid][String(seat)] = (fuelSeating[fid][String(seat)] || 0) + row.car_count;
+
+      if (!fuelSeatingCars[v.fuel_type_id]) fuelSeatingCars[v.fuel_type_id] = {};
+      if (!fuelSeatingCars[v.fuel_type_id][String(seat)]) fuelSeatingCars[v.fuel_type_id][String(seat)] = new Set();
+      fuelSeatingCars[v.fuel_type_id][String(seat)].add(v.car_id);
     }
 
     const seatingCapacities = Array.from(allSeating).sort((a, b) => a - b);
 
-    const rows = fuelTypes.map((ft) => ({
-      fuel_type_id: ft.fuel_type_id,
-      fuel_name: ft.name,
-      fuel_slug: ft.slug,
-      seating: fuelSeating[ft.fuel_type_id] || {},
-    }));
+    const rows = fuelTypes.map((ft) => {
+      const seatSets = fuelSeatingCars[ft.fuel_type_id] || {};
+      const seating: Record<string, number> = {};
+      for (const [seatStr, carSet] of Object.entries(seatSets)) {
+        seating[seatStr] = carSet.size;
+      }
+      return {
+        fuel_type_id: ft.fuel_type_id,
+        fuel_name: ft.name,
+        fuel_slug: ft.slug,
+        seating,
+      };
+    });
 
     return { seating_capacities: seatingCapacities, rows, generated_at: now() };
   }
 
   static async getLifecycle(): Promise<LifecycleResponse> {
-    const fuelTypes = await FuelType.find({ is_published: true, is_deleted: false })
-      .select('fuel_type_id name slug')
-      .lean();
+    const [fuelTypes, variants, cars] = await Promise.all([
+      FuelType.find({ is_published: true, is_deleted: false }).select('fuel_type_id name slug').lean(),
+      CarVariant.find(ACTIVE_MATCH as any).select('car_id fuel_type_id').lean(),
+      Car.find({ is_deleted: false }).select('car_id status entity_lifecycle_state').lean(),
+    ]);
 
     const fuelMap: Record<string, { name: string; slug: string }> = {};
     for (const ft of fuelTypes) fuelMap[ft.fuel_type_id] = { name: ft.name, slug: ft.slug };
 
-    const agg = await CarVariant.aggregate([
-      { $match: { ...ACTIVE_MATCH, fuel_type_id: { $exists: true, $ne: null } } },
-      { $group: { _id: { car_id: '$car_id', fuel_type_id: '$fuel_type_id' } } },
-      {
-        $lookup: {
-          from: 'cars',
-          localField: '_id.car_id',
-          foreignField: 'car_id',
-          as: 'car_doc',
-          pipeline: [
-            { $match: { is_deleted: false } },
-            { $project: { status: 1, entity_lifecycle_state: 1 } },
-          ],
-        },
-      },
-      { $unwind: { path: '$car_doc', preserveNullAndEmptyArrays: false } },
-      {
-        $addFields: {
-          lifecycle: { $ifNull: ['$car_doc.entity_lifecycle_state', '$car_doc.status'] },
-        },
-      },
-      {
-        $group: {
-          _id: { lifecycle: '$lifecycle', fuel_type_id: '$_id.fuel_type_id' },
-          car_count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const lifecycleMap: Record<string, Record<string, number>> = {};
-    for (const row of agg) {
-      const lc = row._id.lifecycle ?? 'unknown';
-      const fid = row._id.fuel_type_id;
-      const fslug = fuelMap[fid]?.slug ?? fid;
-      if (!lifecycleMap[lc]) lifecycleMap[lc] = {};
-      lifecycleMap[lc][fslug] = (lifecycleMap[lc][fslug] || 0) + row.car_count;
+    const carLcMap = new Map<string, string>();
+    for (const c of cars) {
+      const lc = (c as any).entity_lifecycle_state || c.status || 'unknown';
+      carLcMap.set(c.car_id, lc);
     }
 
-    const rows = Object.entries(lifecycleMap).map(([lc, fuels]) => ({
-      lifecycle: lc,
-      fuels,
-      total: Object.values(fuels).reduce((s, c) => s + c, 0),
-    }));
+    const lcFuelCars: Record<string, Record<string, Set<string>>> = {};
+
+    for (const v of variants) {
+      if (!v.car_id || !v.fuel_type_id) continue;
+      const lc = carLcMap.get(v.car_id) || 'unknown';
+
+      if (!lcFuelCars[lc]) lcFuelCars[lc] = {};
+      if (!lcFuelCars[lc][v.fuel_type_id]) lcFuelCars[lc][v.fuel_type_id] = new Set();
+      lcFuelCars[lc][v.fuel_type_id].add(v.car_id);
+    }
+
+    const rows = Object.entries(lcFuelCars).map(([lc, fuelSets]) => {
+      const fuels: Record<string, number> = {};
+      let total = 0;
+      for (const [fid, carSet] of Object.entries(fuelSets)) {
+        const fslug = fuelMap[fid]?.slug ?? fid;
+        fuels[fslug] = carSet.size;
+        total += carSet.size;
+      }
+      return {
+        lifecycle: lc,
+        fuels,
+        total,
+      };
+    });
 
     return {
       fuel_types: fuelTypes.map((ft) => ({ id: ft.fuel_type_id, name: ft.name, slug: ft.slug })),
@@ -526,55 +420,43 @@ export class FuelTypesIntelligenceService {
   static async getHealth(): Promise<HealthResponse> {
     const issues: FuelHealthIssue[] = [];
 
-    // 1. Published, non-deleted cars with no published active variants
-    const carsNoVariants = await Car.aggregate([
-      { $match: { is_deleted: false, is_published: true } },
-      {
-        $lookup: {
-          from: 'carvariants',
-          localField: 'car_id',
-          foreignField: 'car_id',
-          as: 'active_variants',
-          pipeline: [{ $match: ACTIVE_MATCH }],
-        },
-      },
-      { $match: { active_variants: { $size: 0 } } },
-      { $project: { car_id: 1, name: 1, slug: 1 } },
-      { $limit: 200 },
+    const [publishedCars, activeVariants, allPublishedCars] = await Promise.all([
+      Car.find({ is_deleted: false, is_published: true }).select('car_id name slug is_upcoming').lean(),
+      CarVariant.find(ACTIVE_MATCH as any).select('car_id variant_name fuel_type_id ex_showroom_price').lean(),
+      Car.find({ is_deleted: false, is_published: true }).select('car_id name slug body_type_id').lean(),
     ]);
 
-    for (const c of carsNoVariants) {
-      issues.push({
-        car_id: c.car_id,
-        car_name: c.name,
-        car_slug: c.slug,
-        issue: 'Published car has no active variants',
-        issue_code: 'NO_ACTIVE_VARIANTS',
-        severity: 'critical',
-      });
+    const activeCarVariantMap = new Map<string, any[]>();
+    for (const v of activeVariants) {
+      if (!activeCarVariantMap.has(v.car_id)) activeCarVariantMap.set(v.car_id, []);
+      activeCarVariantMap.get(v.car_id)!.push(v);
+    }
+
+    // 1. Published, non-deleted cars with no published active variants
+    for (const c of publishedCars) {
+      const vars = activeCarVariantMap.get(c.car_id) || [];
+      if (vars.length === 0) {
+        issues.push({
+          car_id: c.car_id,
+          car_name: c.name,
+          car_slug: c.slug,
+          issue: 'Published car has no active variants',
+          issue_code: 'NO_ACTIVE_VARIANTS',
+          severity: 'critical',
+        });
+      }
     }
 
     // 2. Variants with no fuel_type_id (active only)
-    const variantsNoFuel = await CarVariant.find({
-      ...ACTIVE_MATCH,
-      $or: [{ fuel_type_id: { $exists: false } }, { fuel_type_id: null }, { fuel_type_id: '' }],
-    })
-      .select('car_id variant_name')
-      .lean()
-      .limit(200);
-
-    const carIds = [...new Set(variantsNoFuel.map((v) => v.car_id))];
-    const carDocs = await Car.find({ car_id: { $in: carIds } })
-      .select('car_id name slug')
-      .lean();
-    const carDocMap: Record<string, { name: string; slug: string }> = {};
-    for (const c of carDocs) carDocMap[c.car_id] = { name: c.name, slug: c.slug };
+    const variantsNoFuel = activeVariants.filter((v) => !v.fuel_type_id);
+    const carDocMap = new Map<string, { name: string; slug: string }>();
+    for (const c of publishedCars) carDocMap.set(c.car_id, { name: c.name, slug: c.slug });
 
     const seenNoFuel = new Set<string>();
     for (const v of variantsNoFuel) {
       if (seenNoFuel.has(v.car_id)) continue;
       seenNoFuel.add(v.car_id);
-      const car = carDocMap[v.car_id];
+      const car = carDocMap.get(v.car_id);
       issues.push({
         car_id: v.car_id,
         car_name: car?.name ?? v.car_id,
@@ -586,109 +468,88 @@ export class FuelTypesIntelligenceService {
     }
 
     // 3. Cars missing body_type_id
-    const carsNoBodyType = await Car.find({
-      is_deleted: false,
-      is_published: true,
-      $or: [{ body_type_id: { $exists: false } }, { body_type_id: null }, { body_type_id: '' }],
-    })
-      .select('car_id name slug')
-      .lean()
-      .limit(200);
-
-    for (const c of carsNoBodyType) {
-      issues.push({
-        car_id: c.car_id,
-        car_name: c.name,
-        car_slug: c.slug,
-        issue: 'Published car missing body type',
-        issue_code: 'NO_BODY_TYPE',
-        severity: 'high',
-      });
+    for (const c of allPublishedCars) {
+      if (!c.body_type_id) {
+        issues.push({
+          car_id: c.car_id,
+          car_name: c.name,
+          car_slug: c.slug,
+          issue: 'Published car missing body type',
+          issue_code: 'NO_BODY_TYPE',
+          severity: 'high',
+        });
+      }
     }
 
     // 4. Published non-upcoming cars with no price on any active variant
-    const carsNoPrice = await Car.aggregate([
-      { $match: { is_deleted: false, is_published: true, is_upcoming: false } },
-      {
-        $lookup: {
-          from: 'carvariants',
-          localField: 'car_id',
-          foreignField: 'car_id',
-          as: 'priced_variants',
-          pipeline: [
-            { $match: { ...ACTIVE_MATCH, ex_showroom_price: { $gt: 0 } } },
-          ],
-        },
-      },
-      { $match: { priced_variants: { $size: 0 } } },
-      { $project: { car_id: 1, name: 1, slug: 1 } },
-      { $limit: 200 },
-    ]);
-
-    for (const c of carsNoPrice) {
-      issues.push({
-        car_id: c.car_id,
-        car_name: c.name,
-        car_slug: c.slug,
-        issue: 'Launched car has no priced variants',
-        issue_code: 'NO_PRICED_VARIANTS',
-        severity: 'medium',
-      });
+    for (const c of publishedCars) {
+      if (c.is_upcoming) continue;
+      const vars = activeCarVariantMap.get(c.car_id) || [];
+      const hasPriced = vars.some((v) => Number(v.ex_showroom_price || 0) > 0);
+      if (!hasPriced) {
+        issues.push({
+          car_id: c.car_id,
+          car_name: c.name,
+          car_slug: c.slug,
+          issue: 'Launched car has no priced variants',
+          issue_code: 'NO_PRICED_VARIANTS',
+          severity: 'medium',
+        });
+      }
     }
 
     return { issues, total: issues.length, generated_at: now() };
   }
 
   static async getMultiFuel(): Promise<MultiFuelResponse> {
-    const brands = await Brand.find({ is_deleted: false }).select('brand_id name slug').lean();
+    const [brands, variants, cars] = await Promise.all([
+      Brand.find({ is_deleted: false }).select('brand_id name slug').lean(),
+      CarVariant.find(ACTIVE_MATCH as any).select('car_id fuel_type_id').lean(),
+      Car.find({ is_deleted: false }).select('car_id brand_id').lean(),
+    ]);
 
     const brandMap: Record<string, { name: string; slug: string }> = {};
     for (const b of brands) brandMap[b.brand_id] = { name: b.name, slug: b.slug };
 
-    // Cars with more than 1 distinct fuel type across active variants
-    const agg = await CarVariant.aggregate([
-      { $match: { ...ACTIVE_MATCH, fuel_type_id: { $exists: true, $ne: null } } },
-      {
-        $group: {
-          _id: '$car_id',
-          fuel_type_ids: { $addToSet: '$fuel_type_id' },
-        },
-      },
-      {
-        $lookup: {
-          from: 'cars',
-          localField: '_id',
-          foreignField: 'car_id',
-          as: 'car_doc',
-          pipeline: [{ $match: { is_deleted: false } }, { $project: { brand_id: 1 } }],
-        },
-      },
-      { $unwind: { path: '$car_doc', preserveNullAndEmptyArrays: false } },
-      {
-        $group: {
-          _id: '$car_doc.brand_id',
-          total_models: { $sum: 1 },
-          multi_fuel_models: {
-            $sum: {
-              $cond: [{ $gt: [{ $size: '$fuel_type_ids' }, 1] }, 1, 0],
-            },
-          },
-        },
-      },
-      { $sort: { multi_fuel_models: -1 } },
-    ]);
+    const carBrandMap = new Map<string, string>();
+    for (const c of cars) {
+      if (c.car_id && c.brand_id) carBrandMap.set(c.car_id, c.brand_id);
+    }
 
-    const totalMultiFuelCars = agg.reduce((sum, r) => sum + r.multi_fuel_models, 0);
+    const carFuelMap = new Map<string, Set<string>>();
+    for (const v of variants) {
+      if (!v.car_id || !v.fuel_type_id) continue;
+      if (!carFuelMap.has(v.car_id)) carFuelMap.set(v.car_id, new Set());
+      carFuelMap.get(v.car_id)!.add(v.fuel_type_id);
+    }
 
-    const rows = agg
-      .filter((r) => r.multi_fuel_models > 0)
-      .map((r) => ({
-        brand_id: r._id,
-        brand_name: brandMap[r._id]?.name ?? r._id,
-        brand_slug: brandMap[r._id]?.slug ?? r._id,
-        multi_fuel_models: r.multi_fuel_models,
-        total_models: r.total_models,
-      }));
+    const brandModelStats: Record<string, { total: number; multiFuel: number }> = {};
+
+    for (const [carId, fuelSet] of carFuelMap.entries()) {
+      const brandId = carBrandMap.get(carId);
+      if (!brandId) continue;
+
+      if (!brandModelStats[brandId]) brandModelStats[brandId] = { total: 0, multiFuel: 0 };
+      brandModelStats[brandId].total += 1;
+      if (fuelSet.size > 1) {
+        brandModelStats[brandId].multiFuel += 1;
+      }
+    }
+
+    let totalMultiFuelCars = 0;
+    const rows = Object.entries(brandModelStats)
+      .filter(([_, stats]) => stats.multiFuel > 0)
+      .map(([bid, stats]) => {
+        totalMultiFuelCars += stats.multiFuel;
+        return {
+          brand_id: bid,
+          brand_name: brandMap[bid]?.name ?? bid,
+          brand_slug: brandMap[bid]?.slug ?? bid,
+          multi_fuel_models: stats.multiFuel,
+          total_models: stats.total,
+        };
+      })
+      .sort((a, b) => b.multi_fuel_models - a.multi_fuel_models);
 
     return { rows, total_multi_fuel_cars: totalMultiFuelCars, generated_at: now() };
   }

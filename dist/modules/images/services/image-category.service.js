@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImageCategoryService = void 0;
+const uuid_1 = require("uuid");
 const image_category_model_1 = require("../../../models/image-category.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
 const filter_util_1 = require("../../../shared/utils/filter.util");
@@ -27,7 +28,7 @@ class ImageCategoryService {
         const { skip, limit: validatedLimit } = pagination_util_1.PaginationUtil.getPaginationParams(page, limit);
         const sortFilter = filter_util_1.FilterUtil.buildSortFilter(sortBy, sortOrder);
         const categories = await image_category_model_1.ImageCategory.find(filter)
-            .select('name slug description is_active display_order')
+            .select('id category_id name slug description is_active display_order')
             .sort(sortFilter)
             .skip(skip)
             .limit(validatedLimit)
@@ -50,6 +51,7 @@ class ImageCategoryService {
         const finalSlug = allSlugs.includes(slug) ? slug_util_1.SlugUtil.generateUnique(categoryData.name, allSlugs) : slug;
         categoryData.slug = finalSlug;
         const category = {
+            category_id: categoryData.category_id || (0, uuid_1.v4)(),
             name: categoryData.name,
             slug: categoryData.slug,
             description: categoryData.description,

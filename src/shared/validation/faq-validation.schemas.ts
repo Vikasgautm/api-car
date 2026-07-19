@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { answerFormatSchema, uuidSchema } from './common-validation.schemas';
+import { answerFormatSchema, booleanStringSchema, uuidSchema } from './common-validation.schemas';
 
 // FAQ DTO schemas
 export const createFaqSchema = z.object({
@@ -13,23 +13,33 @@ export const createFaqSchema = z.object({
   related_cars: z.array(uuidSchema).optional(),
   related_brands: z.array(uuidSchema).optional(),
   related_blogs: z.array(uuidSchema).optional(),
-  is_published: z.boolean().optional(),
-  is_featured: z.boolean().optional(),
+  is_published: booleanStringSchema.optional(),
+  is_featured: booleanStringSchema.optional(),
   faq_type: z.string().optional(),
-  // intent_type: z.string().optional(),
+  intent_type: z.string().optional(),
   entity_type: z.string().optional(),
   entity_id: uuidSchema.optional(),
 
-  related_entities: z.array(uuidSchema).optional(),
+  related_entities: z
+    .array(
+      z.union([
+        z.object({
+          entity_type: z.string(),
+          entity_id: uuidSchema,
+        }),
+        uuidSchema,
+      ])
+    )
+    .optional(),
   target_page_types: z.array(z.string()).optional(),
 
   template_key: z.string().optional(),
 
-  is_dynamic: z.boolean().optional(),
-  is_editorial: z.boolean().optional(),
-  indexable: z.boolean().optional(),
-  schema_enabled: z.boolean().optional(),
-  needs_refresh: z.boolean().optional(),
+  is_dynamic: booleanStringSchema.optional(),
+  is_editorial: booleanStringSchema.optional(),
+  indexable: booleanStringSchema.optional(),
+  schema_enabled: booleanStringSchema.optional(),
+  needs_refresh: booleanStringSchema.optional(),
 
   canonical_intent_key: z.string().optional(),
 

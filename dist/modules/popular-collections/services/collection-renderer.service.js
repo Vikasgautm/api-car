@@ -184,7 +184,7 @@ class CollectionRendererService {
         for (const r of rankingData) {
             rankingMap.set(String(r.entity_id), r);
         }
-        const suppressed = new Set(collection.suppressed_car_ids.map(String));
+        const suppressed = new Set((collection.suppressed_car_ids || []).map(String));
         const eligible = discoveryCars.filter((car) => {
             const id = String(car.car_id ?? car._id ?? '');
             return !suppressed.has(id);
@@ -233,14 +233,14 @@ class CollectionRendererService {
         const result = [];
         let rank = 1;
         const seen = new Set();
-        for (const id of collection.pinned_car_ids) {
+        for (const id of (collection.pinned_car_ids || [])) {
             const car = carMap.get(id);
             if (car) {
                 result.push(annotate(car, 'pinned', rank++));
                 seen.add(id);
             }
         }
-        for (const id of collection.manual_car_ids) {
+        for (const id of (collection.manual_car_ids || [])) {
             if (!seen.has(id)) {
                 const car = carMap.get(id);
                 if (car) {
@@ -260,12 +260,13 @@ class CollectionRendererService {
     static applyHybridSlots(eligible, collection, rankingMap, annotate, page, limit) {
         const mW = collection.manual_weight / 100;
         const bW = collection.behavioral_weight / 100;
-        const pinnedSet = new Set(collection.pinned_car_ids);
+        const pinnedSet = new Set(collection.pinned_car_ids || []);
         const scored = eligible.map((car) => {
             const id = String(car.car_id ?? car._id ?? '');
             const r = rankingMap.get(id);
-            const manualIdx = collection.manual_car_ids.indexOf(id);
-            const manualScore = manualIdx >= 0 ? 1 - manualIdx / Math.max(collection.manual_car_ids.length, 1) : 0;
+            const manualCarIds = collection.manual_car_ids || [];
+            const manualIdx = manualCarIds.indexOf(id);
+            const manualScore = manualIdx >= 0 ? 1 - manualIdx / Math.max(manualCarIds.length, 1) : 0;
             const behScore = r?.score ?? 0;
             const isPinned = pinnedSet.has(id);
             return {
@@ -289,7 +290,7 @@ class CollectionRendererService {
         }));
     }
     static applyBehavioralSlots(eligible, collection, rankingMap, annotate, page, limit) {
-        const pinnedSet = new Set(collection.pinned_car_ids);
+        const pinnedSet = new Set(collection.pinned_car_ids || []);
         const scored = eligible.map((car) => {
             const id = String(car.car_id ?? car._id ?? '');
             const r = rankingMap.get(id);

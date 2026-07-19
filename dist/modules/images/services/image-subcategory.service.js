@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImageSubCategoryService = void 0;
+const uuid_1 = require("uuid");
 const image_category_model_1 = require("../../../models/image-category.model");
 const image_subcategory_model_1 = require("../../../models/image-subcategory.model");
 const app_error_util_1 = require("../../../shared/utils/app-error.util");
@@ -31,7 +32,7 @@ class ImageSubCategoryService {
         const sortFilter = filter_util_1.FilterUtil.buildSortFilter(sortBy, sortOrder);
         const subcategories = await image_subcategory_model_1.ImageSubCategory.find(filter)
             .populate('category_id', 'name slug')
-            .select('category_id name slug description is_active display_order')
+            .select('id subcategory_id category_id name slug description is_active display_order')
             .sort(sortFilter)
             .skip(skip)
             .limit(validatedLimit)
@@ -59,6 +60,7 @@ class ImageSubCategoryService {
         const finalSlug = allSlugs.includes(slug) ? slug_util_1.SlugUtil.generateUnique(subcategoryData.name, allSlugs) : slug;
         subcategoryData.slug = finalSlug;
         const subcategory = {
+            subcategory_id: subcategoryData.subcategory_id || (0, uuid_1.v4)(),
             category_id: subcategoryData.category_id,
             name: subcategoryData.name,
             slug: subcategoryData.slug,

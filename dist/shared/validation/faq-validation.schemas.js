@@ -15,8 +15,32 @@ exports.createFaqSchema = zod_1.z.object({
     related_cars: zod_1.z.array(common_validation_schemas_1.uuidSchema).optional(),
     related_brands: zod_1.z.array(common_validation_schemas_1.uuidSchema).optional(),
     related_blogs: zod_1.z.array(common_validation_schemas_1.uuidSchema).optional(),
-    is_published: zod_1.z.boolean().optional(),
-    is_featured: zod_1.z.boolean().optional(),
+    is_published: common_validation_schemas_1.booleanStringSchema.optional(),
+    is_featured: common_validation_schemas_1.booleanStringSchema.optional(),
+    faq_type: zod_1.z.string().optional(),
+    intent_type: zod_1.z.string().optional(),
+    entity_type: zod_1.z.string().optional(),
+    entity_id: common_validation_schemas_1.uuidSchema.optional(),
+    related_entities: zod_1.z
+        .array(zod_1.z.union([
+        zod_1.z.object({
+            entity_type: zod_1.z.string(),
+            entity_id: common_validation_schemas_1.uuidSchema,
+        }),
+        common_validation_schemas_1.uuidSchema,
+    ]))
+        .optional(),
+    target_page_types: zod_1.z.array(zod_1.z.string()).optional(),
+    template_key: zod_1.z.string().optional(),
+    is_dynamic: common_validation_schemas_1.booleanStringSchema.optional(),
+    is_editorial: common_validation_schemas_1.booleanStringSchema.optional(),
+    indexable: common_validation_schemas_1.booleanStringSchema.optional(),
+    schema_enabled: common_validation_schemas_1.booleanStringSchema.optional(),
+    needs_refresh: common_validation_schemas_1.booleanStringSchema.optional(),
+    canonical_intent_key: zod_1.z.string().optional(),
+    priority_score: zod_1.z.number().optional(),
+    visibility_status: zod_1.z.string().optional(),
+    source_type: zod_1.z.string().optional(),
 }).strict();
 exports.updateFaqSchema = exports.createFaqSchema.partial().strict();
 exports.faqFilterSchema = zod_1.z.object({

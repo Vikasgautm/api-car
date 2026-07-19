@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { IImageCategory, ImageCategory } from "../../../models/image-category.model";
 import { AppError } from "../../../shared/utils/app-error.util";
 import { FilterUtil } from "../../../shared/utils/filter.util";
@@ -36,7 +37,7 @@ export class ImageCategoryService {
     const sortFilter = FilterUtil.buildSortFilter(sortBy, sortOrder);
 
     const categories = await ImageCategory.find(filter)
-      .select('name slug description is_active display_order')
+      .select('id category_id name slug description is_active display_order')
       .sort(sortFilter)
       .skip(skip)
       .limit(validatedLimit)
@@ -66,6 +67,7 @@ export class ImageCategoryService {
     categoryData.slug = finalSlug;
 
     const category: Partial<IImageCategory> = {
+      category_id: categoryData.category_id || uuidv4(),
       name: categoryData.name,
       slug: categoryData.slug,
       description: categoryData.description,

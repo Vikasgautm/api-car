@@ -249,8 +249,7 @@ class FAQService {
             updateData.is_dynamic = faqData.is_dynamic;
         if (faqData.is_editorial !== undefined)
             updateData.is_editorial = faqData.is_editorial;
-        if (faqData.canonical_intent_key !== undefined)
-            updateData.canonical_intent_key = faqData.canonical_intent_key;
+        // if (faqData.canonical_intent_key !== undefined) updateData.canonical_intent_key = faqData.canonical_intent_key;
         if (faqData.indexable !== undefined)
             updateData.indexable = faqData.indexable;
         if (faqData.schema_enabled !== undefined)

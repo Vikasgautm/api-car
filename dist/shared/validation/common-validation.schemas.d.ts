@@ -4,7 +4,7 @@ export declare const uuidSchema: z.ZodString;
 export declare const slugSchema: z.ZodString;
 export declare const emailSchema: z.ZodString;
 export declare const urlSchema: z.ZodString;
-export declare const booleanStringSchema: z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+export declare const booleanStringSchema: z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
     true: "true";
     0: "0";
     1: "1";
@@ -20,19 +20,19 @@ export declare const paginationSchema: z.ZodObject<{
     }>>;
     q: z.ZodOptional<z.ZodString>;
     search: z.ZodOptional<z.ZodString>;
-    is_deleted: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    is_deleted: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
         0: "0";
         1: "1";
         false: "false";
     }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
-    is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    is_published: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
         0: "0";
         1: "1";
         false: "false";
     }>, z.ZodTransform<boolean, "true" | "0" | "1" | "false">>]>>;
-    is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodEnum<{
+    is_featured: z.ZodOptional<z.ZodUnion<readonly [z.ZodBoolean, z.ZodPipe<z.ZodNumber, z.ZodTransform<boolean, number>>, z.ZodPipe<z.ZodEnum<{
         true: "true";
         0: "0";
         1: "1";
@@ -84,7 +84,7 @@ export declare const commonFieldsSchema: z.ZodObject<{
     is_featured: z.ZodOptional<z.ZodBoolean>;
 }, z.core.$strip>;
 export declare const idParamSchema: z.ZodObject<{
-    id: z.ZodString;
+    id: z.ZodUnion<readonly [z.ZodString, z.ZodString, z.ZodString]>;
 }, z.core.$strip>;
 export declare const slugParamSchema: z.ZodObject<{
     slug: z.ZodString;

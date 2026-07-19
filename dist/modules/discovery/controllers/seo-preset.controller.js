@@ -32,7 +32,8 @@ class SeoPresetController {
     });
     static create = (0, catchAsync_1.catchAsync)(async (req, res) => {
         const dto = {
-            slug: req.body.slug,
+            // slug: req.body.slug,
+            slug: req.body.slug?.trim().toLowerCase(),
             title: req.body.title,
             h1: req.body.h1,
             meta_description: req.body.meta_description,
@@ -42,9 +43,14 @@ class SeoPresetController {
             is_published: req.body.is_published,
             sort_order: req.body.sort_order,
         };
+        console.log("seo presetes data are hte here->", dto);
         const validation = seo_preset_dto_1.CreateSeoPresetDto.validate(dto);
-        if (!validation.success)
+        console.log("test data pased or not chekoing g g ", validation);
+        console.log(JSON.stringify(validation, null, 2));
+        if (!validation.success) {
+            console.log(validation.error.errors);
             throw new app_error_util_1.AppError(validation.error.errors.map((e) => e.message).join(', '), 400);
+        }
         const created = await seo_preset_service_1.SeoPresetService.create(dto);
         return response_util_1.ResponseUtil.created(res, created, 'SEO preset created');
     });

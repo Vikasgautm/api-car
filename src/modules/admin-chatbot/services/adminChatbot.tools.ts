@@ -18,7 +18,7 @@ const MAX_ROWS = Number(process.env.ADMIN_CHATBOT_MAX_RESULTS) || 20;
 
 // Safe allowlist of fields returned for each entity type — never include sensitive fields
 const SAFE_CAR_FIELDS = 'car_id name slug brand_id is_published is_deleted status createdAt';
-const SAFE_VARIANT_FIELDS = 'variant_id name car_id fuel_type_id body_type_id price_ex_showroom is_published is_deleted';
+const SAFE_VARIANT_FIELDS = 'variant_id name car_id fuel_type_id body_type_id ex_showroom_price is_published is_deleted';
 const SAFE_USER_FIELDS = 'user_id user_name email role is_deleted createdAt';
 const SAFE_BLOG_FIELDS = 'blog_id title slug is_published seo_title meta_description is_deleted createdAt';
 const SAFE_FAQ_FIELDS = 'faq_id question answer is_published car_id is_deleted';
@@ -170,69 +170,53 @@ export async function searchCars(
 export async function getCarDataQualityReport(page: number, limit: number): Promise<ToolResult> {
   const [
     noBrandCars,
-    noVariantCars,
+    usedCarIds,
     duplicateSlugs,
     missingSeoTitle,
     missingMetaDesc,
-    publishedWithNoPublishedVariant,
+    pubVariantCarIds,
   ] = await Promise.all([
     Car.find({ brand_id: { $in: [null, ''] }, is_deleted: false })
       .select(SAFE_CAR_FIELDS).limit(MAX_ROWS).lean(),
+    CarVariant.distinct('car_id', { is_deleted: false }),
     Car.aggregate([
       { $match: { is_deleted: false } },
-      {
-        $lookup: {
-          from: 'carvariants',
-          localField: 'car_id',
-          foreignField: 'car_id',
-          as: 'variants',
-          pipeline: [{ $match: { is_deleted: false } }],
-        },
-      },
-      { $match: { 'variants.0': { $exists: false } } },
-      { $project: { car_id: 1, name: 1, slug: 1, is_published: 1 } },
-      { $limit: MAX_ROWS },
-    ]),
-    Car.aggregate([
-      { $match: { is_deleted: false } },
-      { $group: { _id: '$slug', count: { $sum: 1 }, car_ids: { $push: '$car_id' } } },
-      { $match: { count: { $gt: 1 } } },
-      { $limit: MAX_ROWS },
+      { $group: { _id: '$slug', count: { $sum: 1 } } },
     ]),
     Car.find({ $or: [{ seo_title: { $in: [null, ''] } }, { seo_title: { $exists: false } }], is_deleted: false, is_published: true })
       .select(SAFE_CAR_FIELDS).limit(MAX_ROWS).lean(),
     Car.find({ $or: [{ meta_description: { $in: [null, ''] } }, { meta_description: { $exists: false } }], is_deleted: false, is_published: true })
       .select(SAFE_CAR_FIELDS).limit(MAX_ROWS).lean(),
-    Car.aggregate([
-      { $match: { is_published: true, is_deleted: false } },
-      {
-        $lookup: {
-          from: 'carvariants',
-          localField: 'car_id',
-          foreignField: 'car_id',
-          as: 'pub_variants',
-          pipeline: [{ $match: { is_published: true, is_deleted: false } }],
-        },
-      },
-      { $match: { 'pub_variants.0': { $exists: false } } },
-      { $project: { car_id: 1, name: 1, slug: 1 } },
-      { $limit: MAX_ROWS },
-    ]),
+    CarVariant.distinct('car_id', { is_published: true, is_deleted: false }),
   ]);
+
+  const usedCarSet = new Set(usedCarIds.filter(Boolean));
+  const pubVariantCarSet = new Set(pubVariantCarIds.filter(Boolean));
+
+  const [noVariantCars, publishedWithNoPublishedVariant] = await Promise.all([
+    Car.find({ is_deleted: false, car_id: { $nin: Array.from(usedCarSet) } })
+      .select(SAFE_CAR_FIELDS).limit(MAX_ROWS).lean(),
+    Car.find({ is_published: true, is_deleted: false, car_id: { $nin: Array.from(pubVariantCarSet) } })
+      .select(SAFE_CAR_FIELDS).limit(MAX_ROWS).lean(),
+  ]);
+
+  const actualDuplicateSlugs = (duplicateSlugs as unknown as { _id: string; count: number }[])
+    .filter(d => d.count > 1)
+    .slice(0, MAX_ROWS);
 
   const rawIssues = [
     ...noBrandCars.map(c => ({ ...(c as unknown as Record<string,unknown>), issue: 'missing_brand' })),
-    ...noVariantCars.map((c: Record<string,unknown>) => ({ ...c, issue: 'no_variants' })),
-    ...duplicateSlugs.map((d: Record<string,unknown>) => ({ slug: d._id, count: d.count, car_ids: d.car_ids, issue: 'duplicate_slug' })),
+    ...noVariantCars.map(c => ({ ...(c as unknown as Record<string,unknown>), issue: 'no_variants' })),
+    ...actualDuplicateSlugs.map(d => ({ slug: d._id, count: d.count, issue: 'duplicate_slug' })),
     ...missingSeoTitle.map(c => ({ ...(c as unknown as Record<string,unknown>), issue: 'missing_seo_title' })),
     ...missingMetaDesc.map(c => ({ ...(c as unknown as Record<string,unknown>), issue: 'missing_meta_description' })),
-    ...publishedWithNoPublishedVariant.map((c: Record<string,unknown>) => ({ ...c, issue: 'published_no_published_variant' })),
+    ...publishedWithNoPublishedVariant.map(c => ({ ...(c as unknown as Record<string,unknown>), issue: 'published_no_published_variant' })),
   ];
 
   const issues = await enrichCarRows(rawIssues);
   const paged = paginate(issues, page, limit);
   const total = issues.length;
-  const critical = noVariantCars.length + duplicateSlugs.length + noBrandCars.length;
+  const critical = noVariantCars.length + actualDuplicateSlugs.length + noBrandCars.length;
 
   return {
     data: paged,
@@ -241,12 +225,12 @@ export async function getCarDataQualityReport(page: number, limit: number): Prom
       critical,
       no_brand: noBrandCars.length,
       no_variants: noVariantCars.length,
-      duplicate_slugs: duplicateSlugs.length,
+      duplicate_slugs: actualDuplicateSlugs.length,
       missing_seo_title: missingSeoTitle.length,
       missing_meta_description: missingMetaDesc.length,
       published_no_published_variant: publishedWithNoPublishedVariant.length,
     },
-    fallbackAnswer: `Car data quality report: ${total} issues found. ${critical} critical (${noBrandCars.length} missing brand, ${noVariantCars.length} without variants, ${duplicateSlugs.length} duplicate slugs).`,
+    fallbackAnswer: `Car data quality report: ${total} issues found. ${critical} critical (${noBrandCars.length} missing brand, ${noVariantCars.length} without variants, ${actualDuplicateSlugs.length} duplicate slugs).`,
   };
 }
 
@@ -266,7 +250,7 @@ export async function searchVariants(
   query.is_deleted = filters.is_deleted ?? false;
   if (filters.is_published !== undefined) query.is_published = filters.is_published;
   if (filters.missingPrice) {
-    query.$or = [{ price_ex_showroom: { $in: [null, 0, undefined] } }];
+    query.$or = [{ ex_showroom_price: { $in: [null, 0, undefined] } }];
   }
   if (filters.missingFuelType) {
     query.fuel_type_id = { $in: [null, '', undefined] };
@@ -303,11 +287,11 @@ export async function getVariantDataQualityReport(page: number, limit: number): 
     missingPrice,
     missingFuelType,
     missingBodyType,
-    orphanedVariants,
-    unpublishedUnderPublished,
+    allCarIds,
+    pubCarIds,
   ] = await Promise.all([
     CarVariant.find({
-      $or: [{ price_ex_showroom: { $in: [null, 0, undefined] } }],
+      $or: [{ ex_showroom_price: { $in: [null, 0, undefined] } }],
       is_deleted: false,
     }).select(SAFE_VARIANT_FIELDS).limit(MAX_ROWS).lean(),
     CarVariant.find({
@@ -318,44 +302,26 @@ export async function getVariantDataQualityReport(page: number, limit: number): 
       $or: [{ body_type_id: { $in: [null, '', undefined] } }],
       is_deleted: false,
     }).select(SAFE_VARIANT_FIELDS).limit(MAX_ROWS).lean(),
-    CarVariant.aggregate([
-      { $match: { is_deleted: false } },
-      {
-        $lookup: {
-          from: 'cars',
-          localField: 'car_id',
-          foreignField: 'car_id',
-          as: 'car',
-          pipeline: [{ $match: { is_deleted: false } }],
-        },
-      },
-      { $match: { 'car.0': { $exists: false } } },
-      { $project: { variant_id: 1, name: 1, car_id: 1 } },
-      { $limit: MAX_ROWS },
-    ]),
-    CarVariant.aggregate([
-      { $match: { is_published: false, is_deleted: false } },
-      {
-        $lookup: {
-          from: 'cars',
-          localField: 'car_id',
-          foreignField: 'car_id',
-          as: 'car',
-          pipeline: [{ $match: { is_published: true, is_deleted: false } }],
-        },
-      },
-      { $match: { 'car.0': { $exists: true } } },
-      { $project: { variant_id: 1, name: 1, car_id: 1 } },
-      { $limit: MAX_ROWS },
-    ]),
+    Car.distinct('car_id', { is_deleted: false }),
+    Car.distinct('car_id', { is_published: true, is_deleted: false }),
+  ]);
+
+  const validCarSet = new Set(allCarIds.filter(Boolean));
+  const pubCarSet = new Set(pubCarIds.filter(Boolean));
+
+  const [orphanedVariants, unpublishedUnderPublished] = await Promise.all([
+    CarVariant.find({ is_deleted: false, car_id: { $nin: Array.from(validCarSet) } })
+      .select(SAFE_VARIANT_FIELDS).limit(MAX_ROWS).lean(),
+    CarVariant.find({ is_published: false, is_deleted: false, car_id: { $in: Array.from(pubCarSet) } })
+      .select(SAFE_VARIANT_FIELDS).limit(MAX_ROWS).lean(),
   ]);
 
   const rawIssues = [
     ...missingPrice.map(v => ({ ...(v as unknown as Record<string,unknown>), issue: 'missing_price' })),
     ...missingFuelType.map(v => ({ ...(v as unknown as Record<string,unknown>), issue: 'missing_fuel_type' })),
     ...missingBodyType.map(v => ({ ...(v as unknown as Record<string,unknown>), issue: 'missing_body_type' })),
-    ...orphanedVariants.map((v: Record<string,unknown>) => ({ ...v, issue: 'orphaned_variant' })),
-    ...unpublishedUnderPublished.map((v: Record<string,unknown>) => ({ ...v, issue: 'unpublished_under_published_car' })),
+    ...orphanedVariants.map(v => ({ ...(v as unknown as Record<string,unknown>), issue: 'orphaned_variant' })),
+    ...unpublishedUnderPublished.map(v => ({ ...(v as unknown as Record<string,unknown>), issue: 'unpublished_under_published_car' })),
   ];
   const issues = await enrichVariantRows(rawIssues);
 
@@ -379,23 +345,13 @@ export async function getVariantDataQualityReport(page: number, limit: number): 
 }
 
 export async function getBrandsSummary(page: number, limit: number): Promise<ToolResult> {
-  const [brands, noCarsResults] = await Promise.all([
+  const [brands, activeBrandIds] = await Promise.all([
     Brand.find({ is_deleted: false }).select(SAFE_BRAND_FIELDS).sort({ name: 1 }).lean(),
-    Brand.aggregate([
-      { $match: { is_deleted: false } },
-      {
-        $lookup: {
-          from: 'cars',
-          localField: 'brand_id',
-          foreignField: 'brand_id',
-          as: 'cars',
-          pipeline: [{ $match: { is_deleted: false } }],
-        },
-      },
-      { $match: { 'cars.0': { $exists: false } } },
-      { $project: { brand_id: 1, name: 1, slug: 1 } },
-    ]),
+    Car.distinct('brand_id', { is_deleted: false }),
   ]);
+
+  const activeSet = new Set(activeBrandIds.filter(Boolean));
+  const noCarsResults = brands.filter(b => !activeSet.has((b as any).brand_id));
 
   const paged = paginate(brands as unknown as Record<string, unknown>[], page, limit);
   return {
@@ -614,7 +570,7 @@ export async function getSystemHealth(page: number, limit: number): Promise<Tool
     CarVariant.countDocuments({
       is_deleted: false,
       $or: [
-        { price_ex_showroom: { $in: [null, 0] } },
+        { ex_showroom_price: { $in: [null, 0] } },
         { fuel_type_id: { $in: [null, ''] } },
       ],
     }),

@@ -443,10 +443,7 @@ class DiscoveryService {
             features: [],
             intelligence: [],
         };
-        // Consolidate all 11 facet dimensions into a single aggregation pipeline with $facet
-        // This reduces 11 separate database queries to 1 query with 11 parallel facets
-        const facetPipeline = {};
-        for (const dim of dims) {
+        await Promise.all(dims.map(async (dim) => {
             const facetFilter = this.buildCarFilter(resolved, variantMatchedCarIds, dim.key);
             const subpipeline = [{ $match: facetFilter }];
             if (dim.unwind)
@@ -454,20 +451,11 @@ class DiscoveryService {
             subpipeline.push({ $group: { _id: dim.groupBy, count: { $sum: 1 } } });
             subpipeline.push({ $sort: { count: -1 } });
             subpipeline.push({ $limit: 50 });
-            facetPipeline[dim.key] = subpipeline;
-        }
-        const facetResults = await car_model_1.Car.aggregate([
-            { $facet: facetPipeline }
-        ]);
-        if (facetResults.length > 0) {
-            const result = facetResults[0];
-            for (const dim of dims) {
-                const rows = result[dim.key] || [];
-                out[dim.key] = rows
-                    .filter((r) => r._id !== null && r._id !== undefined && r._id !== '')
-                    .map((r) => ({ value: String(r._id), count: r.count }));
-            }
-        }
+            const rows = await car_model_1.Car.aggregate(subpipeline);
+            out[dim.key] = (rows || [])
+                .filter((r) => r._id !== null && r._id !== undefined && r._id !== '')
+                .map((r) => ({ value: String(r._id), count: Number(r.count) }));
+        }));
         // Batch 5 — count cars per feature-availability flag and per AI-intelligence
         // flag. These are 8 boolean dimensions each, so we count them as a combined
         // facet (one entry per flag rather than per group-by value).
@@ -494,35 +482,16 @@ class DiscoveryService {
         ];
         const featureFacetFilter = this.buildCarFilter(resolved, variantMatchedCarIds, 'features');
         const intelligenceFacetFilter = this.buildCarFilter(resolved, variantMatchedCarIds, 'intelligence');
-        // Single aggregation pipeline with $facet to count all boolean flags in 2 queries instead of 16
-        const [featureAgg, intelligenceAgg] = await Promise.all([
-            car_model_1.Car.aggregate([
-                { $match: featureFacetFilter },
-                {
-                    $facet: Object.fromEntries(featureFields.map(f => [
-                        f.key,
-                        [{ $match: { [f.key]: true } }, { $count: 'count' }],
-                    ])),
-                },
-            ]),
-            car_model_1.Car.aggregate([
-                { $match: intelligenceFacetFilter },
-                {
-                    $facet: Object.fromEntries(intelligenceFields.map(f => [
-                        f.key,
-                        [{ $match: { [f.key]: true } }, { $count: 'count' }],
-                    ])),
-                },
-            ]),
+        const [featureCountsArr, intelligenceCountsArr] = await Promise.all([
+            Promise.all(featureFields.map(async (f) => {
+                const count = await car_model_1.Car.countDocuments({ ...featureFacetFilter, [f.key]: true });
+                return { ...f, count };
+            })),
+            Promise.all(intelligenceFields.map(async (f) => {
+                const count = await car_model_1.Car.countDocuments({ ...intelligenceFacetFilter, [f.key]: true });
+                return { ...f, count };
+            })),
         ]);
-        const featureCountsArr = featureFields.map(f => ({
-            ...f,
-            count: featureAgg[0][f.key]?.[0]?.count ?? 0,
-        }));
-        const intelligenceCountsArr = intelligenceFields.map(f => ({
-            ...f,
-            count: intelligenceAgg[0][f.key]?.[0]?.count ?? 0,
-        }));
         void featureKeys; // (lint silence) — kept for future per-flag exclusion granularity
         out.features = featureCountsArr.filter(f => f.count > 0).map(f => ({ value: f.key, label: f.label, count: f.count }));
         out.intelligence = intelligenceCountsArr.filter(f => f.count > 0).map(f => ({ value: f.key, label: f.label, count: f.count }));

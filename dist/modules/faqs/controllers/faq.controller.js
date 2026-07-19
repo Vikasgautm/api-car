@@ -11,6 +11,13 @@ const faq_template_engine_service_1 = require("../services/faq-template-engine.s
 const faq_deduplication_service_1 = require("../services/faq-deduplication.service");
 const faq_ai_draft_service_1 = require("../services/faq-ai-draft.service");
 const faq_health_service_1 = require("../services/faq-health.service");
+const toBoolean = (value) => {
+    if (value === true || value === 'true' || value === 1 || value === '1')
+        return true;
+    if (value === false || value === 'false' || value === 0 || value === '0')
+        return false;
+    return undefined;
+};
 class FAQController {
     // ---- Public routes ----
     static getAllPublicFAQs = (0, catchAsync_1.catchAsync)(async (req, res) => {
@@ -75,8 +82,8 @@ class FAQController {
             related_cars: req.body.related_cars,
             related_brands: req.body.related_brands,
             related_blogs: req.body.related_blogs,
-            is_published: req.body.is_published,
-            is_featured: req.body.is_featured,
+            is_published: toBoolean(req.body.is_published),
+            is_featured: toBoolean(req.body.is_featured),
             faq_type: req.body.faq_type,
             intent_type: req.body.intent_type,
             entity_type: req.body.entity_type,
@@ -84,18 +91,19 @@ class FAQController {
             related_entities: req.body.related_entities,
             target_page_types: req.body.target_page_types,
             template_key: req.body.template_key,
-            is_dynamic: req.body.is_dynamic,
-            is_editorial: req.body.is_editorial,
+            is_dynamic: toBoolean(req.body.is_dynamic),
+            is_editorial: toBoolean(req.body.is_editorial),
             canonical_intent_key: req.body.canonical_intent_key,
-            indexable: req.body.indexable,
-            schema_enabled: req.body.schema_enabled,
+            indexable: toBoolean(req.body.indexable),
+            schema_enabled: toBoolean(req.body.schema_enabled),
             priority_score: req.body.priority_score,
             visibility_status: req.body.visibility_status,
             source_type: req.body.source_type,
         };
         const validation = validation_1.createFaqSchema.safeParse(createDto);
-        if (!validation.success)
-            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
+        if (!validation.success) {
+            throw app_error_util_1.AppError.validation(validation.error.issues.map((e) => e.message).join(', '), validation.error.issues.map((e) => e.message));
+        }
         const faq = await faq_service_1.FAQService.createFAQ(createDto);
         return response_util_1.ResponseUtil.created(res, faq, 'FAQ created successfully');
     });
@@ -111,12 +119,8 @@ class FAQController {
             related_cars: req.body.related_cars,
             related_brands: req.body.related_brands,
             related_blogs: req.body.related_blogs,
-            is_published: req.body.is_published !== undefined
-                ? req.body.is_published === 'true' || req.body.is_published === true
-                : undefined,
-            is_featured: req.body.is_featured !== undefined
-                ? req.body.is_featured === 'true' || req.body.is_featured === true
-                : undefined,
+            is_published: toBoolean(req.body.is_published),
+            is_featured: toBoolean(req.body.is_featured),
             faq_type: req.body.faq_type,
             intent_type: req.body.intent_type,
             entity_type: req.body.entity_type,
@@ -124,19 +128,20 @@ class FAQController {
             related_entities: req.body.related_entities,
             target_page_types: req.body.target_page_types,
             template_key: req.body.template_key,
-            is_dynamic: req.body.is_dynamic,
-            is_editorial: req.body.is_editorial,
+            is_dynamic: toBoolean(req.body.is_dynamic),
+            is_editorial: toBoolean(req.body.is_editorial),
             canonical_intent_key: req.body.canonical_intent_key,
-            indexable: req.body.indexable,
-            schema_enabled: req.body.schema_enabled,
+            indexable: toBoolean(req.body.indexable),
+            schema_enabled: toBoolean(req.body.schema_enabled),
             priority_score: req.body.priority_score,
             visibility_status: req.body.visibility_status,
-            needs_refresh: req.body.needs_refresh,
+            needs_refresh: toBoolean(req.body.needs_refresh),
             source_type: req.body.source_type,
         };
         const validation = validation_1.updateFaqSchema.safeParse(updateDto);
-        if (!validation.success)
-            throw new app_error_util_1.AppError(validation.error.issues.map((e) => e.message).join(', '), 400);
+        if (!validation.success) {
+            throw app_error_util_1.AppError.validation(validation.error.issues.map((e) => e.message).join(', '), validation.error.issues.map((e) => e.message));
+        }
         const faq = await faq_service_1.FAQService.updateFAQ(req.params.id, updateDto);
         return response_util_1.ResponseUtil.success(res, faq, 'FAQ updated successfully');
     });

@@ -66,4 +66,5 @@ export declare const blogFilterSchema: z.ZodObject<{
         true: "true";
         false: "false";
     }>]>>;
+    noindex: z.ZodOptional<z.ZodBoolean>;
 }, z.core.$strict>;
