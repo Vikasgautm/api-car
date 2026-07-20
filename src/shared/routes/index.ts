@@ -37,6 +37,8 @@ import masterDataPublicRoutes from '../../modules/master-data/routes/master-data
 import adminChatbotRoutes from '../../modules/admin-chatbot/routes/adminChatbot.routes';
 import sitemapRoutes from '../../modules/sitemap/routes/sitemap.routes';
 
+import webRoutes from '../../modules/main-web/routes/web.routes';
+
 const router = Router();
 
 router.use('/dashboard', dashboardRoutes);
@@ -81,5 +83,9 @@ router.use('/master-data/admin', masterDataRoutes);
 router.use('/master-data/public', masterDataPublicRoutes);
 router.use('/chatbot', adminChatbotRoutes);
 router.use('/sitemap', sitemapRoutes);
+
+// main web site routes here 
+router.use('/web', webRoutes);
+router.use('/webengage', webRoutes);
 
 export default router;
